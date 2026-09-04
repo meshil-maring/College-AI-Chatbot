@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+.venv/
+.env
+
+# Supabase temp files
+supabase/.temp/
+
+# pytest
+.pytest_cache/
