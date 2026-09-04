@@ -8,3 +8,10 @@ class IngestResponse(BaseModel):
     processing_run_id: str
     storage_object_key: str
     status: str = "queued"
+
+
+class ExtractionResponse(BaseModel):
+    processing_run_id: str
+    document_version_id: str
+    status: str
+    characters_extracted: int

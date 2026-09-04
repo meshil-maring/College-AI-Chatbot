@@ -71,3 +71,47 @@ def create_processing_run(
         .execute()
     )
     return response.data[0]
+
+
+def get_processing_run_with_version(client: Client, processing_run_id: str) -> dict | None:
+    response = (
+        client.table("document_processing_runs")
+        .select(
+            "processing_run_id, status, document_version_id, "
+            "document_versions(document_version_id, storage_bucket, storage_object_key, file_type)"
+        )
+        .eq("processing_run_id", processing_run_id)
+        .maybe_single()
+        .execute()
+    )
+    return response.data
+
+
+def update_run_status(
+    client: Client,
+    processing_run_id: str,
+    status: str,
+    started_at: str | None = None,
+    completed_at: str | None = None,
+    error_message: str | None = None,
+) -> None:
+    payload: dict = {"status": status}
+    if started_at is not None:
+        payload["started_at"] = started_at
+    if completed_at is not None:
+        payload["completed_at"] = completed_at
+    if error_message is not None:
+        payload["error_message"] = error_message
+    client.table("document_processing_runs").update(payload).eq(
+        "processing_run_id", processing_run_id
+    ).execute()
+
+
+def store_extracted_text(
+    client: Client,
+    document_version_id: str,
+    extracted_text: str,
+) -> None:
+    client.table("document_versions").update(
+        {"extracted_text": extracted_text}
+    ).eq("document_version_id", document_version_id).execute()

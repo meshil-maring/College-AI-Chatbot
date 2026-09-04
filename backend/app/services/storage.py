@@ -39,3 +39,9 @@ def delete_file(r2: BaseClient, bucket: str, object_key: str) -> None:
         r2.delete_object(Bucket=bucket, Key=object_key)
     except Exception:
         pass
+
+
+def download_file(r2: BaseClient, bucket: str, object_key: str) -> bytes:
+    """Download an R2 object and return its raw bytes."""
+    response = r2.get_object(Bucket=bucket, Key=object_key)
+    return response["Body"].read()
