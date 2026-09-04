@@ -22,3 +22,9 @@ class ChunkingResponse(BaseModel):
     document_version_id: str
     status: str
     chunks_created: int
+
+
+class EmbeddingResponse(BaseModel):
+    processing_run_id: str
+    status: str
+    embeddings_created: int

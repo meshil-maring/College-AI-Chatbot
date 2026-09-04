@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket: str = "documents"
 
+    openai_api_key: str = ""
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 1536
+    embedding_batch_size: int = 100
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

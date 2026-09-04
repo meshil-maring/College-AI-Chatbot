@@ -14,8 +14,14 @@ from app.repositories.ingestion import (
     delete_chunks_for_run,
     insert_chunks,
 )
-from app.schemas.ingestion import ChunkingResponse, ExtractionResponse, IngestResponse
+from app.schemas.ingestion import (
+    ChunkingResponse,
+    EmbeddingResponse,
+    ExtractionResponse,
+    IngestResponse,
+)
 from app.services.chunking import chunk_text
+from app.services.embeddings import embed_processing_run
 from app.services.extraction import extract_text
 from app.services.ingestion import ingest_document
 from app.services.storage import download_file, get_r2_client
@@ -131,4 +137,18 @@ def chunk(
         document_version_id=document_version_id,
         status="ready",
         chunks_created=len(chunks),
+    )
+
+
+@router.post("/{processing_run_id}/embed", response_model=EmbeddingResponse)
+def embed(
+    processing_run_id: UUID,
+    current_user: dict = Depends(_INGEST_ALLOWED),
+) -> EmbeddingResponse:
+    run_id_str = str(processing_run_id)
+    embeddings_created = embed_processing_run(run_id_str)
+    return EmbeddingResponse(
+        processing_run_id=run_id_str,
+        status="embedded",
+        embeddings_created=embeddings_created,
     )

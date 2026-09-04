@@ -77,7 +77,7 @@ def get_processing_run_with_version(client: Client, processing_run_id: str) -> d
     response = (
         client.table("document_processing_runs")
         .select(
-            "processing_run_id, status, document_version_id, "
+            "processing_run_id, status, embedding_status, document_version_id, "
             "document_versions(document_version_id, storage_bucket, storage_object_key, file_type)"
         )
         .eq("processing_run_id", processing_run_id)
