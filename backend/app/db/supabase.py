@@ -19,13 +19,21 @@ def get_admin_client() -> Client:
 
 
 async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
-    """Return the public.users row whose auth_user_id matches, or None."""
-    client = create_supabase_client()
+    """Return the public.users row whose auth_user_id matches, including active role names."""
+    client = get_admin_client()
     response = (
         client.table("users")
-        .select("id, auth_user_id, email")
+        .select("id, auth_user_id, email, user_roles(roles(name, is_active))")
         .eq("auth_user_id", auth_user_id)
         .maybe_single()
         .execute()
     )
-    return response.data
+    if response.data is None:
+        return None
+    row = response.data
+    roles = [
+        ur["roles"]["name"]
+        for ur in (row.get("user_roles") or [])
+        if ur.get("roles") and ur["roles"].get("is_active", True)
+    ]
+    return {"user_id": row["id"], "auth_user_id": row["auth_user_id"], "email": row["email"], "roles": roles}

@@ -102,10 +102,13 @@ async def ingest_document(
             processor_name=settings.app_name,
             processor_version=settings.app_version,
         )
+    except AppError:
+        delete_file(r2, settings.r2_bucket, object_key)
+        raise
     except Exception as exc:
         delete_file(r2, settings.r2_bucket, object_key)
         raise AppError(
-            "Database registration failed; storage upload has been rolled back.",
+            f"Database registration failed: {exc}",
             status_code=500,
             code="REGISTRATION_FAILED",
         ) from exc

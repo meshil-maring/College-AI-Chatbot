@@ -5,7 +5,7 @@ from supabase_auth.errors import AuthApiError
 from app.db.supabase import create_supabase_client
 from app.core.errors import AppError
 
-router = APIRouter(prefix="/auth/v1", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class AuthRequest(BaseModel):

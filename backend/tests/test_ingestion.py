@@ -27,7 +27,7 @@ KS_ID = "ks000000-0000-0000-0000-000000000001"
 DOC_ID = "dc000000-0000-0000-0000-000000000001"
 DV_ID = "dv000000-0000-0000-0000-000000000001"
 RUN_ID = "pr000000-0000-0000-0000-000000000001"
-R2_BUCKET = "documents"
+R2_BUCKET = "college-ai-knowledge"
 
 FAKE_CLAIMS = {
     "sub": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
@@ -35,7 +35,13 @@ FAKE_CLAIMS = {
     "aud": "authenticated",
     "exp": 9999999999,
 }
-FAKE_USER = {"id": USER_ID, "auth_user_id": FAKE_CLAIMS["sub"], "email": FAKE_CLAIMS["email"]}
+FAKE_USER = {
+    "id": USER_ID,
+    "user_id": USER_ID,
+    "auth_user_id": FAKE_CLAIMS["sub"],
+    "email": FAKE_CLAIMS["email"],
+    "roles": ["staff"],
+}
 FAKE_KS = {
     "knowledge_source_id": KS_ID,
     "institution_id": INSTITUTION_ID,
@@ -113,7 +119,7 @@ def _post_ingest(
         patch("app.services.ingestion.get_r2_client", return_value=r2),
     ):
         return client.post(
-            "/documents/ingest",
+            "/api/v1/documents/ingest",
             headers=_auth_headers(),
             data={"knowledge_source_id": ks_id},
             files={"file": (filename, io.BytesIO(content), content_type)},
@@ -224,7 +230,7 @@ def test_ingest_checksum_stored_with_prefix():
         ),
     ):
         client.post(
-            "/documents/ingest",
+            "/api/v1/documents/ingest",
             headers=_auth_headers(),
             data={"knowledge_source_id": KS_ID},
             files={"file": ("doc.pdf", io.BytesIO(data), "application/pdf")},
@@ -265,11 +271,58 @@ def test_ingest_rejects_unknown_knowledge_source():
 
 def test_ingest_requires_auth():
     response = client.post(
-        "/documents/ingest",
+        "/api/v1/documents/ingest",
         data={"knowledge_source_id": KS_ID},
         files={"file": ("f.pdf", io.BytesIO(b"%PDF"), "application/pdf")},
     )
     assert response.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# 9b. Role-based authorization
+# ---------------------------------------------------------------------------
+
+def _post_ingest_as(role: str | None):
+    """POST /ingest with a user whose only role is `role` (or no roles if None)."""
+    claims = {**FAKE_CLAIMS}
+    user = {**FAKE_USER, "roles": [role] if role else []}
+    p1 = patch("app.core.security.verify_jwt", return_value=claims)
+    p2 = patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user))
+    db = _make_db_mock()
+    r2 = _make_r2_mock()
+    with (
+        p1,
+        p2,
+        patch("app.services.ingestion.get_admin_client", return_value=db),
+        patch("app.services.ingestion.get_r2_client", return_value=r2),
+    ):
+        return client.post(
+            "/api/v1/documents/ingest",
+            headers=_auth_headers(),
+            data={"knowledge_source_id": KS_ID},
+            files={"file": ("doc.pdf", io.BytesIO(b"%PDF content"), "application/pdf")},
+        )
+
+
+def test_ingest_student_is_forbidden():
+    response = _post_ingest_as("student")
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "FORBIDDEN"
+
+
+def test_ingest_faculty_is_allowed():
+    response = _post_ingest_as("faculty")
+    assert response.status_code == 201
+
+
+def test_ingest_staff_is_allowed():
+    response = _post_ingest_as("staff")
+    assert response.status_code == 201
+
+
+def test_ingest_admin_is_allowed():
+    response = _post_ingest_as("admin")
+    assert response.status_code == 201
 
 
 # ---------------------------------------------------------------------------
@@ -307,7 +360,7 @@ def test_document_version_fields():
         ),
     ):
         client.post(
-            "/documents/ingest",
+            "/api/v1/documents/ingest",
             headers=_auth_headers(),
             data={"knowledge_source_id": KS_ID},
             files={"file": ("syllabus.pdf", io.BytesIO(b"%PDF data"), "application/pdf")},
@@ -342,7 +395,7 @@ def test_processing_run_created_with_queued_status():
         patch("app.services.ingestion.create_processing_run", side_effect=_spy),
     ):
         response = client.post(
-            "/documents/ingest",
+            "/api/v1/documents/ingest",
             headers=_auth_headers(),
             data={"knowledge_source_id": KS_ID},
             files={"file": ("doc.pdf", io.BytesIO(b"%PDF"), "application/pdf")},
@@ -369,7 +422,7 @@ def test_processing_run_includes_processor_metadata():
         patch("app.services.ingestion.create_processing_run", side_effect=_spy),
     ):
         client.post(
-            "/documents/ingest",
+            "/api/v1/documents/ingest",
             headers=_auth_headers(),
             data={"knowledge_source_id": KS_ID},
             files={"file": ("doc.pdf", io.BytesIO(b"%PDF"), "application/pdf")},
@@ -396,7 +449,7 @@ def test_r2_upload_failure_returns_500_no_db_records():
         patch("app.services.ingestion.get_r2_client", return_value=r2),
     ):
         response = client.post(
-            "/documents/ingest",
+            "/api/v1/documents/ingest",
             headers=_auth_headers(),
             data={"knowledge_source_id": KS_ID},
             files={"file": ("doc.pdf", io.BytesIO(b"%PDF"), "application/pdf")},
@@ -430,7 +483,7 @@ def test_db_failure_after_r2_upload_triggers_r2_cleanup():
         patch("app.services.ingestion.get_r2_client", return_value=r2),
     ):
         response = client.post(
-            "/documents/ingest",
+            "/api/v1/documents/ingest",
             headers=_auth_headers(),
             data={"knowledge_source_id": KS_ID},
             files={"file": ("doc.pdf", io.BytesIO(b"%PDF"), "application/pdf")},

@@ -1,7 +1,7 @@
 import jwt
 from jwt import PyJWKClient, ExpiredSignatureError, InvalidTokenError
-from fastapi import Header, status
-from fastapi.responses import JSONResponse
+from fastapi import Depends, Header
+from typing import Callable
 
 from app.config import settings
 from app.core.errors import AppError
@@ -24,7 +24,7 @@ def verify_jwt(token: str) -> dict:
         claims = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["RS256"],
+            algorithms=["ES256"],
             options={"require": ["sub", "exp", "aud"]},
             audience="authenticated",
         )
@@ -68,7 +68,28 @@ async def get_current_user(
         )
 
     return {
-        "user_id": user["id"],
+        "user_id": user["user_id"],
         "auth_user_id": auth_user_id,
         "email": claims.get("email"),
+        "roles": user.get("roles", []),
     }
+
+
+def require_roles(*allowed: str) -> Callable:
+    """Return a FastAPI dependency that enforces role membership.
+
+    Raises 401 for unauthenticated requests (delegated to get_current_user).
+    Raises 403 when the authenticated user holds none of the allowed roles.
+    """
+    allowed_set = frozenset(allowed)
+
+    async def _dependency(current_user: dict = Depends(get_current_user)) -> dict:
+        if not allowed_set.intersection(current_user.get("roles", [])):
+            raise AppError(
+                "You do not have permission to perform this action",
+                status_code=403,
+                code="FORBIDDEN",
+            )
+        return current_user
+
+    return _dependency
