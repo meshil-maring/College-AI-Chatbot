@@ -15,3 +15,10 @@ class ExtractionResponse(BaseModel):
     document_version_id: str
     status: str
     characters_extracted: int
+
+
+class ChunkingResponse(BaseModel):
+    processing_run_id: str
+    document_version_id: str
+    status: str
+    chunks_created: int

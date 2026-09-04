@@ -20,8 +20,8 @@ client = TestClient(app, raise_server_exceptions=False)
 # Constants
 # ---------------------------------------------------------------------------
 
-DV_ID = "dv000000-0000-0000-0000-000000000001"
-RUN_ID = "pr000000-0000-0000-0000-000000000001"
+DV_ID = "d0000000-0000-0000-0000-000000000001"
+RUN_ID = "a0000000-0000-0000-0000-000000000001"
 R2_BUCKET = "college-ai-knowledge"
 OBJECT_KEY = "inst/ks/ver/doc.pdf"
 
