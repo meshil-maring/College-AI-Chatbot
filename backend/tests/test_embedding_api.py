@@ -62,7 +62,6 @@ def test_embed_already_embedded_response_is_terminal_without_route_regeneration(
         user,
         patch("app.api.ingestion.embed_processing_run", embed_mock),
         patch("app.api.ingestion.update_run_status") as update_status,
-        patch("openai.OpenAI") as openai_client,
     ):
         response = client.post(
             f"/api/v1/documents/{RUN_ID}/embed",
@@ -72,7 +71,6 @@ def test_embed_already_embedded_response_is_terminal_without_route_regeneration(
     assert response.status_code == 200
     assert response.json()["status"] == "embedded"
     update_status.assert_not_called()
-    openai_client.assert_not_called()
 
 
 def test_embed_invalid_processing_run_id_uses_fastapi_validation():

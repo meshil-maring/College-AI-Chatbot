@@ -23,7 +23,7 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
     client = get_admin_client()
     response = (
         client.table("users")
-        .select("id, auth_user_id, email, user_roles(roles(name, is_active))")
+        .select("user_id, auth_user_id, email, user_roles(roles(name, is_active))")
         .eq("auth_user_id", auth_user_id)
         .maybe_single()
         .execute()
@@ -36,4 +36,4 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         for ur in (row.get("user_roles") or [])
         if ur.get("roles") and ur["roles"].get("is_active", True)
     ]
-    return {"user_id": row["id"], "auth_user_id": row["auth_user_id"], "email": row["email"], "roles": roles}
+    return {"user_id": row["user_id"], "auth_user_id": row["auth_user_id"], "email": row["email"], "roles": roles}

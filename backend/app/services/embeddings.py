@@ -1,7 +1,5 @@
 from collections.abc import Iterable
 
-from openai import OpenAI
-
 from app.config import settings
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
@@ -12,28 +10,14 @@ from app.repositories.embeddings import (
     upsert_chunk_embeddings,
 )
 from app.repositories.ingestion import get_processing_run_with_version
+from app.services.embedding_provider import EmbeddingProvider, get_embedding_provider
 
 
 def _safe_error_message(error: Exception) -> str:
     message = str(error)
-    if settings.openai_api_key:
-        message = message.replace(settings.openai_api_key, "[redacted]")
+    if settings.openrouter_api_key:
+        message = message.replace(settings.openrouter_api_key, "[redacted]")
     return message[:1000]
-
-
-def _embedding_values(response: object) -> list[list[float]]:
-    data = getattr(response, "data", None)
-    if data is None:
-        raise ValueError("OpenAI returned no embedding data")
-    values = []
-    for item in data:
-        embedding = getattr(item, "embedding", None)
-        if embedding is None and isinstance(item, dict):
-            embedding = item.get("embedding")
-        if embedding is None:
-            raise ValueError("OpenAI returned an embedding without a vector")
-        values.append(embedding)
-    return values
 
 
 def _batches(items: list[dict], size: int) -> Iterable[list[dict]]:
@@ -41,7 +25,10 @@ def _batches(items: list[dict], size: int) -> Iterable[list[dict]]:
         yield items[start : start + size]
 
 
-def embed_processing_run(processing_run_id: str) -> int:
+def embed_processing_run(
+    processing_run_id: str,
+    provider: EmbeddingProvider | None = None,
+) -> int:
     """Generate and persist embeddings for all chunks in a processing run."""
     db = get_admin_client()
     run = get_processing_run_with_version(db, processing_run_id)
@@ -69,27 +56,22 @@ def embed_processing_run(processing_run_id: str) -> int:
             )
 
         delete_embeddings_for_run(db, processing_run_id, settings.embedding_model)
-        client = OpenAI(api_key=settings.openai_api_key)
+        embedding_provider = provider or get_embedding_provider()
         total = 0
 
         if settings.embedding_batch_size <= 0:
             raise ValueError("Embedding batch size must be greater than zero")
 
         for batch in _batches(chunks, settings.embedding_batch_size):
-            response = client.embeddings.create(
-                input=[chunk["content_text"] for chunk in batch],
-                model=settings.embedding_model,
-                dimensions=settings.embedding_dimensions,
-            )
-            vectors = _embedding_values(response)
+            vectors = embedding_provider.embed([chunk["content_text"] for chunk in batch])
             if len(vectors) != len(batch):
                 raise ValueError(
-                    "OpenAI returned an embedding count that does not match the chunk count"
+                    "Embedding provider returned an embedding count that does not match the chunk count"
                 )
             for vector in vectors:
                 if len(vector) != settings.embedding_dimensions:
                     raise ValueError(
-                        "OpenAI returned an embedding with an unexpected number of dimensions"
+                        "Embedding provider returned an embedding with an unexpected number of dimensions"
                     )
 
             total += upsert_chunk_embeddings(

@@ -9,11 +9,12 @@ Scenarios:
   5. Valid JWT, matching public.users    → 200
 """
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.db.supabase import get_user_by_auth_id
 from app.main import app
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -44,6 +45,37 @@ def _patch_verify(claims=FAKE_CLAIMS):
 
 def _patch_db(user=FAKE_USER):
     return patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user))
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_auth_id_uses_actual_users_schema():
+    client = MagicMock()
+    users_table = client.table.return_value
+    users_table.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        "user_id": "10000000-0000-0000-0000-000000000001",
+        "auth_user_id": FAKE_CLAIMS["sub"],
+        "email": FAKE_CLAIMS["email"],
+        "user_roles": [
+            {"roles": {"name": "student", "is_active": True}},
+            {"roles": {"name": "disabled", "is_active": False}},
+        ],
+    }
+
+    with patch("app.db.supabase.get_admin_client", return_value=client):
+        result = await get_user_by_auth_id(FAKE_CLAIMS["sub"])
+
+    assert result == {
+        "user_id": "10000000-0000-0000-0000-000000000001",
+        "auth_user_id": FAKE_CLAIMS["sub"],
+        "email": FAKE_CLAIMS["email"],
+        "roles": ["student"],
+    }
+    users_table.select.assert_called_once_with(
+        "user_id, auth_user_id, email, user_roles(roles(name, is_active))"
+    )
+    users_table.select.return_value.eq.assert_called_once_with(
+        "auth_user_id", FAKE_CLAIMS["sub"]
+    )
 
 
 # ---------------------------------------------------------------------------

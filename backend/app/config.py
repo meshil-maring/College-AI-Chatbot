@@ -19,8 +19,11 @@ class Settings(BaseSettings):
     r2_secret_access_key: str = ""
     r2_bucket: str = "documents"
 
-    openai_api_key: str = ""
-    embedding_model: str = "text-embedding-3-small"
+    ai_provider: str = "openrouter"
+    openrouter_api_key: str = ""
+    openrouter_site_url: str = ""
+    openrouter_app_name: str = ""
+    embedding_model: str = "qwen/qwen3-embedding-8b"
     embedding_dimensions: int = 1536
     embedding_batch_size: int = 100
 
