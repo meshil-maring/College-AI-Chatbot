@@ -1,0 +1,2025 @@
+{
+  "aggregate_metrics": {
+    "hit_rate@1": 1.0,
+    "hit_rate@10": 1.0,
+    "hit_rate@3": 1.0,
+    "hit_rate@5": 1.0,
+    "mrr": 1.0,
+    "precision@1": 1.0,
+    "precision@10": 0.625,
+    "precision@3": 0.6372549019607844,
+    "precision@5": 0.6294117647058823,
+    "recall@1": 0.9411764705882353,
+    "recall@10": 1.0,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "zero_result_rate": 0.0
+  },
+  "category_metrics": {
+    "all_supported": {
+      "hit_rate@1": 1.0,
+      "hit_rate@10": 1.0,
+      "hit_rate@3": 1.0,
+      "hit_rate@5": 1.0,
+      "mrr": 1.0,
+      "precision@1": 1.0,
+      "precision@10": 0.625,
+      "precision@3": 0.6372549019607844,
+      "precision@5": 0.6294117647058823,
+      "recall@1": 0.9411764705882353,
+      "recall@10": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "zero_result_rate": 0.0
+    },
+    "direct": {
+      "hit_rate@1": 1.0,
+      "hit_rate@10": 1.0,
+      "hit_rate@3": 1.0,
+      "hit_rate@5": 1.0,
+      "mrr": 1.0,
+      "precision@1": 1.0,
+      "precision@10": 0.625,
+      "precision@3": 0.625,
+      "precision@5": 0.625,
+      "recall@1": 1.0,
+      "recall@10": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "zero_result_rate": 0.0
+    },
+    "distractor": {
+      "hit_rate@1": 1.0,
+      "hit_rate@10": 1.0,
+      "hit_rate@3": 1.0,
+      "hit_rate@5": 1.0,
+      "mrr": 1.0,
+      "precision@1": 1.0,
+      "precision@10": 0.5,
+      "precision@3": 0.5,
+      "precision@5": 0.5,
+      "recall@1": 1.0,
+      "recall@10": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "zero_result_rate": 0.0
+    },
+    "multi-chunk": {
+      "hit_rate@1": 1.0,
+      "hit_rate@10": 1.0,
+      "hit_rate@3": 1.0,
+      "hit_rate@5": 1.0,
+      "mrr": 1.0,
+      "precision@1": 1.0,
+      "precision@10": 1.0,
+      "precision@3": 1.0,
+      "precision@5": 1.0,
+      "recall@1": 0.5,
+      "recall@10": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "zero_result_rate": 0.0
+    },
+    "scope/filter": {
+      "hit_rate@1": 1.0,
+      "hit_rate@10": 1.0,
+      "hit_rate@3": 1.0,
+      "hit_rate@5": 1.0,
+      "mrr": 1.0,
+      "precision@1": 1.0,
+      "precision@10": 0.625,
+      "precision@3": 0.6666666666666667,
+      "precision@5": 0.64,
+      "recall@1": 0.9,
+      "recall@10": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0,
+      "zero_result_rate": 0.0
+    },
+    "unsupported": {
+      "hit_rate@1": null,
+      "hit_rate@10": null,
+      "hit_rate@3": null,
+      "hit_rate@5": null,
+      "mrr": null,
+      "precision@1": null,
+      "precision@10": null,
+      "precision@3": null,
+      "precision@5": null,
+      "recall@1": null,
+      "recall@10": null,
+      "recall@3": null,
+      "recall@5": null,
+      "zero_result_rate": null
+    }
+  },
+  "metadata": {
+    "dataset_path": "E:\\Project\\CollegeAIChatbot\\backend\\evaluation\\retrieval_dataset.jsonl",
+    "embedding_model": "qwen/qwen3-embedding-8b",
+    "evaluation_timestamp": "2026-09-06T04:49:32.071917+00:00",
+    "number_of_cases": 19
+  },
+  "per_case_results": [
+    {
+      "case_id": "direct-attendance-exam-eligibility",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What attendance level do I need in a course to be allowed to take the regular end-semester exam?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151",
+        "30000000-0000-0000-0000-000000000152"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000151",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 1,
+          "similarity_score": 0.82591331005097
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000152",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 2,
+          "similarity_score": 0.589399541056185
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000121",
+        "document_version_id": "30000000-0000-0000-0000-000000000131",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000111",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000141"
+      }
+    },
+    {
+      "case_id": "direct-attendance-relaxation-conditions",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000152"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What kind of circumstances can be considered for attendance relaxation, and what must I submit?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000152",
+        "30000000-0000-0000-0000-000000000151"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000152",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 1,
+          "similarity_score": 0.814763594553686
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000151",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 2,
+          "similarity_score": 0.692287169967552
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000121",
+        "document_version_id": "30000000-0000-0000-0000-000000000131",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000111",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000141"
+      }
+    },
+    {
+      "case_id": "direct-cse-annual-tuition",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "How much is the annual tuition for B.Tech Computer Science and Engineering in 2026-2027?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153",
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000153",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 1,
+          "similarity_score": 0.809535384178167
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000154",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 2,
+          "similarity_score": 0.626817777969572
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000122",
+        "document_version_id": "30000000-0000-0000-0000-000000000132",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000112",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000142"
+      }
+    },
+    {
+      "case_id": "direct-ai-ds-annual-tuition",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What annual tuition amount is listed for B.Tech Artificial Intelligence and Data Science for 2026-2027?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000154",
+        "30000000-0000-0000-0000-000000000153"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000154",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 1,
+          "similarity_score": 0.826275636331776
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000153",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 2,
+          "similarity_score": 0.6509708374160039
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000122",
+        "document_version_id": "30000000-0000-0000-0000-000000000132",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000112",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000142"
+      }
+    },
+    {
+      "case_id": "direct-academic-progression",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000155"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What must I complete before I can progress to the next stage of my programme?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000155",
+        "30000000-0000-0000-0000-000000000158"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000155",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 1,
+          "similarity_score": 0.80033682576732
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000158",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 2,
+          "similarity_score": 0.32621241651699995
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000123",
+        "document_version_id": "30000000-0000-0000-0000-000000000133",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000113",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000143"
+      }
+    },
+    {
+      "case_id": "direct-undergraduate-admission-eligibility",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What do I need to satisfy when applying for an undergraduate programme?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000156",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000144",
+          "rank": 1,
+          "similarity_score": 0.822103185152248
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000124",
+        "document_version_id": "30000000-0000-0000-0000-000000000134",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000114",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000144"
+      }
+    },
+    {
+      "case_id": "direct-chatbot-unsupported-information-policy",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "How should the college chatbot respond when its official sources do not contain reliable information?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000157",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000145",
+          "rank": 1,
+          "similarity_score": 0.840916122225408
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000125",
+        "document_version_id": "30000000-0000-0000-0000-000000000135",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000115",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000145"
+      }
+    },
+    {
+      "case_id": "direct-programme-comparison",
+      "category": "direct",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000158"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "How do the CSE and AI and Data Science B.Tech programmes compare in duration and total credits?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000158",
+        "30000000-0000-0000-0000-000000000155"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000158",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 1,
+          "similarity_score": 0.753444105797303
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000155",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 2,
+          "similarity_score": 0.385308034103636
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000123",
+        "document_version_id": "30000000-0000-0000-0000-000000000133",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000113",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000143"
+      }
+    },
+    {
+      "case_id": "multi-attendance-eligibility-and-relaxation",
+      "category": "multi-chunk",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151",
+        "30000000-0000-0000-0000-000000000152"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 0.5,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 2,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 2,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 2,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "If my attendance is below the usual exam requirement because of a documented medical circumstance, what rules and process apply?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000152",
+        "30000000-0000-0000-0000-000000000151"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000152",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 1,
+          "similarity_score": 0.7658675909042361
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000151",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 2,
+          "similarity_score": 0.752492889910514
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000121",
+        "document_version_id": "30000000-0000-0000-0000-000000000131",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000111",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000141"
+      }
+    },
+    {
+      "case_id": "distractor-cse-not-ai-ds-fee",
+      "category": "distractor",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What is the 2026-2027 annual tuition for the B.Tech Computer Science and Engineering programme, rather than the AI and Data Science programme?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153",
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000153",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 1,
+          "similarity_score": 0.801954340818267
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000154",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 2,
+          "similarity_score": 0.675859849206201
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000122",
+        "document_version_id": "30000000-0000-0000-0000-000000000132",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000112",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000142"
+      }
+    },
+    {
+      "case_id": "distractor-ai-ds-not-cse-fee",
+      "category": "distractor",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "Which annual tuition applies to B.Tech Artificial Intelligence and Data Science, not B.Tech Computer Science and Engineering?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000154",
+        "30000000-0000-0000-0000-000000000153"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000154",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 1,
+          "similarity_score": 0.6807557750198721
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000153",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 2,
+          "similarity_score": 0.534559337225001
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000122",
+        "document_version_id": "30000000-0000-0000-0000-000000000132",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000112",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000142"
+      }
+    },
+    {
+      "case_id": "distractor-medical-attendance-process",
+      "category": "distractor",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000152"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "For a medical attendance-relaxation request, what approval process and evidence are required?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000152",
+        "30000000-0000-0000-0000-000000000151"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000152",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 1,
+          "similarity_score": 0.693753939494727
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000151",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 2,
+          "similarity_score": 0.5940621607377721
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000121",
+        "document_version_id": "30000000-0000-0000-0000-000000000131",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000111",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000141"
+      }
+    },
+    {
+      "case_id": "unsupported-hostel-accommodation",
+      "category": "unsupported",
+      "gold_relevant_chunk_ids": [],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "Does the college provide hostel accommodation, and what is the hostel fee?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000157",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000145",
+          "rank": 1,
+          "similarity_score": 0.50203123700805
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000125",
+        "document_version_id": "30000000-0000-0000-0000-000000000135",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000115",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000145"
+      }
+    },
+    {
+      "case_id": "unsupported-scholarship-deadline",
+      "category": "unsupported",
+      "gold_relevant_chunk_ids": [],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": null,
+          "hit": null,
+          "precision": 0.0,
+          "recall": null,
+          "reciprocal_rank": null,
+          "relevant_retrieved_count": 0,
+          "retrieved_count": 1,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What is the deadline to apply for a college scholarship?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000156",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000144",
+          "rank": 1,
+          "similarity_score": 0.5027264053714751
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000124",
+        "document_version_id": "30000000-0000-0000-0000-000000000134",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000114",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000144"
+      }
+    },
+    {
+      "case_id": "scope-knowledge-source-attendance",
+      "category": "scope/filter",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What attendance rule affects eligibility for the regular end-semester examination?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151",
+        "30000000-0000-0000-0000-000000000152"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000151",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 1,
+          "similarity_score": 0.826834906747039
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000152",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 2,
+          "similarity_score": 0.587052345275879
+        }
+      ],
+      "scope": {
+        "document_id": null,
+        "document_version_id": null,
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": "30000000-0000-0000-0000-000000000111",
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": null
+      },
+      "scope_filter": {
+        "checked_fields": [
+          "model_name"
+        ],
+        "expected_relevant_chunk_ids": [
+          "30000000-0000-0000-0000-000000000151"
+        ],
+        "filter_correct": true,
+        "retrieved_chunk_ids": [
+          "30000000-0000-0000-0000-000000000151",
+          "30000000-0000-0000-0000-000000000152"
+        ],
+        "unverifiable_fields": [
+          "institution_id",
+          "knowledge_source_id"
+        ],
+        "verification_status": "partial",
+        "violating_results": []
+      }
+    },
+    {
+      "case_id": "scope-document-fees",
+      "category": "scope/filter",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153",
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 0.5,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 2,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 2,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 2,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What tuition amounts are listed for the two B.Tech programmes?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153",
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000153",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 1,
+          "similarity_score": 0.60147889843709
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000154",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 2,
+          "similarity_score": 0.560363206885053
+        }
+      ],
+      "scope": {
+        "document_id": "30000000-0000-0000-0000-000000000122",
+        "document_version_id": null,
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": null,
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": null
+      },
+      "scope_filter": {
+        "checked_fields": [
+          "model_name"
+        ],
+        "expected_relevant_chunk_ids": [
+          "30000000-0000-0000-0000-000000000153",
+          "30000000-0000-0000-0000-000000000154"
+        ],
+        "filter_correct": true,
+        "retrieved_chunk_ids": [
+          "30000000-0000-0000-0000-000000000153",
+          "30000000-0000-0000-0000-000000000154"
+        ],
+        "unverifiable_fields": [
+          "institution_id",
+          "document_id"
+        ],
+        "verification_status": "partial",
+        "violating_results": []
+      }
+    },
+    {
+      "case_id": "scope-document-version-academic",
+      "category": "scope/filter",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000155"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.5,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 2,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What academic condition governs progression to the next stage of study?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000155",
+        "30000000-0000-0000-0000-000000000158"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000155",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 1,
+          "similarity_score": 0.825690886295934
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000158",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 2,
+          "similarity_score": 0.27116687722008703
+        }
+      ],
+      "scope": {
+        "document_id": null,
+        "document_version_id": "30000000-0000-0000-0000-000000000133",
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": null,
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": null
+      },
+      "scope_filter": {
+        "checked_fields": [
+          "model_name"
+        ],
+        "expected_relevant_chunk_ids": [
+          "30000000-0000-0000-0000-000000000155"
+        ],
+        "filter_correct": true,
+        "retrieved_chunk_ids": [
+          "30000000-0000-0000-0000-000000000155",
+          "30000000-0000-0000-0000-000000000158"
+        ],
+        "unverifiable_fields": [
+          "institution_id",
+          "document_version_id"
+        ],
+        "verification_status": "partial",
+        "violating_results": []
+      }
+    },
+    {
+      "case_id": "scope-processing-run-admission",
+      "category": "scope/filter",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What general eligibility and application steps are stated for undergraduate admission?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000156",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000144",
+          "rank": 1,
+          "similarity_score": 0.842615946297421
+        }
+      ],
+      "scope": {
+        "document_id": null,
+        "document_version_id": null,
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": null,
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": "30000000-0000-0000-0000-000000000144"
+      },
+      "scope_filter": {
+        "checked_fields": [
+          "processing_run_id",
+          "model_name"
+        ],
+        "expected_relevant_chunk_ids": [
+          "30000000-0000-0000-0000-000000000156"
+        ],
+        "filter_correct": true,
+        "retrieved_chunk_ids": [
+          "30000000-0000-0000-0000-000000000156"
+        ],
+        "unverifiable_fields": [
+          "institution_id"
+        ],
+        "verification_status": "partial",
+        "violating_results": []
+      }
+    },
+    {
+      "case_id": "scope-institution-and-model-faq",
+      "category": "scope/filter",
+      "gold_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157"
+      ],
+      "metrics": {
+        "1": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 1.0,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 1,
+          "top_k": 1,
+          "zero_result": false
+        },
+        "10": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.125,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 8,
+          "top_k": 10,
+          "zero_result": false
+        },
+        "3": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 3,
+          "top_k": 3,
+          "zero_result": false
+        },
+        "5": {
+          "first_relevant_rank": 1,
+          "hit": true,
+          "precision": 0.2,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "relevant_retrieved_count": 1,
+          "retrieved_count": 5,
+          "top_k": 5,
+          "zero_result": false
+        }
+      },
+      "query": "What should the chatbot do when it cannot find reliable information?",
+      "requested_top_k": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157",
+        "30000000-0000-0000-0000-000000000156",
+        "30000000-0000-0000-0000-000000000151",
+        "30000000-0000-0000-0000-000000000155",
+        "30000000-0000-0000-0000-000000000152",
+        "30000000-0000-0000-0000-000000000158",
+        "30000000-0000-0000-0000-000000000154",
+        "30000000-0000-0000-0000-000000000153"
+      ],
+      "retrieved_results": [
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000157",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000145",
+          "rank": 1,
+          "similarity_score": 0.737145558765797
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000156",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000144",
+          "rank": 2,
+          "similarity_score": 0.41729126859463495
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000151",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 3,
+          "similarity_score": 0.33660483360290805
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000155",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 4,
+          "similarity_score": 0.328057826508673
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000152",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000141",
+          "rank": 5,
+          "similarity_score": 0.287167293598218
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000158",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000143",
+          "rank": 6,
+          "similarity_score": 0.18233361840248197
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000154",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 7,
+          "similarity_score": 0.169218629598619
+        },
+        {
+          "chunk_id": "30000000-0000-0000-0000-000000000153",
+          "model_name": "qwen/qwen3-embedding-8b",
+          "processing_run_id": "30000000-0000-0000-0000-000000000142",
+          "rank": 8,
+          "similarity_score": 0.132406695794261
+        }
+      ],
+      "scope": {
+        "document_id": null,
+        "document_version_id": null,
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+        "knowledge_source_id": null,
+        "model_name": "qwen/qwen3-embedding-8b",
+        "processing_run_id": null
+      },
+      "scope_filter": {
+        "checked_fields": [
+          "model_name"
+        ],
+        "expected_relevant_chunk_ids": [
+          "30000000-0000-0000-0000-000000000157"
+        ],
+        "filter_correct": true,
+        "retrieved_chunk_ids": [
+          "30000000-0000-0000-0000-000000000157",
+          "30000000-0000-0000-0000-000000000156",
+          "30000000-0000-0000-0000-000000000151",
+          "30000000-0000-0000-0000-000000000155",
+          "30000000-0000-0000-0000-000000000152",
+          "30000000-0000-0000-0000-000000000158",
+          "30000000-0000-0000-0000-000000000154",
+          "30000000-0000-0000-0000-000000000153"
+        ],
+        "unverifiable_fields": [
+          "institution_id"
+        ],
+        "verification_status": "partial",
+        "violating_results": []
+      }
+    }
+  ],
+  "scope_filter_results": [
+    {
+      "case_id": "scope-knowledge-source-attendance",
+      "checked_fields": [
+        "model_name"
+      ],
+      "expected_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151"
+      ],
+      "filter_correct": true,
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151",
+        "30000000-0000-0000-0000-000000000152"
+      ],
+      "unverifiable_fields": [
+        "institution_id",
+        "knowledge_source_id"
+      ],
+      "verification_status": "partial",
+      "violating_results": []
+    },
+    {
+      "case_id": "scope-document-fees",
+      "checked_fields": [
+        "model_name"
+      ],
+      "expected_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153",
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "filter_correct": true,
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000153",
+        "30000000-0000-0000-0000-000000000154"
+      ],
+      "unverifiable_fields": [
+        "institution_id",
+        "document_id"
+      ],
+      "verification_status": "partial",
+      "violating_results": []
+    },
+    {
+      "case_id": "scope-document-version-academic",
+      "checked_fields": [
+        "model_name"
+      ],
+      "expected_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000155"
+      ],
+      "filter_correct": true,
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000155",
+        "30000000-0000-0000-0000-000000000158"
+      ],
+      "unverifiable_fields": [
+        "institution_id",
+        "document_version_id"
+      ],
+      "verification_status": "partial",
+      "violating_results": []
+    },
+    {
+      "case_id": "scope-processing-run-admission",
+      "checked_fields": [
+        "processing_run_id",
+        "model_name"
+      ],
+      "expected_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "filter_correct": true,
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "unverifiable_fields": [
+        "institution_id"
+      ],
+      "verification_status": "partial",
+      "violating_results": []
+    },
+    {
+      "case_id": "scope-institution-and-model-faq",
+      "checked_fields": [
+        "model_name"
+      ],
+      "expected_relevant_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157"
+      ],
+      "filter_correct": true,
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157",
+        "30000000-0000-0000-0000-000000000156",
+        "30000000-0000-0000-0000-000000000151",
+        "30000000-0000-0000-0000-000000000155",
+        "30000000-0000-0000-0000-000000000152",
+        "30000000-0000-0000-0000-000000000158",
+        "30000000-0000-0000-0000-000000000154",
+        "30000000-0000-0000-0000-000000000153"
+      ],
+      "unverifiable_fields": [
+        "institution_id"
+      ],
+      "verification_status": "partial",
+      "violating_results": []
+    }
+  ],
+  "unsupported_query_results": [
+    {
+      "case_id": "unsupported-hostel-accommodation",
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000157"
+      ],
+      "zero_result": false
+    },
+    {
+      "case_id": "unsupported-scholarship-deadline",
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000156"
+      ],
+      "zero_result": false
+    }
+  ]
+}

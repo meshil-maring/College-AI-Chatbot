@@ -1,4 +1,6 @@
+import math
 from collections.abc import Iterable
+from numbers import Real
 
 from app.config import settings
 from app.core.errors import AppError
@@ -11,6 +13,31 @@ from app.repositories.embeddings import (
 )
 from app.repositories.ingestion import get_processing_run_with_version
 from app.services.embedding_provider import EmbeddingProvider, get_embedding_provider
+
+
+def embed_query(
+    query: str,
+    provider: EmbeddingProvider | None = None,
+) -> list[float]:
+    """Generate and validate one query embedding through the configured provider."""
+    embedding_provider = provider or get_embedding_provider()
+    vectors = embedding_provider.embed([query])
+    if len(vectors) != 1:
+        raise ValueError("Embedding provider returned an unexpected result count")
+
+    vector = vectors[0]
+    if len(vector) != settings.embedding_dimensions:
+        raise ValueError(
+            "Embedding provider returned an embedding with an unexpected number of dimensions"
+        )
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, Real)
+        or not math.isfinite(value)
+        for value in vector
+    ):
+        raise ValueError("Embedding provider returned non-numeric embedding values")
+    return vector
 
 
 def _safe_error_message(error: Exception) -> str:
