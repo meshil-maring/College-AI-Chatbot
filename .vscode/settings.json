@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    ".\\.venv\\Scripts\\python.exe": true,
+    "Get-Command": true,
+    "git add": true,
+    "git commit": true
+  }
+}
