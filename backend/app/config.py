@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     openrouter_site_url: str = ""
     openrouter_app_name: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_model: str = "openai/gpt-4o-mini"
     embedding_model: str = "qwen/qwen3-embedding-8b"
     embedding_dimensions: int = 1536
     embedding_batch_size: int = 100
