@@ -1,0 +1,172 @@
+{
+  "test_a": {
+    "session_id": "2221f35d-c0b1-4cc2-95bf-406afd7a1d4d",
+    "conversation_id": "2221f35d-c0b1-4cc2-95bf-406afd7a1d4d",
+    "message_id": "be4614e5-79b7-4b10-ba36-20600bbff828",
+    "answer": "To be allowed to take the regular end-semester exam, you must maintain at least 75% attendance in each registered course. If your attendance falls below this threshold, you may be considered for attendance relaxation only if you meet the institution's documented eligibility conditions and provide supporting evidence (Retrieved chunk 30000000-0000-0000-0000-000000000151).",
+    "answer_chunks": [
+      "30000000-0000-0000-0000-000000000151"
+    ],
+    "sources": [
+      {
+        "chunk_id": "30000000-0000-0000-0000-000000000151",
+        "document_id": "30000000-0000-0000-0000-000000000121",
+        "document_version_id": "30000000-0000-0000-0000-000000000131",
+        "quote": "Students must maintain at least 75% attendance in each registered course to remain eligible for the regular end-semester examination. Students whose attendance falls below 75% may be considered for attendance relaxation only when they meet the institution's documented eligibility conditions and provide supporting evidence.",
+        "similarity_score": 0.826194921278348
+      }
+    ],
+    "citations": [
+      {
+        "message_citation_id": "03be8780-b021-4e47-a5d1-f30b3cc53ec6",
+        "message_id": "be4614e5-79b7-4b10-ba36-20600bbff828",
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000151",
+        "display_order": 1,
+        "citation_label": null,
+        "created_at": "2026-09-07T05:48:36.76218+00:00"
+      }
+    ],
+    "retrieved_chunks": [
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000151",
+        "retrieval_rank": 1,
+        "relevance_score": 0.826194921278348,
+        "selected_for_context": true
+      },
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000155",
+        "retrieval_rank": 2,
+        "relevance_score": 0.601648533246018,
+        "selected_for_context": true
+      },
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000152",
+        "retrieval_rank": 3,
+        "relevance_score": 0.589845632901528,
+        "selected_for_context": true
+      },
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000157",
+        "retrieval_rank": 4,
+        "relevance_score": 0.497368663392584,
+        "selected_for_context": true
+      },
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000156",
+        "retrieval_rank": 5,
+        "relevance_score": 0.49123576335694596,
+        "selected_for_context": true
+      },
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000158",
+        "retrieval_rank": 6,
+        "relevance_score": 0.23521643700795603,
+        "selected_for_context": true
+      },
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000153",
+        "retrieval_rank": 7,
+        "relevance_score": 0.23068398237228604,
+        "selected_for_context": true
+      },
+      {
+        "retrieval_operation_id": "07e6af2a-54bf-4e53-8422-2d32ad9a0531",
+        "chunk_id": "30000000-0000-0000-0000-000000000154",
+        "retrieval_rank": 8,
+        "relevance_score": 0.218648996192097,
+        "selected_for_context": true
+      }
+    ]
+  },
+  "test_b": {
+    "session_id": "ee9a431c-52e5-462b-8bfc-fe4cd37245ee",
+    "conversation_id": "ee9a431c-52e5-462b-8bfc-fe4cd37245ee",
+    "message_id": "90dcc267-821c-48d7-a337-8d8d3fa02068",
+    "answer": "**Admission Process:** To be admitted to undergraduate programmes at this college, applicants must fulfill the eligibility requirements published by the institution for the relevant programme and admission cycle. They should review the official admission information and submit the necessary documents through the designated application process (Retrieved chunk 30000000-0000-0000-0000-000000000156). **Attendance Policy:** Students are required to maintain at least 75% attendance in each registered course to be eligible for the regular end-semester examination. If a student's attendance falls below this threshold, they may be considered for attendance relaxation only if they meet documented eligibility conditions and provide supporting evidence. Additionally, attendance relaxation can be sought for documented medical or other institutionally recognized circumstances, but these requests must follow the designated academic process and are subject to institutional review (Retrieved chunks 30000000-0000-0000-0000-000000000151 and 30000000-0000-0000-0000-000000000152).",
+    "answer_chunks": [
+      "30000000-0000-0000-0000-000000000156"
+    ],
+    "sources": [
+      {
+        "chunk_id": "30000000-0000-0000-0000-000000000156",
+        "document_id": "30000000-0000-0000-0000-000000000124",
+        "document_version_id": "30000000-0000-0000-0000-000000000134",
+        "quote": "Applicants seeking admission to undergraduate programmes must satisfy the eligibility requirements published by the institution for the relevant programme and admission cycle. Applicants should review the official admission information and submit the required documents through the designated application process.",
+        "similarity_score": 0.684468764992441
+      }
+    ],
+    "citations": [
+      {
+        "message_citation_id": "66f01b11-8902-4ffc-83cf-c517583bb8af",
+        "message_id": "90dcc267-821c-48d7-a337-8d8d3fa02068",
+        "retrieval_operation_id": "535f2ae0-c90a-496f-9aed-d2c8556f5de6",
+        "chunk_id": "30000000-0000-0000-0000-000000000156",
+        "display_order": 1,
+        "citation_label": null,
+        "created_at": "2026-09-07T05:49:03.456854+00:00"
+      }
+    ],
+    "retrieved_chunks_count": 8
+  },
+  "test_c": {
+    "message_id": "6fe3194a-a8c2-4efc-9691-7bf99dfb5977",
+    "answer": "Applicants seeking admission to undergraduate programs must meet the eligibility requirements outlined by the institution for the specific program and admission cycle. They should review the official admission information and submit the necessary documents through the designated application process (source: chunk 30000000-0000-0000-0000-000000000156).",
+    "answer_chunks": [
+      "30000000-0000-0000-0000-000000000156"
+    ],
+    "citations": [
+      {
+        "message_citation_id": "7ecbe3d1-e91e-431f-a27c-868520600b54",
+        "message_id": "6fe3194a-a8c2-4efc-9691-7bf99dfb5977",
+        "retrieval_operation_id": "fe13468a-f0d7-4b45-b6b3-d266a9ac1bba",
+        "chunk_id": "30000000-0000-0000-0000-000000000156",
+        "display_order": 1,
+        "citation_label": null,
+        "created_at": "2026-09-07T05:49:20.368445+00:00"
+      }
+    ],
+    "sources": [
+      {
+        "chunk_id": "30000000-0000-0000-0000-000000000156",
+        "document_id": "30000000-0000-0000-0000-000000000124",
+        "document_version_id": "30000000-0000-0000-0000-000000000134",
+        "quote": "Applicants seeking admission to undergraduate programmes must satisfy the eligibility requirements published by the institution for the relevant programme and admission cycle. Applicants should review the official admission information and submit the required documents through the designated application process.",
+        "similarity_score": 0.7208983634831521
+      }
+    ]
+  },
+  "test_d": {
+    "conversation_id": "2521c365-c420-4de6-b29b-6db348b21b12",
+    "message_id": null,
+    "status": "insufficient_context"
+  },
+  "test_e": {
+    "session_id": "d150a7b7-9190-4181-8dc0-6140baae3a7d",
+    "conversation_id": "d150a7b7-9190-4181-8dc0-6140baae3a7d",
+    "turn1_msg": "c85f98a0-235a-4342-9344-a896785658cf",
+    "turn2_msg": "7b454fd1-5f71-4d80-8e2d-a683ed7486f4"
+  },
+  "test_f": {
+    "message_id": "b340775a-07ce-460e-8263-f0de5d97196e",
+    "answer_chunks": [],
+    "citations": [],
+    "retrieved_ids": [
+      "30000000-0000-0000-0000-000000000156",
+      "30000000-0000-0000-0000-000000000158",
+      "30000000-0000-0000-0000-000000000154",
+      "30000000-0000-0000-0000-000000000151",
+      "30000000-0000-0000-0000-000000000153",
+      "30000000-0000-0000-0000-000000000152",
+      "30000000-0000-0000-0000-000000000155",
+      "30000000-0000-0000-0000-000000000157"
+    ]
+  }
+}

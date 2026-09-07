@@ -1,0 +1,37 @@
+{
+  "test": "Phase 4.4 Physical Test F \u2014 Invalid / Non-Retrieved Citation Safety",
+  "timestamp": "2026-09-07 18:20:24 UTC",
+  "method": "Real authenticated chat endpoint used to establish retrieval; crafted answer with invalid chunk reference fed into UNMODIFIED Phase 4.4 pipeline functions imported from app.services.chat (_extract_source_references -> _build_structured_sources -> _enrich_source_titles). No production files modified.",
+  "question": "What attendance level do I need in a course to be allowed to take the regular end-semester exam?",
+  "retrieved_chunk_ids": [
+    "30000000-0000-0000-0000-000000000151",
+    "30000000-0000-0000-0000-000000000152"
+  ],
+  "invalid_chunk_id": "00000000-0000-0000-0000-000000000999",
+  "test_answer": "A minimum attendance of 75% is mandatory for eligibility to take the regular end-semester examination. [Retrieved chunk 30000000-0000-0000-0000-000000000151] This sentence is deliberately ungrounded and cites a chunk that was never retrieved. [Retrieved chunk 00000000-0000-0000-0000-000000000999]",
+  "source_references": [
+    {
+      "chunk_id": "30000000-0000-0000-0000-000000000151",
+      "document_id": "30000000-0000-0000-0000-000000000121",
+      "quote": "Students must maintain at least 75% attendance in each registered course to remain eligible for the regular end-semester examination. Students whose attendance falls below 75% may be considered for attendance relaxation only when they meet the institution's documented eligibility conditions and provide supporting evidence."
+    }
+  ],
+  "sources": [
+    {
+      "chunk_id": "30000000-0000-0000-0000-000000000151",
+      "quote": "Students must maintain at least 75% attendance in each registered course to remain eligible for the regular end-semester examination. Students whose attendance falls below 75% may be considered for attendance relaxation only when they meet the institution's documented eligibility conditions and provide supporting evidence.",
+      "relevance_score": 0.9,
+      "source_title": "Attendance Regulations",
+      "section": "Attendance Requirements"
+    }
+  ],
+  "criteria": {
+    "A_invalid_not_in_source_references": true,
+    "B_invalid_not_in_sources": true,
+    "C_no_fabricated_quote": true,
+    "D_no_fabricated_source_title": true,
+    "E_valid_chunk_still_produces_valid_source": true,
+    "F_no_unrelated_chunk_substituted": true
+  },
+  "overall": "PASS"
+}

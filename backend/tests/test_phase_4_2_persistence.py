@@ -71,6 +71,9 @@ def test_new_conversation_creates_conversation_record() -> None:
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1, "message_type": "user"}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 2, "message_type": "assistant"}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(
         data=[]
@@ -113,6 +116,9 @@ def test_existing_conversation_reuses_conversation_id() -> None:
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 3, "message_type": "user"}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 4, "message_type": "assistant"}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(
         data=[{"message_sequence": 2}]
@@ -190,6 +196,9 @@ def test_user_message_persisted_with_correct_sequence() -> None:
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1, "message_type": "user"}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 2, "message_type": "assistant"}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(
         data=[]
@@ -201,8 +210,9 @@ def test_user_message_persisted_with_correct_sequence() -> None:
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
-    # Verify 4 inserts: conversation, user message, assistant message, ai_response
-    assert mock_client.table().insert().execute.call_count == 4
+    # Verify 6 inserts: conversation, user message, assistant message, ai_response,
+    # retrieval_operation, retrieved_chunks (no message_citations since source_references=[])
+    assert mock_client.table().insert().execute.call_count == 6
 
 
 def test_assistant_message_and_ai_response_persisted_after_generation() -> None:
@@ -228,6 +238,9 @@ def test_assistant_message_and_ai_response_persisted_after_generation() -> None:
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1}]),
         MagicMock(data=[{"message_id": str(message_id), "message_sequence": 2}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(
         data=[]
@@ -275,6 +288,9 @@ def test_ai_response_captures_token_counts_and_latency() -> None:
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 2}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(
         data=[]
@@ -311,6 +327,9 @@ def test_backward_compatibility_session_id_maps_to_conversation_id() -> None:
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(
         data=[]
@@ -348,6 +367,9 @@ def test_response_contract_includes_conversation_and_message_ids() -> None:
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(message_id)}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(
         data=[]
@@ -383,12 +405,16 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
     mock_client_turn_1 = MagicMock()
     # Conversation does not exist initially
     mock_client_turn_1.table().select().eq().maybe_single().execute.return_value = MagicMock(data=None)
-    # Inserts: conversation, user message (seq 1), assistant message (seq 2), ai_response
+    # Inserts: conversation, user message (seq 1), assistant message (seq 2), ai_response,
+    # retrieval_operation, retrieved_chunks, message_citations
     mock_client_turn_1.table().insert().execute.side_effect = [
         MagicMock(data=[{"conversation_id": str(conversation_id), "user_id": str(TEST_USER_ID), "title": "First turn question", "status": "active"}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1, "message_type": "user"}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 2, "message_type": "assistant"}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     # No existing messages for next sequence query
     mock_client_turn_1.table().select().eq().order().limit().execute.side_effect = [
@@ -417,11 +443,15 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
     mock_client_turn_2.table().select().eq().maybe_single().execute.return_value = MagicMock(
         data={"conversation_id": str(conversation_id), "user_id": str(TEST_USER_ID), "title": "First turn question", "status": "active"}
     )
-    # Inserts: ONLY user message (seq 3), assistant message (seq 4), ai_response (NO conversation insert)
+    # Inserts: ONLY user message (seq 3), assistant message (seq 4), ai_response (NO conversation insert),
+    # retrieval_operation, retrieved_chunks, message_citations
     mock_client_turn_2.table().insert().execute.side_effect = [
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 3, "message_type": "user"}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 4, "message_type": "assistant"}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     # Existing messages for next sequence query
     mock_client_turn_2.table().select().eq().order().limit().execute.side_effect = [
@@ -437,8 +467,8 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
 
     assert response_2.conversation_id == conversation_id
     assert response_2.status == "success"
-    # Ensure insert was called exactly 3 times in turn 2 (messages + ai_response, NO conversation insert)
-    assert mock_client_turn_2.table().insert().execute.call_count == 3
+    # Ensure insert was called exactly 5 times in turn 2 (messages + ai_response + retrieval_op + chunks, NO conversation insert, NO citations since source_references=[])
+    assert mock_client_turn_2.table().insert().execute.call_count == 5
 
 
 def test_insufficient_context_persists_user_message_only() -> None:

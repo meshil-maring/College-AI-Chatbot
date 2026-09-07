@@ -156,6 +156,8 @@ def test_retrieval_invocation_propagates_query_and_scope() -> None:
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
@@ -253,6 +255,8 @@ def test_successful_retrieval_reaches_generation_with_known_attendance_chunk() -
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
@@ -298,6 +302,8 @@ def test_caller_provided_chunks_bypass_retrieval() -> None:
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
@@ -368,6 +374,9 @@ def test_provider_does_not_populate_source_references():
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
@@ -401,6 +410,8 @@ def test_unannotated_answer_produces_empty_source_references():
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
@@ -432,6 +443,9 @@ def test_explicit_chunk_reference_maps_to_retrieved_chunk():
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
@@ -468,6 +482,9 @@ def test_multiple_explicit_references_produce_multiple_source_references():
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
+        MagicMock(data=[{"message_citation_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
@@ -502,6 +519,8 @@ def test_non_matching_uuid_in_answer_is_not_cited():
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"ai_response_id": str(uuid4())}]),
+        MagicMock(data=[{"retrieval_operation_id": str(uuid4())}]),
+        MagicMock(data=[{"chunk_id": str(uuid4())}]),
     ]
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 

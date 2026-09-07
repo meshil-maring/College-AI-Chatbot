@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.chat_response import ChatUsage, StructuredSource
 from app.schemas.generation import AIResponse, RetrievedChunk
 
 
@@ -28,3 +29,5 @@ class ChatResponse(AIResponse):
     session_id: UUID
     conversation_id: UUID
     message_id: UUID | None
+    sources: list[StructuredSource] = Field(default_factory=list)
+    usage: ChatUsage | None = None
