@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 4.2 Architecture &amp; Database Schema Report</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-surface: #1e293b;
+      --bg-card: #24324a;
+      --border-color: #334155;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-primary: #38bdf8;
+      --accent-success: #10b981;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --accent-purple: #a855f7;
+      --code-bg: #0b1120;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg-primary: #f8fafc;
+        --bg-surface: #ffffff;
+        --bg-card: #f1f5f9;
+        --border-color: #e2e8f0;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --accent-primary: #0284c7;
+        --accent-success: #059669;
+        --accent-warning: #d97706;
+        --accent-danger: #dc2626;
+        --accent-purple: #9333ea;
+        --code-bg: #f1f5f9;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-surface: #1e293b;
+      --bg-card: #24324a;
+      --border-color: #334155;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-primary: #38bdf8;
+      --accent-success: #10b981;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --accent-purple: #a855f7;
+      --code-bg: #0b1120;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.6;
+      padding: 2.5rem 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-primary); border: 1px solid var(--accent-primary); }
+    .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-success); border: 1px solid var(--accent-success); }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text-main);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+    }
+
+    p, ul, ol {
+      color: var(--text-main);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--accent-primary);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-card);
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    td {
+      font-variant-numeric: tabular-nums;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.25rem;
+      font-size: 0.85em;
+      color: var(--accent-primary);
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+    }
+
+    .boundary-box {
+      border-left: 4px solid var(--accent-primary);
+      padding-left: 1rem;
+      margin: 1rem 0;
+      background: rgba(56, 189, 248, 0.05);
+      padding: 1rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    .must-box {
+      border-left: 4px solid var(--accent-success);
+      background: rgba(16, 185, 129, 0.05);
+      padding: 1rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+      margin-bottom: 1rem;
+    }
+
+    .must-not-box {
+      border-left: 4px solid var(--accent-danger);
+      background: rgba(239, 68, 68, 0.05);
+      padding: 1rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+      margin-bottom: 1rem;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.25rem;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+    .status-pill.pass { background: rgba(16, 185, 129, 0.2); color: var(--accent-success); }
+    .status-pill.lock { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge-row">
+      <span class="badge badge-blue">Phase 4.2 Investigation</span>
+      <span class="badge badge-purple">Read-Only Architectural Blueprint</span>
+      <span class="badge badge-green">Schema V2 Verified</span>
+    </div>
+    <h1>Phase 4.2 — Conversation Record Investigation Report</h1>
+    <p class="subtitle">Complete architectural, relational database, transaction boundary, and persistence flow mapping for the College AI Chatbot platform.</p>
+  </header>
+
+  <!-- Section A: Database Schema -->
+  <section id="section-a">
+    <h2>Section A &bull; Existing Relational Database Schema Inspection</h2>
+    <p>Authoritative review of <code>schemaV2_export.sql</code> and Supabase DDL definitions for conversational and generation records.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1. conversations</div>
+        <p><strong>Primary Container</strong> for multi-turn sessions.</p>
+        <ul>
+          <li><code>conversation_id</code>: UUID (PK, default <code>gen_random_uuid()</code>)</li>
+          <li><code>user_id</code>: UUID (FK &rarr; <code>users.id</code>)</li>
+          <li><code>title</code>: TEXT (nullable)</li>
+          <li><code>status</code>: TEXT (<code>'active' | 'archived'</code>)</li>
+          <li><code>created_at / updated_at</code>: TIMESTAMPTZ</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">2. messages</div>
+        <p><strong>Sequential Dialogue Turns</strong> in conversation.</p>
+        <ul>
+          <li><code>message_id</code>: UUID (PK)</li>
+          <li><code>conversation_id</code>: UUID (FK &rarr; <code>conversations</code>)</li>
+          <li><code>message_sequence</code>: INT (1-based, > 0)</li>
+          <li><code>message_type</code>: <code>'user' | 'assistant'</code></li>
+          <li><code>content_text</code>: TEXT (length > 0)</li>
+          <li><strong>Constraint:</strong> <code>UNIQUE(conversation_id, message_sequence)</code></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">3. ai_responses</div>
+        <p><strong>Technical LLM Telemetry</strong> (1:1 with assistant message).</p>
+        <ul>
+          <li><code>ai_response_id</code>: UUID (PK)</li>
+          <li><code>message_id</code>: UUID (FK &rarr; <code>messages.message_id</code>, UNIQUE)</li>
+          <li><code>provider_name</code>: TEXT</li>
+          <li><code>model_name</code>: TEXT</li>
+          <li><code>validation_status</code>: <code>'pending' | 'passed' | 'failed'</code></li>
+          <li><code>input_token_count / output_token_count</code>: INT</li>
+          <li><code>latency_ms</code>: INT</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Downstream Related Tables (Phase 4.3 Scope)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Table Name</th>
+          <th>Primary Key</th>
+          <th>Foreign Keys</th>
+          <th>Purpose &amp; Scope Separation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>message_citations</code></td>
+          <td><code>citation_id</code></td>
+          <td><code>message_id</code> &rarr; <code>messages</code>, <code>chunk_id</code> &rarr; <code>knowledge_chunks</code></td>
+          <td>Phase 4.3 &bull; Grounded chunk citations and text spans.</td>
+        </tr>
+        <tr>
+          <td><code>retrieval_operations</code></td>
+          <td><code>retrieval_operation_id</code></td>
+          <td><code>message_id</code> &rarr; <code>messages</code>, <code>processing_run_id</code></td>
+          <td>Phase 4.3 &bull; Vector search audit log and latency metrics.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Section B & C: Approved Source & Backend Models -->
+  <section id="section-b-c">
+    <h2>Sections B &amp; C &bull; Approved Schema Source &amp; Backend Models</h2>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Approved Schema Source</div>
+        <p>The single authoritative schema source for the College AI Chatbot is <code>schemaV2_export.sql</code> in the repository root. All table names (<code>conversations</code>, <code>messages</code>, <code>ai_responses</code>) and column constraints conform to PostgreSQL standard DDL.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Current Backend Models (Phase 4.1 State)</div>
+        <p>Currently, <code>backend/app/schemas/chat.py</code> and <code>session.py</code> handle request-scoped volatile contexts (<code>session_id</code>). Phase 4.2 requires creating domain schemas for <code>ConversationCreate</code>, <code>MessageCreate</code>, and <code>AIResponseCreate</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section D: Request Trace & Persistence Point -->
+  <section id="section-d">
+    <h2>Section D &bull; Request Execution Flow &amp; Persistence Insertion Point</h2>
+    <div class="boundary-box">
+      <strong>Safest Insertion Point:</strong> Persistence must occur <em>post-generation</em> in <code>process_chat_request()</code> (or dedicated orchestrator), after OpenRouter generation completes successfully and token/latency metrics are known.
+    </div>
+
+    <pre>
+1. POST /api/v1/generation/chat (FastAPI Route)
+   ├── Auth Extraction: get_current_user (User ID extracted from Supabase JWT)
+   ├── Session/Conversation Resolution:
+   │   └── Find or Create conversation row in DB (status='active', user_id)
+   ├── Persistence (Turn 1 - User Message):
+   │   └── INSERT INTO messages (conversation_id, message_sequence=N, message_type='user', content_text)
+   ├── Phase 3 Retrieval (if chunks not pre-supplied):
+   │   └── retrieve(RetrievalRequest) -> Vector Search & Chunk Mapping
+   ├── Phase 4 Generation:
+   │   └── assemble_context() -> AIGenerationService.generate() (OpenRouter / gpt-4o-mini)
+   ├── Persistence (Turn 2 - Assistant Message & AI Response):
+   │   ├── INSERT INTO messages (conversation_id, message_sequence=N+1, message_type='assistant', content_text)
+   │   └── INSERT INTO ai_responses (message_id, provider_name, model_name, token_counts, latency_ms)
+   └── Return ChatResponse (including conversation_id, message_id, session_id)
+    </pre>
+  </section>
+
+  <!-- Section E, F, G: Semantics -->
+  <section id="section-e-f-g">
+    <h2>Sections E, F, G &bull; Semantic Model &amp; Invariants</h2>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">Conversation Semantics</div>
+        <ul>
+          <li><code>conversation_id</code> is the persistent database identity.</li>
+          <li><code>session_id</code> (Phase 4.1) maps 1:1 to <code>conversation_id</code>.</li>
+          <li>Auto-title generation from initial user query (e.g. truncated first 60 chars).</li>
+          <li>Conversations belong strictly to authenticated <code>user_id</code>.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Message Semantics</div>
+        <ul>
+          <li>Strict sequence monotonicity: <code>message_sequence</code> starts at 1 and increments by 1.</li>
+          <li>Constraint: <code>UNIQUE(conversation_id, message_sequence)</code> prevents turn overlap.</li>
+          <li>Strict type enum: <code>'user' | 'assistant'</code>.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">AI Response Semantics</div>
+        <ul>
+          <li>1:1 relationship with assistant message (unique <code>message_id</code> FK).</li>
+          <li>Captures true OpenRouter execution metadata.</li>
+          <li><code>validation_status = 'passed'</code> when grounded/honest.</li>
+          <li>Non-negative latency and token counts.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section H & I: Boundaries, Transactions, & Security -->
+  <section id="section-h-i">
+    <h2>Sections H &amp; I &bull; Phase 4.2 vs Phase 4.3 Boundaries &amp; Transactions</h2>
+    <div class="must-box">
+      <strong>Phase 4.2 MUST IMPLEMENT:</strong>
+      <ul>
+        <li><code>conversations</code> record creation / lookup.</li>
+        <li><code>messages</code> record insertion (both user and assistant turns).</li>
+        <li><code>ai_responses</code> record insertion (generation metrics and status).</li>
+        <li>Atomic transaction support via repository/service layer.</li>
+      </ul>
+    </div>
+
+    <div class="must-not-box">
+      <strong>Phase 4.2 MUST NOT IMPLEMENT (Phase 4.3 Scope):</strong>
+      <ul>
+        <li><code>message_citations</code> insertion or chunk citation mapping.</li>
+        <li><code>retrieval_operations</code> persistence.</li>
+        <li>Modifications to Phase 3 vector search, chunking, or ingestion pipelines.</li>
+        <li>Changes to OpenRouter model parameters or prompt templates.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Section J, K, L: Security & API Evolution -->
+  <section id="section-j-k-l">
+    <h2>Sections J, K, L &bull; Security, Auth, &amp; API Contract</h2>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Security &amp; RLS</div>
+        <p><strong>Authenticated Context:</strong> FastAPI route utilizes <code>get_current_user</code> to extract validated <code>user_id</code> from the Supabase JWT. Repository layer uses <code>get_admin_client()</code> for server-side persistence while enforcing <code>user_id</code> ownership guards at the application layer.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">API Contract Evolution</div>
+        <p><strong>Seamless Compatibility:</strong> <code>ChatRequest</code> accepts optional <code>conversation_id</code> (or aliases <code>session_id</code>). <code>ChatResponse</code> returns <code>conversation_id</code>, <code>message_id</code>, and <code>session_id</code> to guarantee zero breakage for Phase 4.1 consumers.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section M & N: Summary -->
+  <section id="section-m-n">
+    <h2>Sections M &amp; N &bull; Final Recommendation &amp; Next Steps</h2>
+    <div class="card">
+      <div class="card-title">Read-Only Investigation Conclusion</div>
+      <p>All database tables, foreign keys, uniqueness constraints, and execution flows have been mapped and verified against <code>schemaV2_export.sql</code> and the Phase 4.1 codebase.</p>
+      <p><strong>Recommendation:</strong> Proceed with Phase 4.2 implementation once formal user approval is given.</p>
+    </div>
+  </section>
+
+</body>
+</html>

@@ -94,6 +94,38 @@ def test_request_preserves_context_and_configuration():
     assert result.source_references == []
 
 
+def test_provider_does_not_perform_source_reference_extraction():
+    """Provider returns empty source_references regardless of explicit chunk references in the answer.
+
+    Source-reference extraction is the responsibility of the chat orchestration layer,
+    not the generation provider.
+    """
+    chunk = context().retrieved_knowledge[0]
+    instance, client = provider(
+        lambda _request: httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": f"The requirement is documented in [Retrieved chunk {chunk.chunk_id}]."
+                        }
+                    }
+                ]
+            },
+        )
+    )
+    try:
+        with configured():
+            result = instance.generate(context())
+    finally:
+        client.close()
+
+    assert result.source_references == []
+    assert result.answer is not None
+    assert str(chunk.chunk_id) in result.answer
+
+
 def test_context_model_name_overrides_configured_default():
     requests = []
     instance, client = provider(

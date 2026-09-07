@@ -3,6 +3,18 @@
     ".\\.venv\\Scripts\\python.exe": true,
     "Get-Command": true,
     "git add": true,
-    "git commit": true
+    "git commit": true,
+    "&": true,
+    "Push-Location": true,
+    "Pop-Location": true,
+    "e:/Project/CollegeAIChatbot/backend/.venv/Scripts/python.exe": true,
+    "git check-ignore": true,
+    "git remote": true,
+    "/^cd e:\\\\Project\\\\CollegeAIChatbot\\\\backend ; python -c \"import httpx; print\\(httpx\\.get\\('http://localhost:8000/health', timeout=2\\)\\.status_code\\)\" 2>&1$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "Get-Process": true,
+    "Test-Path": true
   }
 }

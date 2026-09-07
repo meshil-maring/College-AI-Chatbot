@@ -1,0 +1,128 @@
+{
+  "test_a": {
+    "session_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+    "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+    "message_id": "01857950-e190-4cb2-83db-1aca97ea764f",
+    "answer": "To be eligible to take the regular end-semester exam, you must maintain at least 75% attendance in each registered course (source: chunk 30000000-0000-0000-0000-000000000151).",
+    "sources": 1,
+    "model": "openai/gpt-4o-mini",
+    "conv_row": {
+      "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+      "user_id": "8464c7b9-511a-4d4c-9978-4882dfb24cbe",
+      "title": "What attendance level do I need in a course to be allowed to",
+      "status": "active",
+      "created_at": "2026-09-06T16:32:50.456698+00:00",
+      "updated_at": "2026-09-06T16:32:50.456698+00:00"
+    },
+    "messages": [
+      {
+        "message_id": "70a0d147-172e-41ed-bdb0-e8349151786c",
+        "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+        "message_sequence": 1,
+        "message_type": "user",
+        "content_text": "What attendance level do I need in a course to be allowed to take the regular end-semester exam?",
+        "created_at": "2026-09-06T16:32:52.103544+00:00"
+      },
+      {
+        "message_id": "01857950-e190-4cb2-83db-1aca97ea764f",
+        "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+        "message_sequence": 2,
+        "message_type": "assistant",
+        "content_text": "To be eligible to take the regular end-semester exam, you must maintain at least 75% attendance in each registered course (source: chunk 30000000-0000-0000-0000-000000000151).",
+        "created_at": "2026-09-06T16:33:13.319726+00:00"
+      }
+    ],
+    "ai_response": {
+      "ai_response_id": "021e8e81-1ba8-4fae-a866-faf6948d23c8",
+      "message_id": "01857950-e190-4cb2-83db-1aca97ea764f",
+      "provider_name": "openrouter",
+      "model_name": "openai/gpt-4o-mini",
+      "validation_status": "pending",
+      "input_token_count": 1238,
+      "output_token_count": 48,
+      "latency_ms": 3889,
+      "created_at": "2026-09-06T16:33:14.032533+00:00"
+    }
+  },
+  "test_b": {
+    "session_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+    "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+    "message_id": "164dd975-0a2a-4755-951d-94f0afdc1bd7",
+    "answer": "If a student's attendance falls below the required 75% in each registered course, they may not be eligible for the regular end-semester examination. However, attendance relaxation may be considered under the institution's documented eligibility conditions if the student provides supporting evidence for their circumstances. Approval for such requests is subject to institutional review and is not guaranteed (Retrieved chunks 30000000-0000-0000-0000-000000000151 and 30000000-0000-0000-0000-000000000152).",
+    "model": "openai/gpt-4o-mini",
+    "messages": [
+      {
+        "message_id": "70a0d147-172e-41ed-bdb0-e8349151786c",
+        "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+        "message_sequence": 1,
+        "message_type": "user",
+        "content_text": "What attendance level do I need in a course to be allowed to take the regular end-semester exam?",
+        "created_at": "2026-09-06T16:32:52.103544+00:00"
+      },
+      {
+        "message_id": "01857950-e190-4cb2-83db-1aca97ea764f",
+        "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+        "message_sequence": 2,
+        "message_type": "assistant",
+        "content_text": "To be eligible to take the regular end-semester exam, you must maintain at least 75% attendance in each registered course (source: chunk 30000000-0000-0000-0000-000000000151).",
+        "created_at": "2026-09-06T16:33:13.319726+00:00"
+      },
+      {
+        "message_id": "8aa8c62b-4d25-4795-b5bc-2406141caa16",
+        "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+        "message_sequence": 3,
+        "message_type": "user",
+        "content_text": "What happens if a student's attendance falls below the required level?",
+        "created_at": "2026-09-06T16:33:27.36714+00:00"
+      },
+      {
+        "message_id": "164dd975-0a2a-4755-951d-94f0afdc1bd7",
+        "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+        "message_sequence": 4,
+        "message_type": "assistant",
+        "content_text": "If a student's attendance falls below the required 75% in each registered course, they may not be eligible for the regular end-semester examination. However, attendance relaxation may be considered under the institution's documented eligibility conditions if the student provides supporting evidence for their circumstances. Approval for such requests is subject to institutional review and is not guaranteed (Retrieved chunks 30000000-0000-0000-0000-000000000151 and 30000000-0000-0000-0000-000000000152).",
+        "created_at": "2026-09-06T16:34:00.052479+00:00"
+      }
+    ],
+    "ai_response": {
+      "ai_response_id": "a7a0a162-e28e-4986-96be-f1ca10746fe7",
+      "message_id": "164dd975-0a2a-4755-951d-94f0afdc1bd7",
+      "provider_name": "openrouter",
+      "model_name": "openai/gpt-4o-mini",
+      "validation_status": "pending",
+      "input_token_count": 1229,
+      "output_token_count": 107,
+      "latency_ms": 5249,
+      "created_at": "2026-09-06T16:34:00.64105+00:00"
+    }
+  },
+  "test_c": {
+    "status_code": 422
+  },
+  "test_d": {
+    "session_id": "677c1f1a-1ad0-4d03-95be-a920402fda41",
+    "conversation_id": "677c1f1a-1ad0-4d03-95be-a920402fda41",
+    "message_id": null,
+    "status": "insufficient_context",
+    "answer": null,
+    "messages": [
+      {
+        "message_id": "593b446b-4246-49fe-94fa-1a1af1e22d37",
+        "conversation_id": "677c1f1a-1ad0-4d03-95be-a920402fda41",
+        "message_sequence": 1,
+        "message_type": "user",
+        "content_text": "What is the detailed quantum gravitational warp field equation in astrophysics module 999?",
+        "created_at": "2026-09-06T16:34:16.830828+00:00"
+      }
+    ]
+  },
+  "ownership": {
+    "status_code": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Conversation does not belong to the authenticated user"
+      }
+    }
+  }
+}

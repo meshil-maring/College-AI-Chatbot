@@ -1,0 +1,994 @@
+<title>Phase 4.2 Validation Report</title>
+<meta name="description" content="Physical validation results for conversation and message persistence">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --cyan-950: #0A2E3C;
+    --green-800: #1A4D2E;
+    --cyan-50: #E8F4F8;
+    --steel-600: #2D5F7F;
+    --slate-100: #F8F9FA;
+    --slate-600: #475569;
+    --slate-800: #1E293B;
+    --slate-200: #E2E8F0;
+    --green-50: #F0FDF4;
+    --red-50: #FEF2F2;
+    --red-700: #B91C1C;
+
+    --surface: #FFFFFF;
+    --ground: var(--slate-100);
+    --text: var(--cyan-950);
+    --text-muted: var(--slate-600);
+    --border: var(--slate-200);
+    --pass: var(--green-800);
+    --pass-bg: var(--green-50);
+    --code-bg: var(--cyan-50);
+    --accent: var(--steel-600);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cyan-950: #E8F4F8;
+      --green-800: #4ADE80;
+      --cyan-50: #0F2830;
+      --steel-600: #7DD3FC;
+      --slate-100: #0F172A;
+      --slate-600: #94A3B8;
+      --slate-800: #E2E8F0;
+      --slate-200: #334155;
+      --green-50: #0A2818;
+      --red-50: #2A0F0F;
+      --red-700: #FCA5A5;
+
+      --surface: #1E293B;
+      --ground: var(--slate-100);
+      --text: var(--cyan-950);
+      --text-muted: var(--slate-600);
+      --border: var(--slate-200);
+      --pass: var(--green-800);
+      --pass-bg: var(--green-50);
+      --code-bg: var(--cyan-50);
+      --accent: var(--steel-600);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --cyan-950: #E8F4F8;
+    --green-800: #4ADE80;
+    --cyan-50: #0F2830;
+    --steel-600: #7DD3FC;
+    --slate-100: #0F172A;
+    --slate-600: #94A3B8;
+    --slate-800: #E2E8F0;
+    --slate-200: #334155;
+    --green-50: #0A2818;
+    --red-50: #2A0F0F;
+    --red-700: #FCA5A5;
+
+    --surface: #1E293B;
+    --ground: var(--slate-100);
+    --text: var(--cyan-950);
+    --text-muted: var(--slate-600);
+    --border: var(--slate-200);
+    --pass: var(--green-800);
+    --pass-bg: var(--green-50);
+    --code-bg: var(--cyan-50);
+    --accent: var(--steel-600);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  header {
+    margin-bottom: 48px;
+  }
+
+  h1 {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 8px;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+
+  .meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .meta-item {
+    display: flex;
+    gap: 8px;
+  }
+
+  .meta-label {
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+
+  .summary h2 {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .summary-intro {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .results-grid {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .check {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--pass-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--pass);
+  }
+
+  .test-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .test-section::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 32px;
+    bottom: 32px;
+    width: 4px;
+    background: var(--pass);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .test-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    gap: 16px;
+  }
+
+  h3 {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text);
+    text-wrap: balance;
+  }
+
+  .pass-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--pass);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .test-meta {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .section-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 24px 0 12px;
+  }
+
+  .field-group {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .field {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .field-label {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .field-value {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .field-value.success {
+    color: var(--pass);
+  }
+
+  .verification-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text);
+    margin-top: 12px;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 12px 0;
+  }
+
+  .db-section {
+    margin-top: 20px;
+  }
+
+  .db-table {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .message-list {
+    display: grid;
+    gap: 6px;
+    font-size: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    margin: 12px 0;
+  }
+
+  .message-item {
+    display: flex;
+    gap: 12px;
+    color: var(--text-muted);
+  }
+
+  .seq {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .architecture-section {
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    padding: 32px;
+    margin: 48px 0;
+  }
+
+  .architecture-section h2 {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    margin-bottom: 24px;
+    color: var(--text);
+  }
+
+  .architecture-item {
+    margin-bottom: 24px;
+  }
+
+  .architecture-item h4 {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .architecture-detail {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-left: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-top: 4px;
+  }
+
+  .flow-diagram {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    margin: 16px 0;
+  }
+
+  .final-status {
+    background: var(--pass-bg);
+    border: 2px solid var(--pass);
+    border-radius: 8px;
+    padding: 40px;
+    margin: 48px 0;
+    text-align: center;
+  }
+
+  .final-status h2 {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--pass);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .final-list {
+    display: grid;
+    gap: 8px;
+    text-align: left;
+    max-width: 600px;
+    margin: 0 auto;
+    font-size: 14px;
+  }
+
+  .final-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .test-details {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  .component-list {
+    display: grid;
+    gap: 6px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+
+  .component-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    color: var(--text-muted);
+  }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+</style>
+
+<div class="container">
+  <header>
+    <h1>Phase 4.2 Physical Validation Report</h1>
+    <p class="subtitle">College AI Chatbot Backend — Conversation & Message Persistence</p>
+    <div class="meta">
+      <div class="meta-item">
+        <span class="meta-label">Date:</span>
+        <span>2026-09-06</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Server:</span>
+        <span>http://127.0.0.1:8000</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Database:</span>
+        <span>Live Supabase PostgreSQL</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="summary">
+    <h2>Executive Summary</h2>
+    <p class="summary-intro">All physical validation tests passed successfully against the live backend and database.</p>
+    <div class="results-grid">
+      <div class="result-row">
+        <span class="check">✓</span>
+        <span><strong>Test A</strong> (New Session): PASS</span>
+      </div>
+      <div class="result-row">
+        <span class="check">✓</span>
+        <span><strong>Test B</strong> (Existing Session Reuse): PASS</span>
+      </div>
+      <div class="result-row">
+        <span class="check">✓</span>
+        <span><strong>Test C</strong> (Invalid Session UUID): PASS</span>
+      </div>
+      <div class="result-row">
+        <span class="check">✓</span>
+        <span><strong>Test D</strong> (Insufficient Context): PASS</span>
+      </div>
+      <div class="result-row">
+        <span class="check">✓</span>
+        <span><strong>Physical Ownership Test</strong>: PASS</span>
+      </div>
+      <div class="result-row">
+        <span class="check">✓</span>
+        <span><strong>Phase 4.3 Integrity Check</strong>: PASS</span>
+      </div>
+      <div class="result-row">
+        <span class="check">✓</span>
+        <span><strong>Locked Component Regression Check</strong>: PASS</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="test-section">
+    <div class="test-header">
+      <h3>Test A — New Session</h3>
+      <span class="pass-label">Pass</span>
+    </div>
+
+    <p class="test-meta">POST /api/v1/generation/chat (no session_id)</p>
+
+    <div class="section-label">HTTP Response</div>
+    <div class="field-group">
+      <div class="field">
+        <span class="field-label">Status Code</span>
+        <span class="field-value success">200 OK (31.78s)</span>
+      </div>
+      <div class="field">
+        <span class="field-label">session_id</span>
+        <span class="field-value">73edb6bf-6f08-4c1e-a639-bbda4fd90e34</span>
+      </div>
+      <div class="field">
+        <span class="field-label">conversation_id</span>
+        <span class="field-value success">73edb6bf-6f08-4c1e-a639-bbda4fd90e34</span>
+      </div>
+      <div class="field">
+        <span class="field-label">message_id</span>
+        <span class="field-value">01857950-e190-4cb2-83db-1aca97ea764f</span>
+      </div>
+      <div class="field">
+        <span class="field-label">status</span>
+        <span class="field-value success">success</span>
+      </div>
+      <div class="field">
+        <span class="field-label">model_used</span>
+        <span class="field-value success">openai/gpt-4o-mini</span>
+      </div>
+      <div class="field">
+        <span class="field-label">source_references</span>
+        <span class="field-value success">1 reference</span>
+      </div>
+    </div>
+
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span><code>conversation_id</code> matches <code>session_id</code> (1:1 mapping)</span>
+    </div>
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>Answer grounded in 75% attendance policy</span>
+    </div>
+
+    <div class="db-section">
+      <div class="section-label">Database Verification</div>
+
+      <div class="db-table">Conversations Table</div>
+      <pre>{
+  "conversation_id": "73edb6bf-6f08-4c1e-a639-bbda4fd90e34",
+  "user_id": "8464c7b9-511a-4d4c-9978-4882dfb24cbe",
+  "title": "What attendance level do I need in a course to be allowed to",
+  "status": "active",
+  "created_at": "2026-09-06T16:32:50.456698+00:00",
+  "updated_at": "2026-09-06T16:32:50.456698+00:00"
+}</pre>
+
+      <div class="db-table">Messages Table (2 messages)</div>
+      <div class="message-list">
+        <div class="message-item">
+          <span class="seq">Seq 1:</span>
+          <span>user → "What attendance level do I need in a course to be allowed to..."</span>
+        </div>
+        <div class="message-item">
+          <span class="seq">Seq 2:</span>
+          <span>assistant → "To be eligible to take the regular end-semester exam, you mu..."</span>
+        </div>
+      </div>
+
+      <div class="db-table">AI Responses Table</div>
+      <div class="field-group">
+        <div class="field">
+          <span class="field-label">provider_name</span>
+          <span class="field-value success">openrouter</span>
+        </div>
+        <div class="field">
+          <span class="field-label">model_name</span>
+          <span class="field-value success">openai/gpt-4o-mini</span>
+        </div>
+        <div class="field">
+          <span class="field-label">input_token_count</span>
+          <span class="field-value">1238</span>
+        </div>
+        <div class="field">
+          <span class="field-label">output_token_count</span>
+          <span class="field-value">48</span>
+        </div>
+        <div class="field">
+          <span class="field-label">latency_ms</span>
+          <span class="field-value">3889</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="test-section">
+    <div class="test-header">
+      <h3>Test B — Existing Session / Conversation Reuse</h3>
+      <span class="pass-label">Pass</span>
+    </div>
+
+    <p class="test-meta">POST /api/v1/generation/chat (with session_id from Test A)</p>
+
+    <div class="section-label">HTTP Response</div>
+    <div class="field-group">
+      <div class="field">
+        <span class="field-label">Status Code</span>
+        <span class="field-value success">200 OK (42.45s)</span>
+      </div>
+      <div class="field">
+        <span class="field-label">session_id</span>
+        <span class="field-value success">73edb6bf-6f08-4c1e-a639-bbda4fd90e34 (same)</span>
+      </div>
+      <div class="field">
+        <span class="field-label">conversation_id</span>
+        <span class="field-value success">73edb6bf-6f08-4c1e-a639-bbda4fd90e34 (same)</span>
+      </div>
+      <div class="field">
+        <span class="field-label">message_id</span>
+        <span class="field-value success">164dd975-0a2a-4755-951d-94f0afdc1bd7 (new)</span>
+      </div>
+    </div>
+
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>No duplicate conversation created</span>
+    </div>
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>Conversation <code>updated_at</code> timestamp progressed</span>
+    </div>
+
+    <div class="db-section">
+      <div class="section-label">Database Verification</div>
+
+      <div class="db-table">Messages Table (4 messages, monotonic sequence)</div>
+      <div class="message-list">
+        <div class="message-item">
+          <span class="seq">Seq 1:</span>
+          <span>user → Turn 1 query</span>
+        </div>
+        <div class="message-item">
+          <span class="seq">Seq 2:</span>
+          <span>assistant → Turn 1 answer</span>
+        </div>
+        <div class="message-item">
+          <span class="seq">Seq 3:</span>
+          <span>user → Turn 2 query</span>
+        </div>
+        <div class="message-item">
+          <span class="seq">Seq 4:</span>
+          <span>assistant → Turn 2 answer</span>
+        </div>
+      </div>
+
+      <div class="verification-note">
+        <span class="check">✓</span>
+        <span>Sequence progression: 1 → 2 → 3 → 4 (monotonic)</span>
+      </div>
+      <div class="verification-note">
+        <span class="check">✓</span>
+        <span>Second AI response record created with distinct metadata</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="test-section">
+    <div class="test-header">
+      <h3>Test C — Invalid Session UUID</h3>
+      <span class="pass-label">Pass</span>
+    </div>
+
+    <p class="test-meta">POST /api/v1/generation/chat (malformed session_id)</p>
+
+    <div class="field-group">
+      <div class="field">
+        <span class="field-label">Status Code</span>
+        <span class="field-value success">422 Unprocessable Content</span>
+      </div>
+      <div class="field">
+        <span class="field-label">Input</span>
+        <span class="field-value">"not-a-valid-uuid"</span>
+      </div>
+    </div>
+
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>Phase 4.1 UUID validation remains intact</span>
+    </div>
+  </section>
+
+  <section class="test-section">
+    <div class="test-header">
+      <h3>Test D — Insufficient Context</h3>
+      <span class="pass-label">Pass</span>
+    </div>
+
+    <p class="test-meta">POST /api/v1/generation/chat (empty retrieval scope)</p>
+
+    <div class="field-group">
+      <div class="field">
+        <span class="field-label">Status Code</span>
+        <span class="field-value success">200 OK</span>
+      </div>
+      <div class="field">
+        <span class="field-label">status</span>
+        <span class="field-value success">insufficient_context</span>
+      </div>
+      <div class="field">
+        <span class="field-label">message_id</span>
+        <span class="field-value success">null</span>
+      </div>
+      <div class="field">
+        <span class="field-label">answer</span>
+        <span class="field-value success">null</span>
+      </div>
+    </div>
+
+    <div class="db-section">
+      <div class="section-label">Database Verification</div>
+
+      <div class="db-table">Messages Table (1 message only)</div>
+      <div class="message-list">
+        <div class="message-item">
+          <span class="seq">Seq 1:</span>
+          <span>user → "What is the detailed quantum gravitational warp field equati..."</span>
+        </div>
+      </div>
+
+      <div class="verification-note">
+        <span class="check">✓</span>
+        <span>User message persisted</span>
+      </div>
+      <div class="verification-note">
+        <span class="check">✓</span>
+        <span>Assistant message strictly omitted</span>
+      </div>
+      <div class="verification-note">
+        <span class="check">✓</span>
+        <span>AI response metadata strictly omitted (0 records)</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="test-section">
+    <div class="test-header">
+      <h3>Physical Ownership Test</h3>
+      <span class="pass-label">Pass</span>
+    </div>
+
+    <p class="test-meta">Cross-User Conversation Access Enforcement</p>
+
+    <div class="section-label">Test Scenario</div>
+    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+      User 2 (<code>30000000-0000-0000-0000-000000000101</code>) attempts to access User 1's conversation (<code>8464c7b9-511a-4d4c-9978-4882dfb24cbe</code>) using User 1's session_id with User 2's Bearer token
+    </p>
+
+    <div class="field-group">
+      <div class="field">
+        <span class="field-label">Status Code</span>
+        <span class="field-value success">403 Forbidden</span>
+      </div>
+      <div class="field">
+        <span class="field-label">Error Message</span>
+        <span class="field-value">"Conversation does not belong to the authenticated user"</span>
+      </div>
+    </div>
+
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>Ownership enforcement prevents cross-user conversation access</span>
+    </div>
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>Live Supabase Auth OTP flow with 2 distinct authenticated users</span>
+    </div>
+  </section>
+
+  <section class="test-section">
+    <div class="test-header">
+      <h3>Phase 4.3 Integrity Check</h3>
+      <span class="pass-label">Pass</span>
+    </div>
+
+    <div class="field-group">
+      <div class="field">
+        <span class="field-label">message_citations</span>
+        <span class="field-value success">3 rows (unchanged)</span>
+      </div>
+      <div class="field">
+        <span class="field-label">retrieval_operations</span>
+        <span class="field-value success">3 rows (unchanged)</span>
+      </div>
+    </div>
+
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>No Phase 4.2 tests created or modified <code>message_citations</code> or <code>retrieval_operations</code> tables</span>
+    </div>
+    <div class="verification-note">
+      <span class="check">✓</span>
+      <span>Response-level <code>source_references</code> continue to work (verified in Tests A and B)</span>
+    </div>
+  </section>
+
+  <section class="test-section">
+    <div class="test-header">
+      <h3>Locked Component Regression Check</h3>
+      <span class="pass-label">Pass</span>
+    </div>
+
+    <div class="section-label">Components Verified Unchanged</div>
+    <div class="component-list">
+      <div class="component-item">
+        <span class="check">✓</span>
+        <span>Phase 3 Retrieval (vector search, embeddings, HNSW, chunking, RAG scope guards)</span>
+      </div>
+      <div class="component-item">
+        <span class="check">✓</span>
+        <span>Phase 4.1 Session Resolver</span>
+      </div>
+      <div class="component-item">
+        <span class="check">✓</span>
+        <span>OpenRouter Provider (<code>openai/gpt-4o-mini</code>)</span>
+      </div>
+      <div class="component-item">
+        <span class="check">✓</span>
+        <span>Generation Provider Abstraction</span>
+      </div>
+      <div class="component-item">
+        <span class="check">✓</span>
+        <span>Frontend (not touched)</span>
+      </div>
+      <div class="component-item">
+        <span class="check">✓</span>
+        <span>Authentication Architecture (Supabase Auth + JWT)</span>
+      </div>
+    </div>
+
+    <div class="test-details">
+      <div class="section-label">Automated Test Results</div>
+      <div class="field-group">
+        <div class="field">
+          <span class="field-label">Phase 4.2 + generation API</span>
+          <span class="field-value success">18 passed</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Phase 4.1</span>
+          <span class="field-value success">6 passed</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Generation/provider</span>
+          <span class="field-value success">17 passed</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Phase 3/RAG</span>
+          <span class="field-value success">222 passed</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Full backend</span>
+          <span class="field-value success">341 passed, 3 skipped, 0 failed</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Compileall</span>
+          <span class="field-value success">passed</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="architecture-section">
+    <h2>Database Architecture Verification</h2>
+
+    <div class="architecture-item">
+      <h4>Conversation-to-Session Mapping</h4>
+      <div class="flow-diagram">conversation_id == session_id  (1:1 application-layer mapping)</div>
+      <div class="architecture-detail">
+        <span class="check">✓</span>
+        <span>No <code>session_id</code> column added to database schema</span>
+      </div>
+      <div class="architecture-detail">
+        <span class="check">✓</span>
+        <span>Phase 4.1 session UUIDs serve as conversation identities</span>
+      </div>
+      <div class="architecture-detail">
+        <span class="check">✓</span>
+        <span>Approved Phase 4.2 architecture preserved</span>
+      </div>
+    </div>
+
+    <div class="architecture-item">
+      <h4>Message Sequence Resolution</h4>
+      <div class="architecture-detail">
+        <span class="check">✓</span>
+        <span>Dynamic via <code>MAX(message_sequence) + 1</code> query in <code>get_next_message_sequence()</code></span>
+      </div>
+      <div class="architecture-detail">
+        <span class="check">✓</span>
+        <span>Monotonic sequence: 1 → 2 → 3 → 4 verified across multi-turn conversations</span>
+      </div>
+      <div class="architecture-detail">
+        <span class="check">✓</span>
+        <span>No hard-coded sequence numbers in production code</span>
+      </div>
+    </div>
+
+    <div class="architecture-item">
+      <h4>Conditional Persistence Logic</h4>
+      <div class="flow-diagram">IF retrieval yields chunks AND generation succeeds:
+    - User message persisted (sequence N)
+    - Assistant message persisted (sequence N+1)
+    - AI response metadata persisted
+
+IF retrieval yields 0 chunks:
+    - User message persisted (sequence 1)
+    - Assistant message NOT created
+    - AI response metadata NOT created
+    - Response status = "insufficient_context"</div>
+      <div class="architecture-detail">
+        <span class="check">✓</span>
+        <span>Both branches verified through physical testing</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-status">
+    <h2>Physical Validation Passed</h2>
+    <p style="font-size: 16px; color: var(--text); margin-bottom: 24px;">Ready for Final Phase 4.2 Lock Review</p>
+
+    <div class="final-list">
+      <div class="final-item">
+        <span class="check">✓</span>
+        <span>New session conversation creation with full persistence chain</span>
+      </div>
+      <div class="final-item">
+        <span class="check">✓</span>
+        <span>Existing session conversation reuse with monotonic message sequences</span>
+      </div>
+      <div class="final-item">
+        <span class="check">✓</span>
+        <span>Invalid session UUID rejection (Phase 4.1 integrity)</span>
+      </div>
+      <div class="final-item">
+        <span class="check">✓</span>
+        <span>Insufficient context conditional persistence (user message only)</span>
+      </div>
+      <div class="final-item">
+        <span class="check">✓</span>
+        <span>Cross-user conversation ownership enforcement (HTTP 403)</span>
+      </div>
+      <div class="final-item">
+        <span class="check">✓</span>
+        <span>Phase 4.3 tables remain untouched</span>
+      </div>
+      <div class="final-item">
+        <span class="check">✓</span>
+        <span>All locked components show zero regressions</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">Validation Engineer</div>
+      <div>Claude Code</div>
+    </div>
+    <div>
+      <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">Validation Script</div>
+      <div>backend/test_physical_phase_4_2.py</div>
+    </div>
+    <div>
+      <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">Results Artifact</div>
+      <div>backend/physical_validation_results_phase_4_2.json</div>
+    </div>
+  </footer>
+</div>
