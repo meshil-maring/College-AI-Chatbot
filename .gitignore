@@ -10,3 +10,6 @@ supabase/.temp/
 
 # pytest
 .pytest_cache/
+
+# Nested third-party repos (cloned via Postman MCP guide; not part of this repo)
+mcp_servers/
