@@ -45,3 +45,17 @@ def update_conversation_timestamp(client: Client, conversation_id: UUID | str) -
     client.table("conversations").update({
         "updated_at": datetime.now(timezone.utc).isoformat()
     }).eq("conversation_id", str(conversation_id)).execute()
+
+
+def list_conversations_for_user(client: Client, user_id: UUID | str) -> list[dict]:
+    """Retrieve all conversations belonging to a user, newest first."""
+    response = (
+        client.table("conversations")
+        .select("conversation_id, user_id, title, status, created_at, updated_at")
+        .eq("user_id", str(user_id))
+        .order("updated_at", desc=True)
+        .execute()
+    )
+    if not response.data:
+        return []
+    return response.data

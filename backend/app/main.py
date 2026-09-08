@@ -6,6 +6,7 @@ from app.core.errors import AppError, app_error_handler
 from app.core.security import get_current_user
 from app.api.ingestion import router as ingestion_router
 from app.api.auth import router as auth_router
+from app.api.conversations import router as conversations_router
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.session import SessionContextRequest
 from app.services.chat import process_chat_request
@@ -21,6 +22,7 @@ app = FastAPI(
 app.add_exception_handler(AppError, app_error_handler)
 app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(conversations_router, prefix="/api/v1")
 
 generation_router = APIRouter(prefix="/generation", tags=["generation"])
 

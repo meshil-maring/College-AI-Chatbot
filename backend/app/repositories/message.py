@@ -52,3 +52,17 @@ def get_message(client: Client, message_id: UUID | str) -> dict | None:
     if response is None:
         return None
     return response.data
+
+
+def list_messages_for_conversation(client: Client, conversation_id: UUID | str) -> list[dict]:
+    """Retrieve all messages for a conversation in chronological order."""
+    response = (
+        client.table("messages")
+        .select("message_id, conversation_id, message_sequence, message_type, content_text, created_at")
+        .eq("conversation_id", str(conversation_id))
+        .order("message_sequence")
+        .execute()
+    )
+    if not response.data:
+        return []
+    return response.data

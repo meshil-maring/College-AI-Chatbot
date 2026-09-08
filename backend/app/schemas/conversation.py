@@ -69,3 +69,29 @@ class AIResponse(BaseModel):
     output_token_count: int | None
     latency_ms: int | None
     created_at: datetime
+
+
+# ============================================================================
+# Phase 5.6 — Conversation history API response schemas
+# ============================================================================
+
+
+class ConversationSummary(BaseModel):
+    """One conversation in the authenticated user's conversation list."""
+
+    conversation_id: UUID
+    title: str | None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class MessageSummary(BaseModel):
+    """One persisted message returned by the conversation history API."""
+
+    message_id: UUID
+    conversation_id: UUID
+    message_sequence: int
+    message_type: str
+    content_text: str
+    created_at: datetime
