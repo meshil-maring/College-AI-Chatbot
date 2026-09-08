@@ -184,8 +184,18 @@ def _build_user_content(context: AIContext) -> str:
         )
         for chunk in context.retrieved_knowledge
     )
+
+    conversation_history = ""
+    if context.conversation_history:
+        history_parts = []
+        for turn in context.conversation_history:
+            role = "User" if turn.role == "user" else "Assistant"
+            history_parts.append(f"{role}: {turn.content}")
+        conversation_history = "\n\nConversation history:\n" + "\n".join(history_parts) + "\n"
+
     return (
         f"Student question:\n{context.user_question}\n\n"
         "Retrieved college knowledge:\n"
         f"{knowledge}"
+        f"{conversation_history}"
     )

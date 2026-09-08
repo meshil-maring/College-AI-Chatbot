@@ -83,6 +83,40 @@ class RetrievedChunk(BaseModel):
 
 
 # ============================================================================
+# Conversation Turn (Phase 5.7b)
+# ============================================================================
+# Bounded conversational history passed into the generation pipeline.
+
+
+class ConversationTurn(BaseModel):
+    """One persisted message from the conversation history.
+
+    Used to inject bounded conversational context into the LLM prompt.
+    This is an internal type; it is not exposed in the public API response.
+    """
+
+    role: str = Field(..., description="Message role: 'user' or 'assistant'")
+    content: str = Field(..., description="Message content text")
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, value: str) -> str:
+        if value not in ("user", "assistant"):
+            raise ValueError("role must be 'user' or 'assistant'")
+        return value
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, value: str) -> str:
+        if not isinstance(value, str):
+            raise ValueError("content must be a string")
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("content must not be empty")
+        return normalized
+
+
+# ============================================================================
 # AI Request
 # ============================================================================
 # Explicit contract for AI generation requests.
@@ -112,6 +146,10 @@ class AIRequest(BaseModel):
     model_name: str | None = Field(
         default=None,
         description="Optional AI model identifier (e.g., 'openai/gpt-4')",
+    )
+    conversation_history: list[ConversationTurn] = Field(
+        default_factory=list,
+        description="Bounded prior conversation turns for multi-turn context",
     )
 
     @field_validator("user_query")
@@ -177,6 +215,10 @@ class AIContext(BaseModel):
     grounding_instructions: str = Field(
         default="",
         description="Instructions for grounding answer in source material and citations",
+    )
+    conversation_history: list[ConversationTurn] = Field(
+        default_factory=list,
+        description="Bounded prior conversation turns for multi-turn context",
     )
 
     @field_validator("system_instructions", "user_question", "grounding_instructions")

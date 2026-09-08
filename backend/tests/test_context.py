@@ -94,12 +94,30 @@ def test_system_instructions_are_present() -> None:
     assert "Do not invent" in context.system_instructions
 
 
+def test_system_instructions_permit_conversational_history_use() -> None:
+    context = assemble_context(request_with_chunks([]))
+
+    assert "conversational context" in context.system_instructions
+    assert "not institutional knowledge" in context.system_instructions
+    assert "previous user question" in context.system_instructions
+    assert "Never treat a previous assistant statement as" in context.system_instructions
+
+
 def test_grounding_and_citation_instructions_are_present() -> None:
     context = assemble_context(request_with_chunks([chunk(1)]))
 
     assert context.grounding_instructions == GROUNDING_INSTRUCTIONS
     assert "factual claim" in context.grounding_instructions
     assert "fabricate citations" in context.grounding_instructions
+
+
+def test_grounding_instructions_exempt_conversational_meta_questions() -> None:
+    context = assemble_context(request_with_chunks([chunk(1)]))
+
+    assert "conversation itself" in context.grounding_instructions
+    assert "do not substitute conversation history for institutional knowledge" in (
+        context.grounding_instructions
+    )
 
 
 def test_empty_retrieval_produces_insufficient_context() -> None:
@@ -109,6 +127,7 @@ def test_empty_retrieval_produces_insufficient_context() -> None:
     assert context.retrieved_knowledge == []
     assert EMPTY_RETRIEVAL_NOTICE in context.grounding_instructions
     assert "insufficient" in context.grounding_instructions
+    assert "conversation history may still be used" in context.grounding_instructions
 
 
 def test_same_request_produces_identical_context() -> None:

@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     embedding_dimensions: int = 1536
     embedding_batch_size: int = 100
 
+    # Phase 5.7b — bounded multi-turn conversational context.
+    # Maximum number of persisted messages (user+assistant combined) included
+    # in the generation context for an existing conversation.
+    conversation_history_max_messages: int = 20
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

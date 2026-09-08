@@ -52,7 +52,10 @@ def _chat_request(**overrides):
 def _mock_client(insert_side_effects=None):
     """Build a mock Supabase client with standard lookup behavior."""
     mc = MagicMock()
-    mc.table().select().eq().maybe_single().execute.return_value = MagicMock(data=None)
+    mc.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mc.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     if insert_side_effects is not None:
@@ -75,6 +78,7 @@ def _process(request, provider, client, retrieval=None):
     session_context = SessionContext(session_id=uuid4())
     with (
         patch("app.services.chat.get_admin_client", return_value=client),
+        patch("app.services.conversation_history.get_admin_client", return_value=client),
         patch("app.services.chat.retrieve", return_value=retrieval or _retrieval_chunks()),
     ):
         return process_chat_request(request, session_context, provider, TEST_USER_ID), session_context
@@ -267,6 +271,7 @@ def test_citations_belong_to_correct_assistant_message():
     session_ctx = SessionContext(session_id=conversation_id)
     with (
         patch("app.services.chat.get_admin_client", return_value=mc1),
+        patch("app.services.conversation_history.get_admin_client", return_value=mc1),
         patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response1 = process_chat_request(request1, session_ctx, provider1, TEST_USER_ID)
@@ -302,6 +307,7 @@ def test_citations_belong_to_correct_assistant_message():
     request2 = _chat_request(user_query="Follow-up question")
     with (
         patch("app.services.chat.get_admin_client", return_value=mc2),
+        patch("app.services.conversation_history.get_admin_client", return_value=mc2),
         patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response2 = process_chat_request(request2, session_ctx, provider2, TEST_USER_ID)
@@ -331,6 +337,7 @@ def test_insufficient_context_creates_no_citations():
     session_context = SessionContext(session_id=uuid4())
     with (
         patch("app.services.chat.get_admin_client", return_value=mc),
+        patch("app.services.conversation_history.get_admin_client", return_value=mc),
         patch("app.services.chat.retrieve", return_value=retrieval),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -363,7 +370,10 @@ def test_conversation_reuse_with_citations():
     )
 
     mc1 = MagicMock()
-    mc1.table().select().eq().maybe_single().execute.return_value = MagicMock(data=None)
+    mc1.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(conversation_id), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mc1.table().insert().execute.side_effect = [
         MagicMock(data=[{"conversation_id": str(conversation_id)}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
@@ -380,6 +390,7 @@ def test_conversation_reuse_with_citations():
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mc1),
+        patch("app.services.conversation_history.get_admin_client", return_value=mc1),
         patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         r1 = process_chat_request(_chat_request(), session_ctx, provider1, TEST_USER_ID)
@@ -415,6 +426,7 @@ def test_conversation_reuse_with_citations():
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mc2),
+        patch("app.services.conversation_history.get_admin_client", return_value=mc2),
         patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         r2 = process_chat_request(_chat_request(user_query="Follow-up"), session_ctx, provider2, TEST_USER_ID)

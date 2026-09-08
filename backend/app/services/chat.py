@@ -4,6 +4,7 @@ import re
 import time
 from uuid import UUID
 
+from app.config import settings
 from app.db.supabase import get_admin_client
 from app.repositories.ai_response import create_ai_response
 from app.repositories.conversation import (
@@ -31,6 +32,7 @@ from app.schemas.conversation import (
 )
 from app.schemas.generation import (
     AIRequest,
+    ConversationTurn,
     RetrievalScope,
     RetrievedChunk,
     SourceReference,
@@ -38,6 +40,7 @@ from app.schemas.generation import (
 from app.schemas.retrieval import RetrievalRequest, RetrievalResult
 from app.schemas.session import SessionContext
 from app.services.context import assemble_context
+from app.services.conversation_history import get_conversation_messages
 from app.services.generation import AIGenerationService
 from app.services.generation_provider import GenerationProvider
 from app.services.retrieval import retrieve
@@ -206,6 +209,31 @@ def _enrich_source_titles(client, structured_sources: list[StructuredSource]) ->
             source.source_title = title
 
 
+def _bounded_conversation_history(
+    turns: list[ConversationTurn], max_messages: int
+) -> list[ConversationTurn]:
+    """Select the most recent bounded window of conversation turns.
+
+    Keeps recent messages (never the oldest), caps total message count at
+    ``max_messages``, and — when the budget forces trimming — starts the window
+    at a user turn where practical so a user/assistant exchange is not split
+    unnecessarily. Ordering stays chronological (message_sequence ASC).
+
+    Fallback behavior: if ``max_messages <= 0`` or no messages exist, an empty
+    list is returned (first-message / no-history behavior).
+    """
+    if max_messages <= 0 or not turns:
+        return []
+    if len(turns) <= max_messages:
+        return turns
+    window = turns[-max_messages:]
+    if window and window[0].role == "assistant":
+        # Trimming to the most recent max_messages would start mid-exchange;
+        # drop the orphaned assistant turn so the window starts at a user turn.
+        window = window[1:]
+    return window
+
+
 def process_chat_request(
     request: ChatRequest,
     session_context: SessionContext,
@@ -245,6 +273,19 @@ def process_chat_request(
             )
         # Update conversation timestamp
         update_conversation_timestamp(client, conversation_id)
+
+    # Step 1.5: Retrieve bounded conversation history for multi-turn context.
+    # Runs BEFORE the current user message is persisted, so the history never
+    # contains the current query (no duplication). Ownership is verified by
+    # get_conversation_messages before any history is returned.
+    message_summaries = get_conversation_messages(conversation_id, UUID(str(user_id)))
+    conversation_history = _bounded_conversation_history(
+        [
+            ConversationTurn(role=msg.message_type, content=msg.content_text)
+            for msg in message_summaries
+        ],
+        max_messages=settings.conversation_history_max_messages,
+    )
 
     # Step 2: Get next message sequence and persist user message
     user_sequence = get_next_message_sequence(client, conversation_id)
@@ -288,10 +329,13 @@ def process_chat_request(
         ),
         retrieved_chunks=retrieved_chunks,
         model_name=request.model_name,
+        conversation_history=conversation_history,
     )
 
     start_time = time.perf_counter()
-    generation_result = AIGenerationService(provider).generate(assemble_context(ai_request))
+    generation_result = AIGenerationService(provider).generate(
+        assemble_context(ai_request, conversation_history=conversation_history)
+    )
     latency_ms = int((time.perf_counter() - start_time) * 1000)
 
     # Step 4.5: Extract validated source references from the generated answer

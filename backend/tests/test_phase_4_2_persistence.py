@@ -56,9 +56,10 @@ def test_new_conversation_creates_conversation_record() -> None:
     mock_provider.generate.return_value = _mock_generation_result()
 
     mock_client = MagicMock()
-    mock_client.table().select().eq().maybe_single().execute.return_value = MagicMock(
-        data=None
-    )
+    mock_client.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mock_client.table().insert().execute.side_effect = [
         MagicMock(
             data=[{
@@ -81,6 +82,7 @@ def test_new_conversation_creates_conversation_record() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -126,6 +128,7 @@ def test_existing_conversation_reuses_conversation_id() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -159,6 +162,7 @@ def test_conversation_ownership_verification_rejects_unauthorized() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         try:
@@ -188,9 +192,10 @@ def test_user_message_persisted_with_correct_sequence() -> None:
         "status": "active",
     }
 
-    mock_client.table().select().eq().maybe_single().execute.return_value = MagicMock(
-        data=None
-    )
+    mock_client.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mock_client.table().insert().execute.side_effect = [
         MagicMock(data=[conversation_data]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1, "message_type": "user"}]),
@@ -206,6 +211,7 @@ def test_user_message_persisted_with_correct_sequence() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -230,9 +236,10 @@ def test_assistant_message_and_ai_response_persisted_after_generation() -> None:
     )
 
     mock_client = MagicMock()
-    mock_client.table().select().eq().maybe_single().execute.return_value = MagicMock(
-        data=None
-    )
+    mock_client.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mock_client.table().insert().execute.side_effect = [
         MagicMock(data=[{"conversation_id": str(session_context.session_id)}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1}]),
@@ -248,6 +255,7 @@ def test_assistant_message_and_ai_response_persisted_after_generation() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -280,9 +288,10 @@ def test_ai_response_captures_token_counts_and_latency() -> None:
     )
 
     mock_client = MagicMock()
-    mock_client.table().select().eq().maybe_single().execute.return_value = MagicMock(
-        data=None
-    )
+    mock_client.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mock_client.table().insert().execute.side_effect = [
         MagicMock(data=[{"conversation_id": str(session_context.session_id)}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1}]),
@@ -298,6 +307,7 @@ def test_ai_response_captures_token_counts_and_latency() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -319,9 +329,10 @@ def test_backward_compatibility_session_id_maps_to_conversation_id() -> None:
     mock_provider.generate.return_value = _mock_generation_result()
 
     mock_client = MagicMock()
-    mock_client.table().select().eq().maybe_single().execute.return_value = MagicMock(
-        data=None
-    )
+    mock_client.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mock_client.table().insert().execute.side_effect = [
         MagicMock(data=[{"conversation_id": str(session_id)}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
@@ -337,6 +348,7 @@ def test_backward_compatibility_session_id_maps_to_conversation_id() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -359,9 +371,10 @@ def test_response_contract_includes_conversation_and_message_ids() -> None:
     mock_provider.generate.return_value = _mock_generation_result()
 
     mock_client = MagicMock()
-    mock_client.table().select().eq().maybe_single().execute.return_value = MagicMock(
-        data=None
-    )
+    mock_client.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mock_client.table().insert().execute.side_effect = [
         MagicMock(data=[{"conversation_id": str(session_context.session_id)}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
@@ -377,6 +390,7 @@ def test_response_contract_includes_conversation_and_message_ids() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -403,8 +417,12 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
     )
 
     mock_client_turn_1 = MagicMock()
-    # Conversation does not exist initially
-    mock_client_turn_1.table().select().eq().maybe_single().execute.return_value = MagicMock(data=None)
+    # Conversation does not exist initially (first get_conversation), but the
+    # second get_conversation (inside get_conversation_messages) must return it
+    mock_client_turn_1.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(conversation_id), "user_id": str(TEST_USER_ID), "title": "First turn question", "status": "active"}),
+    ]
     # Inserts: conversation, user message (seq 1), assistant message (seq 2), ai_response,
     # retrieval_operation, retrieved_chunks, message_citations
     mock_client_turn_1.table().insert().execute.side_effect = [
@@ -424,6 +442,7 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client_turn_1),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client_turn_1),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response_1 = process_chat_request(request_turn_1, session_context, mock_provider, TEST_USER_ID)
@@ -461,6 +480,7 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client_turn_2),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client_turn_2),
         patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response_2 = process_chat_request(request_turn_2, session_context, mock_provider, TEST_USER_ID)
@@ -482,7 +502,10 @@ def test_insufficient_context_persists_user_message_only() -> None:
     mock_provider = MagicMock(spec=GenerationProvider)
 
     mock_client = MagicMock()
-    mock_client.table().select().eq().maybe_single().execute.return_value = MagicMock(data=None)
+    mock_client.table().select().eq().maybe_single().execute.side_effect = [
+        MagicMock(data=None),
+        MagicMock(data={"conversation_id": str(uuid4()), "user_id": str(TEST_USER_ID), "title": "Test", "status": "active"}),
+    ]
     mock_client.table().insert().execute.side_effect = [
         MagicMock(data=[{"conversation_id": str(session_context.session_id), "user_id": str(TEST_USER_ID)}]),
         MagicMock(data=[{"message_id": str(uuid4()), "message_sequence": 1, "message_type": "user"}]),
@@ -493,6 +516,7 @@ def test_insufficient_context_persists_user_message_only() -> None:
 
     with (
         patch("app.services.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
         patch("app.services.chat.retrieve", return_value=empty_retrieval_response) as mock_retrieve,
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
