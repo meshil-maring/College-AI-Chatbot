@@ -1,5 +1,5 @@
 import jwt
-from jwt import PyJWKClient, ExpiredSignatureError, InvalidTokenError
+from jwt import PyJWKClient, ExpiredSignatureError, InvalidTokenError, PyJWKError
 from fastapi import Depends, Header
 from typing import Callable
 
@@ -7,6 +7,13 @@ from app.config import settings
 from app.core.errors import AppError
 
 _jwks_client: PyJWKClient | None = None
+
+# Tolerance (in seconds) for minor clock skew between the backend and the
+# Supabase Auth token-issuing server.  A freshly issued JWT's ``iat`` (issued-at)
+# claim can be a few seconds ahead of the local clock; without leeway PyJWT
+# rejects it with ``ImmatureSignatureError`` (a subclass of ``InvalidTokenError``),
+# which surfaces to the frontend as “The saved session could not be verified”.
+_JWT_LEEWAY_SECONDS: int = 10
 
 
 def _get_jwks_client() -> PyJWKClient:
@@ -27,11 +34,12 @@ def verify_jwt(token: str) -> dict:
             algorithms=["ES256"],
             options={"require": ["sub", "exp", "aud"]},
             audience="authenticated",
+            leeway=_JWT_LEEWAY_SECONDS,
         )
         return claims
     except ExpiredSignatureError:
         raise AppError("Token has expired", status_code=401, code="TOKEN_EXPIRED")
-    except InvalidTokenError as exc:
+    except (InvalidTokenError, PyJWKError) as exc:
         raise AppError(f"Invalid token: {exc}", status_code=401, code="INVALID_TOKEN")
 
 

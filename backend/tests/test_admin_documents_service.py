@@ -154,6 +154,83 @@ def test_process_run_409_when_not_queued() -> None:
     assert exc.value.code == "RUN_NOT_QUEUED"
 
 
+def test_process_run_rejects_empty_extraction() -> None:
+    """A scanned/blank PDF must fail fast instead of an unusable KS."""
+    db = MagicMock()
+    with (
+        patch(
+            "app.services.admin_documents.get_processing_run_with_version",
+            return_value={
+                "processing_run_id": RUN1_ID,
+                "status": "queued",
+                "document_versions": {
+                    "document_version_id": V1_ID,
+                    "storage_bucket": "documents",
+                    "storage_object_key": "k",
+                    "file_type": "pdf",
+                },
+            },
+        ),
+        patch("app.services.admin_documents.update_run_status") as status_mock,
+        patch("app.services.admin_documents.get_r2_client", return_value=MagicMock()),
+        patch("app.services.admin_documents.download_file", return_value=b"data"),
+        patch("app.services.admin_documents.extract_text", return_value="   \n  "),
+        patch("app.services.admin_documents.store_extracted_text"),
+        patch("app.services.admin_documents.chunk_text") as chunk_mock,
+        patch("app.services.admin_documents.embed_processing_run") as embed_mock,
+    ):
+        with pytest.raises(AppError) as exc:
+            svc.process_run_to_retrieval(RUN1_ID, db)
+    assert exc.value.code == "EMPTY_EXTRACTION"
+    chunk_mock.assert_not_called()
+    embed_mock.assert_not_called()
+    failed_calls = [
+        c for c in status_mock.call_args_list if c.kwargs.get("status") == "failed"
+    ]
+    assert failed_calls, "run must be marked failed on empty extraction"
+
+
+def test_process_run_marks_run_failed_when_embedding_fails() -> None:
+    """Embedding errors must leave the run failed, not ready/embedded."""
+    db = MagicMock()
+    with (
+        patch(
+            "app.services.admin_documents.get_processing_run_with_version",
+            return_value={
+                "processing_run_id": RUN1_ID,
+                "status": "queued",
+                "document_versions": {
+                    "document_version_id": V1_ID,
+                    "storage_bucket": "documents",
+                    "storage_object_key": "k",
+                    "file_type": "txt",
+                },
+            },
+        ),
+        patch("app.services.admin_documents.update_run_status") as status_mock,
+        patch("app.services.admin_documents.get_r2_client", return_value=MagicMock()),
+        patch("app.services.admin_documents.store_extracted_text"),
+        patch("app.services.admin_documents.download_file", return_value=b"data"),
+        patch("app.services.admin_documents.extract_text", return_value="hello world"),
+        patch(
+            "app.services.admin_documents.chunk_text",
+            return_value=[
+                {"chunk_sequence": 1, "content_text": "hello world", "token_count": 3}
+            ],
+        ),
+        patch("app.services.admin_documents.insert_chunks", return_value=1),
+        patch(
+            "app.services.admin_documents.embed_processing_run",
+            side_effect=AppError("boom", status_code=500, code="EMBEDDING_FAILED"),
+        ),
+    ):
+        with pytest.raises(AppError):
+            svc.process_run_to_retrieval(RUN1_ID, db)
+    failed_calls = [
+        c for c in status_mock.call_args_list if c.kwargs.get("status") == "failed"
+    ]
+    assert failed_calls, "run must be marked failed on embedding error"
+
 def test_process_run_marks_failed_on_extraction_error() -> None:
     db = MagicMock()
     with (

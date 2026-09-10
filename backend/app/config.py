@@ -32,7 +32,16 @@ class Settings(BaseSettings):
     # Phase 5.7b — bounded multi-turn conversational context.
     # Maximum number of persisted messages (user+assistant combined) included
     # in the generation context for an existing conversation.
-    conversation_history_max_messages: int = 20
+    conversation_history_max_messages: int = 10
+
+    # ------------------------------------------------------------------
+    # DEVELOPMENT / TESTING ONLY.
+    #
+    # Gates the dev-only password recovery/reset feature (see
+    # app/api/dev_auth.py). Must be `False` (the default) everywhere except
+    # a local development/testing environment. Never enable in production.
+    # ------------------------------------------------------------------
+    dev_test_mode: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",

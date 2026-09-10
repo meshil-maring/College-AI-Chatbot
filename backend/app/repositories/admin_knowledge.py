@@ -134,15 +134,27 @@ def list_documents_for_source(
     client: Client,
     knowledge_source_id: UUID | str,
 ) -> list[dict]:
-    """List documents that belong to a knowledge source, newest first."""
+    """List documents that belong to a knowledge source, newest first.
+
+    Each document row embeds its version history so the admin frontend can
+    render filenames, file types, and processing info without N+1 calls.
+    """
     response = (
         client.table("documents")
-        .select(DOCUMENT_COLUMNS)
+        .select(f"{DOCUMENT_COLUMNS}, document_versions(*)")
         .eq("knowledge_source_id", str(knowledge_source_id))
         .order("created_at", desc=True)
         .execute()
     )
-    return response.data
+    rows = response.data or []
+    for row in rows:
+        versions = row.get("document_versions") or []
+        versions.sort(
+            key=lambda v: (v.get("version_number") or 0),
+            reverse=True,
+        )
+        row["versions"] = versions
+    return rows
 
 
 def get_document_with_versions(client: Client, document_id: UUID | str) -> dict | None:

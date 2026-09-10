@@ -28,7 +28,7 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         .maybe_single()
         .execute()
     )
-    if response.data is None:
+    if response is None or response.data is None:
         return None
     row = response.data
     roles = [

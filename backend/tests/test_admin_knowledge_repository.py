@@ -131,18 +131,27 @@ def test_update_knowledge_source_rejects_empty_payload() -> None:
 
 def test_list_documents_for_source_filters_by_knowledge_source() -> None:
     client = MagicMock()
-    chain = client.table.return_value.select.return_value.eq.return_value
-    chain.order.return_value.execute.return_value.data = [
-        {"document_id": str(DOC_ID)}
+    client.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value.data = [
+        {
+            "document_id": str(DOC_ID),
+            "document_versions": [
+                {"document_version_id": "v1", "version_number": 1},
+                {"document_version_id": "v2", "version_number": 2},
+            ],
+        }
     ]
 
     rows = repo.list_documents_for_source(client, KS_ID)
 
-    assert rows == [{"document_id": str(DOC_ID)}]
+    assert len(rows) == 1
+    # Frontend expects `versions` (newest first) for rendering.
+    assert [v["version_number"] for v in rows[0]["versions"]] == [2, 1]
     client.table.assert_called_once_with("documents")
     client.table.return_value.select.return_value.eq.assert_called_once_with(
         "knowledge_source_id", str(KS_ID)
     )
+    select_arg = client.table.return_value.select.call_args.args[0]
+    assert "document_versions(*)" in select_arg
 
 
 def test_get_document_with_versions_selects_nested_versions() -> None:

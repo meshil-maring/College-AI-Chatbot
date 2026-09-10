@@ -113,6 +113,19 @@ def process_run_to_retrieval(
         ) from exc
 
     store_extracted_text(db, document_version_id, text)
+    if not (text or "").strip():
+        update_run_status(
+            db,
+            run_id,
+            status="failed",
+            completed_at=_utc_now(),
+            error_message="Document text extraction produced no searchable text",
+        )
+        raise AppError(
+            "Document text extraction produced no searchable text",
+            status_code=422,
+            code="EMPTY_EXTRACTION",
+        )
     update_run_status(db, run_id, status="ready", completed_at=_utc_now())
 
     # --- chunking (existing services/repositories) --------------------------
@@ -137,7 +150,17 @@ def process_run_to_retrieval(
         ) from exc
 
     # --- embedding (existing locked service) --------------------------------
-    embeddings_created = embed_processing_run(run_id)
+    try:
+        embeddings_created = embed_processing_run(run_id)
+    except Exception as exc:
+        update_run_status(
+            db,
+            run_id,
+            status="failed",
+            completed_at=_utc_now(),
+            error_message=str(exc)[:1000],
+        )
+        raise
 
     return {
         "processing_run_id": run_id,
