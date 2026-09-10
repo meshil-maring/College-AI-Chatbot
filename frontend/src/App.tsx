@@ -1,6 +1,10 @@
+import { useCallback, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider.tsx'
 import LoginForm from './features/auth/LoginForm.tsx'
 import ChatShell from './features/chat/ChatShell.tsx'
+import AdminShell from './features/admin/AdminShell.tsx'
+import AcademicsPanel from './features/academics/AcademicsPanel.tsx'
+import { getAdminIdentity } from './services/adminApi.ts'
 
 function RestoringShell() {
   return (
@@ -15,8 +19,46 @@ function RestoringShell() {
   )
 }
 
+function StudentShell() {
+  return (
+    <>
+      <ChatShell />
+      <AcademicsPanel />
+    </>
+  )
+}
+
 function AuthenticatedShell() {
-  return <ChatShell />
+  const { accessToken } = useAuth()
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
+
+  const checkAdmin = useCallback(async () => {
+    if (accessToken === null) return
+    try {
+      await getAdminIdentity(accessToken)
+      setIsAdmin(true)
+    } catch {
+      setIsAdmin(false)
+    }
+  }, [accessToken])
+
+  useEffect(() => {
+    void checkAdmin()
+  }, [checkAdmin])
+
+  if (isAdmin === null) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+        <main className="max-w-xl w-full text-center py-16">
+          <div className="rounded-2xl border border-slate-700 bg-slate-800 p-10 shadow-xl">
+            <h1 className="text-2xl font-bold text-white">Loading…</h1>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  return isAdmin ? <AdminShell /> : <StudentShell />
 }
 
 function AuthGate() {

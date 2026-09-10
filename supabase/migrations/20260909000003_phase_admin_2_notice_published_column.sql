@@ -1,0 +1,1 @@
+﻿-- Phase Admin-2 amendment: add is_published column to notices table`n-- The admin_notices service uses is_published for the RAG sync publish/unpublish flow.`n`nALTER TABLE "public"."notices"`n    ADD COLUMN "is_published" boolean DEFAULT false NOT NULL;`n`nCREATE INDEX IF NOT EXISTS "idx_notices_is_published"`n    ON "public"."notices" ("is_published");

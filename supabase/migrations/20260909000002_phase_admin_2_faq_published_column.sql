@@ -1,0 +1,1 @@
+﻿-- Phase Admin-2 amendment: add is_published column to faqs table`n-- The admin_faq service uses is_published for the RAG sync publish/unpublish flow.`n`nALTER TABLE "public"."faqs"`n    ADD COLUMN "is_published" boolean DEFAULT false NOT NULL;`n`nCREATE INDEX IF NOT EXISTS "idx_faqs_is_published"`n    ON "public"."faqs" ("is_published");
