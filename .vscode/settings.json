@@ -19,6 +19,7 @@
     "/^git rev-parse HEAD; git status --short --branch; git --no-pager log --oneline -20$/": {
       "approve": true,
       "matchCommandLine": true
-    }
+    },
+    "uv": true
   }
 }
