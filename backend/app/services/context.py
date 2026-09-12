@@ -62,4 +62,5 @@ def assemble_context(request: AIRequest, conversation_history: list[Conversation
         retrieved_knowledge=list(request.retrieved_chunks),
         grounding_instructions=grounding_instructions,
         conversation_history=conversation_history or request.conversation_history,
+        retrieval_query=request.retrieval_query,
     )

@@ -35,6 +35,25 @@ class Settings(BaseSettings):
     conversation_history_max_messages: int = 10
 
     # ------------------------------------------------------------------
+    # Conversational RAG — query interpretation & retrieval budget.
+    #
+    # retrieval_top_k:
+    #   Number of nearest knowledge chunks passed from the chat boundary to
+    #   vector retrieval. Kept intentionally small so the generation prompt
+    #   receives only the most relevant knowledge (section-sized chunks),
+    #   instead of every near match in the scoped corpus.
+    # rewrite_history_exchanges:
+    #   Maximum number of complete user/assistant exchanges (2 messages per
+    #   exchange) used to interpret a follow-up question before retrieval.
+    # rewrite_max_history_chars:
+    #   Hard character budget for the conversation excerpt sent to the
+    #   query-interpretation step. The rewriter must stay token-cheap.
+    # ------------------------------------------------------------------
+    retrieval_top_k: int = 4
+    rewrite_history_exchanges: int = 2
+    rewrite_max_history_chars: int = 1000
+
+    # ------------------------------------------------------------------
     # DEVELOPMENT / TESTING ONLY.
     #
     # Gates the dev-only password recovery/reset feature (see

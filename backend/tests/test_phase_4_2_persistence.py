@@ -3,11 +3,30 @@
 from uuid import UUID, uuid4
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.retrieval import RetrievalResponse, RetrievalResult
 from app.schemas.session import SessionContext
-from app.services.chat import process_chat_request
+from app.services.chat import _persist_in_background, process_chat_request
 from app.services.generation_provider import GenerationProvider, GenerationResult
+
+
+@pytest.fixture(autouse=True)
+def _sync_background_persistence(monkeypatch):
+    """Run post-generation persistence synchronously for deterministic asserts.
+
+    ``process_chat_request`` fires the AI-response / retrieval / citation
+    writes on a daemon thread so live requests do not block on DB writes.
+    These Phase 4.2 tests assert exact insert counts and row authorship
+    immediately after the request returns, so the thread launch is replaced
+    with a direct call to the same worker function (which resolves its own
+    client via the patched ``get_admin_client``).
+    """
+    monkeypatch.setattr(
+        "app.services.chat._start_background_persistence",
+        lambda **kwargs: _persist_in_background(**kwargs),
+    )
 
 
 INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"

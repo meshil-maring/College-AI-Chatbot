@@ -1,3 +1,4 @@
+from threading import Lock
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
@@ -6,6 +7,26 @@ import httpx
 from app.config import settings
 from app.core.errors import AppError
 from app.schemas.generation import AIContext, SourceReference
+
+
+_shared_http_client: httpx.Client | None = None
+_shared_http_client_lock = Lock()
+
+
+def _get_shared_http_client() -> httpx.Client:
+    """Return the process-wide HTTP client for OpenRouter requests.
+
+    Building a new ``httpx.Client`` per request forces a fresh TCP + TLS
+    handshake against the provider on every chat message. One shared client
+    keeps connections pooled across requests. ``httpx.Client`` is thread-safe,
+    and providers that receive an explicitly injected client (tests use mock
+    transports) never touch the shared instance.
+    """
+    global _shared_http_client
+    with _shared_http_client_lock:
+        if _shared_http_client is None:
+            _shared_http_client = httpx.Client(timeout=60.0)
+        return _shared_http_client
 
 
 class GenerationResult:
@@ -91,12 +112,11 @@ class OpenRouterGenerationProvider:
 
         try:
             if self._client is None:
-                with httpx.Client(timeout=self._timeout) as client:
-                    response = client.post(
-                        f"{base_url}/chat/completions",
-                        headers=headers,
-                        json=request_body,
-                    )
+                response = _get_shared_http_client().post(
+                    f"{base_url}/chat/completions",
+                    headers=headers,
+                    json=request_body,
+                )
             else:
                 response = self._client.post(
                     f"{base_url}/chat/completions",
@@ -175,15 +195,39 @@ def _is_http_url(value: str) -> bool:
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
+def estimate_prompt_tokens(text: str) -> int:
+    """Return a rough token estimate for development diagnostics only.
+
+    Uses a 4-characters-per-token heuristic. This is intentionally NOT a
+    tokenizer-equivalent count; it exists so the dev latency diagnostics can
+    report a stable, non-zero ``final_context_token_count`` without an extra
+    third-party dependency or API round trip.
+    """
+    if not isinstance(text, str) or not text.strip():
+        return 0
+    return max(1, (len(text) + 3) // 4)
+
+
 def _build_user_content(context: AIContext) -> str:
+    # NOTE: the task §13 token optimization ("no per-chunk metadata in the
+    # generation prompt") is preserved: only chunk ids + raw text are sent.
     knowledge = "\n\n".join(
-        "[Retrieved chunk {chunk_id}]\n{text}\nMetadata: {metadata}".format(
+        "[Retrieved chunk {chunk_id}]\n{text}".format(
             chunk_id=chunk.chunk_id,
             text=chunk.text,
-            metadata=chunk.metadata,
         )
         for chunk in context.retrieved_knowledge
     )
+
+    # Surface the interpreted intent only when a conversational rewrite
+    # actually changed the wording of the question. This keeps retrieval
+    # unambiguous for the model without ever replacing the user's own words.
+    interpreted = ""
+    if (
+        context.retrieval_query
+        and context.retrieval_query.strip() != context.user_question.strip()
+    ):
+        interpreted = f"\n\nInterpreted question:\n{context.retrieval_query.strip()}"
 
     conversation_history = ""
     if context.conversation_history:
@@ -194,7 +238,8 @@ def _build_user_content(context: AIContext) -> str:
         conversation_history = "\n\nConversation history:\n" + "\n".join(history_parts) + "\n"
 
     return (
-        f"Student question:\n{context.user_question}\n\n"
+        f"Student question:\n{context.user_question}"
+        f"{interpreted}\n\n"
         "Retrieved college knowledge:\n"
         f"{knowledge}"
         f"{conversation_history}"

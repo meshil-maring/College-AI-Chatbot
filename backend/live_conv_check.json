@@ -1,0 +1,77 @@
+{
+  "token_user": "8464c7b9-511a-4d4c-9978-4882dfb24cbe",
+  "results": [
+    {
+      "step": "Q1",
+      "query": "How much is the annual hostel fee for a standard room?",
+      "wall_ms": 16527.6,
+      "rewrite_skipped": true,
+      "rewritten_query": null,
+      "answer": "The annual hostel fee for a standard room is Rs. 48,000, with an additional security deposit of Rs. 5,000 and a mess fee of Rs. 36,000 per academic year (Retrieved chunk 956ddaf7-3ae3-4fb2-9365-b1cac9",
+      "status": "success"
+    },
+    {
+      "step": "Q2",
+      "query": "What about for girls?",
+      "wall_ms": 22599.9,
+      "rewrite_skipped": false,
+      "rewritten_query": "What is the annual hostel fee for a standard room for girls?",
+      "answer": "The annual hostel fee for a standard room for girls is Rs. 48,000, with an additional security deposit of Rs. 5,000 and a mess fee of Rs. 36,000 per academic year (Retrieved chunk 956ddaf7-3ae3-4fb2-9",
+      "status": "success"
+    },
+    {
+      "step": "Q3",
+      "query": "What about boys?",
+      "wall_ms": 18179.7,
+      "rewrite_skipped": false,
+      "rewritten_query": "What is the annual hostel fee for a standard room for boys?",
+      "answer": "The annual hostel fee for a standard room for boys is Rs. 48,000, with an additional security deposit of Rs. 5,000 and a mess fee of Rs. 36,000 per academic year (Retrieved chunk 956ddaf7-3ae3-4fb2-93",
+      "status": "success"
+    },
+    {
+      "step": "Q4",
+      "query": "What about AC?",
+      "wall_ms": 67611.1,
+      "rewrite_skipped": false,
+      "rewritten_query": "What about the accommodation costs for AC rooms?",
+      "answer": "The fee for an AC room is Rs. 66,000 per year, with an additional security deposit of Rs. 5,000 and a mess fee of Rs. 36,000 per academic year (Retrieved chunk 956ddaf7-3ae3-4fb2-9365-b1cac91b933c).",
+      "status": "success"
+    },
+    {
+      "step": "Q5",
+      "query": "Is the deposit refundable?",
+      "wall_ms": 15169.8,
+      "rewrite_skipped": false,
+      "rewritten_query": "Is the security deposit of Rs. 5,000 refundable?",
+      "answer": "Yes, the security deposit of Rs. 5,000 is refundable after checkout, subject to adjustment for damage, outstanding dues, or other applicable charges (Retrieved chunk 6c75421b-0d83-463d-acea-17fd2b8dce",
+      "status": "success"
+    },
+    {
+      "step": "security-deposit",
+      "query": "How much is the hostel security deposit?",
+      "wall_ms": 19133.7,
+      "rewrite_skipped": true,
+      "rewritten_query": null,
+      "answer": "The hostel security deposit is Rs. 10,000, which is payable once at admission and is refundable after checkout, subject to adjustment for any damage or outstanding dues (source: chunk 1248265b-f1f9-4b",
+      "status": "success"
+    },
+    {
+      "step": "academic",
+      "query": "What is the minimum attendance required to appear for the semester examination?",
+      "wall_ms": 8897.7,
+      "rewrite_skipped": true,
+      "rewritten_query": null,
+      "answer": "The minimum attendance required to appear for the semester examination is at least 75%. If a student's attendance falls below this percentage, they are not allowed to sit for the regular end-semester ",
+      "status": "success"
+    },
+    {
+      "step": "unrelated",
+      "query": "What is the capital of France?",
+      "wall_ms": 15458.1,
+      "rewrite_skipped": false,
+      "rewritten_query": null,
+      "answer": "The available knowledge is insufficient to answer the question about the capital of France.",
+      "status": "success"
+    }
+  ]
+}

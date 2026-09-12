@@ -129,3 +129,77 @@ def test_repository_functions_are_used():
         delete.assert_called_once_with(client, RUN_ID, MODEL)
         upsert.assert_called_once()
         assert update.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Query-embedding cache (short-lived, configuration-keyed, LRU-bounded).
+# ---------------------------------------------------------------------------
+
+
+def test_query_embedding_repeated_query_hits_cache():
+    embeddings._QUERY_EMBEDDING_CACHE.clear()
+    provider = MagicMock()
+    provider.embed.return_value = [[0.1, 0.2, 0.3]]
+    settings = embeddings.settings
+    with (
+        patch.object(embeddings, "get_embedding_provider") as get_provider,
+        patch.object(settings, "embedding_model", MODEL),
+        patch.object(settings, "embedding_dimensions", DIMENSIONS),
+        patch.object(settings, "openrouter_api_key", "test-key"),
+    ):
+        get_provider.side_effect = lambda: provider
+        assert embeddings.embed_query("What is the hostel fee?") == [0.1, 0.2, 0.3]
+        # Second identical call: no provider round trip.
+        assert embeddings.embed_query("What is the hostel fee?") == [0.1, 0.2, 0.3]
+    assert provider.embed.call_count == 1
+    embeddings._QUERY_EMBEDDING_CACHE.clear()
+
+
+def test_query_embedding_cache_keyed_by_model_configuration():
+    embeddings._QUERY_EMBEDDING_CACHE.clear()
+    provider = MagicMock()
+    provider.embed.return_value = [[0.1, 0.2, 0.3]]
+    settings = embeddings.settings
+    with (
+        patch.object(embeddings, "get_embedding_provider") as get_provider,
+        patch.object(settings, "embedding_model", "model-a"),
+        patch.object(settings, "embedding_dimensions", DIMENSIONS),
+        patch.object(settings, "openrouter_api_key", "test-key"),
+    ):
+        get_provider.side_effect = lambda: provider
+        embeddings.embed_query("same text")
+    with (
+        patch.object(embeddings, "get_embedding_provider") as get_provider,
+        patch.object(settings, "embedding_model", "model-b"),
+        patch.object(settings, "embedding_dimensions", DIMENSIONS),
+        patch.object(settings, "openrouter_api_key", "test-key"),
+    ):
+        get_provider.side_effect = lambda: provider
+        embeddings.embed_query("same text")
+    # Different embedding configuration => different cache key => new call.
+    assert provider.embed.call_count == 2
+    embeddings._QUERY_EMBEDDING_CACHE.clear()
+
+
+def test_query_embedding_explicit_provider_bypasses_cache():
+    embeddings._QUERY_EMBEDDING_CACHE.clear()
+    cached_provider = MagicMock()
+    cached_provider.embed.return_value = [[0.1, 0.2, 0.3]]
+    explicit_provider = MagicMock()
+    explicit_provider.embed.return_value = [[0.1, 0.2, 0.3]]
+    settings = embeddings.settings
+    with (
+        patch.object(embeddings, "get_embedding_provider") as get_provider,
+        patch.object(settings, "embedding_model", MODEL),
+        patch.object(settings, "embedding_dimensions", DIMENSIONS),
+        patch.object(settings, "openrouter_api_key", "test-key"),
+    ):
+        get_provider.side_effect = lambda: cached_provider
+        embeddings.embed_query("same text")
+        # Document/ingestion paths pass an explicit provider and must NOT hit
+        # the query cache.
+        embeddings.embed_query("same text", provider=explicit_provider)
+        embeddings.embed_query("same text", provider=explicit_provider)
+    assert cached_provider.embed.call_count == 1
+    assert explicit_provider.embed.call_count == 2
+    embeddings._QUERY_EMBEDDING_CACHE.clear()

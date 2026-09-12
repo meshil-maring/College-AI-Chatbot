@@ -1,6 +1,7 @@
 """Application service for scoped vector retrieval."""
 
 import math
+import time
 from collections.abc import Sequence
 from numbers import Real
 
@@ -16,19 +17,32 @@ from app.services.embeddings import embed_query
 from app.services.vector_search import search_chunks
 
 
-def retrieve(request: RetrievalRequest) -> RetrievalResponse:
-    """Execute the internal text-to-vector retrieval pipeline."""
+def retrieve(
+    request: RetrievalRequest, timings: dict | None = None
+) -> RetrievalResponse:
+    """Execute the internal text-to-vector retrieval pipeline.
+
+    When ``timings`` is a dict, per-stage durations (milliseconds) are recorded
+    into it for development latency diagnostics; retrieval behavior is
+    completely unchanged.
+    """
+    start = time.perf_counter() if timings is not None else None
     try:
         query_embedding = embed_query(request.query)
     except AppError:
         raise
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         raise AppError(
             "Query embedding failed",
             status_code=500,
             code="EMBEDDING_FAILED",
         ) from exc
+    if timings is not None:
+        timings["embedding_latency_ms"] = int((time.perf_counter() - start) * 1000)
 
+    start = time.perf_counter() if timings is not None else None
     try:
         rows = search_chunks(
             query_embedding,
@@ -46,6 +60,8 @@ def retrieve(request: RetrievalRequest) -> RetrievalResponse:
             status_code=exc.status_code,
             code="RETRIEVAL_FAILED",
         ) from exc
+    if timings is not None:
+        timings["vector_search_latency_ms"] = int((time.perf_counter() - start) * 1000)
 
     return RetrievalResponse(results=[_map_result(row) for row in rows])
 

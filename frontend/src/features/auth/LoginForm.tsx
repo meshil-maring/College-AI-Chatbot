@@ -6,15 +6,36 @@
  * never rendered, nothing is logged, and the password is never persisted.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from './AuthProvider.tsx'
+import ForgotPasswordForm from './ForgotPasswordForm.tsx'
+import { fetchDevAuthStatus } from '../../services/devAuth.ts'
 
 export default function LoginForm() {
   const { status, error, login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [devTestModeEnabled, setDevTestModeEnabled] = useState(false)
+
+  useEffect(() => {
+    // DEVELOPMENT / TESTING ONLY — "Forgot Password?" only appears when the
+    // backend explicitly reports dev/test mode is enabled.
+    let cancelled = false
+    void fetchDevAuthStatus().then((result) => {
+      if (!cancelled) setDevTestModeEnabled(result.dev_test_mode)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const busy = status === 'authenticating'
+
+  if (showForgotPassword) {
+    return <ForgotPasswordForm onBackToLogin={() => setShowForgotPassword(false)} />
+  }
+
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
@@ -78,6 +99,16 @@ export default function LoginForm() {
             >
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
+            {devTestModeEnabled && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-slate-400 hover:text-slate-200 underline"
+              >
+                Forgot password? (Dev/Test only)
+              </button>
+            )}
           </form>
 
           <p className="mt-6 text-xs text-slate-500">

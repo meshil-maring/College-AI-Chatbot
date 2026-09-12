@@ -1,4 +1,8 @@
+import logging
 import math
+import threading
+import time
+from collections import OrderedDict
 from collections.abc import Iterable
 from numbers import Real
 
@@ -14,16 +18,73 @@ from app.repositories.embeddings import (
 from app.repositories.ingestion import get_processing_run_with_version
 from app.services.embedding_provider import EmbeddingProvider, get_embedding_provider
 
+# ---------------------------------------------------------------------------
+# Query-embedding cache (development-measured optimization).
+#
+# Measured query embedding latency against OpenRouter's configured embedding
+# model ranges from ~2s to ~9s. Repeating the exact same query (retry,
+# refresh, common short questions) re-generates an identical vector, so a
+# small short-lived cache removes that round trip entirely. Safety properties:
+#
+#   * keyed by (embedding_model, embedding_dimensions, query) so vectors are
+#     never reused across incompatible embedding configurations,
+#   * short TTL so newly ingested/re-embedded knowledge is reflected quickly,
+#   * bounded size (LRU eviction),
+#   * only the DEFAULT configured provider path is cached; callers that pass
+#     an explicit provider (document ingestion, tests) bypass the cache, so
+#     document embeddings are never cached here.
+# ---------------------------------------------------------------------------
+_QUERY_EMBEDDING_CACHE: "OrderedDict[tuple, tuple[float, list[float]]]" = OrderedDict()
+_QUERY_EMBEDDING_LOCK = threading.Lock()
+_QUERY_EMBEDDING_TTL_SECONDS = 600.0
+_QUERY_EMBEDDING_MAX_ENTRIES = 128
+
+
+def _cache_get(key: tuple) -> list[float] | None:
+    with _QUERY_EMBEDDING_LOCK:
+        entry = _QUERY_EMBEDDING_CACHE.get(key)
+        if entry is None:
+            return None
+    created_at, vector = entry
+    if time.monotonic() - created_at >= _QUERY_EMBEDDING_TTL_SECONDS:
+        with _QUERY_EMBEDDING_LOCK:
+            _QUERY_EMBEDDING_CACHE.pop(key, None)
+        return None
+    with _QUERY_EMBEDDING_LOCK:
+        _QUERY_EMBEDDING_CACHE.move_to_end(key)
+    return vector
+
+
+def _cache_put(key: tuple, vector: list[float]) -> None:
+    with _QUERY_EMBEDDING_LOCK:
+        _QUERY_EMBEDDING_CACHE[key] = (time.monotonic(), vector)
+        _QUERY_EMBEDDING_CACHE.move_to_end(key)
+        while len(_QUERY_EMBEDDING_CACHE) > _QUERY_EMBEDDING_MAX_ENTRIES:
+            _QUERY_EMBEDDING_CACHE.popitem(last=False)
+
 
 def embed_query(
     query: str,
     provider: EmbeddingProvider | None = None,
 ) -> list[float]:
     """Generate and validate one query embedding through the configured provider."""
+    if provider is None:
+        cache_key = (settings.embedding_model, settings.embedding_dimensions, query)
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return list(cached)
+
     embedding_provider = provider or get_embedding_provider()
     vectors = embedding_provider.embed([query])
     if len(vectors) != 1:
-        raise ValueError("Embedding provider returned an unexpected result count")
+        logging.error(
+            "embed_query unexpected result count: %d (expected 1); provider=%s",
+            len(vectors),
+            type(embedding_provider).__name__,
+        )
+        raise ValueError(
+            "Embedding provider returned an unexpected result count"
+        )
 
     vector = vectors[0]
     if len(vector) != settings.embedding_dimensions:
@@ -37,6 +98,9 @@ def embed_query(
         for value in vector
     ):
         raise ValueError("Embedding provider returned non-numeric embedding values")
+
+    if provider is None:
+        _cache_put(cache_key, vector)
     return vector
 
 

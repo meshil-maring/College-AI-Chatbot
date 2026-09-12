@@ -152,6 +152,16 @@ class AIRequest(BaseModel):
         description="Bounded prior conversation turns for multi-turn context",
     )
 
+    retrieval_query: str | None = Field(
+        default=None,
+        description=(
+            "Standalone retrieval query produced by conversational query "
+            "interpretation. When set and different from ``user_query``, it is "
+            "used to retrieve knowledge and surfaced to the model as the "
+            "interpreted intent so follow-up wording does not hide intent."
+        ),
+    )
+
     @field_validator("user_query")
     @classmethod
     def normalize_query(cls, value: str) -> str:
@@ -219,6 +229,13 @@ class AIContext(BaseModel):
     conversation_history: list[ConversationTurn] = Field(
         default_factory=list,
         description="Bounded prior conversation turns for multi-turn context",
+    )
+    retrieval_query: str | None = Field(
+        default=None,
+        description=(
+            "Standalone retrieval query from conversational query interpretation. "
+            "Internal only; never serialized to API responses."
+        ),
     )
 
     @field_validator("system_instructions", "user_question", "grounding_instructions")

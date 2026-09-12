@@ -1,10 +1,55 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider.tsx'
 import LoginForm from './features/auth/LoginForm.tsx'
+import ChangePasswordForm from './features/auth/ChangePasswordForm.tsx'
 import ChatShell from './features/chat/ChatShell.tsx'
 import AdminShell from './features/admin/AdminShell.tsx'
 import AcademicsPanel from './features/academics/AcademicsPanel.tsx'
 import { getAdminIdentity } from './services/adminApi.ts'
+import { fetchDevAuthStatus } from './services/devAuth.ts'
+
+/** DEVELOPMENT / TESTING ONLY — collapsible "Change Password" panel. */
+function DevChangePasswordPanel() {
+  const [devTestModeEnabled, setDevTestModeEnabled] = useState(false)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchDevAuthStatus().then((result) => {
+      if (!cancelled) setDevTestModeEnabled(result.dev_test_mode)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (!devTestModeEnabled) return null
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50">
+      {open ? (
+        <div className="flex flex-col items-end gap-2">
+          <ChangePasswordForm />
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="text-xs text-slate-400 hover:text-slate-200 underline"
+          >
+            Close
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-lg border border-amber-600/60 bg-slate-800 px-3 py-2 text-xs font-semibold text-amber-400 shadow-lg hover:bg-slate-700"
+        >
+          Change Password (Dev/Test only)
+        </button>
+      )}
+    </div>
+  )
+}
 
 function RestoringShell() {
   return (
@@ -67,7 +112,12 @@ function AuthGate() {
     return <RestoringShell />
   }
   if (status === 'authenticated') {
-    return <AuthenticatedShell />
+    return (
+      <>
+        <AuthenticatedShell />
+        <DevChangePasswordPanel />
+      </>
+    )
   }
   return <LoginForm />
 }

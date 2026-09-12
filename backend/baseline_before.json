@@ -1,0 +1,174 @@
+[
+  {
+    "name": "A standalone academic",
+    "query": "What is the minimum attendance required to appear for the semester examination?",
+    "status_code": 200,
+    "wall_ms": 25802.0,
+    "input_tokens": 587,
+    "output_tokens": 96,
+    "diagnostics": {
+      "original_query": "What is the minimum attendance required to appear for the semester examination?",
+      "retrieval_query": "What is the minimum attendance required to appear for the semester examination?",
+      "rewritten_query": null,
+      "retrieved_chunk_count": 4,
+      "retrieved_chunk_ids": [
+        "30000000-0000-0000-0000-000000000151",
+        "6164944b-888f-44bb-a95f-a6b77654fd97",
+        "50fcb497-b5f0-431b-be7e-a967b473fe26",
+        "080a1c07-787e-4bdd-8615-de318cd085b3"
+      ],
+      "retrieved_scores": [
+        0.821447540607903,
+        0.77277672290802,
+        0.772317065458474,
+        0.7241004705429079
+      ],
+      "final_input_token_count": 587,
+      "output_token_count": 96,
+      "final_context_token_count": 226,
+      "conversation_resolution_ms": 1939,
+      "history_retrieval_ms": 899,
+      "query_rewrite_latency_ms": 0,
+      "embedding_latency_ms": 4304,
+      "vector_search_latency_ms": 1331,
+      "retrieval_latency_ms": 5635,
+      "prompt_build_latency_ms": 0,
+      "context_build_latency_ms": 0,
+      "llm_request_latency_ms": 3785,
+      "source_enrichment_latency_ms": 614,
+      "persistence_latency_ms": 5119,
+      "total_latency_ms": 19245
+    },
+    "answer_preview": "The minimum attendance required to appear for the semester examination is at lea",
+    "error": null
+  },
+  {
+    "name": "B conversational followup",
+    "query": "What about for final year students?",
+    "status_code": 200,
+    "wall_ms": 18427.3,
+    "input_tokens": 536,
+    "output_tokens": 15,
+    "diagnostics": {
+      "original_query": "What about for final year students?",
+      "retrieval_query": "What about for final year students?",
+      "rewritten_query": null,
+      "retrieved_chunk_count": 4,
+      "retrieved_chunk_ids": [
+        "b3a2f39d-e5eb-4fcf-bc1f-1f90aa405151",
+        "30000000-0000-0000-0000-000000000157",
+        "30000000-0000-0000-0000-000000000156",
+        "55f66253-15f6-4ef7-8741-c3978b37d660"
+      ],
+      "retrieved_scores": [
+        0.584050441738938,
+        0.565952446105931,
+        0.532266998481692,
+        0.512331634024881
+      ],
+      "final_input_token_count": 536,
+      "output_token_count": 15,
+      "final_context_token_count": 185,
+      "conversation_resolution_ms": 1462,
+      "history_retrieval_ms": 1098,
+      "query_rewrite_latency_ms": 0,
+      "embedding_latency_ms": 2181,
+      "vector_search_latency_ms": 1008,
+      "retrieval_latency_ms": 3189,
+      "prompt_build_latency_ms": 0,
+      "context_build_latency_ms": 0,
+      "llm_request_latency_ms": 4388,
+      "source_enrichment_latency_ms": 0,
+      "persistence_latency_ms": 4010,
+      "total_latency_ms": 15668
+    },
+    "answer_preview": "The available knowledge is insufficient to address your question about final yea",
+    "error": null
+  },
+  {
+    "name": "C hostel",
+    "query": "How much is the annual hostel fee for a standard room?",
+    "status_code": 200,
+    "wall_ms": 18835.3,
+    "input_tokens": 763,
+    "output_tokens": 71,
+    "diagnostics": {
+      "original_query": "How much is the annual hostel fee for a standard room?",
+      "retrieval_query": "How much is the annual hostel fee for a standard room?",
+      "rewritten_query": null,
+      "retrieved_chunk_count": 4,
+      "retrieved_chunk_ids": [
+        "1248265b-f1f9-4b05-b27e-78b2b7bdf5a2",
+        "956ddaf7-3ae3-4fb2-9365-b1cac91b933c",
+        "e93bea1b-9199-4f36-a4a2-12dd0032e54e",
+        "6c75421b-0d83-463d-acea-17fd2b8dce71"
+      ],
+      "retrieved_scores": [
+        0.75947865730779,
+        0.7329427759085549,
+        0.653438412323377,
+        0.6452066936719381
+      ],
+      "final_input_token_count": 763,
+      "output_token_count": 71,
+      "final_context_token_count": 370,
+      "conversation_resolution_ms": 1659,
+      "history_retrieval_ms": 651,
+      "query_rewrite_latency_ms": 0,
+      "embedding_latency_ms": 2312,
+      "vector_search_latency_ms": 1162,
+      "retrieval_latency_ms": 3474,
+      "prompt_build_latency_ms": 0,
+      "context_build_latency_ms": 0,
+      "llm_request_latency_ms": 2358,
+      "source_enrichment_latency_ms": 1226,
+      "persistence_latency_ms": 7164,
+      "total_latency_ms": 17030
+    },
+    "answer_preview": "The annual hostel fee for a standard room is Rs. 48,000. Additionally, there is ",
+    "error": null
+  },
+  {
+    "name": "D unrelated",
+    "query": "What is the capital of France?",
+    "status_code": 200,
+    "wall_ms": 17566.3,
+    "input_tokens": 480,
+    "output_tokens": 15,
+    "diagnostics": {
+      "original_query": "What is the capital of France?",
+      "retrieval_query": "What is the capital of France?",
+      "rewritten_query": null,
+      "retrieved_chunk_count": 4,
+      "retrieved_chunk_ids": [
+        "b3a2f39d-e5eb-4fcf-bc1f-1f90aa405151",
+        "3c294122-9807-46cc-ab73-28d7f805ecfc",
+        "55f66253-15f6-4ef7-8741-c3978b37d660",
+        "54d9a545-a05d-43ba-94bb-d5bf5f617cd0"
+      ],
+      "retrieved_scores": [
+        0.33736865743211897,
+        0.329666038135651,
+        0.329662223438158,
+        0.329662223438158
+      ],
+      "final_input_token_count": 480,
+      "output_token_count": 15,
+      "final_context_token_count": 59,
+      "conversation_resolution_ms": 1639,
+      "history_retrieval_ms": 1025,
+      "query_rewrite_latency_ms": 0,
+      "embedding_latency_ms": 2252,
+      "vector_search_latency_ms": 917,
+      "retrieval_latency_ms": 3169,
+      "prompt_build_latency_ms": 0,
+      "context_build_latency_ms": 0,
+      "llm_request_latency_ms": 2563,
+      "source_enrichment_latency_ms": 0,
+      "persistence_latency_ms": 4254,
+      "total_latency_ms": 14907
+    },
+    "answer_preview": "The available knowledge is insufficient to answer the question about the capital",
+    "error": null
+  }
+]

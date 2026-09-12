@@ -148,9 +148,15 @@ export async function listDocuments(accessToken: string, knowledgeSourceId: stri
 
 export async function uploadDocument(accessToken: string, knowledgeSourceId: string, file: File): Promise<unknown> {
   const formData = new FormData()
-  formData.append('file', file)
   formData.append('knowledge_source_id', knowledgeSourceId)
+  formData.append('file', file)
   return requestJson<unknown>('POST', `${ADMIN_BASE}/documents`, accessToken, formData)
+}
+
+export async function uploadDocumentVersion(accessToken: string, documentId: string, file: File): Promise<unknown> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return requestJson<unknown>('POST', `${ADMIN_BASE}/documents/${documentId}/versions`, accessToken, formData)
 }
 
 export async function deleteDocument(accessToken: string, documentId: string): Promise<void> {

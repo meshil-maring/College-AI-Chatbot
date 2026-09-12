@@ -20,7 +20,9 @@ def get_user_conversations(user_id: UUID) -> list[ConversationSummary]:
 
 
 def get_conversation_messages(
-    conversation_id: UUID, user_id: UUID
+    conversation_id: UUID,
+    user_id: UUID,
+    conversation: dict | None = None,
 ) -> list[MessageSummary]:
     """Return chronological messages for one authenticated user's conversation.
 
@@ -29,9 +31,17 @@ def get_conversation_messages(
     ``404`` so the existence of other users' conversations is never confirmed.
 
     Messages are ordered by ``message_sequence`` ascending.
+
+    ``conversation`` may supply an already-fetched conversation row (e.g. the
+    chat boundary resolves the conversation for ownership verification anyway).
+    When supplied WITH a ``user_id`` (a fully resolved row), the duplicate
+    conversation lookup is skipped and ownership is verified against it; rows
+    without a ``user_id`` (partial/partially mocked rows) trigger the normal
+    lookup so ownership data is always authoritative.
     """
     client = get_admin_client()
-    conversation = get_conversation(client, conversation_id)
+    if conversation is None or not conversation.get("user_id"):
+        conversation = get_conversation(client, conversation_id)
 
     if conversation is None or str(conversation.get("user_id")) != str(user_id):
         raise AppError(
