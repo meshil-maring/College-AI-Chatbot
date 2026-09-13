@@ -27,7 +27,14 @@ from app.schemas.admin import (
     KnowledgeSourceCreate,
     KnowledgeSourceUpdate,
 )
-from app.services import admin_academics, admin_dashboard, admin_documents, admin_faq, admin_notices
+from app.services import (
+    admin_academics,
+    admin_dashboard,
+    admin_documents,
+    admin_faq,
+    admin_notices,
+    attendance,
+)
 from app.services.admin_academics import (
     AttendanceCreate,
     AttendanceUpdate,
@@ -876,7 +883,7 @@ def list_student_attendance(
     current_user: dict = Depends(_ADMIN),
 ) -> list[dict]:
     _assert_student_tenant(current_user, student_id)
-    return admin_academics.list_attendance_for_student(
+    return attendance.list_attendance_for_student(
         student_id,
         academic_year_id=academic_year_id,
         semester_id=semester_id,
@@ -891,7 +898,7 @@ def create_attendance(
     current_user: dict = Depends(_ADMIN),
 ) -> dict:
     _assert_student_tenant(current_user, payload.student_id)
-    created = admin_academics.create_attendance(payload)
+    created = attendance.create_attendance(payload)
     _record_audit(
         current_user,
         "attendance.create",
@@ -912,10 +919,9 @@ def update_attendance(
     payload: AttendanceUpdate,
     current_user: dict = Depends(_ADMIN),
 ) -> dict:
-    _assert_student_tenant(
-        current_user, admin_academics.get_attendance(attendance_id)["student_id"]
-    )
-    updated = admin_academics.update_attendance(attendance_id, payload)
+    existing = attendance.get_attendance(attendance_id)
+    _assert_student_tenant(current_user, existing["student_id"])
+    updated = attendance.update_attendance(attendance_id, payload)
     _record_audit(
         current_user,
         "attendance.update",
@@ -928,10 +934,9 @@ def update_attendance(
 
 @router.delete("/attendance/{attendance_id}")
 def delete_attendance(attendance_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
-    _assert_student_tenant(
-        current_user, admin_academics.get_attendance(attendance_id)["student_id"]
-    )
-    deleted = admin_academics.delete_attendance(attendance_id)
+    existing = attendance.get_attendance(attendance_id)
+    _assert_student_tenant(current_user, existing["student_id"])
+    deleted = attendance.delete_attendance(attendance_id)
     _record_audit(
         current_user,
         "attendance.delete",

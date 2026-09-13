@@ -62,8 +62,8 @@ TEST_RESULT_COLUMNS = (
 )
 
 STUDENT_ATTENDANCE_COLUMNS = (
-    "student_attendance_id, student_id, section_id, academic_year_id, "
-    "semester_id, date, status, notes, created_at"
+    "student_attendance_id, student_id, institution_id, section_id, "
+    "academic_year_id, semester_id, date, status, notes, created_at, updated_at"
 )
 
 

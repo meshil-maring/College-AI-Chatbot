@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
 
@@ -659,8 +660,9 @@ def test_create_attendance_audits_and_rejects_bad_status() -> None:
     }
 
     db = _audit_db(first_insert={"student_attendance_id": ATTENDANCE_ID})
+    created = {"student_attendance_id": ATTENDANCE_ID, "student_id": STUDENT_ID}
     with (
-        patch("app.services.admin_academics.get_admin_client", return_value=db),
+        patch("app.api.admin.attendance.create_attendance", return_value=created),
         patch("app.api.admin.get_admin_client", return_value=db),
     ):
         response = client.post("/api/v1/admin/attendance", json=payload)
@@ -668,34 +670,34 @@ def test_create_attendance_audits_and_rejects_bad_status() -> None:
     audit_rows = [r for r in _audit_rows(db) if "action" in r]
     assert audit_rows[0]["action"] == "attendance.create"
 
-    db2 = _audit_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db2):
-        response = client.post(
-            "/api/v1/admin/attendance", json=payload | {"status": "bogus"}
-        )
+    # Invalid status is rejected by the service before any database work.
+    response = client.post(
+        "/api/v1/admin/attendance", json=payload | {"status": "bogus"}
+    )
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "INVALID_ATTENDANCE_STATUS"
 
 
 def test_create_attendance_reports_duplicate_as_conflict() -> None:
-    db = _audit_db()
-    db.table.return_value.insert.return_value.execute.side_effect = Exception(
-        "duplicate key value violates unique constraint"
-    )
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
-        response = client.post(
-            "/api/v1/admin/attendance",
-            json={
-                "student_id": STUDENT_ID,
-                "section_id": str(uuid4()),
-                "academic_year_id": AY_ID,
-                "semester_id": SEM_ID,
-                "date": "2026-09-01",
-                "status": "present",
-            },
-        )
+    payload = {
+        "student_id": STUDENT_ID,
+        "section_id": str(uuid4()),
+        "academic_year_id": AY_ID,
+        "semester_id": SEM_ID,
+        "date": "2026-09-01",
+        "status": "present",
+    }
+    with patch(
+        "app.api.admin.attendance.create_attendance",
+        side_effect=AppError(
+            "Attendance record already exists for this student, section, and date",
+            status_code=409,
+            code="ATTENDANCE_DUPLICATE",
+        ),
+    ):
+        response = client.post("/api/v1/admin/attendance", json=payload)
     assert response.status_code == 409
-    assert response.json()["error"]["code"] == "ATTENDANCE_CREATE_FAILED"
+    assert response.json()["error"]["code"] == "ATTENDANCE_DUPLICATE"
 
 
 # ============================================================================

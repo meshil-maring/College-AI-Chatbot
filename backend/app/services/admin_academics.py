@@ -15,7 +15,7 @@ import io
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
@@ -155,6 +155,15 @@ class TestResultUpdate(BaseModel):
 
 
 class AttendanceCreate(BaseModel):
+    """Create payload for one daily attendance record (Phase 6.7).
+
+    ``extra="forbid"`` rejects client-supplied control fields such as
+    institution_id / created_by / approval_status / role: the tenant and all
+    audit context are server-derived.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     student_id: UUID
     section_id: UUID
     academic_year_id: UUID
@@ -165,6 +174,15 @@ class AttendanceCreate(BaseModel):
 
 
 class AttendanceUpdate(BaseModel):
+    """Partial update payload — only the mutable fields.
+
+    Ownership fields (student_id, section_id, academic_year_id, semester_id,
+    institution_id) are intentionally absent; ``extra="forbid"`` rejects any
+    attempt to inject them.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     status: str | None = None
     notes: str | None = None
 
@@ -625,26 +643,18 @@ def delete_test_result(test_result_id: UUID | str) -> dict:
 # ============================================================================
 # Attendance management
 # ============================================================================
-
-
-def _get_attendance(db, attendance_id: UUID | str) -> dict | None:
-    response = (
-        db.table("student_attendance")
-        .select(academics_repo.STUDENT_ATTENDANCE_COLUMNS)
-        .eq("student_attendance_id", str(attendance_id))
-        .maybe_single()
-        .execute()
-    )
-    return response.data
+# Phase 6.7: the attendance business logic (validation, tenant derivation,
+# duplicate handling) lives in ``app.services.attendance``; the database-layer
+# guard trigger (Phase 6.7 migration) enforces the same invariants. The
+# functions below are kept as thin delegates so the existing admin API imports
+# and the Phase Admin-3 test surface keep working unchanged.
 
 
 def get_attendance(attendance_id: UUID | str) -> dict:
     """Return one attendance row, or raise 404 (tenant-guard helper entrypoint)."""
-    db = get_admin_client()
-    existing = _get_attendance(db, attendance_id)
-    if existing is None:
-        raise AppError("Attendance record not found", status_code=404, code="ATTENDANCE_NOT_FOUND")
-    return existing
+    from app.services.attendance import get_attendance as _service
+
+    return _service(attendance_id)
 
 
 def list_attendance_for_student(
@@ -655,9 +665,10 @@ def list_attendance_for_student(
     date_to: str | None = None,
     limit: int = 200,
 ) -> list[dict]:
-    db = get_admin_client()
-    return academics_repo.list_student_attendance(
-        db,
+    """List attendance rows for one student, most recent day first."""
+    from app.services.attendance import list_attendance_for_student as _service
+
+    return _service(
         student_id,
         academic_year_id=academic_year_id,
         semester_id=semester_id,
@@ -668,51 +679,24 @@ def list_attendance_for_student(
 
 
 def create_attendance(payload: AttendanceCreate) -> dict:
-    db = get_admin_client()
-    _validate_choice(payload.status, ATTENDANCE_STATUSES, "attendance status")
-    row = payload.model_dump(mode="json")
-    try:
-        response = db.table("student_attendance").insert(row).execute()
-    except Exception as exc:
-        raise AppError(
-            "Attendance creation failed (a record for this student, section, "
-            "and date may already exist)",
-            status_code=409,
-            code="ATTENDANCE_CREATE_FAILED",
-        ) from exc
-    return response.data[0]
+    """Create one attendance record after server-side validation."""
+    from app.services.attendance import create_attendance as _service
+
+    return _service(payload)
 
 
 def update_attendance(attendance_id: UUID | str, payload: AttendanceUpdate) -> dict:
-    db = get_admin_client()
-    existing = _get_attendance(db, attendance_id)
-    if existing is None:
-        raise AppError("Attendance record not found", status_code=404, code="ATTENDANCE_NOT_FOUND")
-    fields = payload.model_dump(mode="json", exclude_unset=True)
-    if not fields:
-        raise AppError(
-            "Attendance update payload is empty", status_code=422, code="EMPTY_UPDATE"
-        )
-    if "status" in fields:
-        _validate_choice(fields["status"], ATTENDANCE_STATUSES, "attendance status")
-    response = (
-        db.table("student_attendance")
-        .update(fields)
-        .eq("student_attendance_id", str(attendance_id))
-        .execute()
-    )
-    return response.data[0] if response.data else existing
+    """Update only the permitted fields (status / notes)."""
+    from app.services.attendance import update_attendance as _service
+
+    return _service(attendance_id, payload)
 
 
 def delete_attendance(attendance_id: UUID | str) -> dict:
-    db = get_admin_client()
-    existing = _get_attendance(db, attendance_id)
-    if existing is None:
-        raise AppError("Attendance record not found", status_code=404, code="ATTENDANCE_NOT_FOUND")
-    db.table("student_attendance").delete().eq(
-        "student_attendance_id", str(attendance_id)
-    ).execute()
-    return existing
+    """Hard-delete one attendance record."""
+    from app.services.attendance import delete_attendance as _service
+
+    return _service(attendance_id)
 
 # ============================================================================
 # Results CSV upload
