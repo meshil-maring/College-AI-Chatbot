@@ -16,6 +16,7 @@ from supabase import Client
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import admin_academics as academics_repo
+from app.repositories import results as results_repo
 
 
 def get_own_student(
@@ -79,6 +80,35 @@ def get_own_test_results(
         limit=limit,
     )
     return [row for row in rows if row.get("status") == "published"]
+
+
+def get_own_result(
+    user_id: UUID | str,
+    result_id: UUID | str,
+    client: Client | None = None,
+) -> dict:
+    """Return ONE of the authenticated student's own published result
+    summaries with its per-course grade rows (Phase 6.8).
+
+    Identity is resolved server-side from the authenticated user id; the
+    client can never choose another student's result id path. A result that
+    does not exist, belongs to another student, or is not published raises
+    the SAME 404 (RESULT_NOT_FOUND) — the endpoint never leaks whether a
+    foreign or unpublished result exists. This is the strict Phase 6.8
+    boundary: no write access and no other-student access.
+    """
+    db = client or get_admin_client()
+    student = get_own_student(user_id, client=db)
+    row = results_repo.get_student_result_with_items(db, result_id)
+    if (
+        row is None
+        or row.get("student_id") != student["student_id"]
+        or row.get("status") != "published"
+    ):
+        raise AppError(
+            "Result not found", status_code=404, code="RESULT_NOT_FOUND"
+        )
+    return row
 
 
 def get_own_attendance(

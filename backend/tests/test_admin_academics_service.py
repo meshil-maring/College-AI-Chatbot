@@ -195,7 +195,41 @@ def test_create_result_with_items_persists_both_tables() -> None:
         sgpa=8.5,
         items=[ResultItemCreate(course_id=uuid4(), credits_earned=4, letter_grade="A")],
     )
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    # Phase 6.8: creation validates the academic context (student / year /
+    # semester / program / course chains) before writing.
+    with (
+        patch("app.services.results.get_admin_client", return_value=db),
+        patch(
+            "app.repositories.results.get_student_context",
+            return_value={
+                "student_id": str(payload.student_id),
+                "institution_id": INSTITUTION_ID,
+                "program_id": None,
+            },
+        ),
+        patch(
+            "app.repositories.results.get_academic_year_context",
+            return_value={
+                "academic_year_id": str(payload.academic_year_id),
+                "institution_id": INSTITUTION_ID,
+            },
+        ),
+        patch(
+            "app.repositories.results.get_semester_context",
+            return_value={
+                "semester_id": str(payload.semester_id),
+                "academic_year_id": str(payload.academic_year_id),
+            },
+        ),
+        patch(
+            "app.repositories.results.get_program_institution",
+            return_value=INSTITUTION_ID,
+        ),
+        patch(
+            "app.repositories.results.get_course_institution",
+            return_value=INSTITUTION_ID,
+        ),
+    ):
         result = svc.create_result(payload)
 
     assert result["student_result_id"] == result_id

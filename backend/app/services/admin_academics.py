@@ -91,6 +91,11 @@ class StudentUpdate(BaseModel):
 
 
 class ResultItemCreate(BaseModel):
+    """Per-course grade row (Phase 6.8: extra='forbid' rejects client-supplied
+    control fields such as institution_id / student_result_id / created_at)."""
+
+    model_config = ConfigDict(extra="forbid")
+
     course_id: UUID
     section_id: UUID | None = None
     credits_earned: float | None = Field(default=None, ge=0)
@@ -102,6 +107,17 @@ class ResultItemCreate(BaseModel):
 
 
 class ResultCreate(BaseModel):
+    """Consolidated per-semester result summary (Phase 6.8).
+
+    ``extra="forbid"`` rejects client-supplied control fields such as
+    institution_id / created_at / updated_at / role: the tenant is derived
+    server-side from the student record and re-derived by the DB guard
+    trigger. Percentage-like fields do not exist here (sgpa/cgpa are
+    institution-computed summaries, not derivable server-side).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     student_id: UUID
     academic_year_id: UUID
     semester_id: UUID
@@ -117,6 +133,15 @@ class ResultCreate(BaseModel):
 
 
 class ResultUpdate(BaseModel):
+    """Partial update payload — only the mutable fields.
+
+    Ownership fields (student_id, academic_year_id, semester_id, program_id,
+    institution_id) are intentionally absent; ``extra="forbid"`` rejects any
+    attempt to inject them.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     result_type: str | None = None
     total_credits_earned: float | None = Field(default=None, ge=0)
     total_credits_max: float | None = Field(default=None, ge=0)
@@ -127,6 +152,16 @@ class ResultUpdate(BaseModel):
 
 
 class TestResultCreate(BaseModel):
+    """Per-test / per-exam score (Phase 6.8).
+
+    ``extra="forbid"`` rejects client-supplied control fields such as
+    institution_id / created_at / updated_at / role: the tenant is derived
+    server-side from the student record. ``percentage`` is DERIVED from
+    scored_marks / max_marks and therefore not accepted here.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     student_id: UUID
     course_id: UUID
     section_id: UUID | None = None
@@ -143,6 +178,16 @@ class TestResultCreate(BaseModel):
 
 
 class TestResultUpdate(BaseModel):
+    """Partial update payload — only the mutable fields.
+
+    Ownership fields (student_id, course_id, academic_year_id, semester_id,
+    institution_id) are intentionally absent; ``extra="forbid"`` rejects any
+    attempt to inject them. ``percentage`` is re-derived server-side whenever
+    scored_marks / max_marks change.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     section_id: UUID | None = None
     test_name: str | None = None
     test_type: str | None = None
@@ -440,6 +485,12 @@ def reject_student(
 # ============================================================================
 # Results management
 # ============================================================================
+# Phase 6.8: the result business logic (academic-context validation, tenant
+# derivation from the STUDENT record, percentage derivation, duplicate
+# handling) lives in ``app.services.results``; the database-layer guard
+# triggers (Phase 6.8 migration) enforce the same invariants. The functions
+# below are kept as thin delegates so the existing admin API imports and the
+# Phase Admin-3 test surface keep working unchanged.
 
 
 def list_results_for_student(
@@ -447,110 +498,54 @@ def list_results_for_student(
     academic_year_id: UUID | str | None = None,
     semester_id: UUID | str | None = None,
 ) -> list[dict]:
-    db = get_admin_client()
-    return academics_repo.list_student_results(
-        db, student_id, academic_year_id=academic_year_id, semester_id=semester_id
+    """List result summaries for one student, newest issued first."""
+    from app.services.results import list_results_for_student as _service
+
+    return _service(
+        student_id,
+        academic_year_id=academic_year_id,
+        semester_id=semester_id,
     )
 
 
 def get_result(result_id: UUID | str) -> dict:
-    db = get_admin_client()
-    result = academics_repo.get_student_result_with_items(db, result_id)
-    if result is None:
-        raise AppError("Result not found", status_code=404, code="RESULT_NOT_FOUND")
-    return result
+    """Return one result summary row, or raise 404 (tenant-guard entrypoint)."""
+    from app.services.results import get_result as _service
+
+    return _service(result_id)
 
 
 def create_result(payload: ResultCreate) -> dict:
-    db = get_admin_client()
-    _validate_choice(payload.result_type, RESULT_TYPES, "result type")
-    _validate_choice(payload.status, RESULT_STATUSES, "result status")
+    """Create one result summary with items (Phase 6.8 validated path)."""
+    from app.services.results import create_result as _service
 
-    row = payload.model_dump(mode="json", exclude={"items"})
-    try:
-        response = db.table("student_results").insert(row).execute()
-        created = response.data[0]
-        if payload.items:
-            item_rows = []
-            for item in payload.items:
-                item_row = item.model_dump(mode="json")
-                item_row["student_result_id"] = created["student_result_id"]
-                item_rows.append(item_row)
-            db.table("student_result_items").insert(item_rows).execute()
-            created["items"] = item_rows
-        return created
-    except AppError:
-        raise
-    except Exception as exc:
-        raise AppError(
-            "Result creation failed (student/year/semester/program combination "
-            "may already exist)",
-            status_code=409,
-            code="RESULT_CREATE_FAILED",
-        ) from exc
+    return _service(payload)
 
 
 def update_result(result_id: UUID | str, payload: ResultUpdate) -> dict:
-    db = get_admin_client()
-    existing = db.table("student_results").select("student_result_id").eq(
-        "student_result_id", str(result_id)
-    ).maybe_single().execute()
-    if existing.data is None:
-        raise AppError("Result not found", status_code=404, code="RESULT_NOT_FOUND")
-    fields = payload.model_dump(mode="json", exclude_unset=True)
-    if not fields:
-        raise AppError(
-            "Result update payload is empty", status_code=422, code="EMPTY_UPDATE"
-        )
-    if "result_type" in fields:
-        _validate_choice(fields["result_type"], RESULT_TYPES, "result type")
-    if "status" in fields:
-        _validate_choice(fields["status"], RESULT_STATUSES, "result status")
-    response = (
-        db.table("student_results")
-        .update(fields)
-        .eq("student_result_id", str(result_id))
-        .execute()
-    )
-    return response.data[0] if response.data else fields
+    """Update the mutable fields of one result summary (Phase 6.8)."""
+    from app.services.results import update_result as _service
+
+    return _service(result_id, payload)
 
 
 def delete_result(result_id: UUID | str) -> dict:
-    db = get_admin_client()
-    existing = academics_repo.get_student_result_with_items(db, result_id)
-    if existing is None:
-        raise AppError("Result not found", status_code=404, code="RESULT_NOT_FOUND")
-    db.table("student_result_items").delete().eq(
-        "student_result_id", str(result_id)
-    ).execute()
-    db.table("student_results").delete().eq(
-        "student_result_id", str(result_id)
-    ).execute()
-    return existing
+    """Hard-delete one result summary and its items (Phase 6.8)."""
+    from app.services.results import delete_result as _service
+
+    return _service(result_id)
 
 # ============================================================================
 # Test results management
 # ============================================================================
-
-
-def _get_test_result(db, test_result_id: UUID | str) -> dict | None:
-    response = (
-        db.table("test_results")
-        .select(academics_repo.TEST_RESULT_COLUMNS)
-        .eq("test_result_id", str(test_result_id))
-        .maybe_single()
-        .execute()
-    )
-    return response.data
+# Phase 6.8 delegates, mirroring the Results management section above.
 
 
 def get_test_result(test_result_id: UUID | str) -> dict:
     """Return one test result row, or raise 404 (tenant-guard helper entrypoint)."""
-    db = get_admin_client()
-    existing = _get_test_result(db, test_result_id)
-    if existing is None:
-        raise AppError("Test result not found", status_code=404, code="TEST_RESULT_NOT_FOUND")
-    return existing
+    from app.services.results import get_test_result as _service
+
+    return _service(test_result_id)
 
 
 def list_test_results_for_student(
@@ -559,9 +554,10 @@ def list_test_results_for_student(
     semester_id: UUID | str | None = None,
     limit: int = 100,
 ) -> list[dict]:
-    db = get_admin_client()
-    return academics_repo.list_test_results(
-        db,
+    """List per-test scores for one student, newest conducted first."""
+    from app.services.results import list_test_results_for_student as _service
+
+    return _service(
         student_id,
         academic_year_id=academic_year_id,
         semester_id=semester_id,
@@ -570,75 +566,24 @@ def list_test_results_for_student(
 
 
 def create_test_result(payload: TestResultCreate) -> dict:
-    db = get_admin_client()
-    _validate_choice(payload.test_type, TEST_TYPES, "test type")
-    _validate_choice(payload.status, TEST_RESULT_STATUSES, "test result status")
-    if (
-        payload.scored_marks is not None
-        and payload.max_marks is not None
-        and payload.scored_marks > payload.max_marks
-    ):
-        raise AppError(
-            "scored_marks cannot exceed max_marks",
-            status_code=422,
-            code="INVALID_SCORES",
-        )
-    row = payload.model_dump(mode="json")
-    try:
-        response = db.table("test_results").insert(row).execute()
-    except Exception as exc:
-        raise AppError(
-            "Test result creation failed (duplicate test for student/course/term?)",
-            status_code=409,
-            code="TEST_RESULT_CREATE_FAILED",
-        ) from exc
-    return response.data[0]
+    """Create one test result row (Phase 6.8 validated path)."""
+    from app.services.results import create_test_result as _service
+
+    return _service(payload)
 
 
 def update_test_result(test_result_id: UUID | str, payload: TestResultUpdate) -> dict:
-    db = get_admin_client()
-    existing = _get_test_result(db, test_result_id)
-    if existing is None:
-        raise AppError("Test result not found", status_code=404, code="TEST_RESULT_NOT_FOUND")
-    fields = payload.model_dump(mode="json", exclude_unset=True)
-    if not fields:
-        raise AppError(
-            "Test result update payload is empty", status_code=422, code="EMPTY_UPDATE"
-        )
-    if "test_type" in fields:
-        _validate_choice(fields["test_type"], TEST_TYPES, "test type")
-    if "status" in fields:
-        _validate_choice(fields["status"], TEST_RESULT_STATUSES, "test result status")
-    max_marks = fields.get("max_marks", existing.get("max_marks"))
-    scored_marks = fields.get("scored_marks", existing.get("scored_marks"))
-    if (
-        max_marks is not None
-        and scored_marks is not None
-        and float(scored_marks) > float(max_marks)
-    ):
-        raise AppError(
-            "scored_marks cannot exceed max_marks",
-            status_code=422,
-            code="INVALID_SCORES",
-        )
-    response = (
-        db.table("test_results")
-        .update(fields)
-        .eq("test_result_id", str(test_result_id))
-        .execute()
-    )
-    return response.data[0] if response.data else existing
+    """Update the mutable fields of one test result row (Phase 6.8)."""
+    from app.services.results import update_test_result as _service
+
+    return _service(test_result_id, payload)
 
 
 def delete_test_result(test_result_id: UUID | str) -> dict:
-    db = get_admin_client()
-    existing = _get_test_result(db, test_result_id)
-    if existing is None:
-        raise AppError("Test result not found", status_code=404, code="TEST_RESULT_NOT_FOUND")
-    db.table("test_results").delete().eq(
-        "test_result_id", str(test_result_id)
-    ).execute()
-    return existing
+    """Hard-delete one test result row (Phase 6.8)."""
+    from app.services.results import delete_test_result as _service
+
+    return _service(test_result_id)
 
 # ============================================================================
 # Attendance management

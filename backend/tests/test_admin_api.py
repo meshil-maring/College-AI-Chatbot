@@ -459,15 +459,39 @@ def test_archive_student_endpoint_soft_deletes_and_audits() -> None:
 def test_create_result_with_items_audits() -> None:
     db = _audit_db(first_insert={"student_result_id": RESULT_ID})
     with (
-        patch("app.services.admin_academics.get_admin_client", return_value=db),
+        patch("app.services.results.get_admin_client", return_value=db),
         patch("app.api.admin.get_admin_client", return_value=db),
+        patch(
+            "app.repositories.results.get_student_context",
+            return_value={
+                "student_id": STUDENT_ID,
+                "institution_id": INSTITUTION_ID,
+                "program_id": None,
+            },
+        ),
+        patch(
+            "app.repositories.results.get_academic_year_context",
+            return_value={"academic_year_id": AY_ID, "institution_id": INSTITUTION_ID},
+        ),
+        patch(
+            "app.repositories.results.get_semester_context",
+            return_value={"semester_id": SEM_ID, "academic_year_id": AY_ID},
+        ),
+        patch(
+            "app.repositories.results.get_program_institution",
+            return_value=INSTITUTION_ID,
+        ),
+        patch(
+            "app.repositories.results.get_course_institution",
+            return_value=INSTITUTION_ID,
+        ),
     ):
         response = client.post(
             "/api/v1/admin/results",
             json={
                 "student_id": STUDENT_ID,
-                "academic_year_id": str(uuid4()),
-                "semester_id": str(uuid4()),
+                "academic_year_id": AY_ID,
+                "semester_id": SEM_ID,
                 "program_id": str(uuid4()),
                 "result_type": "semester",
                 "sgpa": 8.5,
@@ -491,7 +515,7 @@ def test_create_result_with_items_audits() -> None:
 
 def test_create_result_rejects_invalid_result_type() -> None:
     db = _audit_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.results.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/results",
             json={
@@ -588,8 +612,28 @@ def test_csv_upload_rejects_missing_columns() -> None:
 def test_create_test_result_audits() -> None:
     db = _audit_db(first_insert={"test_result_id": TEST_RESULT_ID})
     with (
-        patch("app.services.admin_academics.get_admin_client", return_value=db),
+        patch("app.services.results.get_admin_client", return_value=db),
         patch("app.api.admin.get_admin_client", return_value=db),
+        patch(
+            "app.repositories.results.get_student_context",
+            return_value={
+                "student_id": STUDENT_ID,
+                "institution_id": INSTITUTION_ID,
+                "program_id": None,
+            },
+        ),
+        patch(
+            "app.repositories.results.get_academic_year_context",
+            return_value={"academic_year_id": AY_ID, "institution_id": INSTITUTION_ID},
+        ),
+        patch(
+            "app.repositories.results.get_semester_context",
+            return_value={"semester_id": SEM_ID, "academic_year_id": AY_ID},
+        ),
+        patch(
+            "app.repositories.results.get_course_institution",
+            return_value=INSTITUTION_ID,
+        ),
     ):
         response = client.post(
             "/api/v1/admin/test-results",
@@ -612,7 +656,7 @@ def test_create_test_result_audits() -> None:
 
 def test_create_test_result_rejects_scored_over_max() -> None:
     db = _audit_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.results.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/test-results",
             json={

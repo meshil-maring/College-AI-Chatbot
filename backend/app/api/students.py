@@ -42,6 +42,23 @@ def my_results(
     )
 
 
+@router.get("/me/results/{result_id}")
+def my_result(
+    result_id: UUID,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Return ONE of the authenticated student's own published result
+    summaries with its per-course grade rows (Phase 6.8).
+
+    Identity is resolved server-side from the JWT; a missing, foreign, or
+    unpublished result always yields the same 404 RESULT_NOT_FOUND so the
+    endpoint cannot be used to enumerate other students' results.
+    """
+    result = student_data.get_own_result(UUID(current_user["user_id"]), result_id)
+    assert_tenant_object(current_user, result.get("institution_id"))
+    return result
+
+
 @router.get("/me/test-results")
 def my_test_results(
     academic_year_id: UUID | None = None,
