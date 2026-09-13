@@ -3,11 +3,13 @@ from fastapi import APIRouter, Depends, FastAPI
 
 from app.config import settings
 from app.core.errors import AppError, app_error_handler
-from app.core.security import get_current_user
+from app.core.security import get_current_user, scope_tenant
 from app.api.ingestion import router as ingestion_router
 from app.api.auth import router as auth_router
+from app.api.registration import router as registration_router
 from app.api.conversations import router as conversations_router
 from app.api.admin import router as admin_router
+from app.api.student_auth import router as student_auth_router
 from app.api.students import router as students_router
 from app.api.dev_auth import router as dev_auth_router
 from app.schemas.chat import ChatRequest, ChatResponse
@@ -25,6 +27,8 @@ app = FastAPI(
 app.add_exception_handler(AppError, app_error_handler)
 app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(student_auth_router, prefix="/api/v1")
+app.include_router(registration_router, prefix="/api/v1")
 app.include_router(conversations_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(students_router, prefix="/api/v1")
@@ -38,7 +42,15 @@ def chat(
     request: ChatRequest,
     current_user: dict = Depends(get_current_user),
 ) -> ChatResponse:
-    """Process one chat request with persistent conversation and message records."""
+    """Process one chat request with persistent conversation and message records.
+
+    Tenant isolation: the client-supplied ``institution_id`` is validated
+    against the authenticated user's tenant (resolved server-side from their
+    students profile). A student of College A can never retrieve College B's
+    knowledge — a mismatch is rejected with 403 TENANT_MISMATCH.
+    """
+    tenant_id = scope_tenant(current_user, request.institution_id)
+    request = request.model_copy(update={"institution_id": tenant_id})
     session_context = resolve_session_context(
         SessionContextRequest(session_id=request.session_id)
     )

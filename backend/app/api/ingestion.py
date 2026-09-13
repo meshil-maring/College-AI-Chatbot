@@ -4,9 +4,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Form, UploadFile
 
 from app.core.errors import AppError
-from app.core.security import require_roles
+from app.core.security import assert_tenant_object, require_roles
 from app.db.supabase import get_admin_client
 from app.repositories.ingestion import (
+    get_knowledge_source,
     get_processing_run_with_version,
     store_extracted_text,
     update_run_status,
@@ -37,6 +38,11 @@ async def ingest(
     knowledge_source_id: str = Form(...),
     current_user: dict = Depends(_INGEST_ALLOWED),
 ) -> IngestResponse:
+    # Tenant isolation: the target knowledge source must belong to the
+    # caller's institution (no-op for platform-level accounts).
+    ks = get_knowledge_source(get_admin_client(), knowledge_source_id)
+    if ks is not None:
+        assert_tenant_object(current_user, ks.get("institution_id"))
     return await ingest_document(
         file=file,
         knowledge_source_id=knowledge_source_id,

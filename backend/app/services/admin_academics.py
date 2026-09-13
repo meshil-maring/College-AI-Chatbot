@@ -23,6 +23,12 @@ from app.repositories import admin_academics as academics_repo
 
 # Enum values mirror the CHECK constraints in the Admin-1 migration.
 STUDENT_STATUSES = ["active", "inactive", "graduated", "withdrawn"]
+# Registration-approval lifecycle (Phase 6.2). Independent of STUDENT_STATUSES
+# (academic state) and is_active (soft-archive): a student is provisioned with
+# approval_status='pending' by self-registration (future phase) and becomes
+# 'approved' through the admin/staff approval workflow (future phase), or
+# provisioned 'approved' directly by an admin creating the account.
+APPROVAL_STATUSES = ["pending", "approved", "rejected"]
 RESULT_TYPES = ["semester", "supplementary", "final", "provisional"]
 RESULT_STATUSES = ["draft", "published", "withheld"]
 TEST_TYPES = ["quiz", "assignment", "midterm", "final", "project", "internal", "external"]
@@ -53,6 +59,17 @@ class StudentCreate(BaseModel):
     user_id: UUID
     institution_id: UUID
     student_number: str
+    # Phase 6.2 identity fields — nullable until Phase 6.5 student
+    # authentication defines provisioning/requiredness. Emails are stored
+    # lowercase/trimmed (enforced by students_email_check in the database).
+    email: str | None = None
+    register_number: str | None = None
+    university_roll_number: str | None = None
+    # An admin creating a student account is the approving action itself, so
+    # admin provisioning defaults to 'approved'. Self-registration (future
+    # phase) will explicitly insert 'pending'; the database column default is
+    # 'pending' for exactly that flow.
+    approval_status: str = "approved"
     program_id: UUID | None = None
     academic_year_id: UUID | None = None
     enrollment_date: date
@@ -62,6 +79,10 @@ class StudentCreate(BaseModel):
 
 class StudentUpdate(BaseModel):
     student_number: str | None = None
+    email: str | None = None
+    register_number: str | None = None
+    university_roll_number: str | None = None
+    approval_status: str | None = None
     program_id: UUID | None = None
     academic_year_id: UUID | None = None
     expected_graduation_date: date | None = None
@@ -207,10 +228,32 @@ def get_student(student_id: UUID | str) -> dict:
     return student
 
 
+def _normalize_student_identity(row: dict) -> dict:
+    """Normalize Phase 6.2 identity fields for persistence.
+
+    Emails are stored lowercase and trimmed (matching the
+    students_email_check database constraint); register number and university
+    roll number are trimmed (matching students_register_number_check /
+    students_university_roll_number_check). Empty strings are dropped so the
+    columns stay NULL until provisioned (Phase 6.5).
+    """
+    if row.get("email") is not None:
+        email = str(row["email"]).strip().lower()
+        row["email"] = email or None
+    for field in ("register_number", "university_roll_number"):
+        if row.get(field) is not None:
+            value = str(row[field]).strip()
+            row[field] = value or None
+    return row
+
+
 def create_student(payload: StudentCreate) -> dict:
     db = get_admin_client()
     _validate_choice(payload.status, STUDENT_STATUSES, "student status")
-    row = payload.model_dump(mode="json")
+    _validate_choice(
+        payload.approval_status, APPROVAL_STATUSES, "student approval status"
+    )
+    row = _normalize_student_identity(payload.model_dump(mode="json"))
     try:
         response = db.table("students").insert(row).execute()
     except Exception as exc:
@@ -236,6 +279,11 @@ def update_student(student_id: UUID | str, payload: StudentUpdate) -> dict:
         )
     if "status" in fields:
         _validate_choice(fields["status"], STUDENT_STATUSES, "student status")
+    if "approval_status" in fields:
+        _validate_choice(
+            fields["approval_status"], APPROVAL_STATUSES, "student approval status"
+        )
+    fields = _normalize_student_identity(fields)
     response = (
         db.table("students")
         .update(fields)
@@ -258,6 +306,118 @@ def archive_student(student_id: UUID | str) -> dict:
         .execute()
     )
     return response.data[0] if response.data else existing
+
+
+def _approval_tenant_mismatch() -> AppError:
+    return AppError(
+        "This resource belongs to a different institution",
+        status_code=403,
+        code="TENANT_MISMATCH",
+    )
+
+
+def list_pending_approvals(
+    institution_id: UUID | str | None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[dict]:
+    """List pending students for a scope resolved by the API layer.
+
+    ``institution_id`` is the acting approver's tenant for institution-bound
+    admin/staff. ``None`` is the OPTION A platform-admin passthrough (global
+    queue / unfiltered) — the API layer guarantees only platform-level ADMINS
+    can reach this with None; platform-level staff are rejected upstream.
+    """
+    db = get_admin_client()
+    return academics_repo.list_pending_students(
+        db, institution_id, limit=limit, offset=offset
+    )
+
+
+def _resolve_approval_target(
+    student_id: UUID | str,
+    institution_id: UUID | str | None,
+) -> dict:
+    """Fetch target student; enforce tenant BEFORE state (no state leak)."""
+    db = get_admin_client()
+    target = academics_repo.get_student_for_approval(db, student_id)
+    if target is None:
+        raise AppError("Student not found", status_code=404, code="STUDENT_NOT_FOUND")
+    if institution_id is not None and str(target.get("institution_id")) != str(
+        institution_id
+    ):
+        raise _approval_tenant_mismatch()
+    return target
+
+
+def _conditional_approval_write(
+    student_id: UUID | str,
+    tenant: UUID | str,
+    new_status: str,
+) -> dict:
+    """Apply the conditional pending->new write; map races to 409/404."""
+    db = get_admin_client()
+    updated = academics_repo.set_student_approval_status(
+        db, student_id, tenant, new_status
+    )
+    if updated is not None:
+        return updated
+    current = academics_repo.get_student_for_approval(db, student_id)
+    if current is None:
+        raise AppError("Student not found", status_code=404, code="STUDENT_NOT_FOUND")
+    raise AppError(
+        f"Student is not pending approval (current: {current.get('approval_status')})",
+        status_code=409,
+        code="STUDENT_NOT_PENDING",
+    )
+
+
+def approve_student(
+    student_id: UUID | str,
+    institution_id: UUID | str | None,
+) -> dict:
+    """Transition pending -> approved. Only approval state changes.
+
+    ``institution_id`` is the acting approver's tenant (institution-bound
+    admin/staff) or None for a platform-level ADMIN — the OPTION A global
+    authority, consistent with the Phase 6.1 platform-account convention and
+    the existing unrestricted admin student CRUD (a platform admin could
+    already set approval_status via PATCH /students/{id}). The API layer
+    guarantees None is only ever passed by a platform-level admin; platform
+    staff are rejected upstream with 403.
+    """
+    target = _resolve_approval_target(student_id, institution_id)
+    if target.get("approval_status") != "pending":
+        raise AppError(
+            f"Student is not pending approval (current: {target.get('approval_status')})",
+            status_code=409,
+            code="STUDENT_NOT_PENDING",
+        )
+    # Platform-admin passthrough: write within the TARGET's institution.
+    tenant = institution_id if institution_id is not None else target.get("institution_id")
+    return _conditional_approval_write(student_id, tenant, "approved")
+
+
+def reject_student(
+    student_id: UUID | str,
+    institution_id: UUID | str | None,
+) -> dict:
+    """Transition pending -> rejected. Record preserved, nothing deleted.
+
+    Same OPTION A scope semantics as ``approve_student``: institution-bound
+    callers are strictly own-tenant; platform-level admins pass None
+    (global). The student record (auth account, public.users row, students
+    profile) is preserved with approval_status='rejected'.
+    """
+    target = _resolve_approval_target(student_id, institution_id)
+    if target.get("approval_status") != "pending":
+        raise AppError(
+            f"Student is not pending approval (current: {target.get('approval_status')})",
+            status_code=409,
+            code="STUDENT_NOT_PENDING",
+        )
+    tenant = institution_id if institution_id is not None else target.get("institution_id")
+    return _conditional_approval_write(student_id, tenant, "rejected")
 
 # ============================================================================
 # Results management
@@ -366,6 +526,15 @@ def _get_test_result(db, test_result_id: UUID | str) -> dict | None:
     return response.data
 
 
+def get_test_result(test_result_id: UUID | str) -> dict:
+    """Return one test result row, or raise 404 (tenant-guard helper entrypoint)."""
+    db = get_admin_client()
+    existing = _get_test_result(db, test_result_id)
+    if existing is None:
+        raise AppError("Test result not found", status_code=404, code="TEST_RESULT_NOT_FOUND")
+    return existing
+
+
 def list_test_results_for_student(
     student_id: UUID | str,
     academic_year_id: UUID | str | None = None,
@@ -467,6 +636,15 @@ def _get_attendance(db, attendance_id: UUID | str) -> dict | None:
         .execute()
     )
     return response.data
+
+
+def get_attendance(attendance_id: UUID | str) -> dict:
+    """Return one attendance row, or raise 404 (tenant-guard helper entrypoint)."""
+    db = get_admin_client()
+    existing = _get_attendance(db, attendance_id)
+    if existing is None:
+        raise AppError("Attendance record not found", status_code=404, code="ATTENDANCE_NOT_FOUND")
+    return existing
 
 
 def list_attendance_for_student(

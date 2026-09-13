@@ -4,13 +4,17 @@ All "me" endpoints authenticate with the existing ``get_current_user``
 dependency. The student identity is resolved server-side from the
 authenticated JWT (users.user_id → students.user_id); the client can never
 supply another student's id.
+
+Tenant isolation: the authenticated user's tenant (institution_id, resolved
+from their students profile) must match the tenant of the student profile
+whose data is returned — defence-in-depth against a stale/moved profile.
 """
 
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.core.security import get_current_user
+from app.core.security import assert_tenant_object, get_current_user
 from app.services import student_data
 
 router = APIRouter(prefix="/students", tags=["students"])
@@ -19,7 +23,9 @@ router = APIRouter(prefix="/students", tags=["students"])
 @router.get("/me/profile")
 def my_profile(current_user: dict = Depends(get_current_user)) -> dict:
     """Return the authenticated student's own profile."""
-    return student_data.get_own_profile(UUID(current_user["user_id"]))
+    student = student_data.get_own_profile(UUID(current_user["user_id"]))
+    assert_tenant_object(current_user, student.get("institution_id"))
+    return student
 
 
 @router.get("/me/results")

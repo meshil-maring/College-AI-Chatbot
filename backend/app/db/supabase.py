@@ -38,11 +38,22 @@ def get_admin_client() -> Client:
 
 
 async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
-    """Return the public.users row whose auth_user_id matches, including active role names."""
+    """Return the public.users row whose auth_user_id matches, including active role names.
+
+    The row's tenant is resolved from the one-to-one public.students profile
+    (students.institution_id) when the account has one — this is the value the
+    rest of the application uses for tenant isolation. Platform-level accounts
+    without a student profile (e.g. admins) resolve to institution_id=None and
+    are treated as unrestricted.
+    """
     client = get_admin_client()
     response = (
         client.table("users")
-        .select("user_id, auth_user_id, email, user_roles(roles(name, is_active))")
+        .select(
+            "user_id, auth_user_id, email, "
+            "user_roles(roles(name, is_active)), "
+            "students(institution_id)"
+        )
         .eq("auth_user_id", auth_user_id)
         .maybe_single()
         .execute()
@@ -55,4 +66,14 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         for ur in (row.get("user_roles") or [])
         if ur.get("roles") and ur["roles"].get("is_active", True)
     ]
-    return {"user_id": row["user_id"], "auth_user_id": row["auth_user_id"], "email": row["email"], "roles": roles}
+    student_links = row.get("students") or []
+    institution_id = (
+        student_links[0].get("institution_id") if student_links else None
+    )
+    return {
+        "user_id": row["user_id"],
+        "auth_user_id": row["auth_user_id"],
+        "email": row["email"],
+        "roles": roles,
+        "institution_id": institution_id,
+    }

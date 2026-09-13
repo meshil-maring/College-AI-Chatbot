@@ -59,6 +59,9 @@ async def test_get_user_by_auth_id_uses_actual_users_schema():
             {"roles": {"name": "student", "is_active": True}},
             {"roles": {"name": "disabled", "is_active": False}},
         ],
+        "students": [
+            {"institution_id": "30000000-0000-0000-0000-000000000001"},
+        ],
     }
 
     with patch("app.db.supabase.get_admin_client", return_value=client):
@@ -69,13 +72,37 @@ async def test_get_user_by_auth_id_uses_actual_users_schema():
         "auth_user_id": FAKE_CLAIMS["sub"],
         "email": FAKE_CLAIMS["email"],
         "roles": ["student"],
+        "institution_id": "30000000-0000-0000-0000-000000000001",
     }
     users_table.select.assert_called_once_with(
-        "user_id, auth_user_id, email, user_roles(roles(name, is_active))"
+        "user_id, auth_user_id, email, "
+        "user_roles(roles(name, is_active)), "
+        "students(institution_id)"
     )
     users_table.select.return_value.eq.assert_called_once_with(
         "auth_user_id", FAKE_CLAIMS["sub"]
     )
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_auth_id_without_student_profile_has_no_tenant():
+    """Platform-level accounts (no students row) resolve to institution_id=None."""
+    client = MagicMock()
+    users_table = client.table.return_value
+    users_table.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        "user_id": "30000000-0000-0000-0000-000000000102",
+        "auth_user_id": FAKE_CLAIMS["sub"],
+        "email": FAKE_CLAIMS["email"],
+        "user_roles": [
+            {"roles": {"name": "admin", "is_active": True}},
+        ],
+        "students": [],
+    }
+
+    with patch("app.db.supabase.get_admin_client", return_value=client):
+        result = await get_user_by_auth_id(FAKE_CLAIMS["sub"])
+
+    assert result["institution_id"] is None
 
 
 # ---------------------------------------------------------------------------
