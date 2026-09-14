@@ -118,7 +118,7 @@ def test_chat_rejects_cross_tenant_institution():
 def test_chat_allows_own_tenant_and_propagates_it():
     captured = {}
 
-    def process(request, context, provider, user_id):
+    def process(request, context, provider, user_id, **kwargs):
         captured["institution_id"] = request.institution_id
         return _chat_response(context.session_id)
 

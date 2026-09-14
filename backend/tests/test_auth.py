@@ -105,6 +105,38 @@ async def test_get_user_by_auth_id_without_student_profile_has_no_tenant():
     assert result["institution_id"] is None
 
 
+@pytest.mark.asyncio
+async def test_get_user_by_auth_id_handles_one_to_one_students_object():
+    """Regression: PostgREST embeds the students relation as a single OBJECT
+    (not a list) when the FK is detected as one-to-one. This is what the live
+    Supabase schema returns and previously crashed with ``KeyError: 0``.
+    """
+    client = MagicMock()
+    users_table = client.table.return_value
+    users_table.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        "user_id": "30000000-0000-0000-0000-000000000103",
+        "auth_user_id": FAKE_CLAIMS["sub"],
+        "email": FAKE_CLAIMS["email"],
+        "user_roles": [
+            {"roles": {"name": "student", "is_active": True}},
+        ],
+        "students": {
+            "institution_id": "30000000-0000-0000-0000-000000000001",
+        },
+    }
+
+    with patch("app.db.supabase.get_admin_client", return_value=client):
+        result = await get_user_by_auth_id(FAKE_CLAIMS["sub"])
+
+    assert result == {
+        "user_id": "30000000-0000-0000-0000-000000000103",
+        "auth_user_id": FAKE_CLAIMS["sub"],
+        "email": FAKE_CLAIMS["email"],
+        "roles": ["student"],
+        "institution_id": "30000000-0000-0000-0000-000000000001",
+    }
+
+
 # ---------------------------------------------------------------------------
 # 1. Missing Authorization header
 # ---------------------------------------------------------------------------

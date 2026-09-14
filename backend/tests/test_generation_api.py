@@ -60,7 +60,7 @@ def _response(session_id: UUID, conversation_id: UUID | None = None, message_id:
 def test_new_chat_generates_and_returns_uuid4() -> None:
     with patch(
         "app.main.process_chat_request",
-        side_effect=lambda request, context, provider, user_id: _response(context.session_id),
+        side_effect=lambda request, context, provider, user_id, **kwargs: _response(context.session_id),
     ):
         response = client.post("/api/v1/generation/chat", json=_payload())
 
@@ -73,7 +73,7 @@ def test_existing_session_id_is_preserved_and_propagated() -> None:
     session_id = uuid4()
     captured = {}
 
-    def process(request, context, provider, user_id):
+    def process(request, context, provider, user_id, **kwargs):
         captured["session_id"] = context.session_id
         return _response(context.session_id)
 
@@ -103,7 +103,7 @@ def test_chat_boundary_does_not_persist_records() -> None:
     with (
         patch(
             "app.main.process_chat_request",
-            side_effect=lambda request, context, provider, user_id: _response(context.session_id),
+            side_effect=lambda request, context, provider, user_id, **kwargs: _response(context.session_id),
         ),
         patch("app.db.supabase.get_admin_client") as get_admin_client,
     ):

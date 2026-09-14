@@ -11,6 +11,7 @@ from app.api.conversations import router as conversations_router
 from app.api.admin import router as admin_router
 from app.api.student_auth import router as student_auth_router
 from app.api.students import router as students_router
+from app.api.student_notifications import router as student_notifications_router
 from app.api.dev_auth import router as dev_auth_router
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.session import SessionContextRequest
@@ -32,6 +33,7 @@ app.include_router(registration_router, prefix="/api/v1")
 app.include_router(conversations_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(students_router, prefix="/api/v1")
+app.include_router(student_notifications_router, prefix="/api/v1")
 app.include_router(dev_auth_router, prefix="/api/v1")  # DEVELOPMENT / TESTING ONLY
 
 generation_router = APIRouter(prefix="/generation", tags=["generation"])
@@ -59,10 +61,31 @@ def chat(
         session_context,
         OpenRouterGenerationProvider(),
         user_id=current_user["user_id"],
+        current_user=current_user,
     )
 
 
 app.include_router(generation_router, prefix="/api/v1")
+
+
+@app.get("/")
+def root():
+    """Friendly landing response for the API root.
+
+    Browsing the backend root previously returned a bare ``{"detail":"Not
+    Found"}``, which looks like a broken service. The API itself is fine —
+    the real UI is the frontend dev server (http://localhost:5173), which
+    proxies ``/api`` to this backend.
+    """
+    return {
+        "service": settings.app_name,
+        "version": settings.app_version,
+        "environment": settings.environment,
+        "message": "Backend is running. This is an API — use the frontend UI at "
+        "http://localhost:5173 or the interactive docs below.",
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
 @app.get("/health")
@@ -96,4 +119,18 @@ def dev_auth_status():
 
 
 def start():
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    """Console-script entry point (``uv run start``).
+
+    Binds to ``0.0.0.0`` so the API is also reachable from other devices on the
+    local network, but prints the *browsable* localhost URLs. ``0.0.0.0`` is a
+    bind address, not a destination — opening it in a browser always fails, and
+    the uvicorn banner alone made the backend look broken.
+    """
+    host = "0.0.0.0"
+    port = 8000
+    print(f"Backend (UI entry point):  http://localhost:5173  (frontend dev server)")
+    print(f"API root:                  http://127.0.0.1:{port}/")
+    print(f"API docs (Swagger UI):     http://127.0.0.1:{port}/docs")
+    print(f"Health check:              http://127.0.0.1:{port}/health")
+    print(f"Note: {host}:{port} is the bind address and is NOT browsable.\n")
+    uvicorn.run("app.main:app", host=host, port=port, reload=True)

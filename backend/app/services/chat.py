@@ -44,6 +44,7 @@ from app.services.context import assemble_context
 from app.services.conversation_history import get_conversation_messages
 from app.services.generation import AIGenerationService
 from app.services.generation_provider import GenerationProvider
+from app.services.personalization import prompt_contains_student_data, redact_student_data
 from app.services.query_rewriting import rewrite_query
 from app.services.retrieval import retrieve
 
@@ -194,7 +195,16 @@ def _attach_observability_diagnostics(*, timings: dict, request, retrieval_query
 
     Students never see this dictionary: ``process_chat_request`` only merges
     ``timings`` into response metadata when ``settings.debug`` is enabled.
+
+    Phase 6.10 privacy hardening: the prompt text (which may contain the
+    authorized student data block) is REDACTED before any use inside this
+    diagnostics path. No prompt text — redacted or otherwise — is stored in
+    ``timings``; only counts, scores/ids, and a boolean marker that
+    personalization was active. The AI generation itself is unaffected: the
+    provider receives the unredacted ``AIContext``.
     """
+    timings["student_data_in_prompt"] = prompt_contains_student_data(prompt_text)
+    prompt_text = redact_student_data(prompt_text) or ""
     timings["original_query"] = request.user_query
     timings["rewritten_query"] = retrieval_query if retrieval_query != request.user_query else None
     timings["retrieved_chunk_count"] = len(retrieved_chunks)
@@ -203,6 +213,8 @@ def _attach_observability_diagnostics(*, timings: dict, request, retrieval_query
     try:
         from app.services.generation_provider import estimate_prompt_tokens
 
+        # Estimated on the REDACTED prompt: diagnostics never need the private
+        # block, and a rough dev heuristic does not justify handling it.
         timings["final_context_token_count"] = estimate_prompt_tokens(prompt_text)
     except Exception:
         timings["final_context_token_count"] = 0
@@ -426,8 +438,17 @@ def process_chat_request(
     session_context: SessionContext,
     provider: GenerationProvider,
     user_id: UUID | str,
+    *,
+    current_user: dict | None = None,
 ) -> ChatResponse:
-    """Resolve the validated request through context assembly, generation, and persistence."""
+    """Resolve the validated request through context assembly, generation, and persistence.
+
+    Phase 6.10: ``current_user`` is the authenticated ``get_current_user()`` dict.
+    When supplied, the request may be personalized using the student context
+    derived server-side from that JWT. Client-supplied identity is never used.
+    Direct callers that pass only ``user_id`` (tests, integrations) get the
+    unchanged non-personalized behaviour.
+    """
     if not isinstance(request, ChatRequest):
         raise TypeError("request must be a validated ChatRequest")
     if not isinstance(session_context, SessionContext):
@@ -486,6 +507,32 @@ def process_chat_request(
             for msg in message_summaries
         ],
         max_messages=settings.conversation_history_max_messages,
+    )
+
+    # Step 1.6 (Phase 6.10): Resolve the authorized personalization context.
+    # Identity is ALWAYS derived server-side from the authenticated JWT
+    # (``current_user``); client-supplied identity fields in the question text
+    # are treated as content only, never as authorization. General questions
+    # produce no student data and perform no student-data queries. When the
+    # question needs personal data and the user is not an eligible student, the
+    # established Phase 6.9 behavior applies (404 STUDENT_PROFILE_NOT_FOUND /
+    # 403) and no profile is ever created. This runs before the user message is
+    # persisted so an ineligible request does not leave partial chat state.
+    personalization_start = time.perf_counter()
+    personalization_text = None
+    if current_user is not None:
+        from app.services.personalization import (
+            build_personalization_context,
+            render_personalization_context,
+        )
+
+        personalization_context = build_personalization_context(
+            current_user, request.user_query, client=client
+        )
+        if personalization_context is not None:
+            personalization_text = render_personalization_context(personalization_context)
+    timings["personalization_latency_ms"] = int(
+        (time.perf_counter() - personalization_start) * 1000
     )
 
     # Step 2: Get next message sequence and persist user message
@@ -562,7 +609,11 @@ def process_chat_request(
         conversation_history=conversation_history,
     )
 
-    assembled_context = assemble_context(ai_request, conversation_history=conversation_history)
+    assembled_context = assemble_context(
+        ai_request,
+        conversation_history=conversation_history,
+        student_context=personalization_text,
+    )
     timings["context_build_latency_ms"] = int((time.perf_counter() - context_start) * 1000)
 
     prompt_start = time.perf_counter()

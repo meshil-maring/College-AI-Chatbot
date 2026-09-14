@@ -237,6 +237,14 @@ class AIContext(BaseModel):
             "Internal only; never serialized to API responses."
         ),
     )
+    student_context: str | None = Field(
+        default=None,
+        description=(
+            "Rendered authorized student data (delimited data-only block). "
+            "Internal only; derived server-side from the authenticated JWT and "
+            "never serialized to API responses."
+        ),
+    )
 
     @field_validator("system_instructions", "user_question", "grounding_instructions")
     @classmethod

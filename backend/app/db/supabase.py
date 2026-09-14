@@ -67,9 +67,14 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         if ur.get("roles") and ur["roles"].get("is_active", True)
     ]
     student_links = row.get("students") or []
-    institution_id = (
-        student_links[0].get("institution_id") if student_links else None
-    )
+    # PostgREST embeds the students relation as a single object when the FK is
+    # detected as one-to-one, and as a list otherwise. Handle both shapes.
+    if isinstance(student_links, dict):
+        institution_id = student_links.get("institution_id")
+    elif student_links:
+        institution_id = student_links[0].get("institution_id")
+    else:
+        institution_id = None
     return {
         "user_id": row["user_id"],
         "auth_user_id": row["auth_user_id"],
