@@ -145,7 +145,7 @@ DECLARE
 BEGIN
     SELECT "s"."institution_id" INTO v_student_institution_id
     FROM "public"."students" AS "s"
-    WHERE "s"."student_id" = "NEW"."student_id";
+    WHERE "s"."student_id" = NEW."student_id";
 
     IF v_student_institution_id IS NULL THEN
         RAISE EXCEPTION 'test result student does not exist';
@@ -153,11 +153,11 @@ BEGIN
 
     -- The tenant is server-derived from the student record; any
     -- caller-supplied value is overridden.
-    "NEW"."institution_id" := v_student_institution_id;
+    NEW."institution_id" := v_student_institution_id;
 
     SELECT "ay"."institution_id" INTO v_ay_institution_id
     FROM "public"."academic_years" AS "ay"
-    WHERE "ay"."academic_year_id" = "NEW"."academic_year_id";
+    WHERE "ay"."academic_year_id" = NEW."academic_year_id";
 
     IF v_ay_institution_id IS NULL THEN
         RAISE EXCEPTION 'test result academic year does not exist';
@@ -171,7 +171,7 @@ BEGIN
     FROM "public"."courses" AS "c"
     JOIN "public"."departments" AS "d"
         ON "d"."department_id" = "c"."department_id"
-    WHERE "c"."course_id" = "NEW"."course_id";
+    WHERE "c"."course_id" = NEW."course_id";
 
     IF v_course_institution_id IS NULL THEN
         RAISE EXCEPTION 'test result course academic chain cannot be resolved';
@@ -181,7 +181,7 @@ BEGIN
         RAISE EXCEPTION 'test result student and course belong to different institutions';
     END IF;
 
-    IF "NEW"."section_id" IS NOT NULL THEN
+    IF NEW."section_id" IS NOT NULL THEN
         SELECT "co"."course_id", "co"."academic_year_id", "co"."semester_id",
                "d"."institution_id"
         INTO v_section_course_id, v_section_academic_year_id,
@@ -193,7 +193,7 @@ BEGIN
             ON "c"."course_id" = "co"."course_id"
         JOIN "public"."departments" AS "d"
             ON "d"."department_id" = "c"."department_id"
-        WHERE "sec"."section_id" = "NEW"."section_id";
+        WHERE "sec"."section_id" = NEW."section_id";
 
         IF v_section_institution_id IS NULL THEN
             RAISE EXCEPTION 'test result section academic chain cannot be resolved';
@@ -203,21 +203,21 @@ BEGIN
             RAISE EXCEPTION 'test result student and section belong to different institutions';
         END IF;
 
-        IF v_section_course_id IS DISTINCT FROM "NEW"."course_id"
-           OR v_section_academic_year_id IS DISTINCT FROM "NEW"."academic_year_id"
-           OR v_section_semester_id IS DISTINCT FROM "NEW"."semester_id" THEN
+        IF v_section_course_id IS DISTINCT FROM NEW."course_id"
+           OR v_section_academic_year_id IS DISTINCT FROM NEW."academic_year_id"
+           OR v_section_semester_id IS DISTINCT FROM NEW."semester_id" THEN
             RAISE EXCEPTION 'test result academic context must match the section offering';
         END IF;
     END IF;
 
     IF TG_OP = 'UPDATE' THEN
-        IF "NEW"."student_id"      IS DISTINCT FROM "OLD"."student_id"
-           OR "NEW"."course_id"    IS DISTINCT FROM "OLD"."course_id"
-           OR "NEW"."academic_year_id" IS DISTINCT FROM "OLD"."academic_year_id"
-           OR "NEW"."semester_id"  IS DISTINCT FROM "OLD"."semester_id" THEN
+        IF NEW."student_id"      IS DISTINCT FROM OLD."student_id"
+           OR NEW."course_id"    IS DISTINCT FROM OLD."course_id"
+           OR NEW."academic_year_id" IS DISTINCT FROM OLD."academic_year_id"
+           OR NEW."semester_id"  IS DISTINCT FROM OLD."semester_id" THEN
             RAISE EXCEPTION 'test result ownership fields cannot be changed';
         END IF;
-        "NEW"."updated_at" := "now"();
+        NEW."updated_at" := "now"();
     END IF;
 
     RETURN "NEW";
@@ -258,7 +258,7 @@ DECLARE
 BEGIN
     SELECT "s"."institution_id" INTO v_student_institution_id
     FROM "public"."students" AS "s"
-    WHERE "s"."student_id" = "NEW"."student_id";
+    WHERE "s"."student_id" = NEW."student_id";
 
     IF v_student_institution_id IS NULL THEN
         RAISE EXCEPTION 'result student does not exist';
@@ -266,11 +266,11 @@ BEGIN
 
     -- The tenant is server-derived from the student record; any
     -- caller-supplied value is overridden.
-    "NEW"."institution_id" := v_student_institution_id;
+    NEW."institution_id" := v_student_institution_id;
 
     SELECT "ay"."institution_id" INTO v_ay_institution_id
     FROM "public"."academic_years" AS "ay"
-    WHERE "ay"."academic_year_id" = "NEW"."academic_year_id";
+    WHERE "ay"."academic_year_id" = NEW."academic_year_id";
 
     IF v_ay_institution_id IS NULL THEN
         RAISE EXCEPTION 'result academic year does not exist';
@@ -282,13 +282,13 @@ BEGIN
 
     SELECT "sem"."academic_year_id" INTO v_semester_academic_year_id
     FROM "public"."semesters" AS "sem"
-    WHERE "sem"."semester_id" = "NEW"."semester_id";
+    WHERE "sem"."semester_id" = NEW."semester_id";
 
     IF v_semester_academic_year_id IS NULL THEN
         RAISE EXCEPTION 'result semester does not exist';
     END IF;
 
-    IF v_semester_academic_year_id IS DISTINCT FROM "NEW"."academic_year_id" THEN
+    IF v_semester_academic_year_id IS DISTINCT FROM NEW."academic_year_id" THEN
         RAISE EXCEPTION 'result semester must belong to the result academic year';
     END IF;
 
@@ -296,7 +296,7 @@ BEGIN
     FROM "public"."programs" AS "p"
     JOIN "public"."departments" AS "d"
         ON "d"."department_id" = "p"."department_id"
-    WHERE "p"."program_id" = "NEW"."program_id";
+    WHERE "p"."program_id" = NEW."program_id";
 
     IF v_program_institution_id IS NULL THEN
         RAISE EXCEPTION 'result program academic chain cannot be resolved';
@@ -307,13 +307,13 @@ BEGIN
     END IF;
 
     IF TG_OP = 'UPDATE' THEN
-        IF "NEW"."student_id"      IS DISTINCT FROM "OLD"."student_id"
-           OR "NEW"."academic_year_id" IS DISTINCT FROM "OLD"."academic_year_id"
-           OR "NEW"."semester_id"  IS DISTINCT FROM "OLD"."semester_id"
-           OR "NEW"."program_id"   IS DISTINCT FROM "OLD"."program_id" THEN
+        IF NEW."student_id"      IS DISTINCT FROM OLD."student_id"
+           OR NEW."academic_year_id" IS DISTINCT FROM OLD."academic_year_id"
+           OR NEW."semester_id"  IS DISTINCT FROM OLD."semester_id"
+           OR NEW."program_id"   IS DISTINCT FROM OLD."program_id" THEN
             RAISE EXCEPTION 'result ownership fields cannot be changed';
         END IF;
-        "NEW"."updated_at" := "now"();
+        NEW."updated_at" := "now"();
     END IF;
 
     RETURN "NEW";

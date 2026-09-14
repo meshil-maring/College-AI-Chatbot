@@ -243,8 +243,9 @@ def test_migration_defines_guard_triggers_and_ownership_immutability() -> None:
     assert "student_results_tenant_guard" in sql
     # Two triggers + the header comment mentioning the same phrase.
     assert sql.count("BEFORE INSERT OR UPDATE") >= 2
-    # Trigger-overridden tenant, never client-trusted.
-    assert '"NEW"."institution_id" := v_student_institution_id' in sql
+    # Trigger-overridden tenant, never client-trusted (PL/pgSQL record variable NEW,
+    # not a quoted identifier — fixed from "NEW"."institution_id" to NEW."institution_id").
+    assert 'NEW."institution_id" := v_student_institution_id' in sql
     # Academic-context invariants (fail closed).
     assert "test result academic year does not exist" in sql
     assert "test result student and academic year belong to different institutions" in sql
@@ -256,7 +257,7 @@ def test_migration_defines_guard_triggers_and_ownership_immutability() -> None:
     # Ownership immutability + updated_at freshness.
     assert "test result ownership fields cannot be changed" in sql
     assert "result ownership fields cannot be changed" in sql
-    assert '"NEW"."updated_at" := "now"()' in sql
+    assert 'NEW."updated_at" := "now"()' in sql
 
 
 def test_migration_preserves_admin1_unique_constraints() -> None:
