@@ -13,3 +13,11 @@ supabase/.temp/
 
 # Nested third-party repos (cloned via Postman MCP guide; not part of this repo)
 mcp_servers/
+
+# Logs and coverage artifacts
+*.log
+coverage/
+htmlcov/
+
+# Personal tool settings (local-only agent overrides)
+.claude/settings.local.json

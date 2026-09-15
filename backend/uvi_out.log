@@ -1,7 +1,0 @@
-INFO:     127.0.0.1:64795 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64798 - "GET /api/v1/students/me/profile HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64802 - "POST /api/v1/generation/chat HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64824 - "GET /api/v1/admin/dashboard HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52917 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53145 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49239 - "GET /health HTTP/1.1" 200 OK

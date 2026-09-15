@@ -1,2 +1,0 @@
-error: Failed to spawn: `run`
-  Caused by: program not found
