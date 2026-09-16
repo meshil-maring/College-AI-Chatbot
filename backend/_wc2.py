@@ -1,0 +1,80 @@
+"""Write the corrected public_chat.py file."""
+
+import os
+os.chdir('F:\\Git Project\\CollegeAIChatbot\\backend')
+
+header = (
+    '"""Phase 6.13 - Public (unauthenticated) chat endpoint service.\n'
+    '\n'
+    'Mirrors app.services.chat.process_chat_request so that public conversations\n'
+    'reuse the same chat boundary, turn/conversation ownership model, bounded\n'
+    'history, query rewriting, retrieval, generation, and citation pipeline -\n'
+    'EXCEPT:\n'
+    '\n'
+    '1. user_id is always PUBLIC_USER_ID (a constant, never derived from a JWT).\n'
+    '2. Personalization is never loaded (no current_user -> no student context).\n'
+    '3. institution_id is accepted for forward-compatibility but does not\n'
+    '   participate in any tenant-scoped authorization check.\n'
+    '"""\n'
+)
+
+imports_block = (
+    '\n'
+    'from __future__ import annotations\n'
+    '\n'
+    'import re\n'
+    'import threading\n'
+    'import time\n'
+    'from uuid import UUID\n'
+    '\n'
+    'from app.config import settings\n'
+    'from app.core.errors import AppError\n'
+    'from app.core.security import PUBLIC_USER_ID\n'
+    'from app.db.supabase import get_admin_client\n'
+    'from app.repositories.ai_response import create_ai_response\n'
+    'from app.repositories.conversation import (\n'
+    '    create_conversation,\n'
+    '    get_conversation,\n'
+    '    update_conversation_timestamp,\n'
+    ')\n'
+    'from app.repositories.message import create_message, get_next_message_sequence\n'
+    'from app.repositories.message_citation import create_message_citations\n'
+    'from app.repositories.retrieval_operation import (\n'
+    '    create_retrieval_operation,\n'
+    '    create_retrieved_chunks,\n'
+    ')\n'
+    'from app.schemas.citation import (\n'
+    '    MessageCitationCreate,\n'
+    '    RetrievedChunkCreate,\n'
+    '    RetrievalOperationCreate,\n'
+    ')\n'
+    'from app.schemas.chat import ChatRequest, ChatResponse\n'
+    'from app.schemas.chat_response import ChatUsage, StructuredSource\n'
+    'from app.schemas.conversation import (\n'
+    '    AIResponseCreate,\n'
+    '    ConversationCreate,\n'
+    '    MessageCreate,\n'
+    ')\n'
+    'from app.schemas.generation import (\n'
+    '    AIRequest,\n'
+    '    ConversationTurn,\n'
+    '    RetrievalScope,\n'
+    '    RetrievedChunk,\n'
+    '    SourceReference,\n'
+    ')\n'
+    'from app.schemas.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult\n'
+    'from app.schemas.session import SessionContext\n'
+    'from app.services.context import assemble_context\n'
+    'from app.services.conversation_history import get_conversation_messages\n'
+    'from app.services.generation import AIGenerationService\n'
+    'from app.services.generation_provider import GenerationProvider\n'
+    'from app.services.query_rewriting import rewrite_query\n'
+    'from app.services.retrieval import retrieve\n'
+    '\n'
+    '__all__ = ["process_chat_request"]\n'
+)
+
+with open('app/services/public_chat.py', 'w') as f:
+    f.write(header + imports_block)
+
+print('Header and imports written')

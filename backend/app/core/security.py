@@ -8,6 +8,15 @@ from app.config import settings
 from app.core.errors import AppError
 
 _jwks_client: PyJWKClient | None = None
+PUBLIC_USER_ID: UUID = UUID("00000000-0000-0000-0000-000000000001")
+"""Shared constant identity for public (unauthenticated) conversations.
+
+Public chat routes use this UUID as the ``user_id`` for every new or
+resumed conversation so that public messages are tenant-agnostic and can
+never be read as belonging to any real authenticated user.
+"""
+
+
 
 # Tolerance (in seconds) for minor clock skew between the backend and the
 # Supabase Auth token-issuing server.  A freshly issued JWT's ``iat`` (issued-at)
