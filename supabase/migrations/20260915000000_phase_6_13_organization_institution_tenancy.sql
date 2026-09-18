@@ -98,14 +98,44 @@ CREATE TABLE IF NOT EXISTS "public"."organizations" (
     ))
 );
 
-ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("organization_id");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'organizations_pkey'
+          AND "conrelid" = '"public"."organizations"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."organizations"
+            ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("organization_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations_organization_code_key" UNIQUE ("organization_code");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'organizations_organization_code_key'
+          AND "conrelid" = '"public"."organizations"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."organizations"
+            ADD CONSTRAINT "organizations_organization_code_key" UNIQUE ("organization_code");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations_join_code_key" UNIQUE ("join_code");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'organizations_join_code_key'
+          AND "conrelid" = '"public"."organizations"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."organizations"
+            ADD CONSTRAINT "organizations_join_code_key" UNIQUE ("join_code");
+    END IF;
+END
+$$;
 
 CREATE INDEX IF NOT EXISTS "idx_organizations_status"
     ON "public"."organizations" ("status");
@@ -277,18 +307,18 @@ RETURNS "trigger"
 LANGUAGE "plpgsql"
 AS $$
 BEGIN
-    IF "NEW"."status" IS NULL THEN
-        "NEW"."status" := CASE WHEN "NEW"."is_active" IS TRUE THEN 'active' ELSE 'suspended' END;
+    IF NEW."status" IS NULL THEN
+        NEW."status" := CASE WHEN NEW."is_active" IS TRUE THEN 'active' ELSE 'suspended' END;
     END IF;
 
     -- status is authoritative: only 'active' means the institution is usable.
-    IF "NEW"."status" = 'active' THEN
-        "NEW"."is_active" := true;
+    IF NEW."status" = 'active' THEN
+        NEW."is_active" := true;
     ELSE
-        "NEW"."is_active" := false;
+        NEW."is_active" := false;
     END IF;
 
-    RETURN "NEW";
+    RETURN NEW;
 END;
 $$;
 
@@ -358,24 +388,74 @@ CREATE TABLE IF NOT EXISTS "public"."institution_join_requests" (
     ))
 );
 
-ALTER TABLE ONLY "public"."institution_join_requests"
-    ADD CONSTRAINT "institution_join_requests_pkey" PRIMARY KEY ("join_request_id");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_join_requests_pkey'
+          AND "conrelid" = '"public"."institution_join_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_join_requests"
+            ADD CONSTRAINT "institution_join_requests_pkey" PRIMARY KEY ("join_request_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_join_requests"
-    ADD CONSTRAINT "institution_join_requests_organization_id_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_join_requests_organization_id_fkey'
+          AND "conrelid" = '"public"."institution_join_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_join_requests"
+            ADD CONSTRAINT "institution_join_requests_organization_id_fkey"
     FOREIGN KEY ("organization_id") REFERENCES "public"."organizations" ("organization_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_join_requests"
-    ADD CONSTRAINT "institution_join_requests_institution_id_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_join_requests_institution_id_fkey'
+          AND "conrelid" = '"public"."institution_join_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_join_requests"
+            ADD CONSTRAINT "institution_join_requests_institution_id_fkey"
     FOREIGN KEY ("institution_id") REFERENCES "public"."institutions" ("institution_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_join_requests"
-    ADD CONSTRAINT "institution_join_requests_requested_by_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_join_requests_requested_by_fkey'
+          AND "conrelid" = '"public"."institution_join_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_join_requests"
+            ADD CONSTRAINT "institution_join_requests_requested_by_fkey"
     FOREIGN KEY ("requested_by_user_id") REFERENCES "public"."users" ("user_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_join_requests"
-    ADD CONSTRAINT "institution_join_requests_decided_by_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_join_requests_decided_by_fkey'
+          AND "conrelid" = '"public"."institution_join_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_join_requests"
+            ADD CONSTRAINT "institution_join_requests_decided_by_fkey"
     FOREIGN KEY ("decided_by_user_id") REFERENCES "public"."users" ("user_id");
+    END IF;
+END
+$$;
 
 -- At most ONE open request per institution: re-requesting after a rejection is
 -- allowed, a second concurrent pending request is not.
@@ -537,24 +617,74 @@ CREATE TABLE IF NOT EXISTS "public"."institution_membership_requests" (
     ))
 );
 
-ALTER TABLE ONLY "public"."institution_membership_requests"
-    ADD CONSTRAINT "institution_membership_requests_pkey" PRIMARY KEY ("request_id");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_membership_requests_pkey'
+          AND "conrelid" = '"public"."institution_membership_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_membership_requests"
+            ADD CONSTRAINT "institution_membership_requests_pkey" PRIMARY KEY ("request_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_membership_requests"
-    ADD CONSTRAINT "institution_membership_requests_institution_id_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_membership_requests_institution_id_fkey'
+          AND "conrelid" = '"public"."institution_membership_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_membership_requests"
+            ADD CONSTRAINT "institution_membership_requests_institution_id_fkey"
     FOREIGN KEY ("institution_id") REFERENCES "public"."institutions" ("institution_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_membership_requests"
-    ADD CONSTRAINT "institution_membership_requests_organization_id_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_membership_requests_organization_id_fkey'
+          AND "conrelid" = '"public"."institution_membership_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_membership_requests"
+            ADD CONSTRAINT "institution_membership_requests_organization_id_fkey"
     FOREIGN KEY ("organization_id") REFERENCES "public"."organizations" ("organization_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_membership_requests"
-    ADD CONSTRAINT "institution_membership_requests_user_id_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_membership_requests_user_id_fkey'
+          AND "conrelid" = '"public"."institution_membership_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_membership_requests"
+            ADD CONSTRAINT "institution_membership_requests_user_id_fkey"
     FOREIGN KEY ("user_id") REFERENCES "public"."users" ("user_id");
+    END IF;
+END
+$$;
 
-ALTER TABLE ONLY "public"."institution_membership_requests"
-    ADD CONSTRAINT "institution_membership_requests_decided_by_fkey"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM "pg_constraint"
+        WHERE "conname" = 'institution_membership_requests_decided_by_fkey'
+          AND "conrelid" = '"public"."institution_membership_requests"'::"regclass"
+    ) THEN
+        ALTER TABLE ONLY "public"."institution_membership_requests"
+            ADD CONSTRAINT "institution_membership_requests_decided_by_fkey"
     FOREIGN KEY ("decided_by_user_id") REFERENCES "public"."users" ("user_id");
+    END IF;
+END
+$$;
 
 -- At most ONE open request per (user, requested role). Re-requesting after a
 -- rejection is allowed; a second concurrent pending request is not.
@@ -597,21 +727,21 @@ BEGIN
     SELECT "i"."organization_id"
         INTO institution_organization_id
         FROM "public"."institutions" AS "i"
-        WHERE "i"."institution_id" = "NEW"."institution_id";
+        WHERE "i"."institution_id" = NEW."institution_id";
 
     IF institution_organization_id IS NULL THEN
-        RAISE EXCEPTION 'Phase 6.13: institution % does not exist', "NEW"."institution_id"
+        RAISE EXCEPTION 'Phase 6.13: institution % does not exist', NEW."institution_id"
             USING ERRCODE = 'foreign_key_violation';
     END IF;
 
-    IF "NEW"."organization_id" IS DISTINCT FROM institution_organization_id THEN
+    IF NEW."organization_id" IS DISTINCT FROM institution_organization_id THEN
         RAISE EXCEPTION
             'Phase 6.13: organization % does not own institution % (expected %)',
-            "NEW"."organization_id", "NEW"."institution_id", institution_organization_id
+            NEW."organization_id", NEW."institution_id", institution_organization_id
             USING ERRCODE = 'check_violation';
     END IF;
 
-    RETURN "NEW";
+    RETURN NEW;
 END;
 $$;
 
@@ -638,24 +768,24 @@ AS $$
 DECLARE
     institution_organization_id uuid;
 BEGIN
-    IF "NEW"."scope_type" <> 'institution'::text THEN
-        RETURN "NEW";
+    IF NEW."scope_type" <> 'institution'::text THEN
+        RETURN NEW;
     END IF;
 
     SELECT "i"."organization_id"
         INTO institution_organization_id
         FROM "public"."institutions" AS "i"
-        WHERE "i"."institution_id" = "NEW"."scope_id";
+        WHERE "i"."institution_id" = NEW."scope_id";
 
     IF institution_organization_id IS NULL
-       OR institution_organization_id IS DISTINCT FROM "NEW"."scope_organization_id" THEN
+       OR institution_organization_id IS DISTINCT FROM NEW."scope_organization_id" THEN
         RAISE EXCEPTION
             'Phase 6.13: institution scope % is not inside organization scope %',
-            "NEW"."scope_id", "NEW"."scope_organization_id"
+            NEW."scope_id", NEW."scope_organization_id"
             USING ERRCODE = 'check_violation';
     END IF;
 
-    RETURN "NEW";
+    RETURN NEW;
 END;
 $$;
 

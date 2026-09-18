@@ -69,9 +69,19 @@ def resolve_authorization_context(current_user: dict[str, Any]) -> dict[str, Any
     }
 
     # Prefer the most privileged scope for the context summary.
+    # Rows written before the Phase 6.13 scope backfill (scope_type IS NULL) are
+    # NOT classified here: they are derived AFTER the loop from the locked
+    # tenant resolution, exactly like the migration backfill rule
+    # ("tenant-bound -> institution, otherwise platform"). This is what stops a
+    # legacy institution-scoped account from being silently widened to
+    # platform (unrestricted) authority.
     priority = {ORGANIZATION: 0, INSTITUTION: 1, PLATFORM: 2}
+    legacy_unscoped_row = False
     for row in sorted(active, key=lambda r: priority.get(r.get("scope_type") or PLATFORM, 3)):
-        scope_type = row.get("scope_type") or PLATFORM
+        if row.get("scope_type") is None:
+            legacy_unscoped_row = True
+            continue
+        scope_type = row["scope_type"]
         if context["scope_type"] is None:
             context["scope_type"] = scope_type
             raw_scope_id = row.get("scope_id")
@@ -98,6 +108,9 @@ def resolve_authorization_context(current_user: dict[str, Any]) -> dict[str, Any
         context["scope_id"] = context["institution_id"]
         org = tenancy_repo.get_institution_organization(db, context["institution_id"])
         context["organization_id"] = str(org) if org else None
+    elif context["scope_type"] is None and legacy_unscoped_row:
+        # Tenant-less legacy row: platform scope, i.e. the previous behaviour.
+        context["scope_type"] = PLATFORM
 
     return context
 
@@ -160,7 +173,13 @@ def assert_can_manage_organization(
     authorization_context: dict[str, Any],
     organization_id: UUID | str,
 ) -> None:
-    """Only the organization's own org-scoped admin (or a platform admin)."""
+    """Only the organization's own org-scoped admin or a platform admin.
+
+    Organization-scoped admins manage their OWN organization (join codes,
+    institution lists, etc.) but cannot approve/reject it — that is a
+    PLATFORM-level action enforced separately by ``_assert_platform_authority``
+    inside ``decide_organization``.
+    """
     if "admin" not in authorization_context.get("roles", []):
         raise _scope_forbidden()
     scope_type = authorization_context.get("scope_type")
@@ -170,12 +189,25 @@ def assert_can_manage_organization(
             raise _org_mismatch()
         return
     if scope_type == INSTITUTION:
-        # Institution admins manage THEIR institution, not the organization.
-        user_org = user_organization_id(authorization_context)
-        if user_org is None or user_org != UUID(str(organization_id)):
-            raise _org_mismatch()
+        # Institution admins manage THEIR institution, never the organization.
         raise _scope_forbidden()
     # platform scope: unrestricted (previous behaviour preserved)
+    return
+
+
+def _assert_platform_authority(
+    authorization_context: dict[str, Any],
+) -> None:
+    """Only PLATFORM-scoped admins may perform organization approval/rejection.
+
+    Organization-scoped admins can manage their own organization but can NEVER
+    approve/reject it — that is a platform-level decision enforced here.
+    Institution-scoped admins and non-admin roles are also rejected.
+    """
+    if "admin" not in authorization_context.get("roles", []):
+        raise _scope_forbidden()
+    if authorization_context.get("scope_type") != PLATFORM:
+        raise _scope_forbidden()
     return
 
 

@@ -590,6 +590,12 @@ def get_user_by_email(client: Client, email: str) -> dict | None:
 # Phase 6.13 decision helpers (status writes + role assignment)
 # ============================================================================
 
+# DB status vocabulary used by decision cascade functions in this module.
+# mirrors the vocabulary in app.services.tenancy so that repository-level
+# join-request updates use the same enum strings as the service layer.
+JOIN_REQUEST_DECISION_STATUS = {"approve": "approved", "reject": "rejected"}
+INSTITUTION_DECISION_STATUS = {"approve": "active", "reject": "rejected"}
+
 JOIN_REQUEST_BY_ID_COLUMNS = (
     "join_request_id, organization_id, institution_id, "
     "requested_institution_code, requested_by_user_id, status, "
@@ -642,6 +648,36 @@ def update_institution_status(
     )
     rows = response.data if isinstance(response.data, list) else []
     return rows[0] if rows else None
+
+def update_join_requests_for_organization(
+    client: Client, organization_id: UUID | str, decision: str
+) -> list[dict]:
+    """Decide every STILL-PENDING join request of one organization (cascade).
+
+    Used by ``decide_organization`` (Phase 6.13.4): when the organization
+    itself is approved or rejected, all of its pending institution join
+    requests are decided the same way — using the DB status vocabulary
+    (``approved`` / ``rejected`` per ``institution_join_requests_status_check``)
+    — and each affected institution's lifecycle status is set accordingly
+    (``active`` / ``rejected``; ``is_active`` stays trigger-derived).
+
+    Rows that were already decided (e.g. by a concurrent organization-admin
+    decision) are left untouched: the cascade only moves ``pending`` rows.
+    """
+    join_status = JOIN_REQUEST_DECISION_STATUS.get(decision)
+    institution_status = INSTITUTION_DECISION_STATUS.get(decision)
+    if join_status is None or institution_status is None:
+        raise ValueError(f"Unknown organization decision: {decision!r}")
+    pending = list_join_requests(client, organization_id, status="pending")
+    updated: list[dict] = []
+    for request in pending:
+        row = update_join_request_status(client, request["join_request_id"], join_status)
+        if row is not None:
+            updated.append(row)
+        update_institution_status_for_join(
+            client, request["institution_id"], institution_status
+        )
+    return updated
 
 
 MEMBERSHIP_REQUEST_BY_ID_COLUMNS = (
@@ -715,6 +751,11 @@ def remove_membership_on_reject(
 ) -> None:
     """Best-effort cleanup when a request is rejected.
 
+    The institution-scoped grant lives in the EXISTING ``user_roles`` scope
+    columns (``scope_type`` / ``scope_id``) — ``user_roles`` has no
+    ``institution_id`` column — so the delete is scoped with the Phase 6.13
+    vocabulary that the approval path writes.
+
     The repository intentionally keeps this simple and fails silently-ish so
     that a reject never blocks the approval flow with a non-critical cleanup
     error. The primary accountability trail is the request row itself.
@@ -723,7 +764,8 @@ def remove_membership_on_reject(
         client.table("user_roles")
         .delete()
         .eq("user_id", str(user_id))
-        .eq("institution_id", str(institution_id))
+        .eq("scope_type", "institution")
+        .eq("scope_id", str(institution_id))
         .execute()
     )
     return None

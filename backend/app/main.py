@@ -1,5 +1,7 @@
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.core.errors import AppError, app_error_handler
@@ -9,6 +11,9 @@ from app.api.auth import router as auth_router
 from app.api.registration import router as registration_router
 from app.api.conversations import router as conversations_router
 from app.api.admin import router as admin_router
+from app.api.organizations import router as organizations_router
+from app.api.institutions import router as institutions_router
+from app.api.users import router as users_router
 from app.api.student_auth import router as student_auth_router
 from app.api.students import router as students_router
 from app.api.student_notifications import router as student_notifications_router
@@ -26,10 +31,50 @@ app = FastAPI(
 )
 
 app.add_exception_handler(AppError, app_error_handler)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Normalize request validation failures to the ``{"error": ...}`` contract.
+
+    Phase 6.13.2 organization registration (and all other schema-validated
+    endpoints) must return ``error.code == "VALIDATION_ERROR"`` with HTTP 422
+    for missing/invalid/extra fields, matching the project's AppError shape.
+
+    The pydantic error list is sanitized: raw ``errors()`` entries can carry
+    non-JSON-serializable ``ctx`` values (e.g. the raised ``ValueError``
+    instances from custom field validators), so only the stable ``loc`` /
+    ``msg`` / ``type`` triple is returned.
+    """
+    safe_errors = [
+        {
+            "loc": list(err.get("loc", ())),
+            "msg": str(err.get("msg", "")),
+            "type": str(err.get("type", "")),
+        }
+        for err in exc.errors()
+    ]
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Request validation failed",
+                "details": safe_errors,
+            }
+        },
+    )
+
+
 app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(student_auth_router, prefix="/api/v1")
 app.include_router(registration_router, prefix="/api/v1")
+app.include_router(organizations_router, prefix="/api/v1")
+app.include_router(institutions_router, prefix="/api/v1")
+app.include_router(users_router, prefix="/api/v1")
 app.include_router(conversations_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(students_router, prefix="/api/v1")

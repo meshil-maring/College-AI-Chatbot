@@ -60,8 +60,11 @@ from app.schemas.tenancy import (
 from app.services.authorization import (
     INSTITUTION,
     ORGANIZATION,
+    PLATFORM,
+    _assert_platform_authority,
     assert_can_decide_join_request,
     assert_can_manage_institution,
+    assert_can_manage_organization,
     resolve_authorization_context,
 )
 from app.services.student_registration import (
@@ -76,6 +79,48 @@ ACTIVE = "active"
 REJECTED = "rejected"
 
 # Length of the organization-issued institution join code (crypto-random,
+# Length of the organization-issued institution join code (crypto-random,
+# presented alongside the public organization code at institution registration).
+JOIN_CODE_LENGTH = 12
+
+# Decision vocabulary (ApprovalDecisionRequest: 'approve' | 'reject') mapped to
+# the ROW-STATUS vocabularies enforced by the DB CHECK constraints. The raw
+# decision literal must NEVER be written as a row status:
+#   * organizations / institutions: 'pending' | 'active' | 'suspended' | 'rejected'
+#   * institution_join_requests:    'pending' | 'approved' | 'rejected'
+ORGANIZATION_DECISION_STATUS = {"approve": ACTIVE, "reject": REJECTED}
+JOIN_REQUEST_DECISION_STATUS = {"approve": "approved", "reject": REJECTED}
+INSTITUTION_DECISION_STATUS = {"approve": ACTIVE, "reject": REJECTED}
+
+
+def _decision_row_status(mapping: dict[str, str], decision: str) -> str:
+    """Resolve one decision literal to its row status (defensive: the request
+    schema already restricts the vocabulary with a Literal)."""
+    status = mapping.get(decision)
+    if status is None:
+        raise AppError(
+            f"Unknown decision: {decision!r}",
+            status_code=422,
+            code="VALIDATION_ERROR",
+        )
+    return status
+
+
+def _assert_platform_authority(authorization_context: dict[str, Any]) -> None:
+    """Organization approval/rejection is a PLATFORM-level decision ONLY.
+
+    ``assert_can_manage_organization`` also admits the organization's own
+    admin (they may manage their organization — join codes, institution
+    lists) — but an organization admin can NEVER activate their own pending
+    organization. The platform review gate is enforced server-side here, on
+    top of the scope guard, so self-approval is structurally impossible.
+    """
+    if authorization_context.get("scope_type") != PLATFORM:
+        raise AppError(
+            "Only platform administrators can approve or reject organizations",
+            status_code=403,
+            code="FORBIDDEN",
+        )
 # presented alongside the public organization code at institution registration).
 JOIN_CODE_LENGTH = 12
 
@@ -432,6 +477,7 @@ def decide_organization(
     decision: ApprovalDecisionRequest,
 ) -> DecisionResponse:
     """Platform admin activates or rejects a pending organization."""
+    _assert_platform_authority(authorization_context)
     assert_can_manage_organization(
         current_user,
         authorization_context,
@@ -451,7 +497,8 @@ def decide_organization(
             status_code=422,
             code="ORGANIZATION_NOT_PENDING",
         )
-    tenancy_repo.update_organization_status(db, str(org["organization_id"]), decision.decision)
+    row_status = _decision_row_status(ORGANIZATION_DECISION_STATUS, decision.decision)
+    tenancy_repo.update_organization_status(db, str(org["organization_id"]), row_status)
     tenancy_repo.update_join_requests_for_organization(
         db,
         org["organization_id"],
@@ -488,18 +535,22 @@ def decide_join_request(
             status_code=422,
             code="JOIN_REQUEST_NOT_PENDING",
         )
-    tenancy_repo.update_join_request_status(db, str(join_request["request_id"]), decision.decision)
+    tenancy_repo.update_join_request_status(
+        db,
+        str(join_request["join_request_id"]),
+        _decision_row_status(JOIN_REQUEST_DECISION_STATUS, decision.decision),
+    )
     if decision.decision == "approve":
         tenancy_repo.update_institution_status_for_join(
             db,
             str(join_request["institution_id"]),
-            ACTIVE,
+            _decision_row_status(INSTITUTION_DECISION_STATUS, decision.decision),
         )
     else:
         tenancy_repo.update_institution_status_for_join(
             db,
             str(join_request["institution_id"]),
-            REJECTED,
+            _decision_row_status(INSTITUTION_DECISION_STATUS, decision.decision),
         )
     return DecisionResponse(
         message=(
