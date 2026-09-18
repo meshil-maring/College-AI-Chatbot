@@ -1,4 +1,11 @@
-"""Tests for the Phase 3.6F embedding API route."""
+"""Tests for the Phase 3.6F embedding API route.
+
+Phase 6.13.7 note: the route now resolves the processing run SERVER-SIDE to
+enforce tenant scope on the run's knowledge source (``_assert_run_tenant``).
+The fixtures below stub that read-only lookup with a run whose document
+versions carry no ``knowledge_source_id`` (legacy shape), so the original
+assertions — delegation contract, no status updates — are unchanged.
+"""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -24,6 +31,18 @@ FAKE_USER = {
     "roles": ["staff"],
 }
 
+FAKE_RUN = {
+    "processing_run_id": RUN_ID,
+    "status": "ready",
+    "document_version_id": "d0000000-0000-0000-0000-000000000003",
+    "document_versions": {
+        "document_version_id": "d0000000-0000-0000-0000-000000000003",
+        "storage_bucket": "college-ai-knowledge",
+        "storage_object_key": "inst/ks/ver/doc.pdf",
+        "file_type": "pdf",
+    },
+}
+
 
 def _auth_headers():
     return {"Authorization": "Bearer valid.token.here"}
@@ -32,14 +51,31 @@ def _auth_headers():
 def _patch_auth():
     return (
         patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS),
-        patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=FAKE_USER)),
+        patch(
+            "app.db.supabase.get_user_by_auth_id",
+            new=AsyncMock(return_value=FAKE_USER),
+        ),
+    )
+
+
+def _patch_db():
+    """Stub the route's server-side run lookup (Phase 6.13.7 tenant read)."""
+    return (
+        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+        patch(
+            "app.api.ingestion.get_processing_run_with_version",
+            return_value=FAKE_RUN,
+        ),
     )
 
 
 def test_embed_success_delegates_and_returns_embedded_status():
     verify, user = _patch_auth()
+    db_patch, run_patch = _patch_db()
     embed_mock = MagicMock(return_value=3)
-    with verify, user, patch("app.api.ingestion.embed_processing_run", embed_mock):
+    with verify, user, db_patch, run_patch, patch(
+        "app.api.ingestion.embed_processing_run", embed_mock
+    ):
         response = client.post(
             f"/api/v1/documents/{RUN_ID}/embed",
             headers=_auth_headers(),
@@ -56,10 +92,13 @@ def test_embed_success_delegates_and_returns_embedded_status():
 
 def test_embed_already_embedded_response_is_terminal_without_route_regeneration():
     verify, user = _patch_auth()
+    db_patch, run_patch = _patch_db()
     embed_mock = MagicMock(return_value=0)
     with (
         verify,
         user,
+        db_patch,
+        run_patch,
         patch("app.api.ingestion.embed_processing_run", embed_mock),
         patch("app.api.ingestion.update_run_status") as update_status,
     ):
@@ -87,8 +126,11 @@ def test_embed_invalid_processing_run_id_uses_fastapi_validation():
 
 def test_embed_app_error_uses_application_error_handler():
     verify, user = _patch_auth()
+    db_patch, run_patch = _patch_db()
     error = AppError("Run is not available for embedding", status_code=409, code="RUN_NOT_EMBEDDABLE")
-    with verify, user, patch("app.api.ingestion.embed_processing_run", side_effect=error):
+    with verify, user, db_patch, run_patch, patch(
+        "app.api.ingestion.embed_processing_run", side_effect=error
+    ):
         response = client.post(
             f"/api/v1/documents/{RUN_ID}/embed",
             headers=_auth_headers(),
@@ -105,7 +147,8 @@ def test_embed_app_error_uses_application_error_handler():
 
 def test_embed_unexpected_service_failure_uses_existing_500_convention():
     verify, user = _patch_auth()
-    with verify, user, patch(
+    db_patch, run_patch = _patch_db()
+    with verify, user, db_patch, run_patch, patch(
         "app.api.ingestion.embed_processing_run",
         side_effect=RuntimeError("unexpected failure"),
     ):
@@ -127,12 +170,14 @@ def test_embed_requires_the_existing_ingestion_roles():
 
 def test_embed_route_does_not_update_processing_run_status():
     verify, user = _patch_auth()
+    db_patch, run_patch = _patch_db()
     embed_mock = MagicMock(return_value=1)
     with (
         verify,
         user,
+        db_patch,
+        run_patch,
         patch("app.api.ingestion.embed_processing_run", embed_mock),
-        patch("app.api.ingestion.get_admin_client") as get_admin_client,
         patch("app.api.ingestion.update_run_status") as update_status,
     ):
         response = client.post(
@@ -142,5 +187,4 @@ def test_embed_route_does_not_update_processing_run_status():
 
     assert response.status_code == 200
     embed_mock.assert_called_once_with(RUN_ID)
-    get_admin_client.assert_not_called()
     update_status.assert_not_called()

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Form, UploadFile
 from app.core.errors import AppError
 from app.core.security import assert_tenant_object, require_roles
 from app.db.supabase import get_admin_client
+from app.repositories import admin_knowledge as knowledge_repo
 from app.repositories.ingestion import (
     get_knowledge_source,
     get_processing_run_with_version,
@@ -30,6 +31,32 @@ from app.services.storage import download_file, get_r2_client
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 _INGEST_ALLOWED = require_roles("admin", "staff", "faculty")
+
+
+def _assert_run_tenant(
+    current_user: dict,
+    run: dict | None,
+    db,
+) -> None:
+    """Phase 6.13.7 — tenant guard for document-processing pipelines.
+
+    The processing run's tenant is the tenant of its knowledge source (the
+    document_versions row carries knowledge_source_id). Resolved SERVER-SIDE
+    from the run id in the URL; no client-supplied tenant is consulted.
+
+    Legacy behaviour is preserved: runs whose document_versions projection
+    carries no knowledge_source_id (older fixtures / rows) are skipped, and
+    platform-level accounts are no-ops via the existing assert_tenant_object.
+    """
+    if run is None:
+        return
+    dv = run.get("document_versions") or {}
+    ks_id = dv.get("knowledge_source_id") if isinstance(dv, dict) else None
+    if not ks_id:
+        return
+    ks = knowledge_repo.get_knowledge_source_detail(db, ks_id)
+    if ks is not None:
+        assert_tenant_object(current_user, ks.get("institution_id"))
 
 
 @router.post("/ingest", response_model=IngestResponse, status_code=201)
@@ -66,6 +93,9 @@ def extract(
             status_code=409,
             code="RUN_NOT_QUEUED",
         )
+
+    # Phase 6.13.7: the run must belong to the caller's tenant (server-side).
+    _assert_run_tenant(current_user, run, db)
 
     dv = run["document_versions"]
     run_id_str = str(processing_run_id)
@@ -117,6 +147,9 @@ def chunk(
             code="RUN_NOT_READY",
         )
 
+    # Phase 6.13.7: the run must belong to the caller's tenant (server-side).
+    _assert_run_tenant(current_user, run, db)
+
     dv = run["document_versions"]
     document_version_id = dv["document_version_id"]
 
@@ -152,6 +185,12 @@ def embed(
     current_user: dict = Depends(_INGEST_ALLOWED),
 ) -> EmbeddingResponse:
     run_id_str = str(processing_run_id)
+    db = get_admin_client()
+    run = get_processing_run_with_version(db, run_id_str)
+    if run is None:
+        raise AppError("Processing run not found", status_code=404, code="RUN_NOT_FOUND")
+    # Phase 6.13.7: the run must belong to the caller's tenant (server-side).
+    _assert_run_tenant(current_user, run, db)
     embeddings_created = embed_processing_run(run_id_str)
     return EmbeddingResponse(
         processing_run_id=run_id_str,

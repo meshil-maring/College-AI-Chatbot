@@ -62,6 +62,7 @@ from app.services.authorization import (
     ORGANIZATION,
     PLATFORM,
     _assert_platform_authority,
+    assert_active_tenant_context,
     assert_can_decide_join_request,
     assert_can_manage_institution,
     assert_can_manage_organization,
@@ -484,6 +485,9 @@ def decide_organization(
         organization_id,
     )
     db = get_admin_client()
+    # Phase 6.13.7: consistency + tenant lifecycle guard (no-op for the
+    # platform scope that alone reaches this point; defense in depth).
+    assert_active_tenant_context(db, current_user, authorization_context)
     org = tenancy_repo.get_organization_by_id(db, UUID(organization_id))
     if org is None:
         raise AppError(
@@ -529,6 +533,10 @@ def decide_join_request(
             code="JOIN_REQUEST_NOT_FOUND",
         )
     assert_can_decide_join_request(authorization_context, join_request)
+    # Phase 6.13.7: consistency + tenant lifecycle guard. The requesting
+    # org admin's organization must still be pending/active (never rejected
+    # or suspended), and the resolved scope must be internally consistent.
+    assert_active_tenant_context(db, current_user, authorization_context)
     if join_request.get("status") != PENDING:
         raise AppError(
             "This join request has already been decided",
@@ -581,6 +589,10 @@ def decide_membership_request(
         authorization_context,
         req["institution_id"],
     )
+    # Phase 6.13.7: consistency + tenant lifecycle guard. The approving
+    # institution must still be ACTIVE (pending/rejected/suspended tenants
+    # fail closed) and the resolved scope must be internally consistent.
+    assert_active_tenant_context(db, current_user, authorization_context)
     if req.get("status") != PENDING:
         raise AppError(
             "This onboarding request has already been decided",
