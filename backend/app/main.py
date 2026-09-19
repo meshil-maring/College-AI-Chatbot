@@ -21,6 +21,7 @@ from app.api.dev_auth import router as dev_auth_router
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.session import SessionContextRequest
 from app.services.chat import process_chat_request
+from app.services.public_chat import process_chat_request as process_public_chat_request
 from app.services.generation_provider import OpenRouterGenerationProvider
 from app.services.session import resolve_session_context
 
@@ -109,8 +110,44 @@ def chat(
         current_user=current_user,
     )
 
-
 app.include_router(generation_router, prefix="/api/v1")
+
+# ============================================================================
+# Phase 6.13.8 — Public (unauthenticated) AI
+# ============================================================================
+# Public AI answers ONLY from the public knowledge of the institution selected
+# in the request (validated server-side by the public tenant resolver).
+# No authentication dependency is attached by design.
+
+public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@public_chat_router.post("/public", response_model=ChatResponse)
+def public_chat(request: ChatRequest) -> ChatResponse:
+    """Process one PUBLIC (unauthenticated) chat request.
+
+    Phase 6.13.8:
+      * no authentication dependency — public AI requires no login;
+      * the client-supplied ``institution_id`` (when present) is validated
+        server-side (institution exists, is ACTIVE, belongs to a valid/active
+        organization) — invalid/inactive tenants fail closed;
+      * retrieval is institution-scoped and post-filtered at the
+        data-access boundary to PUBLIC knowledge sources only, so private
+        documents, student records, attendance, and results can never enter
+        the LLM context;
+      * personal-data questions from an unauthenticated caller are rejected
+        with the standard 401 AUTH_REQUIRED error.
+    """
+    session_context = resolve_session_context(
+        SessionContextRequest(session_id=request.session_id)
+    )
+    return process_public_chat_request(
+        request,
+        session_context,
+        OpenRouterGenerationProvider(),
+    )
+
+app.include_router(public_chat_router, prefix="/api/v1")
 
 
 @app.get("/")

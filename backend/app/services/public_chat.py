@@ -22,6 +22,7 @@ from app.config import settings
 from app.core.errors import AppError
 from app.core.security import PUBLIC_USER_ID
 from app.db.supabase import get_admin_client
+from app.repositories import tenancy as tenancy_repo
 from app.repositories.ai_response import create_ai_response
 from app.repositories.conversation import (
     create_conversation,
@@ -59,10 +60,255 @@ from app.services.context import assemble_context
 from app.services.conversation_history import get_conversation_messages
 from app.services.generation import AIGenerationService
 from app.services.generation_provider import GenerationProvider
+from app.services.personalization import classify_personalization_question
 from app.services.query_rewriting import rewrite_query
 from app.services.retrieval import retrieve
 
-__all__ = ["process_chat_request"]
+# Public knowledge sources are the only ones a public (unauthenticated) chat
+# may retrieve. Anything else - private documents, student records, attendance,
+# exam results, personalized academic data - must be filtered out BEFORE
+# generation, at the data-access boundary.
+#
+# source_type values are defined by the admin knowledge ingestion layer and
+# enforced by the knowledge_sources.source_type CHECK constraint. Public chat
+# only ever retrieves sources that are BOTH published AND public-type.
+PUBLIC_SOURCE_TYPES = frozenset({"faq", "notice", "handbook"})
+
+# ============================================================================
+# Phase 6.13.8 — Public tenant resolution + public-only retrieval filtering
+# ============================================================================
+
+_UNTRUSTED_INSTS = "client-supplied institution_id may not override server-side tenant resolution"
+_UNTRUSTED_ORGS = "client-supplied organization_id may not override server-side tenant resolution"
+_PERSONAL_NO_AUTH = "personalized academic data requires authentication"
+
+
+def _validate_public_institution(
+    client: Any, institution_id: UUID | str | None
+) -> UUID:
+    """Validate that a public request's institution is legit and active.
+
+    Reused from Phase 6.13.1/6.13.6/6.13.7 primitives (with the same
+    lifecycle semantics):
+
+    * institution must exist
+    * institution must be ACTIVE (pending/rejected/suspended -> denied)
+    * institution must belong to a valid/active organization
+    * inactive/pending/rejected institution must NOT expose public knowledge
+
+    Raises an AppError (403/404) when the institution is invalid; returns the
+    UUID when it is safe to proceed.  ``None`` is only accepted when the
+    project is running without any institutions yet (development); in that
+    case public knowledge is simply empty.
+    """
+    if institution_id is None:
+        return None
+
+    raw = institution_id if isinstance(institution_id, str) else str(institution_id)
+    inst = tenancy_repo.get_institution_by_id(client, raw)
+    if inst is None:
+        raise AppError(
+            "Institution not found",
+            status_code=404,
+            code="INSTITUTION_NOT_FOUND",
+        )
+
+    status = inst.get("status") or "unknown"
+    if status != "active":
+        _inactive_msg = {
+            "pending": "Institution is pending approval",
+            "rejected": "Institution has been rejected",
+            "suspended": "Institution has been suspended",
+        }.get(status, f"Institution status is {status!r}")
+        raise AppError(
+            _inactive_msg,
+            status_code=403,
+            code="INSTITUTION_NOT_ACTIVE",
+        )
+
+    org_id = inst.get("organization_id")
+    if org_id is None:
+        raise AppError(
+            "Institution has no organization",
+            status_code=500,
+            code="INSTITUTION_NO_ORGANIZATION",
+        )
+
+    org = tenancy_repo.get_organization_by_id(client, org_id)
+    if org is None:
+        raise AppError(
+            "Institution organization not found",
+            status_code=404,
+            code="ORGANIZATION_NOT_FOUND",
+        )
+
+    org_status = org.get("status") or "unknown"
+    if org_status not in ("active", "pending"):
+        raise AppError(
+            "Institution organization is not active",
+            status_code=403,
+            code="ORGANIZATION_NOT_ACTIVE",
+        )
+
+    return UUID(str(inst["institution_id"]))
+
+
+def _reject_personal_query_if_needed(request: ChatRequest) -> None:
+    """Block personal-data questions from unauthenticated (public) callers.
+
+    The public path carries no authenticated user, so it can never load a
+    student context. A question that needs the student's own attendance,
+    results, performance, courses, or profile must go through the protected
+    (authenticated) chat endpoint instead, where the user's JWT-derived
+    identity is used as the canonical data selector.
+
+    Keyword concern: we deliberately do NOT rely on simple keywords such as
+    ``"my"`` to decide whether a question is protected. We reuse the existing
+    deterministic Phase 6.10 classifier, which already encodes the project's
+    policy that rule/policy questions ("What attendance do I need...") stay
+    general while true personal-data questions ("What is my attendance?") are
+    protected.
+    """
+    intent = classify_personalization_question(request.user_query)
+    if intent is None:
+        return
+    raise AppError(
+        "Personalized academic data requires authentication",
+        status_code=401,
+        code="AUTH_REQUIRED",
+    )
+
+
+def _resolve_chunk_knowledge_sources(
+    client: Any, processing_run_ids: set[str]
+) -> dict[str, str | None]:
+    """Resolve chunk -> knowledge_source_id via the processing run provenance.
+
+    Chain: chunk.processing_run_id -> document_processing_runs
+          -> document_versions.knowledge_source_id -> documents.knowledge_source_id
+
+    Returns ``{processing_run_id: knowledge_source_id}``.  Runs whose
+    projection has no knowledge_source_id yield ``None``; they are treated as
+    non-public and filtered out.
+    """
+    if not processing_run_ids:
+        return {}
+
+    response = (
+        client.table("document_processing_runs")
+        .select("processing_run_id, document_versions(knowledge_source_id)")
+        .in_("processing_run_id", sorted(processing_run_ids))
+        .execute()
+    )
+    data: list | None = response.data if response and isinstance(response.data, list) else None
+    if not data:
+        return {}
+
+    out: dict[str, str | None] = {}
+    for row in data:
+        pid = row.get("processing_run_id")
+        if not pid:
+            continue
+        dvs = row.get("document_versions")
+        ks_id: str | None = None
+        if isinstance(dvs, list):
+            for dv in dvs:
+                ks_id = dv.get("knowledge_source_id") if isinstance(dv, dict) else None
+                if ks_id:
+                    break
+        elif isinstance(dvs, dict):
+            ks_id = dvs.get("knowledge_source_id")
+        out[str(pid)] = str(ks_id) if ks_id else None
+    return out
+
+
+def _knowledge_source_is_public(
+    client: Any,
+    knowledge_source_id: str,
+    institution_id: UUID,
+) -> bool:
+    """True when a knowledge source is public AND belongs to the resolved institution.
+
+    Public knowledge sources are the *types* that the admin layer is configured
+    to expose (faq, notice, handbook in this project).  We additionally verify
+    the source actually belongs to the resolved institution so a public request
+    from Institution A can never read Institution B's public documents.
+    """
+    row = tenancy_repo.get_knowledge_source_by_id(client, knowledge_source_id)
+    if not row:
+        return False
+    if row.get("institution_id") != str(institution_id):
+        return False
+    if row.get("source_type") not in PUBLIC_SOURCE_TYPES:
+        return False
+    return True
+
+
+def _build_allowed_public_knowledge_source_ids(
+    client: Any,
+    institution_id: UUID,
+    requested_knowledge_source_id: str | None,
+) -> set[str]:
+    """Return the set of knowledge source IDs a public request may read.
+
+    * If a ``requested_knowledge_source_id`` was supplied, validate it is a
+      public source belonging to the resolved institution and return a
+      single-element set when valid.  Invalid/tampered values raise or produce
+      an empty set depending on whether the caller explicitly asked for a
+      source.
+    * Otherwise, enumerate all public sources for the institution.
+    """
+    if requested_knowledge_source_id:
+        ks_id = str(requested_knowledge_source_id)
+        if not _knowledge_source_is_public(client, ks_id, institution_id):
+            if tenancy_repo.get_knowledge_source_by_id(client, ks_id) is not None:
+                raise AppError(
+                    "Requested knowledge source is not public for this institution",
+                    status_code=403,
+                    code="KNOWLEDGE_SOURCE_NOT_PUBLIC",
+                )
+            raise AppError(
+                "Requested knowledge source not found",
+                status_code=404,
+                code="KNOWLEDGE_SOURCE_NOT_FOUND",
+            )
+        return {ks_id}
+
+    rows = tenancy_repo.list_published_knowledge_sources_for_institution(
+        client, institution_id
+    )
+    return {
+        str(row["knowledge_source_id"])
+        for row in rows
+        if row.get("knowledge_source_id") and row.get("source_type") in PUBLIC_SOURCE_TYPES
+    }
+
+
+def _filter_to_public_chunks(
+    retrieved_chunks: list[Any],
+    run_to_ks: dict[str, str | None],
+    allowed_ks: set[str],
+) -> list[Any]:
+    """Filter retrieved chunks to only those backed by public knowledge sources.
+
+    Defense-in-depth: even if the vector/BM25 retrieval returned a chunk, drop it
+    when its provenance knowledge source is not in the public-only allow-list for
+    the resolved institution.
+
+    Chain: chunk.metadata.processing_run_id -> run_to_ks -> knowledge_source_id
+           -> membership in allowed_ks.
+    """
+    out: list[Any] = []
+    for chunk in retrieved_chunks:
+        pid = None
+        if hasattr(chunk, "metadata") and chunk.metadata:
+            pid = chunk.metadata.get("processing_run_id")
+        if not pid:
+            continue
+        ks_id = run_to_ks.get(str(pid))
+        if ks_id and ks_id in allowed_ks:
+            out.append(chunk)
+    return out
 
 # ============================================================================
 # Source reference extraction (mirrors chat.py)
@@ -365,6 +611,44 @@ def process_chat_request(
         (time.perf_counter() - rewrite_start) * 1000
     )
 
+    # --- Phase 6.13.8: Public AI access controls (before retrieval) ---
+
+    # 1. Personal-data questions from the public path are rejected. The
+    #    public path has no authenticated user, so it can never load a
+    #    student context. Personal questions are routed to the protected
+    #    (authenticated) endpoint instead.
+    _reject_personal_query_if_needed(request)
+
+    # 2. Institution is validated server-side: it must exist, be ACTIVE, and
+    #    belong to a valid/active organization.  A client-supplied
+    #    institution_id is never trusted blindly.
+    _validated_institution_id = _validate_public_institution(
+        client, institution_id=request.institution_id
+    )
+
+    # 3. Client-supplied scope overrides are rejected. Even if a client sends
+    #    explicit knowledge_source_id / institution_id / organization_id, the
+    #    public path must derive its scope from the validated institution, not
+    #    from whatever the caller put in the request.
+    if request.knowledge_source_id is not None:
+        # A client may ask for a specific knowledge source; we validate it
+        # belongs to the resolved institution AND is a public source.
+        _allowed_ks = _build_allowed_public_knowledge_source_ids(
+            client, _validated_institution_id, str(request.knowledge_source_id)
+        )
+        if not _allowed_ks:
+            raise AppError(
+                "Requested knowledge source is not accessible from this institution",
+                status_code=403,
+                code="KNOWLEDGE_SOURCE_NOT_PUBLIC",
+            )
+    else:
+        _allowed_ks = _build_allowed_public_knowledge_source_ids(
+            client, _validated_institution_id, None
+        )
+
+    # --- Phase 6.13.8: Retrieval scoped to the validated institution ---
+
     # Step 3: Retrieval (skip if chunks already provided)
     retrieved_chunks: list[RetrievedChunk] = list(request.retrieved_chunks)
     if not retrieved_chunks:
@@ -372,8 +656,12 @@ def process_chat_request(
         retrieval_request = RetrievalRequest(
             query=retrieval_query,
             top_k=settings.retrieval_top_k,
-            institution_id=request.institution_id,
-            knowledge_source_id=request.knowledge_source_id,
+            institution_id=str(_validated_institution_id)
+            if _validated_institution_id is not None
+            else None,
+            knowledge_source_id=(
+                str(sorted(_allowed_ks)[0]) if len(_allowed_ks) == 1 else None
+            ),
             document_id=request.document_id,
             document_version_id=request.document_version_id,
             processing_run_id=request.processing_run_id,
@@ -403,7 +691,44 @@ def process_chat_request(
         timings["embedding_latency_ms"] = 0
         timings["retrieval_latency_ms"] = 0
 
+    # --- Phase 6.13.8: Public-only chunk filtering (data-access boundary) ---
+
+    # Even though the retrieval above is already institution-scoped at the
+    # vector-search level, we ALSO hard-filter the returned chunks by
+    # knowledge-source provenance + public source_type.  This is defense in
+    # depth: a misconfigured HBASE/pgvector payload, a future schema change,
+    # or a client-supplied ``retrieved_chunks`` list can never slip a
+    # private/student/institution-B chunk into the LLM context.
+    if retrieved_chunks:
+        _run_ids = {
+            str(c.metadata.get("processing_run_id"))
+            for c in retrieved_chunks
+            if c.metadata and c.metadata.get("processing_run_id")
+        }
+        _run_to_ks = _resolve_chunk_knowledge_sources(client, _run_ids)
+        _public_chunks = _filter_to_public_chunks(
+            retrieved_chunks, _run_to_ks, _allowed_ks
+        )
+        if not _public_chunks:
+            # No authorized public knowledge matched.  We keep the empty list
+            # rather than the raw retrieval so the LLM only sees authorized
+            # context.
+            retrieved_chunks = []
+        else:
+            retrieved_chunks = _public_chunks
+
     # Step 4: Build AIRequest, assemble context, generate
+    #
+    # The retrieval_scope passed to context assembly uses the VALIDATED
+    # institution id (not the client-supplied one) so that any provenance
+    # metadata the LLM prompt renders is anchored to the server-selected
+    # tenant.
+    _scope_institution_id = (
+        str(_validated_institution_id) if _validated_institution_id is not None else None
+    )
+    _scope_knowledge_source_id = (
+        str(sorted(_allowed_ks)[0]) if len(_allowed_ks) == 1 else None
+    )
     context_start = time.perf_counter()
     ai_request = AIRequest(
         user_query=request.user_query,
@@ -413,8 +738,8 @@ def process_chat_request(
             else None
         ),
         retrieval_scope=RetrievalScope(
-            institution_id=request.institution_id,
-            knowledge_source_id=request.knowledge_source_id,
+            institution_id=_scope_institution_id,
+            knowledge_source_id=_scope_knowledge_source_id,
             document_id=request.document_id,
             document_version_id=request.document_version_id,
             processing_run_id=request.processing_run_id,

@@ -794,20 +794,63 @@ def test_public_chat_owns_every_public_turn_with_public_user_id() -> None:
     assert "user_id = PUBLIC_USER_ID" in source
 
 
-def test_public_chat_institution_id_stays_forward_compatible() -> None:
-    """Known limitation: the public path carries no tenant authorization yet."""
+def test_public_chat_institution_id_is_now_validated_server_side() -> None:
+    """Phase 6.13.8: the public path now validates institution_id before use.
+
+    The prior known limitation (public chat accepted institution_id but did not
+    enforce institution-specific RAG filtering) is closed in this phase:
+
+    * the client-supplied institution_id is validated server-side by
+      ``_validate_public_institution`` (exists, ACTIVE, belongs to a valid org),
+    * the validated institution is used as the retrieval scope,
+    * retrieved chunks are post-filtered at the data-access boundary to
+      public knowledge sources only (``_filter_to_public_chunks``), so
+      private / student / cross-institution documents can never enter the LLM
+      context,
+    * client-supplied scope overrides (``knowledge_source_id`` that belongs to
+      another institution or is non-public) are rejected at the validation
+      boundary.
+
+    The public path still owns every turn with ``PUBLIC_USER_ID`` (unchanged
+    invariant) — the additions are additive guards around the existing pipeline,
+    not a redesign.
+    """
     source = inspect.getsource(public_chat.process_chat_request)
     assert "institution_id=request.institution_id" in source
-    assert "scope_tenant" not in source
-    assert "assert_tenant_object" not in source
+    # The public path now validates the institution before use.
+    assert "_validate_public_institution" in source
+    # The public path now filters retrieved chunks by public source_type.
+    assert "_filter_to_public_chunks" in source
+    # The public path rejects personal-data questions.
+    assert "_reject_personal_query_if_needed" in source
 
 
-def test_public_chat_is_not_yet_exposed_as_an_http_route() -> None:
-    """Public chat exists as a service only — no route is added in Phase 6.13.1."""
+def test_public_chat_is_now_exposed_as_an_http_route() -> None:
+    """Phase 6.13.8: public chat is exposed at POST /api/v1/chat/public.
+
+    The public chat service (``app.services.public_chat.process_chat_request``)
+    was already wired in Phase 6.13.1; this phase adds the unauthenticated
+    HTTP route so public AI is reachable without a login, while the protected
+    endpoint remains ``POST /api/v1/generation/chat`` (authenticated).
+    """
     from app.main import app
 
     paths = {getattr(route, "path", "") for route in app.routes}
-    assert not {path for path in paths if "public" in path}
+    # FastAPI 0.141+ uses lazy _IncludedRouter expansion; the public route
+    # may not appear in app.routes until the OpenAPI schema is built.
+    if not any("public" in p for p in paths):
+        schema = app.openapi()
+        paths.update(schema.get("paths", {}).keys())
+    public_paths = {path for path in paths if "public" in path}
+    assert public_paths, (
+        "Phase 6.13.8 must expose the public chat route. "
+        "The project convention is POST /api/v1/chat/public."
+    )
+    # The route must be present; verify it is a chat-style path rather than an
+    # unrelated admin/internal path.
+    assert any("/chat" in path for path in public_paths), (
+        public_paths
+    )
 
 
 # ============================================================================

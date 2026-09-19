@@ -177,6 +177,54 @@ def get_institution_by_id(client: Client, institution_id: UUID | str) -> dict | 
     return response.data if response and response.data else None
 
 
+# ============================================================================
+# Knowledge-source lookups (used by the public RAG filtering boundary)
+# ============================================================================
+
+_KS_COLUMNS = (
+    "knowledge_source_id, institution_id, source_type, title, description, "
+    "authority_level, lifecycle_status, effective_from, effective_until, "
+    "created_at, updated_at"
+)
+
+
+def get_knowledge_source_by_id(
+    client: Client, knowledge_source_id: UUID | str
+) -> dict | None:
+    """Return one knowledge_source row, or None when it does not exist.
+
+    This is the data-access primitive the public RAG filter uses to verify that
+    a retrieved chunk's provenance knowledge source is public, active, and
+    belongs to the resolved institution.
+    """
+    response = (
+        client.table("knowledge_sources")
+        .select(_KS_COLUMNS)
+        .eq("knowledge_source_id", str(knowledge_source_id))
+        .maybe_single()
+        .execute()
+    )
+    return response.data if response and response.data else None
+
+
+def list_published_knowledge_sources_for_institution(
+    client: Client, institution_id: UUID | str
+) -> list[dict]:
+    """Return *published* knowledge sources for *institution_id*.
+
+    Source-type filtering is done by the caller (``app.services.public_chat``)
+    because the public-source-type whitelist is a service-layer concern.
+    """
+    response = (
+        client.table("knowledge_sources")
+        .select(_KS_COLUMNS)
+        .eq("institution_id", str(institution_id))
+        .eq("lifecycle_status", "published")
+        .execute()
+    )
+    return response.data if response and response.data else []
+
+
 def get_institution_by_code(client: Client, code: str) -> dict | None:
     """Return the institution with this public code (globally unique), or None."""
     response = (
