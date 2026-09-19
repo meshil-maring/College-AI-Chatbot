@@ -15,6 +15,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from app.core.security import assert_tenant_object, get_current_user
+from app.schemas.student_profile import StudentAcademicProfile
+from app.services import student_academic_profile as academic_profile_service
 from app.services import student_data
 
 router = APIRouter(prefix="/students", tags=["students"])
@@ -26,6 +28,23 @@ def my_profile(current_user: dict = Depends(get_current_user)) -> dict:
     student = student_data.get_own_profile(UUID(current_user["user_id"]))
     assert_tenant_object(current_user, student.get("institution_id"))
     return student
+
+
+@router.get("/me/academic-profile", response_model=StudentAcademicProfile)
+def my_academic_profile(
+    current_user: dict = Depends(get_current_user),
+) -> StudentAcademicProfile:
+    """Return the authenticated student's reusable academic profile.
+
+    Phase 6.14.1: student-facing projection (no internal database
+    identifiers). Identity and tenant are resolved server-side from the
+    authenticated JWT via ``get_current_user``; the endpoint accepts NO
+    identity parameters, so client-supplied ``student_id`` / ``user_id`` /
+    ``institution_id`` / email / register-number / roll-number values can
+    never override the authenticated identity (extra query/body fields are
+    rejected with 422).
+    """
+    return academic_profile_service.get_academic_profile(current_user)
 
 
 @router.get("/me/results")

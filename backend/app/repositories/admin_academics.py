@@ -41,6 +41,23 @@ STUDENT_APPROVAL_COLUMNS = (
     "is_active, enrollment_date, created_at, updated_at"
 )
 
+# Phase 6.14.1 — academic-profile projection (additive; existing projections
+# above are byte-identical and untouched).
+#
+# The locked STUDENT_COLUMNS projection lacks the student-facing academic
+# identity fields (email / register_number / university_roll_number /
+# approval_status) and the academic linkage fields needed for the profile.
+# This projection unions exactly those columns so the academic-profile
+# service can build a student-facing profile in ONE students query.
+# No migration is required: every column already exists (Phase Admin-1 for
+# program_id/academic_year_id/status, Phase 6.2 for the identity +
+# approval_status columns).
+STUDENT_ACADEMIC_PROFILE_COLUMNS = (
+    "student_id, user_id, institution_id, student_number, email, "
+    "register_number, university_roll_number, program_id, academic_year_id, "
+    "approval_status, status, is_active"
+)
+
 
 
 STUDENT_RESULT_COLUMNS = (
@@ -116,6 +133,27 @@ def get_student_by_user_id(client: Client, user_id: UUID | str) -> dict | None:
     response = (
         client.table("students")
         .select(STUDENT_COLUMNS)
+        .eq("user_id", str(user_id))
+        .maybe_single()
+        .execute()
+    )
+    return response.data
+
+
+def get_student_academic_profile_row(
+    client: Client, user_id: UUID | str
+) -> dict | None:
+    """Return the academic-profile row for a users.user_id, or None.
+
+    Phase 6.14.1 helper. Uses the additive STUDENT_ACADEMIC_PROFILE_COLUMNS
+    projection (identity + academic linkage columns). No authorization here —
+    the caller (``app.services.student_academic_profile``) enforces tenant
+    isolation. Follows the existing repository convention: first argument is
+    an already-created Supabase client.
+    """
+    response = (
+        client.table("students")
+        .select(STUDENT_ACADEMIC_PROFILE_COLUMNS)
         .eq("user_id", str(user_id))
         .maybe_single()
         .execute()
