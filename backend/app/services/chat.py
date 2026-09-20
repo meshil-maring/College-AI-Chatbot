@@ -44,7 +44,15 @@ from app.services.context import assemble_context
 from app.services.conversation_history import get_conversation_messages
 from app.services.generation import AIGenerationService
 from app.services.generation_provider import GenerationProvider
-from app.services.personalization import prompt_contains_student_data, redact_student_data
+from app.services.ai_context_builder import build_personalized_ai_context
+from app.services.personalized_retrieval import get_personalized_context
+from app.services.personalization import (
+    build_personalization_context,
+    classify_personalization_question,
+    prompt_contains_student_data,
+    redact_student_data,
+    render_personalization_context,
+)
 from app.services.query_rewriting import rewrite_query
 from app.services.retrieval import retrieve
 
@@ -358,6 +366,49 @@ def _enrich_source_titles(client, structured_sources: list[StructuredSource]) ->
             source.source_title = title
 
 
+def _is_student(current_user: dict | None) -> bool:
+    """Return True when the authenticated principal carries the student role.
+
+    Role-derived branching is intentional: student-private academic data
+    (attendance, results, identity labels) is only assembled for principals
+    that the JWT marks as students. Admin / staff / faculty / unauthenticated
+    callers never enter the personalized retrieval path.
+    """
+    return current_user is not None and "student" in current_user.get("roles", [])
+
+
+def _uses_personalized_pipeline(
+    current_user: dict | None, user_query: str | None
+) -> bool:
+    """Return True when this request must run through the Phase 6.14 pipeline.
+
+    Phase 6.14.7: authenticated students use
+
+        current_user -> get_personalized_context() (6.14.5)
+            -> build_personalized_ai_context() (6.14.6)
+            -> existing AIGenerationService / GenerationProvider (unchanged)
+
+    Two existing, unchanged conditions gate that pipeline:
+
+    * the principal is authenticated AND carries the ``student`` role (JWT
+      derived — never a request field, see ``_is_student``); and
+    * the question's DETERMINISTIC intent (the existing Phase 6.10
+      ``classify_personalization_question`` helper, reused verbatim) indicates
+      that personal academic data is actually being asked for.
+
+    The second condition preserves the locked Phase 6.10 behavior for general
+    questions ("What is the attendance policy for exams?"): no student-data
+    read is performed, no academic block enters the prompt, and a student
+    without a linked profile can still ask general questions. Authorization is
+    never decided by wording — the classifier only decides whether a
+    personalized pipeline is *needed*; who may read what remains decided
+    inside the 6.14.5 / 6.14.4 authorization boundaries from the JWT alone.
+    """
+    if not _is_student(current_user):
+        return False
+    return classify_personalization_question(user_query) is not None
+
+
 def _bounded_conversation_history(
     turns: list[ConversationTurn], max_messages: int
 ) -> list[ConversationTurn]:
@@ -448,6 +499,14 @@ def process_chat_request(
     derived server-side from that JWT. Client-supplied identity is never used.
     Direct callers that pass only ``user_id`` (tests, integrations) get the
     unchanged non-personalized behaviour.
+
+    Phase 6.14.7: for an authenticated principal whose JWT carries the
+    ``student`` role AND whose question the existing deterministic intent
+    classifier marks as personal, the request runs through the Phase 6.14
+    pipeline — ``get_personalized_context`` (6.14.5) ->
+    ``build_personalized_ai_context`` (6.14.6) -> the unchanged
+    ``AIGenerationService`` / ``GenerationProvider``. Every other request keeps
+    the previous Phase 6.10 / Phase 4 behaviour exactly.
     """
     if not isinstance(request, ChatRequest):
         raise TypeError("request must be a validated ChatRequest")
@@ -509,28 +568,55 @@ def process_chat_request(
         max_messages=settings.conversation_history_max_messages,
     )
 
-    # Step 1.6 (Phase 6.10): Resolve the authorized personalization context.
+    # Step 1.6 (Phase 6.14.7): Resolve the personalized AI context for
+    # authenticated STUDENTS using the 6.14.5 retrieval boundary + 6.14.6
+    # AI context builder. Non-student authenticated users (admin/staff/faculty),
+    # general (non-personal) questions and direct callers without
+    # ``current_user`` keep the existing behaviour — student-private academic
+    # data is never exposed outside the authenticated student path and is never
+    # loaded for questions that do not ask for it.
+    #
     # Identity is ALWAYS derived server-side from the authenticated JWT
     # (``current_user``); client-supplied identity fields in the question text
-    # are treated as content only, never as authorization. General questions
-    # produce no student data and perform no student-data queries. When the
-    # question needs personal data and the user is not an eligible student, the
-    # established Phase 6.9 behavior applies (404 STUDENT_PROFILE_NOT_FOUND /
-    # 403) and no profile is ever created. This runs before the user message is
-    # persisted so an ineligible request does not leave partial chat state.
+    # or request body are treated as content only, never as authorization.
+    # This runs before the user message is persisted so an ineligible request
+    # does not leave partial chat state.
     personalization_start = time.perf_counter()
+    personalized_request = _uses_personalized_pipeline(
+        current_user, request.user_query
+    )
     personalization_text = None
-    if current_user is not None:
-        from app.services.personalization import (
-            build_personalization_context,
-            render_personalization_context,
+    if personalized_request:
+        personalized_context = get_personalized_context(
+            current_user,
+            request.user_query,
+            client=client,
         )
-
-        personalization_context = build_personalization_context(
-            current_user, request.user_query, client=client
+        ai_context = build_personalized_ai_context(
+            personalized_context,
+            current_user=current_user,
         )
-        if personalization_context is not None:
-            personalization_text = render_personalization_context(personalization_context)
+        # Attach bounded conversation history to the personalized AIContext
+        # (the builder emits an empty list by default; the existing
+        # conversation-history semantics are preserved).
+        ai_context.conversation_history = conversation_history
+        assembled_context = ai_context
+    else:
+        # Existing Phase 6.10 path for general questions, non-students and
+        # direct callers without ``current_user``. The Phase 6.10
+        # personalization helper keeps its own deterministic gate (it returns
+        # None when the question needs no personal data), so no student-data
+        # read happens for general questions and no academic block enters the
+        # prompt. ``assemble_context`` (Step 4) renders it for this path only.
+        if current_user is not None:
+            personalization_context = build_personalization_context(
+                current_user, request.user_query, client=client
+            )
+            personalization_text = (
+                render_personalization_context(personalization_context)
+                if personalization_context is not None
+                else None
+            )
     timings["personalization_latency_ms"] = int(
         (time.perf_counter() - personalization_start) * 1000
     )
@@ -567,53 +653,78 @@ def process_chat_request(
     timings["query_rewrite_latency_ms"] = int((time.perf_counter() - rewrite_start) * 1000)
 
 
-    # Step 3: If no chunks provided, invoke Phase 3 retrieval
-    retrieved_chunks = request.retrieved_chunks
-    if not retrieved_chunks:
-        retrieval_timings: dict = {}
-        retrieval_request = RetrievalRequest(
-            query=retrieval_query,
-            top_k=settings.retrieval_top_k,
-            institution_id=request.institution_id,
-            knowledge_source_id=request.knowledge_source_id,
-            document_id=request.document_id,
-            document_version_id=request.document_version_id,
-            processing_run_id=request.processing_run_id,
-            model_name=request.model_name,
-        )
-        retrieval_response = retrieve(retrieval_request, timings=retrieval_timings)
-        timings["embedding_latency_ms"] = retrieval_timings.get("embedding_latency_ms", 0)
-        timings["retrieval_latency_ms"] = retrieval_timings.get("vector_search_latency_ms", 0)
-        retrieved_chunks = [
-            _map_retrieval_result_to_chunk(result)
-            for result in retrieval_response.results
-        ]
-    else:
+    # Step 3: Retrieve knowledge chunks.
+    #
+    # For the 6.14.7 student path, knowledge retrieval is already performed
+    # inside ``get_personalized_context`` (Phase 6.14.5), which applies the
+    # Phase 6.13.8 visibility boundary (published sources of the student's own
+    # institution only) and returns both institutional knowledge AND academic
+    # context. Re-running Phase 3 retrieval here would be redundant and could
+    # introduce a different chunk set (rewritten query vs original query).
+    # The pre-assembled ``AIContext`` already carries ``retrieved_knowledge``
+    # from ``build_personalized_ai_context``, so we skip the separate Phase 3
+    # retrieval entirely for students and propagate the personalized chunks.
+    if personalized_request:
+        # Personalized path (Phase 6.14.7): chunks were retrieved inside
+        # ``get_personalized_context`` (6.14.5) and are already carried by the
+        # AIContext built in Step 1.6. Re-export them for downstream use
+        # (source-reference extraction, background persistence, diagnostics).
+        retrieved_chunks = list(personalized_context.knowledge.chunks)
         timings["embedding_latency_ms"] = 0
         timings["retrieval_latency_ms"] = 0
+    else:
+        # Non-personalized path: existing Phase 3 retrieval.
+        retrieved_chunks = request.retrieved_chunks
+        if not retrieved_chunks:
+            retrieval_timings: dict = {}
+            retrieval_request = RetrievalRequest(
+                query=retrieval_query,
+                top_k=settings.retrieval_top_k,
+                institution_id=request.institution_id,
+                knowledge_source_id=request.knowledge_source_id,
+                document_id=request.document_id,
+                document_version_id=request.document_version_id,
+                processing_run_id=request.processing_run_id,
+                model_name=request.model_name,
+            )
+            retrieval_response = retrieve(retrieval_request, timings=retrieval_timings)
+            timings["embedding_latency_ms"] = retrieval_timings.get("embedding_latency_ms", 0)
+            timings["retrieval_latency_ms"] = retrieval_timings.get("vector_search_latency_ms", 0)
+            retrieved_chunks = [
+                _map_retrieval_result_to_chunk(result)
+                for result in retrieval_response.results
+            ]
+        else:
+            timings["embedding_latency_ms"] = 0
+            timings["retrieval_latency_ms"] = 0
 
     # Step 4: Execute generation
     context_start = time.perf_counter()
-    ai_request = AIRequest(
-        user_query=request.user_query,
-        retrieval_query=(retrieval_query if retrieval_query != request.user_query else None),
-        retrieval_scope=RetrievalScope(
-            institution_id=request.institution_id,
-            knowledge_source_id=request.knowledge_source_id,
-            document_id=request.document_id,
-            document_version_id=request.document_version_id,
-            processing_run_id=request.processing_run_id,
-        ),
-        retrieved_chunks=retrieved_chunks,
-        model_name=request.model_name,
-        conversation_history=conversation_history,
-    )
+    if not personalized_request:
+        ai_request = AIRequest(
+            user_query=request.user_query,
+            retrieval_query=(retrieval_query if retrieval_query != request.user_query else None),
+            retrieval_scope=RetrievalScope(
+                institution_id=request.institution_id,
+                knowledge_source_id=request.knowledge_source_id,
+                document_id=request.document_id,
+                document_version_id=request.document_version_id,
+                processing_run_id=request.processing_run_id,
+            ),
+            retrieved_chunks=retrieved_chunks,
+            model_name=request.model_name,
+            conversation_history=conversation_history,
+        )
 
-    assembled_context = assemble_context(
-        ai_request,
-        conversation_history=conversation_history,
-        student_context=personalization_text,
-    )
+        assembled_context = assemble_context(
+            ai_request,
+            conversation_history=conversation_history,
+            student_context=personalization_text,
+        )
+    # else (Phase 6.14.7 personalized path): ``assembled_context`` was already
+    # built in Step 1.6 by the 6.14.6 builder from the 6.14.5 personalized
+    # context, so the Phase 4 AIRequest / assemble_context path is skipped and
+    # no second assembly is applied to the personalized context.
     timings["context_build_latency_ms"] = int((time.perf_counter() - context_start) * 1000)
 
     prompt_start = time.perf_counter()

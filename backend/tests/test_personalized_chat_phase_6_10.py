@@ -24,6 +24,7 @@ from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.generation import AIContext
 from app.schemas.personalization import StudentIdentity
 from app.schemas.retrieval import RetrievalResponse, RetrievalResult
+from app.schemas.student_academic_context import StudentAcademicContext
 from app.schemas.session import SessionContext
 from app.services import personalization as personalization_service
 from app.services.chat import process_chat_request
@@ -49,6 +50,10 @@ OTHER_STUDENT_ID = "30000000-0000-0000-0000-000000000152"
 AUTH_USER_ID = "61000000-0000-0000-0000-000000000001"
 CHUNK_A_ID = "40000000-0000-0000-0000-000000000001"
 CHUNK_A_TEXT = "A minimum attendance of 75% is mandatory for the regular end-semester examination."
+# Phase 6.14.5 provenance fixtures: the retrieved chunk's processing run maps to
+# an authorized (published, own-institution) knowledge source.
+PROCESSING_RUN_ID = "80000000-0000-0000-0000-000000000001"
+KNOWLEDGE_SOURCE_ID = "90000000-0000-0000-0000-000000000001"
 
 
 @pytest.fixture(autouse=True)
@@ -167,9 +172,175 @@ def _retrieval_chunks() -> RetrievalResponse:
                 document_version_id=uuid4(),
                 text=CHUNK_A_TEXT,
                 similarity_score=0.91,
-                metadata={"section": "Attendance"},
+                metadata={
+                    "section": "Attendance",
+                    # Phase 6.14.5 resolves the chunk's knowledge-source
+                    # provenance through this run id and hard-filters the chunk
+                    # when it does not map to an authorized source.
+                    "processing_run_id": PROCESSING_RUN_ID,
+                },
             )
         ]
+    )
+
+
+def _institution_row() -> dict:
+    """A minimal ACTIVE institution row for the test tenant (Phase 6.13.1 schema).
+
+    Includes ``is_active=True``: the Phase 6.14.5 boundary fails closed
+    (403 TENANT_INACTIVE) for pending/rejected/suspended institutions.
+    """
+    return {
+        "institution_id": TENANT_A,
+        "institution_name": "Test College",
+        "institution_code": "TC",
+        "organization_id": "30000000-0000-0000-0000-000000000001",
+        "status": "active",
+        "is_active": True,
+    }
+
+
+def _derived_percentage(row: dict):
+    """Percentage stored on the row, or derived server-side from marks.
+
+    Mirrors ``app.services.personalization`` / Phase 6.14.3 semantics: the
+    backend value is authoritative and is never recomputed by the model.
+    """
+    percentage = row.get("percentage")
+    if percentage is not None:
+        return percentage
+    scored = row.get("scored_marks")
+    maximum = row.get("max_marks")
+    if scored is None or not maximum:
+        return None
+    return round(scored / maximum * 100, 2)
+
+
+def _student_academic_context(
+    profile=None,
+    attendance=None,
+    results=None,
+    test_results=None,
+) -> StudentAcademicContext:
+    """Build the Phase 6.14.4 StudentAcademicContext the resolver would return.
+
+    Phases 6.14.7: the chat pipeline obtains the student's academic data through
+    ``app.services.personalized_retrieval.get_personalized_context`` ->
+    ``app.services.student_academic_context.get_student_academic_context``. The
+    tests mock that 6.14.4 boundary (its own suite covers the authorization
+    chain) and convert the same raw row fixtures the Phase 6.10 tests already
+    used into the 6.14 contracts, so the REAL 6.14.6 builder/renderer and the
+    unchanged generation pipeline still run.
+    """
+    from app.schemas.student_academic_context import (
+        StudentAcademicIdentity,
+        StudentAcademicInstitution,
+        StudentContextResults,
+    )
+    from app.schemas.student_attendance import (
+        StudentAttendanceRecord,
+        StudentAttendanceSummary,
+        StudentOwnAttendance,
+    )
+    from app.schemas.student_results import (
+        StudentAcademicResultRecord,
+        StudentOwnResultsSummary,
+        StudentOwnTestResultsSummary,
+        StudentTestResultRecord,
+    )
+
+    attendance_rows = attendance if attendance is not None else []
+    total = len(attendance_rows)
+    present = sum(1 for row in attendance_rows if row.get("status") == "present")
+    absent = sum(1 for row in attendance_rows if row.get("status") == "absent")
+    late = sum(1 for row in attendance_rows if row.get("status") == "late")
+    excused = sum(1 for row in attendance_rows if row.get("status") == "excused")
+    own_attendance = StudentOwnAttendance(
+        summary=StudentAttendanceSummary(
+            records_available=total > 0,
+            total_classes=total,
+            present_classes=present,
+            absent_classes=absent,
+            late_classes=late,
+            excused_classes=excused,
+            attendance_percentage=(
+                round(present / total * 100, 2) if total else None
+            ),
+        ),
+        records=[
+            StudentAttendanceRecord(
+                date=row.get("date"),
+                status=row.get("status"),
+                notes=row.get("notes"),
+            )
+            for row in attendance_rows
+        ],
+    )
+
+    published_results = [
+        row for row in (results or []) if row.get("status", "published") == "published"
+    ]
+    published_tests = [
+        row
+        for row in (test_results or [])
+        if row.get("status", "published") == "published"
+    ]
+    own_results = StudentContextResults(
+        summary=StudentOwnResultsSummary(
+            records_available=bool(published_results),
+            total_results=len(published_results),
+        ),
+        records=[
+            StudentAcademicResultRecord(
+                result_type=row.get("result_type"),
+                total_credits_earned=row.get("total_credits_earned"),
+                total_credits_max=row.get("total_credits_max"),
+                sgpa=row.get("sgpa"),
+                cgpa=row.get("cgpa"),
+                status=row.get("status"),
+                issued_at=row.get("issued_at"),
+            )
+            for row in published_results
+        ],
+        test_summary=StudentOwnTestResultsSummary(
+            records_available=bool(published_tests),
+            total_results=len(published_tests),
+        ),
+        test_records=[
+            StudentTestResultRecord(
+                test_name=row.get("test_name"),
+                test_type=row.get("test_type"),
+                course_code=row.get("course_code"),
+                course_name=row.get("course_name"),
+                max_marks=row.get("max_marks"),
+                scored_marks=row.get("scored_marks"),
+                # Mirrors the existing server-side derivation the Phase 6.14.3
+                # results service applies when the stored row has no percentage.
+                percentage=_derived_percentage(row),
+                letter_grade=row.get("letter_grade"),
+                conducted_at=row.get("conducted_at"),
+            )
+            for row in published_tests
+        ],
+    )
+
+    student_number = "STU100"
+    if profile is not None:
+        student_number = profile.get("student_number", student_number)
+
+    return StudentAcademicContext(
+        student=StudentAcademicIdentity(
+            name=None,
+            student_number=student_number,
+            register_number=None,
+            university_roll_number=None,
+        ),
+        institution=StudentAcademicInstitution(
+            institution_name="Test College",
+            institution_code="TC",
+        ),
+        attendance=own_attendance,
+        results=own_results,
     )
 
 
@@ -181,6 +352,8 @@ def _mock_client(session_id, conversation_user_id=STUDENT_USER_ID, conversation_
         "title": "Conversation",
         "status": "active",
     }
+    # The Phase 6.14.5 tenant lookup (get_institution_by_id) is patched directly
+    # in _run_chat, so it never reaches this shared client mock chain.
     if conversation_exists:
         mc.table().select().eq().maybe_single().execute.return_value = MagicMock(data=conversation_data)
     else:
@@ -260,32 +433,37 @@ def _run_chat(
         captured["retrieval_request"] = retrieval_request
         return retrieval_response
 
+    def academic_side(*args, **kwargs):
+        """Stand-in for the Phase 6.14.4 resolver (mocked at its own boundary)."""
+        return student_ctx if student_ctx is not None else _student_academic_context(
+            profile=profile,
+            attendance=attendance,
+            results=results,
+            test_results=test_results,
+        )
+
     with (
         patch("app.services.chat.get_admin_client", return_value=mc),
         patch("app.services.conversation_history.get_admin_client", return_value=mc),
+        # Non-personalized (general-question / non-student) path.
         patch("app.services.chat.retrieve", side_effect=retrieve_side),
+        # Phase 6.14.7 personalized path: the REAL 6.14.5 boundary runs, with only
+        # its tenant/institution lookup and its data-access edges mocked. The
+        # server-side tenant resolution still runs from ``current_user``.
+        patch("app.repositories.tenancy.get_institution_by_id", return_value=_institution_row()),
         patch(
-            "app.services.student_context.get_student_context",
-            return_value=student_ctx if student_ctx is not None else _student_context(),
-        ),
-        patch("app.services.student_context.assert_student_context_tenant"),
-        patch(
-            "app.services.student_data.get_own_profile",
-            return_value=profile if profile is not None else _profile(),
-        ),
-        patch(
-            "app.services.student_data.get_own_attendance",
-            return_value=attendance if attendance is not None else [],
+            "app.services.personalized_retrieval._build_authorized_knowledge_source_ids",
+            return_value={KNOWLEDGE_SOURCE_ID},
         ),
         patch(
-            "app.services.student_data.get_own_test_results",
-            return_value=test_results if test_results is not None else [],
+            "app.services.personalized_retrieval._resolve_chunk_knowledge_sources",
+            return_value={PROCESSING_RUN_ID: KNOWLEDGE_SOURCE_ID},
         ),
+        patch("app.services.personalized_retrieval.retrieve", side_effect=retrieve_side),
         patch(
-            "app.services.student_data.get_own_results",
-            return_value=results if results is not None else [],
+            "app.services.student_academic_context.get_student_academic_context",
+            side_effect=academic_side,
         ),
-        patch("app.services.student_data.get_own_result", return_value=result_with_items),
     ):
         response = process_chat_request(
             request,
@@ -814,7 +992,7 @@ class TestChatPipelinePersonalization:
         assert response.answer == "Personalized answer."
         assert context.student_context is not None
         assert "<authorized_student_data>" in context.student_context
-        assert "75.0%" in context.student_context
+        assert "75%" in context.student_context
         assert "STU100" in context.student_context
 
     def test_eligible_student_can_ask_own_results(self):
@@ -841,7 +1019,7 @@ class TestChatPipelinePersonalization:
         assert context.student_context is not None
         assert "Internal Assessment 1" in context.student_context
         assert "18/20" in context.student_context
-        assert "90.0%" in context.student_context
+        assert "90%" in context.student_context
 
     def test_general_question_adds_no_student_context(self):
         """Scenario 16 through the pipeline."""
@@ -949,7 +1127,7 @@ class TestChatPipelinePersonalization:
             _attendance_row(3, status="present"),
             _attendance_row(4, status="present"),
         ]
-        test_row = _test_result_row(1, percentage=None)  # server derives 90.0
+        test_row = _test_result_row(1, percentage=None)  # server derives 90%
         response, captured = _run_chat(
             "What is my current academic performance?",
             attendance=attendance,
@@ -958,8 +1136,10 @@ class TestChatPipelinePersonalization:
         )
         context = captured["context"]
         assert response.status == "success"
-        assert "attendance percentage (authoritative): 75.0%" in context.student_context
-        assert "90.0%" in context.student_context
+        # Phase 6.14.7: the same authoritative values are now rendered by the
+        # Phase 6.14.6 academic-context serializer.
+        assert "3 of 4 classes present (75%)" in context.student_context
+        assert "90%" in context.student_context
         assert STUDENT_DATA_GUIDANCE in context.grounding_instructions
         assert "do not recompute" in context.grounding_instructions
 
@@ -1026,6 +1206,7 @@ class TestChatPipelinePersonalization:
             patch("app.services.chat.get_admin_client", return_value=mc),
             patch("app.services.conversation_history.get_admin_client", return_value=mc),
             patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+            patch("app.repositories.tenancy.get_institution_by_id", return_value=_institution_row()),
         ):
             response = process_chat_request(request, SessionContext(session_id=sid), provider, STUDENT_USER_ID)
         assert response.status == "success"
@@ -1172,7 +1353,7 @@ class TestDebugPrivacy:
         # 1. Generation receives the unredacted authorized student data.
         context = captured["context"]
         assert context.student_context is not None
-        assert "75.0%" in context.student_context
+        assert "75%" in context.student_context
         assert "STU100" in context.student_context
         assert "<authorized_student_data>" in context.student_context
 
@@ -1182,7 +1363,7 @@ class TestDebugPrivacy:
         assert diagnostics is not None
         serialized = response.model_dump_json()
         assert "STU100" not in serialized
-        assert "75.0%" not in serialized
+        assert "75%" not in serialized
         assert "authorized_student_data" not in serialized
         assert STUDENT_ID not in serialized
         assert TENANT_A not in serialized

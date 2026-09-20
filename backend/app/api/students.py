@@ -15,9 +15,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from app.core.security import assert_tenant_object, get_current_user
+from app.schemas.student_attendance import StudentOwnAttendance
 from app.schemas.student_profile import StudentAcademicProfile
+from app.schemas.student_results import (
+    StudentAcademicResultDetail,
+    StudentOwnResults,
+    StudentOwnTestResults,
+)
 from app.services import student_academic_profile as academic_profile_service
+from app.services import student_attendance as student_attendance_service
 from app.services import student_data
+from app.services import student_results as student_results_service
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -61,6 +69,43 @@ def my_results(
     )
 
 
+@router.get("/me/results/summary", response_model=StudentOwnResults)
+def my_results_summary(
+    academic_year_id: UUID | None = None,
+    semester_id: UUID | None = None,
+    current_user: dict = Depends(get_current_user),
+) -> StudentOwnResults:
+    """Return the authenticated student's own published results (safe view).
+
+    Phase 6.14.3: student-safe projection (no internal database
+    identifiers). Identity and tenant are resolved server-side from the
+    authenticated JWT; only non-identity filters already supported by the
+    existing schema (academic_year_id / semester_id) narrow the caller's
+    own rows. The legacy raw ``GET /me/results`` contract is unchanged.
+    """
+    return student_results_service.get_own_results(
+        current_user,
+        academic_year_id=academic_year_id,
+        semester_id=semester_id,
+    )
+
+
+@router.get("/me/results/{result_id}/detail",
+    response_model=StudentAcademicResultDetail)
+def my_result_detail(
+    result_id: UUID,
+    current_user: dict = Depends(get_current_user),
+) -> StudentAcademicResultDetail:
+    """Return ONE own published result with subject rows (safe view).
+
+    Phase 6.14.3: ownership + published status + tenant are enforced in
+    the service; foreign/unpublished/missing rows yield 404
+    RESULT_NOT_FOUND. The legacy raw ``GET /me/results/{result_id}``
+    contract is unchanged.
+    """
+    return student_results_service.get_own_result(current_user, result_id)
+
+
 @router.get("/me/results/{result_id}")
 def my_result(
     result_id: UUID,
@@ -78,6 +123,27 @@ def my_result(
     return result
 
 
+@router.get("/me/test-results/summary", response_model=StudentOwnTestResults)
+def my_test_results_summary(
+    academic_year_id: UUID | None = None,
+    semester_id: UUID | None = None,
+    current_user: dict = Depends(get_current_user),
+) -> StudentOwnTestResults:
+    """Return the authenticated student's own published test scores (safe).
+
+    Phase 6.14.3: student-safe projection (no internal database
+    identifiers). Identity and tenant are resolved server-side from the
+    authenticated JWT; only non-identity filters already supported by the
+    existing schema (academic_year_id / semester_id) narrow the caller's
+    own rows. The legacy raw ``GET /me/test-results`` contract is unchanged.
+    """
+    return student_results_service.get_own_test_results(
+        current_user,
+        academic_year_id=academic_year_id,
+        semester_id=semester_id,
+    )
+
+
 @router.get("/me/test-results")
 def my_test_results(
     academic_year_id: UUID | None = None,
@@ -89,6 +155,36 @@ def my_test_results(
         UUID(current_user["user_id"]),
         academic_year_id=academic_year_id,
         semester_id=semester_id,
+    )
+
+
+@router.get("/me/attendance/summary", response_model=StudentOwnAttendance)
+def my_attendance_summary(
+    academic_year_id: UUID | None = None,
+    semester_id: UUID | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    current_user: dict = Depends(get_current_user),
+) -> StudentOwnAttendance:
+    """Return the authenticated student's own attendance summary + records.
+
+    Phase 6.14.2: reusable student-safe attendance data layer (no
+    internal database identifiers). Identity and tenant are resolved
+    server-side from the authenticated JWT via ``get_current_user``;
+    the endpoint accepts NO identity parameters, so client-supplied
+    ``student_id`` / ``user_id`` / ``institution_id`` / email /
+    register-number / roll-number values can never override the
+    authenticated identity (extra query fields are rejected with 422).
+    Only non-identity filters already supported by the existing schema
+    (academic_year_id / semester_id / date_from / date_to) narrow the
+    caller's own rows.
+    """
+    return student_attendance_service.get_own_attendance(
+        current_user,
+        academic_year_id=academic_year_id,
+        semester_id=semester_id,
+        date_from=date_from,
+        date_to=date_to,
     )
 
 
