@@ -1,10 +1,11 @@
 /**
- * Phase 5.4 — Authentication service.
+ * Phase 5.4 — Authentication service (extended by Phase 6.15.3).
  *
  * The only authentication boundary the frontend is allowed to use. It talks
  * exclusively to the existing FastAPI backend endpoints:
- *     POST /api/v1/auth/login   (obtain a Supabase JWT access token)
- *     GET  /api/v1/auth/me      (validate a token and resolve the app user)
+ *     POST /api/v1/auth/login        (email + password — admin/staff/faculty)
+ *     POST /api/v1/auth/student/login (unified identifier + password — students)
+ *     GET  /api/v1/auth/me           (validate a token and resolve the app user)
  *
  * Boundaries:
  * - No password hashing, JWT signing/decoding, authorization decisions,
@@ -24,18 +25,31 @@
  * by the Vite dev server to the FastAPI backend).
  */
 
-import type { CurrentUser, LoginRequest, LoginResponse } from '../types/auth.ts'
+import { SESSION_EXPIRED_MESSAGE } from './sessionEvents.ts'
+import type { CurrentUser, LoginRequest, LoginResponse, StudentLoginRequest } from '../types/auth.ts'
 
 const API_BASE_URL: string = (
   import.meta.env?.VITE_API_BASE_URL ?? '/api'
 ).replace(/\/+$/, '')
 
 const LOGIN_ENDPOINT: string = `${API_BASE_URL}/v1/auth/login`
+const STUDENT_LOGIN_ENDPOINT: string = `${API_BASE_URL}/v1/auth/student/login`
 const ME_ENDPOINT: string = `${API_BASE_URL}/v1/auth/me`
+
+/**
+ * Distinguishes which authentication operation a response belongs to, so the
+ * SAME HTTP status can be classified differently by context (Phase 6.15.3):
+ *   - `login`   — POST /auth/login or POST /auth/student/login. A 401 here
+ *                 means the credentials were rejected (the student endpoint
+ *                 normalizes every auth failure to 401 INVALID_CREDENTIALS).
+ *   - `session` — GET /auth/me with a saved token. A 401/404 here means the
+ *                 token is no longer accepted (session invalid/expired).
+ */
+type AuthOperation = 'login' | 'session'
 
 /** Distinguishes why an authentication operation failed. */
 export type AuthErrorKind =
-  | 'invalid_credentials' // 400 INVALID_CREDENTIALS from /login
+  | 'invalid_credentials' // 400 INVALID_CREDENTIALS (/auth/login) or 401 INVALID_CREDENTIALS (/auth/student/login)
   | 'validation' // 422 FastAPI request validation failure
   | 'session_invalid' // 401/404 from /auth/me — token rejected or user gone
   | 'server' // 5xx upstream error
@@ -46,11 +60,17 @@ export type AuthErrorKind =
 function messageFor(kind: AuthErrorKind): string {
   switch (kind) {
     case 'invalid_credentials':
-      return 'The email or password is incorrect. Please try again.'
+      // Generic on purpose: must not reveal whether the email / register
+      // number / roll number exists or which part was wrong.
+      return 'Invalid login credentials. Please check your details and try again.'
     case 'validation':
       return 'Please enter a valid email and a password of at least 6 characters.'
     case 'session_invalid':
-      return 'The saved session could not be verified. Please sign in again.'
+      // Phase 6.15.6 — ONE session-expiry sentence for the whole application:
+      // the message shown when a saved token is rejected during restore is
+      // byte-identical to the message published by the session-expiry bus
+      // (services/sessionEvents.ts), so every expiry path is consistent.
+      return SESSION_EXPIRED_MESSAGE
     case 'server':
       return 'The authentication server reported an error. Please try again later.'
     case 'network':
@@ -122,21 +142,43 @@ function extractAppError(body: unknown): { code: string | null; message: string 
   return { code: null, message: null }
 }
 
-/** Classify a received HTTP error response into a user-safe AuthError. */
-async function buildAuthError(response: Response): Promise<AuthError> {
+/**
+ * Classify a received HTTP error response into a user-safe AuthError.
+ *
+ * Phase 6.15.3 fix: classification is driven by the backend `error.code`
+ * first and by the AUTHENTICATION OPERATION context, not by HTTP status
+ * alone. The student login endpoint intentionally returns HTTP 401
+ * `INVALID_CREDENTIALS` for bad credentials (anti-enumeration), while
+ * GET /auth/me returns 401 for an expired/rejected token — the same status
+ * must NOT collapse into `session_invalid` on a login request.
+ */
+async function buildAuthError(
+  response: Response,
+  operation: AuthOperation,
+): Promise<AuthError> {
   const status = response.status
   const body = await readJsonBody(response)
   const { code } = extractAppError(body)
 
-  // 400 from /login — bad credentials (live-verified backend contract).
-  if (status === 400 && code === 'INVALID_CREDENTIALS') {
+  // Backend error code wins over status: both /auth/login (400) and
+  // /auth/student/login (401) use `INVALID_CREDENTIALS` for rejected
+  // credentials.
+  if (code === 'INVALID_CREDENTIALS') {
     return new AuthError('invalid_credentials', status, code)
   }
-  // 422 — FastAPI request validation (email format / password length).
+  // 422 — FastAPI/AppError request validation (e.g. missing
+  // institution_code for an academic identifier login, password length).
   if (status === 422) {
     return new AuthError('validation', status, code ?? 'VALIDATION_ERROR')
   }
-  // 401/404 from /auth/me — the token is not accepted for a current user.
+  // 401 on a LOGIN request — the credentials were rejected. Even without an
+  // `INVALID_CREDENTIALS` code this can never mean "the saved session
+  // expired": no session exists yet on a login request.
+  if (operation === 'login' && status === 401) {
+    return new AuthError('invalid_credentials', status, code)
+  }
+  // 401/404 from /auth/me (operation `session`) — the token is not accepted
+  // for a current user.
   if (status === 401 || status === 404) {
     return new AuthError('session_invalid', status, code)
   }
@@ -158,6 +200,7 @@ async function requestAuthJson<T>(
   endpoint: string,
   body: unknown,
   accessToken: string | null,
+  operation: AuthOperation,
 ): Promise<T> {
   let response: Response
   try {
@@ -177,7 +220,7 @@ async function requestAuthJson<T>(
   }
 
   if (!response.ok) {
-    throw await buildAuthError(response)
+    throw await buildAuthError(response, operation)
   }
 
   return (await response.json()) as T
@@ -193,7 +236,88 @@ async function requestAuthJson<T>(
  *                   credentials or tokens in the message.
  */
 export async function login(request: LoginRequest): Promise<LoginResponse> {
-  return requestAuthJson<LoginResponse>('POST', LOGIN_ENDPOINT, request, null)
+  return requestAuthJson<LoginResponse>('POST', LOGIN_ENDPOINT, request, null, 'login')
+}
+
+/**
+ * Authenticate a student via POST /api/v1/auth/student/login using the
+ * backend's UNIFIED `identifier` field (email / register number /
+ * university roll number). The backend resolves the identifier type itself;
+ * the frontend never classifies register-number vs roll-number formats.
+ *
+ * The response reuses the existing locked login contract
+ * (`{ access_token, message, user: { id, email } }`), so identity bootstrap
+ * via GET /auth/me works unchanged afterwards.
+ *
+ * @throws AuthError kind `invalid_credentials` on HTTP 401 (the backend
+ *                   normalizes EVERY student auth failure — unknown
+ *                   identifier, wrong password, pending/rejected student,
+ *                   inactive lifecycle — to 401 INVALID_CREDENTIALS so no
+ *                   account information is ever disclosed), `validation`
+ *                   on 422 (e.g. missing institution_code), `server`,
+ *                   `network`, or `unknown`.
+ */
+export async function studentLogin(
+  request: StudentLoginRequest,
+): Promise<LoginResponse> {
+  return requestAuthJson<LoginResponse>(
+    'POST',
+    STUDENT_LOGIN_ENDPOINT,
+    request,
+    null,
+    'login',
+  )
+}
+
+/**
+ * Mirror of the backend's heuristic email detection
+ * (app/schemas/student_auth.py `_is_email`): a value is treated as an email
+ * when it contains "@" and the part after it contains ".". Everything else
+ * is an academic identifier (register number / university roll number).
+ *
+ * Used ONLY to decide which endpoint to call and whether an institution
+ * code is required — never to interpret identifier semantics (the backend
+ * remains authoritative).
+ */
+export function isEmailAddress(value: string): boolean {
+  const trimmed = value.trim()
+  if (!trimmed.includes('@')) return false
+  const domain = trimmed.split('@').pop() ?? ''
+  return domain.includes('.')
+}
+
+/**
+ * Authenticate with EITHER backend password flow from a single UI input:
+ *
+ * - Email identifier        → existing POST /api/v1/auth/login (admin,
+ *                             staff, faculty, and email-based student
+ *                             login all keep working unchanged).
+ * - Academic identifier     → POST /api/v1/auth/student/login with
+ *   (register/roll number)    `institution_code` (required by the backend;
+ *                             the caller must supply it).
+ *
+ * @param identifier Email, register number, or university roll number.
+ * @param password The plaintext password (sent only in the POST body).
+ * @param institutionCode Public institution code — REQUIRED for academic
+ *                        identifier login, ignored (not sent) for email.
+ * @throws AuthError Classified per `AuthErrorKind`.
+ */
+export async function authenticate(
+  identifier: string,
+  password: string,
+  institutionCode?: string,
+): Promise<LoginResponse> {
+  const trimmed = identifier.trim()
+  if (isEmailAddress(trimmed)) {
+    // Existing general email contract — unchanged for admin/staff/faculty.
+    return login({ email: trimmed, password })
+  }
+  // Academic identifier → student login contract (institution-scoped).
+  return studentLogin({
+    identifier: trimmed,
+    password,
+    institution_code: institutionCode?.trim() || undefined,
+  })
 }
 
 /**
@@ -206,5 +330,5 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
  *                   application user does not exist.
  */
 export async function fetchCurrentUser(accessToken: string): Promise<CurrentUser> {
-  return requestAuthJson<CurrentUser>('GET', ME_ENDPOINT, undefined, accessToken)
+  return requestAuthJson<CurrentUser>('GET', ME_ENDPOINT, undefined, accessToken, 'session')
 }

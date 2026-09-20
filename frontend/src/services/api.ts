@@ -18,6 +18,7 @@ import type {
   ConversationSummary,
   MessageSummary,
 } from '../types/conversation.ts'
+import { notifySessionExpired } from './sessionEvents.ts'
 
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 
@@ -98,6 +99,11 @@ export async function chat(
 
   if (!response.ok) {
     const details = await readErrorDetails(response)
+    // Phase 6.15.4 — global session-expiry handling: an authenticated
+    // request rejected with 401 means the token is no longer accepted.
+    // Phase 6.15.7 — the notification names the token used, so a late 401
+    // from a replaced session cannot clear a newer one.
+    if (response.status === 401) notifySessionExpired(accessToken)
     throw new ApiError(
       response.status,
       formatApiErrorMessage(response.status, details),
@@ -131,6 +137,7 @@ export async function listConversations(
 
   if (!response.ok) {
     const details = await readErrorDetails(response)
+    if (response.status === 401) notifySessionExpired(accessToken)
     throw new ApiError(
       response.status,
       formatApiErrorMessage(response.status, details),
@@ -173,6 +180,7 @@ export async function getConversationMessages(
 
   if (!response.ok) {
     const details = await readErrorDetails(response)
+    if (response.status === 401) notifySessionExpired(accessToken)
     throw new ApiError(
       response.status,
       formatApiErrorMessage(response.status, details),

@@ -1,3 +1,5 @@
+import logging
+
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -5,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.core.errors import AppError, app_error_handler
-from app.core.security import get_current_user, scope_tenant
+from app.core.security import get_current_user, resolve_primary_role, scope_tenant
 from app.api.ingestion import router as ingestion_router
 from app.api.auth import router as auth_router
 from app.api.registration import router as registration_router
@@ -32,6 +34,30 @@ app = FastAPI(
 )
 
 app.add_exception_handler(AppError, app_error_handler)
+
+
+logger = logging.getLogger(__name__)
+
+
+@app.exception_handler(Exception)
+async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Phase 6.15.7 — fail closed on unhandled server errors.
+
+    Production responses carry ONLY the stable ``{"error": ...}`` envelope
+    with a generic message. The traceback, exception class name, SQL text,
+    file paths, and any other internal detail are logged server-side (with
+    the request path for correlation) and never returned to the client.
+    """
+    logger.exception("Unhandled server error on %s", request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": "INTERNAL_ERROR",
+                "message": "An unexpected server error occurred. Please try again later.",
+            }
+        },
+    )
 
 
 @app.exception_handler(RequestValidationError)
@@ -181,11 +207,24 @@ def health_check():
 
 @app.get("/api/v1/auth/me")
 async def auth_me(current_user: dict = Depends(get_current_user)):
+    """Phase 6.15.4 — canonical authenticated identity + role bootstrap.
+
+    The role and tenant are resolved SERVER-SIDE from the authenticated
+    JWT -> public.users -> user_roles -> roles chain (never from any
+    client-supplied value). Existing Phase 5.4 response fields are preserved
+    byte-for-byte; ``role`` (canonical, single) and ``institution_id`` (tenant
+    context, None for platform-level accounts) are additive.
+
+    An account whose active roles contain no supported role resolves to
+    ``role: None`` — the frontend treats that as "no privileged UI".
+    """
     return {
         "authenticated": True,
         "user_id": current_user["user_id"],
         "auth_user_id": current_user["auth_user_id"],
         "email": current_user["email"],
+        "role": resolve_primary_role(current_user.get("roles")),
+        "institution_id": current_user.get("institution_id"),
     }
 
 

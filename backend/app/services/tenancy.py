@@ -50,6 +50,7 @@ from app.repositories import tenancy as tenancy_repo
 from app.schemas.tenancy import (
     ApprovalDecisionRequest,
     DecisionResponse,
+    InstitutionLookupResponse,
     InstitutionRegistrationRequest,
     InstitutionRegistrationResponse,
     OrganizationRegistrationRequest,
@@ -165,6 +166,51 @@ def _assert_institution_active(institution: dict) -> None:
             status_code=403,
             code="INSTITUTION_NOT_ACCEPTING_REGISTRATIONS",
         )
+
+
+# ============================================================================
+# 0. Public institution lookup (Phase 6.15.2 — registration discovery)
+# ============================================================================
+
+
+def lookup_institution_by_code(code: str) -> InstitutionLookupResponse:
+    """Resolve a PUBLIC institution code to its safe public identity.
+
+    Phase 6.15.2 — read-only, unauthenticated, intended for the student
+    registration form's institution-code field. Returns ONLY the safe public
+    projection (id / code / name); the backend remains authoritative: the
+    registration endpoint re-resolves and re-validates the institution
+    server-side, so a stale or forged client value can never influence
+    authorization.
+
+    Errors (project AppError envelope):
+      * 422 VALIDATION_ERROR   — missing/blank code (schema enforces length too)
+      * 404 INSTITUTION_NOT_FOUND — no institution with this code
+      * 403 INSTITUTION_NOT_ACCEPTING_REGISTRATIONS — institution exists but
+        is not ACTIVE (pending/rejected/suspended), so it cannot be joined.
+    """
+    normalized = (code or "").strip().upper()
+    if not normalized:
+        raise AppError(
+            "Institution code is required",
+            status_code=422,
+            code="VALIDATION_ERROR",
+        )
+
+    db = get_admin_client()
+    institution = tenancy_repo.get_institution_by_code(db, normalized)
+    if institution is None:
+        raise AppError(
+            "Institution not found",
+            status_code=404,
+            code="INSTITUTION_NOT_FOUND",
+        )
+    _assert_institution_active(institution)
+    return InstitutionLookupResponse(
+        institution_id=UUID(str(institution["institution_id"])),
+        code=str(institution["code"]),
+        name=str(institution["name"]),
+    )
 
 
 def _grant_role(

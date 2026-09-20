@@ -3,7 +3,7 @@
 Covers:
   * feature disabled by default (dev_test_mode=False) → 404 for every route
   * forgot-password validation (email format, password length, confirm match)
-  * forgot-password success and user-not-found failure
+  * forgot-password success and anti-enumeration parity for an unknown email
   * change-password success and invalid-current-password failure
   * change-password unauthorized is impossible to bypass (feature flag first)
   * admin reset-student-password requires admin role + dev flag
@@ -181,27 +181,54 @@ def test_forgot_password_success():
             },
         )
     assert response.status_code == 200
-    assert "successfully" in response.json()["message"]
+    # Phase 6.15.6 — the response is the generic anti-enumeration message.
+    assert "If an account exists for this email" in response.json()["message"]
     admin_client.auth.admin.update_user_by_id.assert_called_once_with(
         "uid-1", {"password": "newpass123"}
     )
 
 
-def test_forgot_password_user_not_found():
+def test_forgot_password_does_not_reveal_account_existence():
+    """Phase 6.15.6 — anti-enumeration contract.
+
+    An unknown email must be INDISTINGUISHABLE from a successful reset: same
+    HTTP status, same generic message, no password change, and no wording that
+    confirms or denies that the account exists.
+    """
     _enable_dev_mode()
-    admin_client = MagicMock()
-    admin_client.auth.admin.list_users.return_value = []
-    with patch("app.api.dev_auth.get_admin_client", return_value=admin_client):
-        response = client.post(
+    body = {
+        "email": "student@college.edu",
+        "new_password": "newpass123",
+        "confirm_password": "newpass123",
+    }
+
+    # Known email → password is updated.
+    known_client = MagicMock()
+    known_client.auth.admin.list_users.return_value = [
+        _fake_user("uid-1", "student@college.edu")
+    ]
+    with patch("app.api.dev_auth.get_admin_client", return_value=known_client):
+        known = client.post("/api/v1/dev/auth/forgot-password", json=body)
+
+    # Unknown email → generic response, nothing updated.
+    unknown_client = MagicMock()
+    unknown_client.auth.admin.list_users.return_value = []
+    with patch("app.api.dev_auth.get_admin_client", return_value=unknown_client):
+        unknown = client.post(
             "/api/v1/dev/auth/forgot-password",
-            json={
-                "email": "nobody@college.edu",
-                "new_password": "newpass123",
-                "confirm_password": "newpass123",
-            },
+            json={**body, "email": "nobody@college.edu"},
         )
-    assert response.status_code == 404
-    assert response.json()["error"]["code"] == "USER_NOT_FOUND"
+
+    assert unknown.status_code == known.status_code == 200
+    assert unknown.json() == known.json()
+    unknown_client.auth.admin.update_user_by_id.assert_not_called()
+    known_client.auth.admin.update_user_by_id.assert_called_once_with(
+        "uid-1", {"password": "newpass123"}
+    )
+    message = unknown.json()["message"].lower()
+    assert "no account" not in message
+    assert "not found" not in message
+    assert "does not exist" not in message
 
 
 # ---------------------------------------------------------------------------

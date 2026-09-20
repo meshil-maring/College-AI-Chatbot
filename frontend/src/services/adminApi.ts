@@ -34,6 +34,7 @@ import type {
   TestResultCreate,
   TestResultUpdate,
 } from '../types/admin.ts'
+import { notifySessionExpired } from './sessionEvents.ts'
 
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 const ADMIN_BASE = `${API_BASE_URL}/v1/admin`
@@ -108,6 +109,12 @@ async function requestJson<T>(
   }
   if (!response.ok) {
     const { details, code } = await readErrorDetails(response)
+    // Phase 6.15.4 — global session-expiry handling: every admin/student
+    // request sends a bearer token, so a 401 means the token is no longer
+    // accepted (TOKEN_EXPIRED / INVALID_TOKEN / USER_NOT_FOUND).
+    // Phase 6.15.7 — the notification names the token used, so a late 401 from
+    // a replaced session cannot clear a newer one.
+    if (response.status === 401) notifySessionExpired(accessToken)
     throw new AdminApiError(response.status, formatErrorMessage(response.status, details, code), details, code)
   }
   return (await response.json()) as T

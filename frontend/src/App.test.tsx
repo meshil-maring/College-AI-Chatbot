@@ -1,69 +1,118 @@
 /**
- * Phase Admin-4 — App role gating tests.
+ * Phase 6.15.4 — App role gating tests (canonical /auth/me role).
  *
- * Verifies that admin users see AdminShell and student users see
- * ChatShell + AcademicsPanel.
+ * Verifies that the application shell is selected from the SERVER-
+ * authoritative role held in AuthProvider state — with NO /admin/me probe:
+ *   admin    -> AdminShell
+ *   staff    -> StudentShell (no dedicated staff UI yet)
+ *   faculty  -> StudentShell (no dedicated faculty UI yet)
+ *   student  -> StudentShell
+ *   unknown  -> safe "Access restricted" shell (never privileged UI)
  */
 
 /// <reference types="vitest/globals" />
-import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
-import { createContext, useContext } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import App from './App.tsx'
 import * as adminApi from './services/adminApi.ts'
+import type { DashboardSummary } from './types/admin.ts'
 
 vi.mock('./services/adminApi.ts')
-
-const AuthContext = createContext<{
-  status: string
-  user: unknown
-  accessToken: string | null
-  error: string | null
-  login: ReturnType<typeof vi.fn>
-  logout: ReturnType<typeof vi.fn>
-}>({
-  status: 'authenticated',
-  user: null,
-  accessToken: 'test-token',
-  error: null,
-  login: vi.fn(),
-  logout: vi.fn(),
-})
-
-vi.mock('./features/auth/AuthProvider.tsx', () => ({
-  AuthProvider: ({ children }: { children: React.ReactNode }) => {
-    return <AuthContext.Provider value={{
-      status: 'authenticated',
-      user: null,
-      accessToken: 'test-token',
-      error: null,
-      login: vi.fn(),
-      logout: vi.fn(),
-    }}>{children}</AuthContext.Provider>
-  },
-  useAuth: () => useContext(AuthContext),
+vi.mock('./services/devAuth.ts', () => ({
+  fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
 }))
 
-describe('App role gating', () => {
-  it('shows AdminShell for admin users', async () => {
-    vi.mocked(adminApi.getAdminIdentity).mockResolvedValue({
-      user_id: 'u1',
-      auth_user_id: 'a1',
-      email: 'admin@test.com',
-      roles: ['admin'],
-      is_admin: true,
-    })
+const DASHBOARD_SUMMARY: DashboardSummary = {
+  counts: {
+    knowledge_sources: 0,
+    documents: 0,
+    faqs: 0,
+    notices: 0,
+    students: 0,
+    student_results: 0,
+    test_results: 0,
+    attendance_records: 0,
+  },
+  recent_audit: [],
+}
+
+/** Mutable auth context so each test can drive the canonical role. */
+const authState = vi.hoisted(() => ({
+  status: 'authenticated' as string,
+  user: null as unknown,
+  role: null as string | null,
+  accessToken: 'test-token' as string | null,
+  error: null as string | null,
+  login: vi.fn(),
+  logout: vi.fn(),
+}))
+
+vi.mock('./features/auth/AuthProvider.tsx', () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useAuth: () => authState,
+}))
+
+beforeEach(() => {
+  authState.status = 'authenticated'
+  authState.user = {
+    authenticated: true,
+    user_id: 'u1',
+    auth_user_id: 'a1',
+    email: 'admin@test.com',
+    role: 'admin',
+    institution_id: null,
+  }
+  authState.role = null
+  authState.accessToken = 'test-token'
+  authState.error = null
+  authState.logout.mockReset()
+  vi.mocked(adminApi.getAdminIdentity).mockReset()
+  vi.mocked(adminApi.getDashboardSummary).mockReset()
+  vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
+})
+
+describe('App shell selection from the canonical /auth/me role', () => {
+  it('shows AdminShell for the admin role', async () => {
+    authState.role = 'admin'
     render(<App />)
-    await waitFor(() => {
-      expect(screen.getByText('Admin Panel')).toBeInTheDocument()
-    })
+    expect(await screen.findByText('Admin Panel')).toBeInTheDocument()
+    // No /admin/me probe is used for role resolution.
+    expect(adminApi.getAdminIdentity).not.toHaveBeenCalled()
   })
 
-  it('shows My Academics for student users (non-admin)', async () => {
-    vi.mocked(adminApi.getAdminIdentity).mockRejectedValue(new Error('Forbidden'))
+  it('shows the student shell for the student role', async () => {
+    authState.role = 'student'
     render(<App />)
-    await waitFor(() => {
-      expect(screen.getByText('My Academics')).toBeInTheDocument()
-    })
+    expect(await screen.findByText('My Academics')).toBeInTheDocument()
+    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
+  })
+
+  it('shows the student shell for the staff role (no privileged UI)', async () => {
+    authState.role = 'staff'
+    render(<App />)
+    expect(await screen.findByText('My Academics')).toBeInTheDocument()
+    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
+  })
+
+  it('shows the student shell for the faculty role (no privileged UI)', async () => {
+    authState.role = 'faculty'
+    render(<App />)
+    expect(await screen.findByText('My Academics')).toBeInTheDocument()
+    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
+  })
+
+  it('fails safe for an unknown role: no privileged UI', async () => {
+    authState.role = 'unknown-role'
+    render(<App />)
+    expect(await screen.findByText('Access restricted')).toBeInTheDocument()
+    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
+    expect(screen.queryByText('My Academics')).not.toBeInTheDocument()
+  })
+
+  it('fails safe for a null role: no privileged UI', async () => {
+    authState.role = null
+    render(<App />)
+    expect(await screen.findByText('Access restricted')).toBeInTheDocument()
+    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
 })

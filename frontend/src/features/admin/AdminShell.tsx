@@ -5,15 +5,17 @@
  * navigation (no React Router). Provides a sidebar with links to each
  * manager and renders the active panel.
  *
- * Role gating is performed by the parent (App.tsx) — this shell assumes
- * the authenticated user is an admin. The admin identity is fetched to
- * confirm authorization and display the current admin.
+ * Phase 6.15.4 — the parent (App.tsx) gates this shell on the SERVER-
+ * authoritative `admin` role from /auth/me. This shell no longer re-probes
+ * GET /admin/me for identity: the canonical identity (email/user id) comes
+ * from the same AuthProvider state, so one authenticated request bootstraps
+ * everything. Authorization itself remains fully backend-enforced: every
+ * admin API request still carries the bearer token and /admin/* endpoints
+ * reject non-admin tokens with 403.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.tsx'
-import { getAdminIdentity } from '../../services/adminApi.ts'
-import type { AdminIdentity } from '../../types/admin.ts'
 import AdminDashboard from './AdminDashboard.tsx'
 import FaqManager from './FaqManager.tsx'
 import DocumentManager from './DocumentManager.tsx'
@@ -45,68 +47,25 @@ const NAV_ITEMS: { key: AdminView; label: string }[] = [
 ]
 
 export default function AdminShell() {
-  const { accessToken, logout } = useAuth()
-  const [identity, setIdentity] = useState<AdminIdentity | null>(null)
-  const [authError, setAuthError] = useState<string | null>(null)
+  const { user, logout } = useAuth()
   const [currentView, setCurrentView] = useState<AdminView>('dashboard')
-
-  useEffect(() => {
-    if (accessToken === null) return
-    let cancelled = false
-    void getAdminIdentity(accessToken)
-      .then((me) => {
-        if (!cancelled) setIdentity(me)
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setAuthError(err instanceof Error ? err.message : 'Authorization failed.')
-        }
-      })
-    return () => { cancelled = true }
-  }, [accessToken])
 
   const handleLogout = useCallback(() => {
     logout()
   }, [logout])
 
-  if (authError !== null) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-        <main className="max-w-xl w-full text-center py-16">
-          <div className="rounded-2xl border border-red-900/50 bg-red-500/10 p-10 shadow-xl">
-            <h1 className="text-2xl font-bold text-red-300">Access denied</h1>
-            <p className="mt-4 text-slate-300">{authError}</p>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="mt-6 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            >
-              Sign out
-            </button>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (identity === null) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-        <main className="max-w-xl w-full text-center py-16">
-          <div className="rounded-2xl border border-slate-700 bg-slate-800 p-10 shadow-xl">
-            <h1 className="text-2xl font-bold text-white">Loading admin…</h1>
-          </div>
-        </main>
-      </div>
-    )
-  }
+  // Phase 6.15.4 — identity comes from the canonical /auth/me bootstrap
+  // (AuthProvider state). No loading/probe state is needed: App.tsx only
+  // renders this shell once /auth/me has resolved the authenticated
+  // identity, so `user` is present. Defensive fallback to the user id.
+  const identityLabel = user?.email ?? user?.user_id ?? 'Admin'
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col">
       <header className="border-b border-slate-700 bg-slate-800/60 px-4 py-3">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="text-lg font-bold text-white">Admin Panel</h1>
-          <span className="text-xs text-slate-400">{identity.email ?? identity.user_id}</span>
+          <span className="text-xs text-slate-400">{identityLabel}</span>
           <div className="ml-auto flex items-center gap-3">
             <button
               type="button"

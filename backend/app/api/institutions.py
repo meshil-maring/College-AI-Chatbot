@@ -36,23 +36,55 @@ Security invariants (inherited from the existing schemas and services):
 * Approval / activation workflow is explicitly Phase 6.13.4 — not here.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from uuid import UUID
 
 from app.core.security import get_current_user
 from app.schemas.tenancy import (
     ApprovalDecisionRequest,
     DecisionResponse,
+    InstitutionLookupResponse,
     InstitutionRegistrationRequest,
     InstitutionRegistrationResponse,
 )
 from app.services.tenancy import (
     decide_join_request,
     get_authorization_context_for_user,
+    lookup_institution_by_code,
     register_institution,
 )
 
 router = APIRouter(prefix="/institutions", tags=["institutions"])
+
+
+@router.get(
+    "/lookup",
+    status_code=200,
+    response_model=InstitutionLookupResponse,
+    summary="Resolve a public institution code (student registration discovery)",
+    description="""Public, read-only, UNAUTHENTICATED endpoint for the student
+    registration form: an unauthenticated prospective student knows only the
+    institution's public code, so this endpoint lets the frontend confirm the
+    code resolves to an ACTIVE institution before submitting the registration.
+
+    Returns ONLY the safe public projection — ``institution_id``, ``code``,
+    ``name``. Never exposes contact/location details, organization linkage,
+    status machinery, join codes, credentials, or any student/admin data.
+
+    The registration endpoint remains authoritative: it re-resolves and
+    re-validates the institution server-side.
+    """,
+)
+def lookup_institution_endpoint(
+    code: str = Query(
+        ...,
+        min_length=2,
+        max_length=64,
+        description="Public institution code (case-insensitive).",
+    ),
+) -> InstitutionLookupResponse:
+    """Resolve an institution by its public code for registration discovery."""
+    return lookup_institution_by_code(code)
 
 
 @router.post(

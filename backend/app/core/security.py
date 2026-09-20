@@ -49,8 +49,10 @@ def verify_jwt(token: str) -> dict:
         return claims
     except ExpiredSignatureError:
         raise AppError("Token has expired", status_code=401, code="TOKEN_EXPIRED")
-    except (InvalidTokenError, PyJWKError) as exc:
-        raise AppError(f"Invalid token: {exc}", status_code=401, code="INVALID_TOKEN")
+    except (InvalidTokenError, PyJWKError):
+        # Phase 6.15.7 — never echo library internals (exception text can name
+        # algorithms, claims, key material sources). Fixed user-safe message.
+        raise AppError("Invalid token", status_code=401, code="INVALID_TOKEN")
 
 
 async def get_current_user(
@@ -178,3 +180,47 @@ def require_roles(*allowed: str) -> Callable:
         return current_user
 
     return _dependency
+def user_tenant_id(current_user: dict) -> UUID | None:
+    """Return the authenticated user's tenant (institution_id), or None."""
+    raw = current_user.get("institution_id") if current_user else None
+    if raw is None:
+        return None
+    return raw if isinstance(raw, UUID) else UUID(str(raw))
+
+
+# ============================================================================
+# Phase 6.15.4 — Canonical role resolution
+# ============================================================================
+# The role names below are the EXISTING Phase 6.6 RBAC role names (the only
+# roles the database can contain — see roles table and require_roles usage).
+# No new role is introduced and no authorization rule changes: this is a
+# read-only projection over the roles already resolved server-side by
+# get_current_user -> get_user_by_auth_id -> user_roles -> roles.
+SUPPORTED_ROLES: tuple[str, ...] = ("admin", "staff", "faculty", "student")
+
+# Resolution precedence when an account holds several active roles. The most
+# privileged operational role wins; "admin" first keeps the existing
+# /admin/* behavior identical for multi-role accounts.
+_ROLE_PRECEDENCE: dict[str, int] = {
+    role: index for index, role in enumerate(SUPPORTED_ROLES)
+}
+
+
+def resolve_primary_role(roles: list[str] | tuple[str, ...] | None) -> str | None:
+    """Resolve the canonical primary role from the server-side role list.
+
+    Returns the highest-precedence SUPPORTED role, or None when the account
+    holds no supported role (unknown/unsupported roles are never reported —
+    the caller treats None as "no privileged UI").
+    """
+    if not roles:
+        return None
+    supported = [
+        _ROLE_PRECEDENCE[role]
+        for role in roles
+        if role in _ROLE_PRECEDENCE
+    ]
+    if not supported:
+        return None
+    return SUPPORTED_ROLES[min(supported)]
+

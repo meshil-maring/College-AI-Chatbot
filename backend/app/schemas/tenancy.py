@@ -137,6 +137,20 @@ class InstitutionRegistrationResponse(BaseModel):
     email: EmailStr
 
 
+class InstitutionLookupResponse(BaseModel):
+    """SAFE public institution projection for registration discovery.
+
+    Phase 6.15.2 — deliberately minimal: only the fields an unauthenticated
+    prospective student needs to confirm they are registering under the right
+    institution. Never exposes contact information, location, organization
+    linkage, status machinery, join codes, or any other internal column.
+    """
+
+    institution_id: UUID
+    code: str
+    name: str
+
+
 class StaffFacultyRegistrationRequest(BaseModel):
     """Public staff/faculty registration payload.
 

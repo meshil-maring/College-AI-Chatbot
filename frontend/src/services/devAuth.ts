@@ -12,6 +12,9 @@
  * - Passwords are only ever sent in POST request bodies over HTTPS in a
  *   real deployment — never in URLs or query strings.
  * - Nothing is logged; errors surfaced here are user-safe messages only.
+ * - Phase 6.15.6: no response ever confirms whether an account exists for an
+ *   email (`user_not_found` maps to a generic message; the backend also
+ *   normalizes its recovery response — see app/api/dev_auth.py).
  */
 
 const API_BASE_URL: string = (
@@ -39,7 +42,10 @@ function messageFor(kind: DevAuthErrorKind): string {
     case 'invalid_credentials':
       return 'The current password is incorrect.'
     case 'user_not_found':
-      return 'No account was found for that email.'
+      // Phase 6.15.6 — ANTI-ENUMERATION: never confirm or deny that an
+      // account exists for an email. The message is deliberately generic and
+      // identical in tone to the other operational failures.
+      return 'We could not complete this request. Please try again.'
     case 'validation':
       return 'Please check the email and password fields and try again.'
     case 'server':

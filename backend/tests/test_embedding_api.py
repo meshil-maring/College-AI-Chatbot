@@ -158,7 +158,15 @@ def test_embed_unexpected_service_failure_uses_existing_500_convention():
         )
 
     assert response.status_code == 500
-    assert response.text == "Internal Server Error"
+    # Phase 6.15.7 — unhandled server errors fail closed through the global
+    # ``unhandled_error_handler`` (app/main.py): the stable ``{"error": ...}``
+    # envelope with a generic message, never a bare Starlette plain-text body.
+    assert response.json() == {
+        "error": {
+            "code": "INTERNAL_ERROR",
+            "message": "An unexpected server error occurred. Please try again later.",
+        }
+    }
 
 
 def test_embed_requires_the_existing_ingestion_roles():
