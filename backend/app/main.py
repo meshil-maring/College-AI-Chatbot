@@ -26,6 +26,12 @@ from app.services.chat import process_chat_request
 from app.services.public_chat import process_chat_request as process_public_chat_request
 from app.services.generation_provider import OpenRouterGenerationProvider
 from app.services.session import resolve_session_context
+from app.core.startup_validation import run_startup_configuration_validation
+
+# Phase 6.15.8 — fail fast on an invalid/incomplete deployment configuration.
+# In local development/testing this only logs a warning; anywhere else a
+# failed check stops startup with a value-free error message.
+run_startup_configuration_validation(settings)
 
 
 app = FastAPI(
