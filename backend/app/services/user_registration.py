@@ -1,10 +1,23 @@
 """Phase 6.13.5 - Student, Faculty & Staff registration service.
 
 Unified registration endpoint for students, faculty, and staff.
+
+Failure handling (Phase 6.15.9): ``register_user`` is the ONE controlled entry
+point for the endpoint. Expected outcomes keep their existing behaviour —
+validation problems raise a 4xx ``AppError`` (missing/inactive institution,
+duplicate identity, missing identifier, ...), and the compensating writes
+around account/profile creation still raise ``REGISTRATION_FAILED``. Anything
+else (an unexpected database/driver/service failure raised outside those
+guarded blocks, e.g. a failing identity lookup) is logged server-side with
+context and converted into the same controlled 5xx ``REGISTRATION_FAILED``
+``AppError``, so a single bad request can never surface as an unhandled
+traceback. The client only ever receives the safe ``{"error": {code,
+message}}`` envelope; no password, token, or internal detail is logged.
 """
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from uuid import UUID
 
@@ -16,7 +29,16 @@ from app.schemas.users import UserRegistrationRequest, UserRegistrationResponse
 from app.services import student_registration as student_svc
 from app.services import tenancy as tenancy_svc
 
+logger = logging.getLogger(__name__)
+
 ROLE_MAP = {"student": "student", "faculty": "faculty", "staff": "staff"}
+
+# Safe, client-facing message for an unexpected failure. Never contains
+# implementation detail (table names, driver messages, stack information).
+REGISTRATION_FAILED_MESSAGE = (
+    "Unable to complete registration at this time. Please try again later."
+)
+
 
 
 def _require_student_identifier(register_number, university_roll_number):
@@ -33,6 +55,42 @@ def _resolve_institution(db, code: str) -> dict:
 
 
 def register_user(payload):
+    """Register a user, converting ANY unexpected failure into a controlled 5xx.
+
+    Layering: the endpoint (``app/api/users.py``) stays a thin delegation and
+    the project's ``AppError`` handler maps errors to the stable
+    ``{"error": {"code", "message"}}`` envelope.
+
+    * ``AppError`` (validation/conflict, and the compensating-block failures
+      raised inside ``_register_user``) passes through untouched — the caller
+      sees the intended 4xx/5xx.
+    * Any other exception is an unexpected database/service failure: it is
+      logged server-side with context and re-raised as a controlled
+      ``REGISTRATION_FAILED`` 5xx with a safe message. It is never swallowed
+      (registration is NOT reported as successful) and never converted into
+      ``None``.
+    """
+    try:
+        return _register_user(payload)
+    except AppError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - converted, logged, then re-raised
+        # Context only: registration type + institution code. Never the
+        # password, tokens, or the student's email/identifiers.
+        logger.exception(
+            "User registration failed (unexpected error): registration_type=%s "
+            "institution_code=%s",
+            getattr(payload, "registration_type", "unknown"),
+            getattr(payload, "institution_code", "unknown"),
+        )
+        raise AppError(
+            REGISTRATION_FAILED_MESSAGE,
+            status_code=500,
+            code="REGISTRATION_FAILED",
+        ) from exc
+
+
+def _register_user(payload):
     reg_type = payload.registration_type
     code = payload.institution_code.strip().upper()
     email = str(payload.email).strip().lower()

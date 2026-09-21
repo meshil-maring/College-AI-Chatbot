@@ -50,6 +50,7 @@ duplicated anywhere.
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from uuid import UUID
 
@@ -60,9 +61,17 @@ from app.core.errors import AppError
 from app.db.supabase import create_supabase_client, get_admin_client
 from app.repositories import admin_academics as academics_repo
 
+logger = logging.getLogger(__name__)
+
 # Approval lifecycle value every registered student must start with. Phase 6.4
 # owns the transition pending -> approved | rejected.
 PENDING = "pending"
+
+# Safe, client-facing message for an unexpected failure (Phase 6.15.9). Never
+# contains implementation detail; the real exception is logged server-side.
+REGISTRATION_FAILED_MESSAGE = (
+    "Unable to complete registration at this time. Please try again later."
+)
 
 INSTITUTION_COLUMNS = "institution_id, name, code, is_active"
 
@@ -196,7 +205,8 @@ def _get_institution(db, institution_id: UUID | str) -> dict:
         .maybe_single()
         .execute()
     )
-    institution = response.data
+    # Guard: maybe_single().execute() returns None when no row matches.
+    institution = response.data if response is not None else None
     if institution is None:
         raise AppError(
             "Institution not found",
@@ -221,6 +231,11 @@ def _find_user_by_email(db, email: str) -> dict | None:
         .maybe_single()
         .execute()
     )
+    # postgrest-py >= 2.x: maybe_single().execute() returns None (not an
+    # APIResponse with data=None) when no row matches — e.g. a brand-new
+    # email during registration.
+    if response is None:
+        return None
     return response.data
 
 
@@ -388,7 +403,37 @@ def register_student(payload: StudentRegistrationRequest) -> RegistrationRespons
     Never produces ``approved``, never assigns roles, and never lets a
     client value influence privileges: only the fields defined on
     ``StudentRegistrationRequest`` (all others rejected with 422) are read.
+
+    Failure handling (Phase 6.15.9): ``AppError`` (validation/conflict, and the
+    compensating-block failures raised in ``_register_student``) passes through
+    unchanged. ANY other exception is an unexpected database/service failure:
+    it is logged server-side with context and converted into a controlled
+    ``REGISTRATION_FAILED`` 5xx with a safe message — never swallowed, never
+    reported as a successful registration, and never allowed to surface as an
+    unhandled traceback.
     """
+    try:
+        return _register_student(payload)
+    except AppError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - converted, logged, then re-raised
+        # Context only: the institution the registration targets. Never the
+        # password, tokens, or the student's email/identifiers.
+        logger.exception(
+            "Student registration failed (unexpected error): institution_id=%s",
+            getattr(payload, "institution_id", "unknown"),
+        )
+        raise AppError(
+            REGISTRATION_FAILED_MESSAGE,
+            status_code=500,
+            code="REGISTRATION_FAILED",
+        ) from exc
+
+
+def _register_student(
+    payload: StudentRegistrationRequest,
+) -> RegistrationResponse:
+    """Registration orchestration (see ``register_student`` for the contract)."""
     email = str(payload.email).strip().lower()
     register_number = _normalize_identifier(payload.register_number)
     university_roll_number = _normalize_identifier(payload.university_roll_number)

@@ -85,6 +85,37 @@ STUDENT_ATTENDANCE_COLUMNS = (
 
 
 # ============================================================================
+# Query-response helpers (postgrest-py >= 2.x)
+# ============================================================================
+
+
+def _single_row(response) -> dict | None:
+    """Return the row of a ``maybe_single().execute()`` response, or ``None``.
+
+    postgrest-py >= 2.x returns ``None`` from ``maybe_single().execute()`` when
+    the query matches ZERO rows — it does NOT return an ``APIResponse`` whose
+    ``data`` is ``None``. Reading ``response.data`` directly therefore raised
+    ``AttributeError: 'NoneType' object has no attribute 'data'`` for the
+    perfectly normal "no such row" case (e.g. a brand-new student email during
+    registration), which surfaced as an unhandled HTTP 500.
+
+    Contract:
+
+    * no matching row          -> ``None`` (a normal repository outcome)
+    * matching row             -> the row ``dict``
+    * database/service failure -> the client raises, and that failure is NEVER
+      translated into ``None``: a real failure must not masquerade as
+      "not found" (the caller must be able to return a controlled 5xx).
+
+    The same defensive shape is already used for exactly this reason by
+    ``app.repositories.tenancy`` and ``app.db.supabase``.
+    """
+    if response is None:
+        return None
+    return response.data
+
+
+# ============================================================================
 # Students
 # ============================================================================
 
@@ -125,7 +156,7 @@ def get_student(client: Client, student_id: UUID | str) -> dict | None:
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def get_student_by_user_id(client: Client, user_id: UUID | str) -> dict | None:
@@ -137,7 +168,7 @@ def get_student_by_user_id(client: Client, user_id: UUID | str) -> dict | None:
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def get_student_academic_profile_row(
@@ -158,7 +189,7 @@ def get_student_academic_profile_row(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 # ============================================================================
@@ -191,7 +222,7 @@ def get_student_by_email(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def get_student_by_email_global(
@@ -210,7 +241,7 @@ def get_student_by_email_global(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def get_student_by_register_number(
@@ -227,7 +258,7 @@ def get_student_by_register_number(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def get_student_by_register_number_global(
@@ -262,7 +293,7 @@ def get_student_by_university_roll_number(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def get_student_by_university_roll_number_global(
@@ -369,7 +400,7 @@ def get_student_for_approval(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def set_student_approval_status(
@@ -401,7 +432,7 @@ def set_student_approval_status(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 # ============================================================================
@@ -444,7 +475,7 @@ def get_student_result_with_items(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 # ============================================================================
