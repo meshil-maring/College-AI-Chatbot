@@ -4,6 +4,7 @@ import LoginForm from './features/auth/LoginForm.tsx'
 import ChangePasswordForm from './features/auth/ChangePasswordForm.tsx'
 import AdminShell from './features/admin/AdminShell.tsx'
 import StudentShell from './features/student/StudentShell.tsx'
+import FacultyShell from './features/faculty/FacultyShell.tsx'
 import { fetchDevAuthStatus } from './services/devAuth.ts'
 
 /** DEVELOPMENT / TESTING ONLY — collapsible "Change Password" panel. */
@@ -74,15 +75,14 @@ function RestoringShell() {
  */
 
 /**
- * Phase 6.15.4 — canonical role-based shell selection.
+ * Phase 6.17 — faculty shell selection added; the selection model is
+ * unchanged: the shell is selected from the SERVER-authoritative role
+ * resolved by /auth/me (held in AuthProvider state). No /admin/me probe, no
+ * inference from email/identifier/storage: the backend decides, the frontend
+ * renders.
  *
- * The shell is selected from the SERVER-authoritative role resolved by
- * /auth/me (held in AuthProvider state). No /admin/me probe, no inference
- * from email/identifier/storage: the backend decides, the frontend renders.
- *
- * Staff/faculty have no dedicated UI yet (per phase scope): they receive the
- * student shell rather than privileged admin UI — identical to the previous
- * probe behavior for those roles, without the wasted probe request.
+ * Faculty -> FacultyShell (Phase 6.17; server-verified capabilities only).
+ * Staff keeps the existing student-shell fallback until the Staff milestone.
  *
  * Unknown/unsupported role (`null` or any value outside AuthRole) fails
  * SAFELY: no privileged UI — the user sees a controlled access message and
@@ -94,7 +94,10 @@ function AuthenticatedShell() {
   if (role === 'admin') {
     return <AdminShell />
   }
-  if (role === 'staff' || role === 'faculty' || role === 'student') {
+  if (role === 'faculty') {
+    return <FacultyShell />
+  }
+  if (role === 'staff' || role === 'student') {
     return <StudentShell />
   }
   return <UnsupportedRoleShell onSignOut={logout} />

@@ -5,7 +5,7 @@
  * authoritative role held in AuthProvider state — with NO /admin/me probe:
  *   admin    -> AdminShell
  *   staff    -> StudentShell (no dedicated staff UI yet)
- *   faculty  -> StudentShell (no dedicated faculty UI yet)
+ *   faculty  -> FacultyShell (Phase 6.17)
  *   student  -> StudentShell
  *   unknown  -> safe "Access restricted" shell (never privileged UI)
  */
@@ -95,11 +95,13 @@ describe('App shell selection from the canonical /auth/me role', () => {
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
 
-  it('shows the student shell for the faculty role (no privileged UI)', async () => {
+  it('shows the faculty shell for the faculty role (Phase 6.17)', async () => {
     authState.role = 'faculty'
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Faculty navigation' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
+    // Faculty navigation never exposes admin or student academic surfaces.
+    expect(screen.queryByRole('navigation', { name: 'Student navigation' })).not.toBeInTheDocument()
   })
 
   it('fails safe for an unknown role: no privileged UI', async () => {
