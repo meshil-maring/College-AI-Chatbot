@@ -83,21 +83,22 @@ describe('App shell selection from the canonical /auth/me role', () => {
   it('shows the student shell for the student role', async () => {
     authState.role = 'student'
     render(<App />)
-    expect(await screen.findByText('My Academics')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
 
   it('shows the student shell for the staff role (no privileged UI)', async () => {
     authState.role = 'staff'
     render(<App />)
-    expect(await screen.findByText('My Academics')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
 
   it('shows the student shell for the faculty role (no privileged UI)', async () => {
     authState.role = 'faculty'
     render(<App />)
-    expect(await screen.findByText('My Academics')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
 
@@ -106,7 +107,7 @@ describe('App shell selection from the canonical /auth/me role', () => {
     render(<App />)
     expect(await screen.findByText('Access restricted')).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
-    expect(screen.queryByText('My Academics')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Student navigation' })).not.toBeInTheDocument()
   })
 
   it('fails safe for a null role: no privileged UI', async () => {

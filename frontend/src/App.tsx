@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider.tsx'
 import LoginForm from './features/auth/LoginForm.tsx'
 import ChangePasswordForm from './features/auth/ChangePasswordForm.tsx'
-import ChatShell from './features/chat/ChatShell.tsx'
 import AdminShell from './features/admin/AdminShell.tsx'
-import AcademicsPanel from './features/academics/AcademicsPanel.tsx'
+import StudentShell from './features/student/StudentShell.tsx'
 import { fetchDevAuthStatus } from './services/devAuth.ts'
 
 /** DEVELOPMENT / TESTING ONLY — collapsible "Change Password" panel. */
@@ -65,14 +64,14 @@ function RestoringShell() {
   )
 }
 
-function StudentShell() {
-  return (
-    <>
-      <ChatShell />
-      <AcademicsPanel />
-    </>
-  )
-}
+/**
+ * Phase 6.16 — Student experience shell composition.
+ *
+ * The pre-6.16 shell rendered `ChatShell` (+ the `AcademicsPanel` modal)
+ * directly here. The coherent student navigation now lives in
+ * `features/student/StudentShell.tsx`, which reuses the same `ChatShell` for
+ * its assistant view.
+ */
 
 /**
  * Phase 6.15.4 — canonical role-based shell selection.

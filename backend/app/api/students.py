@@ -8,15 +8,22 @@ supply another student's id.
 Tenant isolation: the authenticated user's tenant (institution_id, resolved
 from their students profile) must match the tenant of the student profile
 whose data is returned — defence-in-depth against a stale/moved profile.
+
+Phase 6.16 adds two read-only endpoints that close the student experience
+dashboard's data gaps (``/me/notices`` and ``/me/resources``). Both reuse the
+same server-side identity/tenant resolution as every endpoint above and expose
+no mutation path.
 """
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.core.security import assert_tenant_object, get_current_user
 from app.schemas.student_attendance import StudentOwnAttendance
+from app.schemas.student_notices import StudentNoticeList
 from app.schemas.student_profile import StudentAcademicProfile
+from app.schemas.student_resources import StudentResourceList
 from app.schemas.student_results import (
     StudentAcademicResultDetail,
     StudentOwnResults,
@@ -25,6 +32,8 @@ from app.schemas.student_results import (
 from app.services import student_academic_profile as academic_profile_service
 from app.services import student_attendance as student_attendance_service
 from app.services import student_data
+from app.services import student_notices as student_notices_service
+from app.services import student_resources as student_resources_service
 from app.services import student_results as student_results_service
 
 router = APIRouter(prefix="/students", tags=["students"])
@@ -204,3 +213,60 @@ def my_attendance(
         date_from=date_from,
         date_to=date_to,
     )
+
+
+# ============================================================================
+# Phase 6.16 — Student experience: notices and learning resources
+# ============================================================================
+# Both endpoints close the two dashboard data gaps found during the Phase 6.16
+# audit: institution notices and institution learning resources previously had
+# NO student-scoped read path (only /admin/* with require_roles("admin")).
+#
+# They follow the exact pattern already used by every other /students/me/*
+# endpoint: identity and tenant come exclusively from the authenticated JWT via
+# the server-resolved student context. There is no identity parameter on either
+# endpoint, so a client-supplied ``institution_id`` / ``student_id`` query value
+# is simply ignored and can never widen the scope.
+#
+# Both are strictly READ-ONLY: there is no student-facing create/update/publish
+# /delete route for notices or resources.
+
+
+@router.get("/me/notices", response_model=StudentNoticeList)
+def my_notices(
+    limit: int = Query(
+        student_notices_service.DEFAULT_NOTICE_LIMIT,
+        ge=1,
+        le=student_notices_service.MAX_NOTICE_LIMIT,
+        description="Maximum number of notices to return",
+    ),
+    current_user: dict = Depends(get_current_user),
+) -> StudentNoticeList:
+    """Return published notices for the authenticated student's institution.
+
+    Server-side scope: the student's OWN institution only (resolved from the
+    JWT chain), published + active + unexpired rows only, pinned first then
+    newest. An institution with no published notices returns an empty list.
+    """
+    return student_notices_service.get_own_notices(current_user, limit=limit)
+
+
+@router.get("/me/resources", response_model=StudentResourceList)
+def my_resources(
+    limit: int = Query(
+        student_resources_service.DEFAULT_RESOURCE_LIMIT,
+        ge=1,
+        le=student_resources_service.MAX_RESOURCE_LIMIT,
+        description="Maximum number of learning resources to return",
+    ),
+    current_user: dict = Depends(get_current_user),
+) -> StudentResourceList:
+    """Return published learning resources for the student's institution.
+
+    Server-side scope: the student's OWN institution only, ``published``
+    knowledge sources only, newest first. Storage keys, storage buckets,
+    document/version identifiers and internal database identifiers are never
+    projected. An institution with no published resources returns an empty
+    list.
+    """
+    return student_resources_service.get_own_resources(current_user, limit=limit)
