@@ -35,12 +35,12 @@ export default function StudentShell() {
     'Student'
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
+    <div className="min-h-screen overflow-x-clip bg-slate-900 text-slate-100">
       <header className="border-b border-slate-700 bg-slate-800/60">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <div className="mr-auto">
-            <p className="text-lg font-bold text-white">College AI Chatbot</p>
-            <p className="text-xs text-slate-400">Signed in as {displayName}</p>
+        <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+          <div className="mr-auto min-w-0">
+            <p className="break-words text-lg font-bold text-white">College AI Chatbot</p>
+            <p className="break-words text-xs text-slate-400">Signed in as {displayName}</p>
           </div>
           <button
             type="button"
@@ -75,9 +75,9 @@ export default function StudentShell() {
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-6">
+      <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6">
         {view !== 'assistant' ? (
-          <h1 className="mb-4 text-2xl font-bold text-white">{STUDENT_VIEW_HEADINGS[view]}</h1>
+          <h1 className="mb-4 break-words text-2xl font-bold text-white">{STUDENT_VIEW_HEADINGS[view]}</h1>
         ) : null}
         {view === 'dashboard' ? <StudentDashboard onNavigate={setView} /> : null}
         {view === 'attendance' ? <AttendancePage /> : null}

@@ -23,14 +23,11 @@ import type { StudentAcademicProfile } from '../../types/student.ts'
 import type { StudentResourceState } from './useStudentResource.ts'
 import { Definition, EmptyBlock, ErrorBlock, LoadingBlock, NOT_PROVIDED } from './SectionState.tsx'
 
-function labelWithCode(
-  name: string | null | undefined,
-  code: string | null | undefined,
-): string {
-  const cleanName = name?.trim()
-  const cleanCode = code?.trim()
-  if (cleanName && cleanCode) return `${cleanName} (${cleanCode})`
-  return cleanName || cleanCode || NOT_PROVIDED
+function labelWithCode(name: unknown, code: unknown): string {
+  const cleanName = typeof name === 'string' ? name.trim() : ''
+  const cleanCode = typeof code === 'string' ? code.trim() : ''
+  if (cleanName !== '' && cleanCode !== '') return `${cleanName} (${cleanCode})`
+  return cleanName !== '' ? cleanName : cleanCode !== '' ? cleanCode : NOT_PROVIDED
 }
 
 export default function AcademicContextCard({
@@ -52,7 +49,7 @@ export default function AcademicContextCard({
   }
 
   const data = profile.data
-  if (data === null) {
+  if (data === null || data === undefined || typeof data !== 'object') {
     return <EmptyBlock message="Your academic context is not available yet." />
   }
 

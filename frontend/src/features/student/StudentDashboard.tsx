@@ -23,7 +23,8 @@ function ViewLink({ label, view, onNavigate }: { label: string; view: StudentVie
     <button
       type="button"
       onClick={() => onNavigate(view)}
-      className="rounded-lg px-2 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+      aria-label={label}
+      className="max-w-full truncate rounded-lg px-2 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10 focus:outline-none focus:ring-2 focus:ring-emerald-400"
     >
       {label}
     </button>
@@ -39,7 +40,7 @@ export default function StudentDashboard({ onNavigate }: { onNavigate: (view: St
   const resources = useStudentResource((token) => getMyResources(token, 6), 'Unable to load learning resources.')
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4 overflow-x-clip">
       <SectionCard title="Your profile" headingId="student-dashboard-profile">
         <StudentIdentityCard profile={profile} />
       </SectionCard>
@@ -82,7 +83,7 @@ export default function StudentDashboard({ onNavigate }: { onNavigate: (view: St
       </SectionCard>
 
       <SectionCard title="Ask the AI Assistant" headingId="student-dashboard-assistant">
-        <p className="text-sm text-slate-300">
+        <p className="break-words text-sm text-slate-300">
           Get answers about your college, academic resources, attendance, results, notices, and available knowledge.
         </p>
         <button

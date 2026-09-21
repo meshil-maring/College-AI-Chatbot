@@ -87,11 +87,11 @@ export function SectionCard({
       aria-labelledby={headingId}
       className="rounded-2xl border border-slate-700 bg-slate-800/60 p-4 sm:p-5"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id={headingId} className="text-base font-semibold text-white">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <h2 id={headingId} className="min-w-0 flex-1 break-words text-base font-semibold text-white">
           {title}
         </h2>
-        {action}
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
       <div className="mt-3">{children}</div>
     </section>

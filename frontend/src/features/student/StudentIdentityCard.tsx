@@ -20,17 +20,20 @@
 
 import type { StudentAcademicProfile } from '../../types/student.ts'
 import type { StudentResourceState } from './useStudentResource.ts'
-import { Definition, EmptyBlock, ErrorBlock, LoadingBlock, NOT_PROVIDED } from './SectionState.tsx'
-import { formatLabel } from './studentFormat.ts'
+import { Definition, EmptyBlock, ErrorBlock, LoadingBlock } from './SectionState.tsx'
+import { formatLabel, formatText } from './studentFormat.ts'
 
 /** Preferred display identifier, in the order the backend exposes them. */
 function preferredIdentifier(profile: StudentAcademicProfile): string | null {
-  return (
-    profile.register_number?.trim() ||
-    profile.university_roll_number?.trim() ||
-    profile.student_number?.trim() ||
-    null
-  )
+  const candidates = [profile.register_number, profile.university_roll_number, profile.student_number]
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim() !== '') return candidate.trim()
+  }
+  return null
+}
+
+function safeField(value: unknown): string {
+  return formatText(value)
 }
 
 export default function StudentIdentityCard({
@@ -52,32 +55,32 @@ export default function StudentIdentityCard({
   }
 
   const data = profile.data
-  if (data === null) {
+  if (data === null || data === undefined || typeof data !== 'object') {
     return <EmptyBlock message="Your academic profile is not available yet." />
   }
 
-  const identifier = preferredIdentifier(data)
+  const identifier = preferredIdentifier(data as StudentAcademicProfile)
 
   return (
     <>
-      <p className="text-sm text-slate-300">
+      <p className="break-words text-sm text-slate-300">
         Welcome{identifier ? `, ${identifier}` : ''}
       </p>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Definition label="Email" value={data.email?.trim() || NOT_PROVIDED} />
-        <Definition label="Register number" value={data.register_number?.trim() || NOT_PROVIDED} />
+        <Definition label="Email" value={safeField(data.email)} />
+        <Definition label="Register number" value={safeField(data.register_number)} />
         <Definition
           label="University roll number"
-          value={data.university_roll_number?.trim() || NOT_PROVIDED}
+          value={safeField(data.university_roll_number)}
         />
-        <Definition label="Student number" value={data.student_number?.trim() || NOT_PROVIDED} />
+        <Definition label="Student number" value={safeField(data.student_number)} />
         <Definition
           label="Institution"
-          value={data.institution_name?.trim() || NOT_PROVIDED}
+          value={safeField(data.institution_name)}
         />
         <Definition
           label="Institution code"
-          value={data.institution_code?.trim() || NOT_PROVIDED}
+          value={safeField(data.institution_code)}
         />
         <Definition label="Enrollment status" value={formatLabel(data.status)} />
         <Definition label="Approval status" value={formatLabel(data.approval_status)} />
