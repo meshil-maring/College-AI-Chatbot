@@ -38,6 +38,21 @@ import type {
   StudentResourceList,
 } from '../types/student.ts'
 
+/**
+ * Phase 6.16.2 — attendance filters, using ONLY the query fields the existing
+ * `GET /students/me/attendance/summary` contract already supports:
+ * `date_from` / `date_to` (ISO dates, server-validated with 422 INVALID_FILTER).
+ * Academic-year/semester filters exist on the endpoint but no student-accessible
+ * contract exposes their IDs, so the client never sends them (no invented
+ * identifiers, no frontend-only filtering).
+ */
+export interface StudentAttendanceFilters {
+  /** Inclusive ISO date (`YYYY-MM-DD`) mapped to the `date_from` query param. */
+  dateFrom?: string
+  /** Inclusive ISO date (`YYYY-MM-DD`) mapped to the `date_to` query param. */
+  dateTo?: string
+}
+
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 const STUDENT_BASE = `${API_BASE_URL}/v1/students/me`
 
@@ -128,9 +143,29 @@ export async function getMyAcademicProfile(accessToken: string): Promise<Student
   return getJson<StudentAcademicProfile>(`${STUDENT_BASE}/academic-profile`, accessToken)
 }
 
-/** GET /api/v1/students/me/attendance/summary — own attendance summary + rows. */
-export async function getMyAttendanceSummary(accessToken: string): Promise<StudentOwnAttendance> {
-  return getJson<StudentOwnAttendance>(`${STUDENT_BASE}/attendance/summary`, accessToken)
+/** GET /api/v1/students/me/attendance/summary — own attendance summary + rows.
+ *
+ * Phase 6.16.2: optional server-side date-range filters, mapped to the
+ * endpoint's existing `date_from` / `date_to` query fields only. Blank values
+ * are omitted; the limit stays a SERVER-side cap (200) — the client cannot
+ * request a larger page because the contract has no `limit` query field.
+ */
+export async function getMyAttendanceSummary(
+  accessToken: string,
+  filters: StudentAttendanceFilters = {},
+): Promise<StudentOwnAttendance> {
+  const params = new URLSearchParams()
+  if (typeof filters.dateFrom === 'string' && filters.dateFrom.trim() !== '') {
+    params.set('date_from', filters.dateFrom.trim())
+  }
+  if (typeof filters.dateTo === 'string' && filters.dateTo.trim() !== '') {
+    params.set('date_to', filters.dateTo.trim())
+  }
+  const query = params.toString()
+  return getJson<StudentOwnAttendance>(
+    `${STUDENT_BASE}/attendance/summary${query === '' ? '' : `?${query}`}`,
+    accessToken,
+  )
 }
 
 /** GET /api/v1/students/me/results/summary — own published academic results. */

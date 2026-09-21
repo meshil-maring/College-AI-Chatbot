@@ -52,10 +52,15 @@ const IDLE_STATE: SectionState<never> = { status: 'idle', data: null, error: nul
  *                     reference in a ref, so an inline arrow cannot cause a
  *                     reload loop.
  * @param errorMessage User-safe message shown when the request fails.
+ * @param watchKey     Optional Phase 6.16.2 key (e.g. a serialised filter
+ *                     selection). When it changes, the resource reloads with
+ *                     the loader's latest closure — exactly ONE new request
+ *                     per change, nothing speculative.
  */
 export function useStudentResource<T>(
   loader: (accessToken: string) => Promise<T>,
   errorMessage: string,
+  watchKey?: string,
 ): StudentResourceState<T> {
   const { accessToken } = useAuth()
   const [state, setState] = useState<SectionState<T>>(IDLE_STATE as SectionState<T>)
@@ -91,7 +96,7 @@ export function useStudentResource<T>(
         // message stays stable per section.
         setState({ status: 'error', data: null, error: errorMessageRef.current })
       })
-  }, [accessToken])
+  }, [accessToken, watchKey])
 
   useEffect(() => {
     load()

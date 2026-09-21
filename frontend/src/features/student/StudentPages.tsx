@@ -1,39 +1,31 @@
-/** Phase 6.16 — Full student pages (read-only, one resource per page). */
+/** Phase 6.16.2 — Full student pages (read-only, one resource per page). */
 
 import {
   getMyAcademicProfile,
-  getMyAttendanceSummary,
   getMyNotices,
   getMyResources,
-  getMyResultsSummary,
-  getMyTestResultsSummary,
 } from '../../services/studentApi.ts'
 import { useStudentResource } from './useStudentResource.ts'
 import { SectionCard } from './SectionState.tsx'
 import StudentIdentityCard from './StudentIdentityCard.tsx'
 import AcademicContextCard from './AcademicContextCard.tsx'
-import AttendancePanel from './AttendancePanel.tsx'
-import ResultsPanel from './ResultsPanel.tsx'
+import { AttendanceDetailPage } from './AttendanceDetail.tsx'
+import { ResultsDetailPage } from './ResultsDetail.tsx'
 import NoticesPanel from './NoticesPanel.tsx'
 import ResourcesPanel from './ResourcesPanel.tsx'
 
+/**
+ * Phase 6.16.2 — the Attendance and Results pages are the full detail
+ * experiences (academic context + summary + filters + records), built in
+ * `AttendanceDetail.tsx` / `ResultsDetail.tsx` over the existing read-only
+ * contracts. The dashboard keeps using the compact panels.
+ */
 export function AttendancePage() {
-  const attendance = useStudentResource(getMyAttendanceSummary, 'Unable to load attendance.')
-  return (
-    <SectionCard title="Your attendance" headingId="student-page-attendance">
-      <AttendancePanel attendance={attendance} />
-    </SectionCard>
-  )
+  return <AttendanceDetailPage />
 }
 
 export function ResultsPage() {
-  const results = useStudentResource(getMyResultsSummary, 'Unable to load results.')
-  const testResults = useStudentResource(getMyTestResultsSummary, 'Unable to load results.')
-  return (
-    <SectionCard title="Your results" headingId="student-page-results">
-      <ResultsPanel results={results} testResults={testResults} />
-    </SectionCard>
-  )
+  return <ResultsDetailPage />
 }
 
 export function NoticesPage() {
