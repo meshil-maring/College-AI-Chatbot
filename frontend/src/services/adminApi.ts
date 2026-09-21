@@ -23,6 +23,7 @@ import type {
   Notice,
   NoticeCreate,
   NoticeUpdate,
+  PendingStudent,
   ResultCreate,
   ResultUpdate,
   Student,
@@ -312,4 +313,32 @@ export async function getMyTestResults(accessToken: string): Promise<TestResult[
 
 export async function getMyAttendance(accessToken: string): Promise<AttendanceRecord[]> {
   return requestJson<AttendanceRecord[]>('GET', `${STUDENT_BASE}/me/attendance`, accessToken)
+}
+
+// ============================================================================
+// Student approval queue (Phase 6.4 backend contract; Phase 6.18 Staff UI)
+// ============================================================================
+// These endpoints are the ONLY /admin/* surface the backend authorizes for
+// the staff role (`require_roles("admin", "staff")` with the tenant-scoped
+// `_approval_scope`). Tenant-bound staff always receive their OWN
+// institution's queue server-side; this client never sends an
+// `institution_id` (the backend resolves the tenant from the authenticated
+// JWT). Approve/reject bodies accept NO fields, so no decision target can
+// be spoofed from the client.
+
+export async function listPendingStudents(
+  accessToken: string,
+  limit = 100,
+  offset = 0,
+): Promise<PendingStudent[]> {
+  const params = `?limit=${limit}&offset=${offset}`
+  return requestJson<PendingStudent[]>('GET', `${ADMIN_BASE}/students/pending${params}`, accessToken)
+}
+
+export async function approvePendingStudent(accessToken: string, studentId: string): Promise<PendingStudent> {
+  return requestJson<PendingStudent>('POST', `${ADMIN_BASE}/students/${encodeURIComponent(studentId)}/approve`, accessToken)
+}
+
+export async function rejectPendingStudent(accessToken: string, studentId: string): Promise<PendingStudent> {
+  return requestJson<PendingStudent>('POST', `${ADMIN_BASE}/students/${encodeURIComponent(studentId)}/reject`, accessToken)
 }

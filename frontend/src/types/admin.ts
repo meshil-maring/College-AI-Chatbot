@@ -381,3 +381,31 @@ export interface NoticeUpdate {
   published_at?: string | null
   expires_at?: string | null
 }
+
+// ============================================================================
+// Student approval queue (Phase 6.4 backend contract; Phase 6.18 staff UI)
+// ============================================================================
+
+/**
+ * Phase 6.18 — one row of the tenant-scoped student approval queue
+ * (GET /api/v1/admin/students/pending; backend `require_roles("admin","staff")`
+ * with the tenant resolved server-side). Mirrors the backend
+ * `STUDENT_APPROVAL_COLUMNS` projection exactly. Internal identifiers
+ * (`student_id`, `user_id`, `institution_id`) are present in the payload but
+ * must NEVER be rendered by any UI consumer (data minimization).
+ */
+export interface PendingStudent {
+  student_id: string
+  user_id: string
+  institution_id: string
+  student_number: string
+  email: string | null
+  register_number: string | null
+  university_roll_number: string | null
+  approval_status: string
+  status: string
+  is_active: boolean
+  enrollment_date: string | null
+  created_at: string
+  updated_at: string
+}
