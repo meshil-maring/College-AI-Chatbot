@@ -89,23 +89,47 @@ function RestoringShell() {
  * Unknown/unsupported role (`null` or any value outside AuthRole) fails
  * SAFELY: no privileged UI — the user sees a controlled access message and
  * can sign out. A role is only ever privileged when it equals 'admin'.
+ *
+ * Phase 6.20 — the four shells are additionally keyed on the canonical
+ * identity, so a session replacement can never leave a previous role's (or a
+ * previous tenant's) view state mounted. See `AuthenticatedShell`.
  */
 function AuthenticatedShell() {
-  const { role, logout } = useAuth()
+  const { user, role, logout } = useAuth()
+
+  /**
+   * Phase 6.20 — identity-scoped shell key.
+   *
+   * Shell selection happens per render, but React REUSES a component instance
+   * when the element type and position are unchanged. Two authentication
+   * replacements keep the same element type:
+   *
+   *   * the same role with a DIFFERENT account/tenant (admin A -> admin B),
+   *     which is exactly the cross-tenant case the backend isolates;
+   *   * any role change that React would otherwise reconcile in place.
+   *
+   * Keying the shell on the canonical identity (`role` + server-issued
+   * `auth_user_id`, both from `/auth/me`) forces React to unmount the previous
+   * shell and mount a fresh one, so in-shell view state (e.g. an open
+   * "Documents" manager) and already-fetched role data can never survive an
+   * authentication replacement. This is UX state hygiene only — every request
+   * remains authorized server-side from the JWT.
+   */
+  const shellKey = `${role ?? 'unsupported'}:${user?.auth_user_id ?? user?.user_id ?? 'unknown'}`
 
   if (role === 'admin') {
-    return <AdminShell />
+    return <AdminShell key={shellKey} />
   }
   if (role === 'faculty') {
-    return <FacultyShell />
+    return <FacultyShell key={shellKey} />
   }
   if (role === 'staff') {
-    return <StaffShell />
+    return <StaffShell key={shellKey} />
   }
   if (role === 'student') {
-    return <StudentShell />
+    return <StudentShell key={shellKey} />
   }
-  return <UnsupportedRoleShell onSignOut={logout} />
+  return <UnsupportedRoleShell key={shellKey} onSignOut={logout} />
 }
 
 function UnsupportedRoleShell({ onSignOut }: { onSignOut: () => void }) {

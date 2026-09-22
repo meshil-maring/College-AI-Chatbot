@@ -22,6 +22,11 @@
  * Session expiry is inherited, never duplicated: every request goes through
  * the shared API client (requestJson -> 401 -> notifySessionExpired ->
  * AuthProvider).
+ *
+ * Phase 6.20 — responsive/overflow parity with the student/faculty/staff
+ * shells: the shell root clips accidental page-level horizontal overflow
+ * (`overflow-x-clip`) and the header row can shrink (`min-w-0`). No visual
+ * system was redesigned.
  */
 
 import { useState } from 'react'
@@ -50,9 +55,9 @@ export default function AdminShell() {
   const identityLabel = user?.email?.trim() || 'Admin'
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
+    <div className="min-h-screen overflow-x-clip bg-slate-900 text-slate-100">
       <header className="border-b border-slate-700 bg-slate-800/60">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+        <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <div className="mr-auto min-w-0">
             <p className="text-lg font-bold text-white">Admin Panel</p>
             <p className="break-words text-xs text-slate-400">Signed in as {identityLabel}</p>
