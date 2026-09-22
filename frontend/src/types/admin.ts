@@ -311,6 +311,24 @@ export interface DashboardSummary {
   recent_audit: AuditLogEntry[]
 }
 
+/**
+ * Phase 6.19 — mirror of the backend CSV upload result contract
+ * (backend/app/services/admin_academics.py `CsvUploadResult` / `CsvRowError`).
+ * The endpoint is POST /api/v1/admin/results/csv-upload.
+ */
+export interface CsvRowError {
+  row: number
+  student_number: string | null
+  errors: string[]
+}
+
+export interface CsvUploadResult {
+  total_rows: number
+  inserted_count: number
+  failed_count: number
+  row_errors: CsvRowError[]
+}
+
 // ============================================================================
 // Audit log
 // ============================================================================

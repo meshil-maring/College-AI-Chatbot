@@ -1,7 +1,18 @@
 /**
- * Phase Admin-4 — Results manager.
+ * Phase Admin-4 / Phase 6.19 — Results manager.
  *
  * View student results and upload results via CSV.
+ *
+ * Phase 6.19 hardening: the tenant is derived exclusively from the
+ * server-authoritative identity held in AuthProvider state
+ * (`/auth/me` -> `user.institution_id`) and is sent as the required
+ * `institution_id` multipart field of POST /admin/results/csv-upload —
+ * the backend re-scopes it against the authenticated JWT (scope_tenant),
+ * so it is a validated filter, never an authorization input. The CSV
+ * response contract is the backend `CsvUploadResult`
+ * ({total_rows, inserted_count, failed_count, row_errors}). When the
+ * account has no institution linked, the upload control is disabled with a
+ * neutral status instead of guessing a tenant.
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -10,7 +21,9 @@ import { listStudentResults, uploadResultsCsv } from '../../services/adminApi.ts
 import type { StudentResult } from '../../types/admin.ts'
 
 export default function ResultsManager() {
-  const { accessToken } = useAuth()
+  const { accessToken, user } = useAuth()
+  // Tenant context resolved SERVER-SIDE (never typed or guessed).
+  const institutionId = user?.institution_id ?? null
   const [results, setResults] = useState<StudentResult[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -37,18 +50,22 @@ export default function ResultsManager() {
   }, [load, studentId])
 
   const handleCsvUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (accessToken === null) return
+    if (accessToken === null || institutionId === null) return
     const file = e.target.files?.[0]
     if (file === undefined) return
     setUploading(true)
     setUploadMessage(null)
     setError(null)
     try {
-      const response = await uploadResultsCsv(accessToken, file) as { uploaded?: number; errors?: string[] }
-      if (response.errors && response.errors.length > 0) {
-        setUploadMessage(`Uploaded ${response.uploaded ?? 0} rows with ${response.errors.length} error(s).`)
+      const response = await uploadResultsCsv(accessToken, file, institutionId)
+      // Phase 6.19 — the backend `CsvUploadResult` contract is authoritative:
+      // {total_rows, inserted_count, failed_count, row_errors}.
+      if (response.failed_count > 0) {
+        setUploadMessage(
+          `Uploaded ${response.inserted_count} of ${response.total_rows} rows; ${response.failed_count} row(s) failed.`,
+        )
       } else {
-        setUploadMessage(`Successfully uploaded ${response.uploaded ?? 0} rows.`)
+        setUploadMessage(`Successfully uploaded ${response.inserted_count} of ${response.total_rows} rows.`)
       }
       if (studentId.trim().length > 0) void load()
     } catch (err) {
@@ -57,7 +74,7 @@ export default function ResultsManager() {
       setUploading(false)
       e.target.value = ''
     }
-  }, [accessToken, studentId, load])
+  }, [accessToken, studentId, load, institutionId])
 
   return (
     <div className="space-y-4">
@@ -71,9 +88,21 @@ export default function ResultsManager() {
         <div>
           <label className="block">
             <span className="text-xs text-slate-400">Upload Results CSV</span>
-            <input type="file" accept=".csv" onChange={handleCsvUpload} disabled={uploading} className="mt-1 block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-500 file:disabled:opacity-50" />
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCsvUpload}
+              disabled={uploading || institutionId === null}
+              className="mt-1 block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-500 file:disabled:opacity-50"
+            />
           </label>
-          {uploadMessage !== null && <p className="mt-1 text-xs text-emerald-400">{uploadMessage}</p>}
+          {institutionId === null ? (
+            <p role="status" className="mt-1 text-xs text-slate-400">
+              No institution is linked to your administrator account, so CSV
+              results upload is unavailable.
+            </p>
+          ) : null}
+          {uploadMessage !== null && <p role="status" className="mt-1 text-xs text-emerald-400">{uploadMessage}</p>}
         </div>
       </div>
       {studentId.trim().length === 0 ? (

@@ -110,7 +110,7 @@ describe('adminApi', () => {
     const file = new File(['csv,data'], 'results.csv', { type: 'text/csv' })
     const result = await uploadResultsCsv('token', file)
     const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit]
-    expect(url).toBe('/api/v1/admin/results/csv')
+    expect(url).toBe('/api/v1/admin/results/csv-upload')
     expect(options.method).toBe('POST')
     expect(options.body).toBeInstanceOf(FormData)
     expect(result).toEqual({ uploaded: 10 })

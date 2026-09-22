@@ -34,6 +34,7 @@ import type {
   TestResult,
   TestResultCreate,
   TestResultUpdate,
+  CsvUploadResult,
 } from '../types/admin.ts'
 import { notifySessionExpired } from './sessionEvents.ts'
 
@@ -249,10 +250,25 @@ export async function deleteResult(accessToken: string, id: string): Promise<voi
   await requestJson<{ deleted: boolean }>('DELETE', `${ADMIN_BASE}/results/${id}`, accessToken)
 }
 
-export async function uploadResultsCsv(accessToken: string, file: File): Promise<unknown> {
+/**
+ * Phase 6.19 — verified defect fix: the backend route is
+ * `POST /admin/results/csv-upload` (NOT `/results/csv`), it REQUIRES the
+ * `institution_id` multipart Form field, and the response is the backend
+ * `CsvUploadResult` contract (`{total_rows, inserted_count, failed_count,
+ * row_errors}`), NOT the `{uploaded, errors}` shape the client previously
+ * assumed. The institution value is only a server-validated filter: the
+ * backend re-scopes it against the authenticated JWT tenant
+ * (scope_tenant), so a foreign value fails closed with 403 TENANT_MISMATCH.
+ */
+export async function uploadResultsCsv(
+  accessToken: string,
+  file: File,
+  institutionId: string,
+): Promise<CsvUploadResult> {
   const formData = new FormData()
+  formData.append('institution_id', institutionId)
   formData.append('file', file)
-  return requestJson<unknown>('POST', `${ADMIN_BASE}/results/csv`, accessToken, formData)
+  return requestJson<CsvUploadResult>('POST', `${ADMIN_BASE}/results/csv-upload`, accessToken, formData)
 }
 
 export async function listTestResults(accessToken: string, studentId: string): Promise<TestResult[]> {

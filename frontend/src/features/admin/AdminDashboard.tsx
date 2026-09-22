@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="text-slate-400">Loading dashboard…</div>
+        <div role="status" className="text-slate-400">Loading dashboard…</div>
       </div>
     )
   }

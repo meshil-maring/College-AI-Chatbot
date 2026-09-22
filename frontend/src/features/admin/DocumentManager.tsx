@@ -1,8 +1,16 @@
 /**
- * Phase Admin-4 — Document manager.
+ * Phase Admin-4 / Phase 6.19 — Document manager.
  *
  * Upload documents to knowledge sources and manage existing documents.
  * Shows processing status: upload → extraction → chunking → embedding → ready/error.
+ *
+ * Phase 6.19 hardening: the tenant is no longer a hardcoded demo institution
+ * constant. It is derived exclusively from the server-authoritative identity
+ * held in AuthProvider state (`/auth/me` -> `user.institution_id`);
+ * `?institution_id=` remains only a server-validated filter, never an
+ * authorization input. When the account has no institution linked
+ * (platform-level), a controlled neutral state is shown and knowledge-source
+ * creation is disabled instead of silently targeting a guessed tenant.
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -17,11 +25,10 @@ import {
 } from '../../services/adminApi.ts'
 import type { DocumentWithVersions, KnowledgeSource } from '../../types/admin.ts'
 
-/** Demo institution seeded in the database (see Admin-1 fixtures). */
-const DEMO_INSTITUTION_ID = '30000000-0000-0000-0000-000000000001'
-
 export default function DocumentManager() {
-  const { accessToken } = useAuth()
+  const { accessToken, user } = useAuth()
+  // Tenant context resolved SERVER-SIDE (never hardcoded or guessed).
+  const institutionId = user?.institution_id ?? null
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([])
   const [isSourcesLoading, setIsSourcesLoading] = useState(true)
   const [sourcesError, setSourcesError] = useState<string | null>(null)
@@ -33,11 +40,11 @@ export default function DocumentManager() {
   const [uploadStatus, setUploadStatus] = useState<string | null>(null)
 
   const loadSources = useCallback(async () => {
-    if (accessToken === null) return
+    if (accessToken === null || institutionId === null) return
     setIsSourcesLoading(true)
     setSourcesError(null)
     try {
-      const data = await listKnowledgeSources(accessToken, DEMO_INSTITUTION_ID)
+      const data = await listKnowledgeSources(accessToken, institutionId)
       setKnowledgeSources(data)
       // Auto-select the first knowledge source so the upload control is
       // usable immediately (previously it stayed disabled on an empty ID).
@@ -50,7 +57,7 @@ export default function DocumentManager() {
     } finally {
       setIsSourcesLoading(false)
     }
-  }, [accessToken])
+  }, [accessToken, institutionId])
 
   useEffect(() => {
     void loadSources()
@@ -125,13 +132,13 @@ export default function DocumentManager() {
   }, [accessToken, load])
 
   const handleCreateKnowledgeSource = useCallback(async () => {
-    if (accessToken === null) return
+    if (accessToken === null || institutionId === null) return
     const title = window.prompt('Enter a title for the new knowledge source:')
     if (title === null || title.trim().length === 0) return
     setError(null)
     try {
       const created = await createKnowledgeSource(accessToken, {
-        institution_id: DEMO_INSTITUTION_ID,
+        institution_id: institutionId,
         source_type: 'handbook',
         title: title.trim(),
       })
@@ -140,7 +147,7 @@ export default function DocumentManager() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create knowledge source.')
     }
-  }, [accessToken])
+  }, [accessToken, institutionId])
 
   const handleDelete = useCallback(async (id: string) => {
     if (accessToken === null) return
@@ -160,7 +167,12 @@ export default function DocumentManager() {
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 space-y-3">
         <label className="block">
           <span className="text-xs text-slate-400">Knowledge Source</span>
-          {isSourcesLoading ? (
+          {institutionId === null ? (
+            <p role="status" className="mt-1 text-sm text-slate-400">
+              No institution is linked to your administrator account, so there
+              are no knowledge sources to manage yet.
+            </p>
+          ) : isSourcesLoading ? (
             <p className="mt-1 text-sm text-slate-400">Loading knowledge sources…</p>
           ) : sourcesError !== null ? (
             <div className="mt-1 space-y-2">
