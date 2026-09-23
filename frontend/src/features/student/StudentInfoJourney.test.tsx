@@ -81,7 +81,11 @@ describe('phase 6.16.3 student information journey', () => {
     expect(
       vi.mocked(getMyNotices).mock.calls.filter((call) => call[1] === 20),
     ).toHaveLength(1)
-  })
+    // Phase 6.21 — production readiness: this journey performs 5 dashboard
+    // mounts plus 8 real-timer interactions and measures ~2.1s in isolation but
+    // exceeds the 5s vitest default when the whole suite runs in parallel.
+    // Explicit budget only; no behavioural change.
+  }, 15000)
   it('dashboard ViewLinks reach notices and resources; back navigation returns to the dashboard', async () => {
     const user = userEvent.setup()
     mockAllLoaded()

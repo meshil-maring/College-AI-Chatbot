@@ -210,7 +210,7 @@ export default function DocumentManager() {
         <div>
           <label className="block">
             <span className="text-xs text-slate-400">Upload Document</span>
-            <input type="file" onChange={handleUpload} disabled={uploading || knowledgeSourceId.trim().length === 0} className="mt-1 block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-500 file:disabled:opacity-50" />
+            <input type="file" onChange={handleUpload} disabled={uploading || knowledgeSourceId.trim().length === 0} className="mt-1 block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-500 disabled:file:opacity-50" />
           </label>
           {uploadStatus !== null && <p className="mt-1 text-xs text-slate-400">{uploadStatus}</p>}
         </div>

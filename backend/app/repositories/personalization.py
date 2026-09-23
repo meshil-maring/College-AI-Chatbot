@@ -25,6 +25,28 @@ from supabase import Client
 _LABEL_COLUMNS = "code, name"
 
 
+def _single_row(response) -> dict | None:
+    """Return the row of a ``maybe_single().execute()`` response, or ``None``.
+
+    Phase 6.22 (defect fix): postgrest-py >= 2.x returns ``None`` from
+    ``maybe_single().execute()`` when the query matches ZERO rows, so reading
+    ``response.data`` directly raises ``AttributeError: 'NoneType' object has no
+    attribute 'data'`` for the perfectly normal "no such row" case. That is
+    exactly why every ``maybe_single()`` read in this module is now routed
+    through this guard — it surfaced as an unhandled HTTP 500 on
+    ``GET /students/me/academic-profile`` whenever the student's academic year
+    has no ``is_current`` semester flagged. The same defensive shape is already
+    documented and used by ``app.repositories.admin_academics``,
+    ``app.repositories.tenancy`` and ``app.db.supabase``.
+
+    Contract: no matching row -> ``None``; matching row -> the row dict; a real
+    database/service failure still raises (it is never translated into None).
+    """
+    if response is None:
+        return None
+    return response.data
+
+
 def get_program_label(client: Client, program_id: Any, institution_id: Any = None) -> dict | None:
     """Return ``{program_id, code, name}`` for one program, or None.
 
@@ -43,7 +65,7 @@ def get_program_label(client: Client, program_id: Any, institution_id: Any = Non
             .maybe_single()
             .execute()
         )
-        return response.data
+        return _single_row(response)
     response = (
         client.table("programs")
         .select(f"program_id, {_LABEL_COLUMNS}, departments(institution_id)")
@@ -51,7 +73,7 @@ def get_program_label(client: Client, program_id: Any, institution_id: Any = Non
         .maybe_single()
         .execute()
     )
-    row = response.data
+    row = _single_row(response)
     if row is None:
         return None
     department = row.get("departments")
@@ -82,7 +104,7 @@ def get_academic_year_label(
     if institution_id is not None:
         query = query.eq("institution_id", str(institution_id))
     response = query.maybe_single().execute()
-    return response.data
+    return _single_row(response)
 
 
 def get_current_semester_label(
@@ -100,7 +122,7 @@ def get_current_semester_label(
         .maybe_single()
         .execute()
     )
-    return response.data
+    return _single_row(response)
 
 
 def get_course_labels(client: Client, course_ids: list) -> dict[str, dict]:

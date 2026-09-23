@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -29,6 +30,8 @@ from app.services.ingestion import ingest_document
 from app.services.storage import download_file, get_r2_client
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+
+logger = logging.getLogger(__name__)
 
 _INGEST_ALLOWED = require_roles("admin", "staff", "faculty")
 
@@ -115,7 +118,15 @@ def extract(
             completed_at=completed,
             error_message=str(exc)[:1000],
         )
-        raise AppError(str(exc), status_code=500, code="EXTRACTION_FAILED") from exc
+        # Phase 6.21 — production hardening: the DB row keeps the raw detail
+        # for operators; the API response stays a fixed safe message so file
+        # contents, SQL text, and storage internals can never leak to clients.
+        logger.exception("Document extraction failed (run_id=%s)", run_id_str)
+        raise AppError(
+            "Document processing failed during extraction",
+            status_code=500,
+            code="EXTRACTION_FAILED",
+        ) from exc
 
     completed = datetime.now(timezone.utc).isoformat()
     store_extracted_text(db, dv["document_version_id"], text)
@@ -169,7 +180,14 @@ def chunk(
             completed_at=datetime.now(timezone.utc).isoformat(),
             error_message=str(exc)[:1000],
         )
-        raise AppError(str(exc), status_code=500, code="CHUNKING_FAILED") from exc
+        # Phase 6.21 — production hardening: the DB row keeps the raw detail
+        # for operators; the API response stays a fixed safe message.
+        logger.exception("Document chunking failed (run_id=%s)", run_id_str)
+        raise AppError(
+            "Document processing failed during chunking",
+            status_code=500,
+            code="CHUNKING_FAILED",
+        ) from exc
 
     return ChunkingResponse(
         processing_run_id=run_id_str,

@@ -120,7 +120,12 @@ def _resolve_academic_id_with_context(
     # Same student matched both fields (or one field matched)
     if by_register is not None and by_roll is not None:
         if by_register["student_id"] != by_roll["student_id"]:
-            logger.warning("Ambiguous academic identifier within institution: %s", identifier)
+            # Phase 6.21 — production hardening: the identifier is user input
+            # (a potential credential-adjacent value); never write it to logs.
+            logger.warning(
+                "Ambiguous academic identifier within institution (institution_id=%s)",
+                institution_id,
+            )
             raise SafeAuthFailure()
         student = by_register
     elif by_register is not None:

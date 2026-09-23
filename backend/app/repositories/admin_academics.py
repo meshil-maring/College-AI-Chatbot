@@ -171,6 +171,33 @@ def get_student_by_user_id(client: Client, user_id: UUID | str) -> dict | None:
     return _single_row(response)
 
 
+def get_student_approval_row_by_user_id(
+    client: Client, user_id: UUID | str
+) -> dict | None:
+    """Return the approval-relevant student projection for a ``users.user_id``.
+
+    Phase 6.22 (defect fix): ``get_student_by_user_id`` uses the locked
+    ``STUDENT_COLUMNS`` projection, which does NOT include ``approval_status``.
+    ``app.services.student_context._assert_student_eligible`` REQUIRES that
+    column, so the eligibility guard read ``None`` and rejected EVERY student —
+    which made ``GET /students/me/notices`` and ``GET /students/me/resources``
+    return 403 ``STUDENT_NOT_APPROVED`` even for students whose
+    ``approval_status`` is ``'approved'`` in the database.
+
+    This helper reuses the existing Phase 6.4 approval projection
+    (``STUDENT_APPROVAL_COLUMNS``), so no existing projection is modified and
+    the eligibility check finally sees the real approval state.
+    """
+    response = (
+        client.table("students")
+        .select(STUDENT_APPROVAL_COLUMNS)
+        .eq("user_id", str(user_id))
+        .maybe_single()
+        .execute()
+    )
+    return _single_row(response)
+
+
 def get_student_academic_profile_row(
     client: Client, user_id: UUID | str
 ) -> dict | None:
@@ -429,10 +456,10 @@ def set_student_approval_status(
         .eq("institution_id", str(institution_id))
         .eq("approval_status", "pending")
         .select(STUDENT_APPROVAL_COLUMNS)
-        .maybe_single()
         .execute()
     )
-    return _single_row(response)
+    rows = response.data if isinstance(response.data, list) else []
+    return rows[0] if rows else None
 
 
 # ============================================================================

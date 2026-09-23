@@ -1,4 +1,6 @@
 import hashlib
+import logging
+import re
 import uuid
 
 from fastapi import UploadFile
@@ -22,9 +24,25 @@ ALLOWED_MIME_TYPES = {
     "text/plain",
 }
 
+logger = logging.getLogger(__name__)
+
 
 def _extension(filename: str) -> str:
     return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+
+def _safe_filename(filename: str) -> str:
+    """Return a storage-safe leaf filename derived from a client filename.
+
+    Phase 6.21 — production hardening: the client filename is untrusted
+    metadata. Directory components (``../../``), separators, and control
+    characters must never reach the R2 object key; only the final path
+    component survives, restricted to a conservative allowlist. The original
+    filename is still stored verbatim in ``original_filename`` for display.
+    """
+    leaf = (filename or "").replace("\\", "/").rsplit("/", 1)[-1].strip()
+    leaf = re.sub(r"[^A-Za-z0-9._-]+", "_", leaf).strip("._") or "upload"
+    return leaf[:128]
 
 
 def _validate(filename: str, content_type: str, size: int) -> None:
@@ -76,7 +94,8 @@ async def ingest_document(
     doc_id = doc["document_id"]
 
     version_uuid = str(uuid.uuid4())
-    object_key = f"{ks['institution_id']}/{knowledge_source_id}/{version_uuid}/{file.filename}"
+    safe_name = _safe_filename(file.filename or "")
+    object_key = f"{ks['institution_id']}/{knowledge_source_id}/{version_uuid}/{safe_name}"
 
     r2 = get_r2_client()
     upload_file(r2, settings.r2_bucket, object_key, data, file.content_type or "")
@@ -107,8 +126,13 @@ async def ingest_document(
         raise
     except Exception as exc:
         delete_file(r2, settings.r2_bucket, object_key)
+        # Phase 6.21 — production hardening: the raw exception may carry SQL
+        # text, storage paths, or provider detail; keep it server-side only.
+        logger.exception(
+            "Document version registration failed (document_id=%s)", doc_id
+        )
         raise AppError(
-            f"Database registration failed: {exc}",
+            "Document processing failed during registration",
             status_code=500,
             code="REGISTRATION_FAILED",
         ) from exc

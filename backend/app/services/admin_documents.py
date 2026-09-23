@@ -19,6 +19,7 @@ document/version/processing pipeline while preserving institution scope.
 """
 
 import hashlib
+import logging
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
@@ -47,13 +48,15 @@ from app.schemas.admin import DocumentVersionCreate
 from app.services.chunking import chunk_text
 from app.services.embeddings import embed_processing_run
 from app.services.extraction import extract_text
-from app.services.ingestion import _extension, _validate, ingest_document
+from app.services.ingestion import _extension, _safe_filename, _validate, ingest_document
 from app.services.storage import (
     delete_file,
     download_file,
     get_r2_client,
     upload_file,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _utc_now() -> str:
@@ -283,7 +286,7 @@ async def update_document(
 
     checksum = f"sha256:{hashlib.sha256(data).hexdigest()}"
     ext = _extension(file.filename or "")
-    object_key = f"documents/{document_id}/{uuid4()}/{file.filename}"
+    object_key = f"documents/{document_id}/{uuid4()}/{_safe_filename(file.filename or '')}"
 
     r2 = get_r2_client()
     upload_file(r2, settings.r2_bucket, object_key, data, file.content_type or "")

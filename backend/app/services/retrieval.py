@@ -1,5 +1,6 @@
 """Application service for scoped vector retrieval."""
 
+import logging
 import math
 import time
 from collections.abc import Sequence
@@ -15,6 +16,8 @@ from app.repositories.vector_search import (
 from app.schemas.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult
 from app.services.embeddings import embed_query
 from app.services.vector_search import search_chunks
+
+logger = logging.getLogger(__name__)
 
 
 def retrieve(
@@ -32,8 +35,10 @@ def retrieve(
     except AppError:
         raise
     except Exception as exc:
-        import traceback
-        traceback.print_exc()
+        # Phase 6.21 — production hardening: keep the raw traceback in the
+        # server log with context instead of printing it to stdout, where it
+        # could be captured by unfiltered log sinks.
+        logger.exception("Query embedding failed")
         raise AppError(
             "Query embedding failed",
             status_code=500,

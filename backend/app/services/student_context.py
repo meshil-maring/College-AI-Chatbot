@@ -73,7 +73,13 @@ def get_student_context(current_user: dict[str, Any]) -> dict[str, Any]:
         )
 
     db = get_admin_client()
-    student = academics_repo.get_student_by_user_id(db, str(user_id))
+    # Phase 6.22 (defect fix): the eligibility guard below reads
+    # ``approval_status``, which the locked ``STUDENT_COLUMNS`` projection used
+    # by ``get_student_by_user_id`` does not carry — so EVERY student was
+    # rejected with 403 STUDENT_NOT_APPROVED here. The approval-relevant
+    # projection supplies the real approval state without changing any existing
+    # projection or weakening the guard.
+    student = academics_repo.get_student_approval_row_by_user_id(db, str(user_id))
 
     if student is None:
         raise AppError(

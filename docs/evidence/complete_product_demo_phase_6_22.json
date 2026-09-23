@@ -1,0 +1,360 @@
+{
+  "phase": "6.22",
+  "generated_at": "2026-09-23T12:01:34.110825+00:00",
+  "base_url": "http://127.0.0.1:8000",
+  "institution_code": "GIT",
+  "checks": [
+    {
+      "check": "backend is reachable",
+      "status": "PASS",
+      "detail": "http://127.0.0.1:8000"
+    },
+    {
+      "check": "institution lookup by public code succeeds",
+      "status": "PASS",
+      "detail": "GIT"
+    },
+    {
+      "check": "institution is active",
+      "status": "PASS",
+      "detail": "None"
+    },
+    {
+      "check": "institution lookup returns exactly the safe public projection",
+      "status": "PASS",
+      "detail": "keys=['code', 'institution_id', 'name']"
+    },
+    {
+      "check": "unknown institution code fails safely",
+      "status": "PASS",
+      "detail": "http 404"
+    },
+    {
+      "check": "institution row exists in the live tenant store",
+      "status": "PASS",
+      "detail": "rows=1"
+    },
+    {
+      "check": "admin session established (server-issued JWT)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "admin role resolved server-side",
+      "status": "PASS",
+      "detail": "admin"
+    },
+    {
+      "check": "student sessions established",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "faculty session established",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "knowledge source reused (repeat demo run)",
+      "status": "PASS",
+      "detail": "2742d6d8-657b-4c8e-8b36-a8050d852e98"
+    },
+    {
+      "check": "knowledge source is bound to the demo institution",
+      "status": "PASS",
+      "detail": "30000000-0000-0000-0000-000000000001"
+    },
+    {
+      "check": "knowledge source is published for retrieval",
+      "status": "PASS",
+      "detail": "published"
+    },
+    {
+      "check": "demo document reused (already processed)",
+      "status": "PASS",
+      "detail": "74e8fd44-ccdc-447a-bc82-e74d948542ce"
+    },
+    {
+      "check": "document version registered",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "stored metadata matches the uploaded file",
+      "status": "PASS",
+      "detail": "phase622_campus_services_demo.txt txt"
+    },
+    {
+      "check": "storage bucket matches the configured bucket",
+      "status": "PASS",
+      "detail": "college-ai-knowledge"
+    },
+    {
+      "check": "storage object key is tenant-scoped",
+      "status": "PASS",
+      "detail": "30000000-0000-0000-0000-000000000001/2742d6d8-65"
+    },
+    {
+      "check": "uploaded object is retrievable from R2 storage",
+      "status": "PASS",
+      "detail": "bytes=1134"
+    },
+    {
+      "check": "processing run reached a terminal success state",
+      "status": "PASS",
+      "detail": "ready"
+    },
+    {
+      "check": "processing run recorded no error",
+      "status": "PASS",
+      "detail": "None"
+    },
+    {
+      "check": "extraction + chunking produced chunks",
+      "status": "PASS",
+      "detail": "chunks=4"
+    },
+    {
+      "check": "chunks belong to the demo processing run (tenant via knowledge source)",
+      "status": "PASS",
+      "detail": "runs=['18a894aa-8a13-40d7-9588-158c6f1bf0ea'] ks_tenant=30000000-0000-0000-0000-000000000001"
+    },
+    {
+      "check": "chunk sequence is contiguous from 1",
+      "status": "PASS",
+      "detail": "sequences=[1, 2, 3, 4]"
+    },
+    {
+      "check": "chunking retained the document text (overlap expected)",
+      "status": "PASS",
+      "detail": "chunk chars=937 source chars=937 (whitespace-normalised)"
+    },
+    {
+      "check": "vector storage holds one embedding per chunk",
+      "status": "PASS",
+      "detail": "embeddings=4 chunks=4"
+    },
+    {
+      "check": "stored embedding has the configured dimensionality",
+      "status": "PASS",
+      "detail": "len=1536"
+    },
+    {
+      "check": "embedding model recorded on the stored vector",
+      "status": "PASS",
+      "detail": "qwen/qwen3-embedding-8b"
+    },
+    {
+      "check": "retrieval returned relevant chunks",
+      "status": "PASS",
+      "detail": "results=4"
+    },
+    {
+      "check": "retrieved chunks come from the demo document",
+      "status": "PASS",
+      "detail": "provenance chained to the demo document"
+    },
+    {
+      "check": "top chunk contains the expected source fact",
+      "status": "PASS",
+      "detail": "central library opening hours  the central library is open monday to friday from 8:00 am to 8:00 pm. on saturday the lib"
+    },
+    {
+      "check": "every returned chunk carries chunk/document provenance",
+      "status": "PASS",
+      "detail": "chunk + document identifiers present"
+    },
+    {
+      "check": "retrieval applies the tenant filter (foreign tenant sees nothing)",
+      "status": "PASS",
+      "detail": "results=0"
+    },
+    {
+      "check": "grounded answer: When does the central library close on weekdays?",
+      "status": "PASS",
+      "detail": "status=success retrieved=4 structured_sources=0"
+    },
+    {
+      "check": "grounded answer: How many books may a student borrow at one time from",
+      "status": "PASS",
+      "detail": "status=success retrieved=4 structured_sources=0"
+    },
+    {
+      "check": "grounded answer: What is the late return fine per book per day?",
+      "status": "PASS",
+      "detail": "status=success retrieved=4 structured_sources=1"
+    },
+    {
+      "check": "grounded answers are supplied by the demo knowledge source",
+      "status": "PASS",
+      "detail": "retrieval provenance chained to the demo document"
+    },
+    {
+      "check": "unknown question returns a valid response contract",
+      "status": "PASS",
+      "detail": "success"
+    },
+    {
+      "check": "unknown question invents no citation",
+      "status": "PASS",
+      "detail": "sources=0"
+    },
+    {
+      "check": "unknown question does not fabricate an unsupported contact detail",
+      "status": "PASS",
+      "detail": "status=success"
+    }
+  ],
+  "observations": {
+    "dev_test_mode": true,
+    "institution": {
+      "code": "GIT",
+      "name": "Greenfield Institute of Technology",
+      "is_active": null
+    },
+    "admin_identity": {
+      "authenticated": true,
+      "user_id": "30000000-0000-0000-0000-000000000102",
+      "auth_user_id": "3fa2f8e0-5d7d-4fcf-b522-7c723219f1b7",
+      "email": "admin.demo@collegelocal.dev",
+      "role": "admin",
+      "institution_id": null
+    },
+    "document_version": {
+      "document_version_id": "e476d830-8b84-47c7-bf06-6b54bdea8589",
+      "original_filename": "phase622_campus_services_demo.txt",
+      "file_type": "txt",
+      "mime_type": "text/plain",
+      "file_size_bytes": 1134,
+      "lifecycle_status": "draft"
+    },
+    "processing_run_status_after_upload": "ready",
+    "processing_run_status": "ready",
+    "processing_window": {
+      "started_at": "2026-09-22T19:18:55.126967+00:00",
+      "completed_at": "2026-09-22T19:18:57.510381+00:00",
+      "embedding_status": "embedded"
+    },
+    "retrieval": {
+      "latency_ms": 8304,
+      "returned": 4,
+      "top_similarity": 0.7637
+    },
+    "structured_source_citation_form": {
+      "grounded_answers": 3,
+      "with_structured_sources": 1,
+      "note": "structured sources require the model to repeat the chunk id with the literal 'chunk' prefix used by app.services.chat"
+    },
+    "unknown_question_behaviour": {
+      "question": "What is the personal mobile number of the Dean of Student Affairs?",
+      "status": "success",
+      "answer": "The available knowledge is insufficient to provide the personal mobile number of the Dean of Student Affairs.",
+      "sources": [],
+      "latency_ms": 19122
+    }
+  },
+  "demo_knowledge": {
+    "knowledge_source_id": "2742d6d8-657b-4c8e-8b36-a8050d852e98",
+    "document_id": "74e8fd44-ccdc-447a-bc82-e74d948542ce",
+    "processing_run_id": "18a894aa-8a13-40d7-9588-158c6f1bf0ea",
+    "demo_document": "phase622_campus_services_demo.txt"
+  },
+  "grounded_answers": [
+    {
+      "question": "When does the central library close on weekdays?",
+      "expected_tokens": [
+        "8:00 pm",
+        "8 pm",
+        "20:00"
+      ],
+      "status": "success",
+      "answer": "The central library closes at 8:00 PM on weekdays, from Monday to Friday (ce26995d-318c-4399-bbaa-99e2da120306).",
+      "retrieved_chunk_ids": [
+        "ce26995d-318c-4399-bbaa-99e2da120306",
+        "7119431a-4855-4dc1-8055-c02a96947749",
+        "78a909f6-64fa-4068-97c2-ff916061eb63",
+        "b742c2b4-dd10-4267-92ef-30e37059a163"
+      ],
+      "retrieved_chunk_count": 4,
+      "retrieved_scores": [
+        0.754832602893338,
+        0.45783168077469205,
+        0.45632089544299403,
+        0.261154457261893
+      ],
+      "structured_sources": [],
+      "structured_sources_populated": false,
+      "cited_retrieved_chunk": true,
+      "latency_ms": 14576,
+      "grounded": true
+    },
+    {
+      "question": "How many books may a student borrow at one time from the central library?",
+      "expected_tokens": [
+        "four",
+        "4"
+      ],
+      "status": "success",
+      "answer": "An enrolled student may borrow at most four (4) books at one time from the central library. A book is issued for fourteen (14) days and may be renewed once for an additional fourteen days if not reserved by another reader (source: ce26995d-318c-4399-bbaa-99e2da120306).",
+      "retrieved_chunk_ids": [
+        "ce26995d-318c-4399-bbaa-99e2da120306",
+        "78a909f6-64fa-4068-97c2-ff916061eb63",
+        "7119431a-4855-4dc1-8055-c02a96947749",
+        "b742c2b4-dd10-4267-92ef-30e37059a163"
+      ],
+      "retrieved_chunk_count": 4,
+      "retrieved_scores": [
+        0.75706128818162,
+        0.5197097086560389,
+        0.40049541597027305,
+        0.31633938301621
+      ],
+      "structured_sources": [],
+      "structured_sources_populated": false,
+      "cited_retrieved_chunk": true,
+      "latency_ms": 15754,
+      "grounded": true
+    },
+    {
+      "question": "What is the late return fine per book per day?",
+      "expected_tokens": [
+        "five",
+        "5"
+      ],
+      "status": "success",
+      "answer": "The late return fine is five (5) rupees per book per day, counted from the day after the due date. The maximum late-return fine charged for one book is three hundred (300) rupees, after which the borrower must replace the book [Retrieved chunk 78a909f6-64fa-4068-97c2-ff916061eb63].",
+      "retrieved_chunk_ids": [
+        "78a909f6-64fa-4068-97c2-ff916061eb63",
+        "ce26995d-318c-4399-bbaa-99e2da120306",
+        "7119431a-4855-4dc1-8055-c02a96947749",
+        "b742c2b4-dd10-4267-92ef-30e37059a163"
+      ],
+      "retrieved_chunk_count": 4,
+      "retrieved_scores": [
+        0.841425459554848,
+        0.517565162036727,
+        0.33361935618096805,
+        0.24724604926246596
+      ],
+      "structured_sources": [
+        {
+          "source_title": "Phase 6.22 Demo - Campus Services Handbook",
+          "section": null,
+          "relevance_score": 0.841425459554848
+        }
+      ],
+      "structured_sources_populated": true,
+      "cited_retrieved_chunk": true,
+      "latency_ms": 11103,
+      "grounded": true
+    }
+  ],
+  "summary": {
+    "total": 40,
+    "passed": 40,
+    "failed": 0,
+    "warned": 0,
+    "skipped": 0
+  },
+  "completed_at": "2026-09-23T12:03:10.522828+00:00"
+}

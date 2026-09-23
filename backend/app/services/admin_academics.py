@@ -12,6 +12,7 @@ Student academic data is never injected into the RAG pipeline.
 
 import csv
 import io
+import logging
 from datetime import date, datetime
 from uuid import UUID
 
@@ -20,6 +21,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import admin_academics as academics_repo
+from app.repositories import tenancy as tenancy_repo
+
+logger = logging.getLogger(__name__)
 
 # Enum values mirror the CHECK constraints in the Admin-1 migration.
 STUDENT_STATUSES = ["active", "inactive", "graduated", "withdrawn"]
@@ -439,7 +443,7 @@ def approve_student(
     student_id: UUID | str,
     institution_id: UUID | str | None,
 ) -> dict:
-    """Transition pending -> approved. Only approval state changes.
+    """Transition pending -> approved. Grant the "student" role on approval.
 
     ``institution_id`` is the acting approver's tenant (institution-bound
     admin/staff) or None for a platform-level ADMIN — the OPTION A global
@@ -448,6 +452,9 @@ def approve_student(
     already set approval_status via PATCH /students/{id}). The API layer
     guarantees None is only ever passed by a platform-level admin; platform
     staff are rejected upstream with 403.
+
+    On successful approval, the "student" role is granted to the user
+    (server-side, Phase 6.4 contract: approval grants the student role).
     """
     target = _resolve_approval_target(student_id, institution_id)
     if target.get("approval_status") != "pending":
@@ -458,7 +465,40 @@ def approve_student(
         )
     # Platform-admin passthrough: write within the TARGET's institution.
     tenant = institution_id if institution_id is not None else target.get("institution_id")
-    return _conditional_approval_write(student_id, tenant, "approved")
+    updated = _conditional_approval_write(student_id, tenant, "approved")
+
+    # Phase 6.4 contract: approval grants the "student" role.
+    # Grant the role server-side via the existing tenancy repository.
+    user_id = updated.get("user_id")
+    if user_id:
+        try:
+            # Resolve the institution's real organization_id (the student row
+            # carries institution_id but not organization_id; the DB trigger
+            # trg_phase613_user_roles_scope validates institution ⊂ organization).
+            org_id: UUID | str | None = tenant
+            if tenant is not None:
+                inst_row = tenancy_repo.get_institution_by_id(
+                    get_admin_client(), tenant
+                )
+                if inst_row is not None:
+                    org_id = inst_row.get("organization_id") or tenant
+            tenancy_repo.assign_membership_role(
+                get_admin_client(),
+                user_id=user_id,
+                role_name="student",
+                institution_id=tenant,
+                organization_id=org_id,
+            )
+        except Exception:
+            # Role grant is best-effort; the approval itself succeeded.
+            # Log but don't fail the approval flow.
+            logger.warning(
+                "Failed to grant student role for user_id=%s after approval",
+                user_id,
+                exc_info=True,
+            )
+
+    return updated
 
 
 def reject_student(

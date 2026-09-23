@@ -74,17 +74,39 @@ def create_processing_run(
 
 
 def get_processing_run_with_version(client: Client, processing_run_id: str) -> dict | None:
+    """Return a processing run with its document-version projection.
+
+    Phase 6.22 (P0 defect fix): ``document_versions`` has NO
+    ``knowledge_source_id`` column — the column lives on ``documents``.
+    Selecting ``document_versions.knowledge_source_id`` made PostgREST reject
+    the whole query (42703), so EVERY consumer of this function failed: the
+    ``/documents/{run}/extract``, ``/chunk`` and ``/embed`` endpoints and the
+    Admin upload with ``auto_process=true`` (which left the run ``queued``).
+    The tenant is now resolved through the existing
+    ``documents(knowledge_source_id)`` embed and hoisted onto the
+    ``document_versions`` projection so the Phase 6.13.7 tenant guard
+    (``_assert_run_tenant``) keeps working unchanged — no schema change, no
+    API change, no pipeline redesign, and NO weakening of tenant isolation.
+    """
     response = (
         client.table("document_processing_runs")
         .select(
             "processing_run_id, status, embedding_status, document_version_id, "
-            "document_versions(document_version_id, storage_bucket, storage_object_key, file_type, knowledge_source_id)"
+            "document_versions(document_version_id, storage_bucket, storage_object_key, "
+            "file_type, documents(knowledge_source_id))"
         )
         .eq("processing_run_id", processing_run_id)
         .maybe_single()
         .execute()
     )
-    return response.data
+    run = response.data
+    if isinstance(run, dict):
+        version = run.get("document_versions")
+        if isinstance(version, dict):
+            document = version.get("documents")
+            if isinstance(document, dict) and document.get("knowledge_source_id"):
+                version["knowledge_source_id"] = document["knowledge_source_id"]
+    return run
 
 
 def update_run_status(
