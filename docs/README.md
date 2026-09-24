@@ -6,7 +6,7 @@ artifacts**: each file records what was true when its phase was locked or valida
 | Directory | Contents |
 | --- | --- |
 | `locks/` | Phase lock records (`PHASE_*_LOCK.md`, `FINAL_DEMO_LOCK.md`): frozen scope and evidence per phase |
-| `status/` | Phase status/scope reports and review prompts (`PHASE_*_STATUS.md`, `FINAL_DEMO_STATUS.md`) |
+| `status/` | Phase status/scope reports and review prompts (`PHASE_*_STATUS.md`, `PHASE_*_SCOPE_REPORT.md`, other `PHASE_*` phase reports, `FINAL_DEMO_STATUS.md`) |
 | `reports/` | Physical-validation and implementation reports (Markdown + HTML) |
 | `evidence/` | Raw JSON evidence captured during validation runs (latency/behaviour baselines, physical validation results, OpenAPI dump) |
 | `schema/` | `schemaV2_export.sql` — exported database schema snapshot |
