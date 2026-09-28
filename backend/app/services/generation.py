@@ -21,7 +21,31 @@ class AIGenerationService:
 
         try:
             result = self._provider.generate(context)
+        except AppError as exc:
+            if context.public:
+                if exc.code == "AI_PROVIDER_TIMEOUT":
+                    raise AppError(
+                        "Public AI generation timed out. Please try again later.",
+                        status_code=504,
+                        code="PUBLIC_GENERATION_TIMEOUT",
+                    ) from exc
+                raise AppError(
+                    "Public AI generation is temporarily unavailable.",
+                    status_code=503,
+                    code="PUBLIC_GENERATION_UNAVAILABLE",
+                ) from exc
+            raise AppError(
+                "AI generation failed",
+                status_code=500,
+                code="GENERATION_FAILED",
+            ) from exc
         except Exception as exc:
+            if context.public:
+                raise AppError(
+                    "Public AI generation is temporarily unavailable.",
+                    status_code=503,
+                    code="PUBLIC_GENERATION_UNAVAILABLE",
+                ) from exc
             raise AppError(
                 "AI generation failed",
                 status_code=500,
@@ -29,6 +53,12 @@ class AIGenerationService:
             ) from exc
 
         if not isinstance(result, GenerationResult):
+            if context.public:
+                raise AppError(
+                    "Public AI generation is temporarily unavailable.",
+                    status_code=503,
+                    code="PUBLIC_GENERATION_UNAVAILABLE",
+                )
             raise AppError(
                 "AI provider returned an invalid result",
                 status_code=500,
@@ -37,6 +67,12 @@ class AIGenerationService:
 
         chunk_ids = {chunk.chunk_id for chunk in context.retrieved_knowledge}
         if any(reference.chunk_id not in chunk_ids for reference in result.source_references):
+            if context.public:
+                raise AppError(
+                    "Public AI generation returned an invalid response.",
+                    status_code=502,
+                    code="PUBLIC_GENERATION_INVALID_RESPONSE",
+                )
             raise AppError(
                 "AI provider returned an ungrounded source reference",
                 status_code=500,
@@ -52,6 +88,12 @@ class AIGenerationService:
                 metadata=result.metadata,
             )
         except ValueError as exc:
+            if context.public:
+                raise AppError(
+                    "Public AI generation returned an invalid response.",
+                    status_code=502,
+                    code="PUBLIC_GENERATION_INVALID_RESPONSE",
+                ) from exc
             raise AppError(
                 "AI provider returned an invalid response",
                 status_code=500,

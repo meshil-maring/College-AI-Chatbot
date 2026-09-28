@@ -250,6 +250,12 @@ def test_http_public_rag_wires_embedding_rpc_policy_context_and_generation():
     assert [chunk.text for chunk in provider.contexts[0].retrieved_knowledge] == [
         "Institution A officially offers engineering."
     ]
+    assert provider.contexts[0].public is True
+    assert str(provider.contexts[0].institution_id) == INST_A
+    assert provider.contexts[0].max_output_tokens == settings.public_generation_max_tokens
+    assert provider.contexts[0].model_name is None
+    assert provider.contexts[0].student_context is None
+    assert provider.contexts[0].conversation_history == []
     assert "FORGED" not in str(provider.contexts[0])
     assert "PRIVATE A" not in str(provider.contexts[0])
     assert "INSTITUTION B" not in str(provider.contexts[0])

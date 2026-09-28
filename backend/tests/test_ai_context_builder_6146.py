@@ -493,12 +493,18 @@ _EXISTING_AICONTEXT_FIELDS = {
     "conversation_history",
     "retrieval_query",
     "student_context",
+    # Phase 7.5 additive internal public-generation boundary fields. Their
+    # defaults preserve every authenticated/personalized caller from 6.14.6.
+    "public",
+    "institution_id",
+    "max_output_tokens",
 }
 
 
 def test_15_existing_aicontext_compatibility():
-    """AIContext keeps its exact existing field set; builder output is one."""
-    # No field was removed, renamed, or added by this phase.
+    """AIContext keeps old fields and additive public fields; builder output is one."""
+    # No pre-existing field was removed or renamed. Phase 7.5 added only
+    # defaulted internal fields for the public generation boundary.
     assert set(AIContext.model_fields) == _EXISTING_AICONTEXT_FIELDS
     # The existing public assembly path still behaves exactly as before.
     request = AIRequest(
@@ -511,6 +517,9 @@ def test_15_existing_aicontext_compatibility():
     assert set(public_ctx.model_dump()) == _EXISTING_AICONTEXT_FIELDS
     assert public_ctx.system_instructions == SYSTEM_INSTRUCTIONS
     assert public_ctx.user_question == "When does the library open?"
+    assert public_ctx.public is False
+    assert public_ctx.institution_id is None
+    assert public_ctx.max_output_tokens is None
     # The builder output is the same contract and round-trips through the
     # model without any special casing.
     ctx = builder.build_personalized_ai_context(_pc(chunks=[_chunk()]), _U())

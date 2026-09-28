@@ -411,9 +411,12 @@ def test_generation_failure_returns_only_safe_provider_error():
             "/api/v1/chat/public",
             json={"institution_code": "COLLEGE001", "message": "What courses?"},
         )
-    assert response.status_code == 500
+    assert response.status_code == 503
     assert response.json() == {
-        "error": {"code": "GENERATION_FAILED", "message": "AI generation failed"}
+        "error": {
+            "code": "PUBLIC_GENERATION_UNAVAILABLE",
+            "message": "Public AI generation is temporarily unavailable.",
+        }
     }
     assert "SECRET_API_KEY" not in response.text
 

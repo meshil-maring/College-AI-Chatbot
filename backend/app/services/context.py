@@ -1,5 +1,7 @@
 """Pure assembly of validated AI requests into model-independent context."""
 
+from uuid import UUID
+
 from app.schemas.generation import AIContext, AIRequest, ConversationTurn
 
 
@@ -63,6 +65,10 @@ def assemble_context(
     request: AIRequest,
     conversation_history: list[ConversationTurn] = None,
     student_context: str | None = None,
+    *,
+    public: bool = False,
+    institution_id: UUID | None = None,
+    max_output_tokens: int | None = None,
 ) -> AIContext:
     """Assemble a validated request into deterministic AI context.
 
@@ -92,4 +98,7 @@ def assemble_context(
         conversation_history=conversation_history or request.conversation_history,
         retrieval_query=request.retrieval_query,
         student_context=student_context,
+        public=public,
+        institution_id=institution_id,
+        max_output_tokens=max_output_tokens,
     )

@@ -101,6 +101,8 @@ class OpenRouterGenerationProvider:
                 },
             ],
         }
+        if context.max_output_tokens is not None:
+            request_body["max_tokens"] = context.max_output_tokens
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -116,12 +118,14 @@ class OpenRouterGenerationProvider:
                     f"{base_url}/chat/completions",
                     headers=headers,
                     json=request_body,
+                    timeout=self._timeout,
                 )
             else:
                 response = self._client.post(
                     f"{base_url}/chat/completions",
                     headers=headers,
                     json=request_body,
+                    timeout=self._timeout,
                 )
         except httpx.TimeoutException as exc:
             raise AppError(

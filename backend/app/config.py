@@ -69,6 +69,12 @@ class Settings(BaseSettings):
     # truncated so the application never changes their factual meaning.
     public_context_max_chunk_chars: int = Field(default=4000, gt=0)
     public_context_max_chars: int = Field(default=12000, gt=0)
+    # Public generation controls are server-owned. They are deliberately not
+    # represented in PublicChatRequest, so anonymous callers cannot select a
+    # model, provider, output budget, or request duration.
+    public_generation_max_tokens: int = Field(default=800, gt=0, le=4096)
+    public_generation_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    public_response_max_chars: int = Field(default=12000, gt=0)
     rewrite_history_exchanges: int = 2
     rewrite_max_history_chars: int = 1000
 

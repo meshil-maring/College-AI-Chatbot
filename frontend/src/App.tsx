@@ -7,6 +7,19 @@ import StudentShell from './features/student/StudentShell.tsx'
 import FacultyShell from './features/faculty/FacultyShell.tsx'
 import StaffShell from './features/staff/StaffShell.tsx'
 import { fetchDevAuthStatus } from './services/devAuth.ts'
+import PublicChatPage, { PublicChatRouteError } from './features/publicChat/PublicChatPage.tsx'
+
+export function resolvePublicInstitutionCode(pathname: string): string | null | undefined {
+  const match = pathname.match(/^\/public-chat(?:\/([^/]+))?\/?$/)
+  if (match === null) return undefined
+  if (match[1] === undefined) return null
+  try {
+    const code = decodeURIComponent(match[1]).trim().toUpperCase()
+    return /^[A-Z0-9][A-Z0-9_-]{0,31}$/.test(code) ? code : null
+  } catch {
+    return null
+  }
+}
 
 /** DEVELOPMENT / TESTING ONLY — collapsible "Change Password" panel. */
 function DevChangePasswordPanel() {
@@ -172,6 +185,12 @@ function AuthGate() {
 }
 
 function App() {
+  const publicInstitutionCode = resolvePublicInstitutionCode(window.location.pathname)
+  if (publicInstitutionCode !== undefined) {
+    return publicInstitutionCode === null
+      ? <PublicChatRouteError />
+      : <PublicChatPage institutionCode={publicInstitutionCode} />
+  }
   return (
     <AuthProvider>
       <AuthGate />

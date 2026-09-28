@@ -190,6 +190,18 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
             "model": PublicAPIErrorResponse,
             "description": "A safe public service error.",
         },
+        502: {
+            "model": PublicAPIErrorResponse,
+            "description": "The generation response was invalid.",
+        },
+        503: {
+            "model": PublicAPIErrorResponse,
+            "description": "Public generation is temporarily unavailable.",
+        },
+        504: {
+            "model": PublicAPIErrorResponse,
+            "description": "Public generation exceeded the server timeout.",
+        },
     },
 )
 def public_chat(request: PublicChatRequest) -> PublicChatResponse:
@@ -213,7 +225,9 @@ def public_chat(request: PublicChatRequest) -> PublicChatResponse:
     return process_public_request(
         request,
         session_context,
-        OpenRouterGenerationProvider(),
+        OpenRouterGenerationProvider(
+            timeout=settings.public_generation_timeout_seconds,
+        ),
     )
 
 app.include_router(public_chat_router, prefix="/api/v1")

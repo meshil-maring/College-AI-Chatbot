@@ -245,6 +245,23 @@ class AIContext(BaseModel):
             "never serialized to API responses."
         ),
     )
+    public: bool = Field(
+        default=False,
+        description=(
+            "Internal trust-boundary marker. True only after the public chat "
+            "orchestrator has completed tenant and canonical provenance checks."
+        ),
+    )
+    institution_id: UUID | None = Field(
+        default=None,
+        description="Server-resolved institution for an internal public context.",
+    )
+    max_output_tokens: int | None = Field(
+        default=None,
+        gt=0,
+        le=4096,
+        description="Server-controlled provider output budget; never client supplied.",
+    )
 
     @field_validator("system_instructions", "user_question", "grounding_instructions")
     @classmethod
@@ -264,6 +281,28 @@ class AIContext(BaseModel):
         if value is not None and not value:
             raise ValueError("model_name must not be empty")
         return value
+
+    @model_validator(mode="after")
+    def validate_public_boundary(self) -> "AIContext":
+        """Keep public contexts stateless, non-personalized, and server-owned.
+
+        The marker does not authorize chunks by itself. Only the public
+        orchestrator may set it, after PublicKnowledgePolicy has replaced
+        retrieval candidates with canonical verified chunks.
+        """
+        if not self.public:
+            return self
+        if self.institution_id is None:
+            raise ValueError("public AI context requires a resolved institution")
+        if self.student_context is not None:
+            raise ValueError("public AI context cannot contain student data")
+        if self.conversation_history:
+            raise ValueError("public AI context must be stateless")
+        if self.model_name is not None:
+            raise ValueError("public AI context model is server controlled")
+        if self.max_output_tokens is None:
+            raise ValueError("public AI context requires a server output limit")
+        return self
 
 
 # ============================================================================
