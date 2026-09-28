@@ -1,6 +1,6 @@
 import logging
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,12 @@ class Settings(BaseSettings):
     #   Hard character budget for the conversation excerpt sent to the
     #   query-interpretation step. The rewriter must stay token-cheap.
     # ------------------------------------------------------------------
-    retrieval_top_k: int = 4
+    retrieval_top_k: int = Field(default=4, gt=0, le=20)
+    # Public RAG context is independently bounded after repository-backed
+    # provenance verification. Oversized chunks are excluded rather than
+    # truncated so the application never changes their factual meaning.
+    public_context_max_chunk_chars: int = Field(default=4000, gt=0)
+    public_context_max_chars: int = Field(default=12000, gt=0)
     rewrite_history_exchanges: int = 2
     rewrite_max_history_chars: int = 1000
 

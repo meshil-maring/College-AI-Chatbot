@@ -1,5 +1,6 @@
 """HTTP contracts for the application chat boundary."""
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -38,8 +39,18 @@ class PublicChatRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    institution_code: str = Field(min_length=1, max_length=32)
-    message: str = Field(min_length=1, max_length=4000)
+    institution_code: str = Field(
+        min_length=1,
+        max_length=32,
+        description="Public institution code (not an internal database ID).",
+        examples=["COLLEGE001"],
+    )
+    message: str = Field(
+        min_length=1,
+        max_length=4000,
+        description="One public, stateless chat message (maximum 4,000 characters).",
+        examples=["What courses does the college offer?"],
+    )
 
     @field_validator("institution_code")
     @classmethod
@@ -61,6 +72,8 @@ class PublicChatRequest(BaseModel):
 class PublicSource(BaseModel):
     """Citation metadata safe for an anonymous user."""
 
+    model_config = ConfigDict(extra="forbid")
+
     title: str | None = None
     section: str | None = None
     quote: str
@@ -69,6 +82,30 @@ class PublicSource(BaseModel):
 class PublicChatResponse(BaseModel):
     """Public projection without IDs, model data, usage, or diagnostics."""
 
+    model_config = ConfigDict(extra="forbid")
+
     answer: str | None = None
-    status: str
+    status: Literal["success", "insufficient_context"]
     sources: list[PublicSource] = Field(default_factory=list)
+
+
+class PublicAPIErrorDetail(BaseModel):
+    """Sanitized request-validation detail exposed by the API error envelope."""
+
+    loc: list[str | int]
+    msg: str
+    type: str
+
+
+class PublicAPIErrorBody(BaseModel):
+    """Stable, safe error body for the public endpoint."""
+
+    code: str
+    message: str
+    details: list[PublicAPIErrorDetail] | None = None
+
+
+class PublicAPIErrorResponse(BaseModel):
+    """Documented public error envelope; never includes exception internals."""
+
+    error: PublicAPIErrorBody

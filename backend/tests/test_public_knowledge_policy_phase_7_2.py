@@ -250,11 +250,16 @@ def test_http_public_boundary_filters_private_context_and_projects_safe_response
             "knowledge_chunks": [
                 {
                     "chunk_id": CHUNK_PUBLIC,
+                    "content_text": "Authorized public answer.",
+                    "chunk_sequence": 1,
+                    "section_title": "Admissions",
                     "processing_run_id": RUN,
                     "document_processing_runs": public_run,
                 },
                 {
                     "chunk_id": CHUNK_PRIVATE,
+                    "content_text": "SECRET PRIVATE DATA",
+                    "chunk_sequence": 1,
                     "processing_run_id": private_run["processing_run_id"],
                     "document_processing_runs": private_run,
                 },

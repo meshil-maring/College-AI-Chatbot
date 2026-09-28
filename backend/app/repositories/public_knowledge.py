@@ -9,7 +9,6 @@ from supabase import Client
 
 from app.repositories.vector_search import _validate_query_embedding
 
-
 SOURCE_COLUMNS = (
     "knowledge_source_id, institution_id, source_type, title, visibility, "
     "lifecycle_status, effective_from, effective_until"
@@ -57,7 +56,8 @@ def get_chunk_provenance(
     response = (
         client.table("knowledge_chunks")
         .select(
-            "chunk_id, processing_run_id, "
+            "chunk_id, content_text, chunk_sequence, section_title, "
+            "processing_run_id, "
             f"document_processing_runs({PROVENANCE_PROJECTION})"
         )
         .in_("chunk_id", sorted(chunk_ids))

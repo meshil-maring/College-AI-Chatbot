@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID
 
 from app.repositories import public_knowledge as repository
-
+from app.schemas.generation import RetrievedChunk
 
 PUBLIC_VISIBILITY = "public"
 PUBLISHED_LIFECYCLE = "published"
@@ -30,7 +30,7 @@ def _as_date(value: Any) -> date | None:
 
 def is_effective(row: dict, *, on_date: date | None = None) -> bool:
     """Return false for malformed or out-of-window lifecycle dates."""
-    today = on_date or date.today()
+    today = on_date or datetime.now(UTC).date()
     raw_from = row.get("effective_from")
     raw_until = row.get("effective_until")
     effective_from = _as_date(raw_from)
@@ -139,36 +139,96 @@ class PublicKnowledgePolicy:
     def authorize_chunks(
         self, chunks: list[Any], *, allowed_source_ids: set[str] | None = None
     ) -> list[Any]:
+        """Return canonical, fully verified chunks in retrieval order.
+
+        The vector result is an untrusted candidate.  In particular, its text
+        and provenance identifiers are not allowed to reach the model merely
+        because its chunk UUID exists.  Eligible results are reconstructed
+        from the repository row after the complete provenance chain passes.
+        Duplicate chunk IDs are collapsed without changing similarity order.
+        """
         chunk_ids = {
             str(chunk.chunk_id)
             for chunk in chunks
             if getattr(chunk, "chunk_id", None)
         }
         rows = repository.get_chunk_provenance(self.client, chunk_ids)
-        allowed_chunks: set[str] = set()
+        canonical_by_id: dict[str, dict] = {}
         for row in rows:
             run = _one(row.get("document_processing_runs")) or row
             normalized = normalize_provenance(run)
+            version = normalized.get("document_version") or {}
+            document = normalized.get("document") or {}
+            source = normalized.get("knowledge_source") or {}
             source_id = str(
-                (normalized.get("knowledge_source") or {}).get(
-                    "knowledge_source_id", ""
-                )
+                source.get("knowledge_source_id", "")
             )
+            content_text = row.get("content_text")
             if (
                 row.get("chunk_id")
                 and row.get("processing_run_id")
                 and str(row.get("processing_run_id"))
                 == str(normalized.get("processing_run_id"))
+                and isinstance(content_text, str)
+                and bool(content_text.strip())
                 and is_public_provenance(normalized, self.institution_id)
                 and (
                     allowed_source_ids is None
                     or source_id in allowed_source_ids
                 )
             ):
-                allowed_chunks.add(str(row["chunk_id"]))
-        return [
-            chunk
-            for chunk in chunks
-            if getattr(chunk, "chunk_id", None)
-            and str(chunk.chunk_id) in allowed_chunks
-        ]
+                canonical_by_id[str(row["chunk_id"])] = {
+                    "content_text": content_text,
+                    "processing_run_id": str(row["processing_run_id"]),
+                    "document_id": document.get("document_id"),
+                    "document_version_id": version.get("document_version_id"),
+                    "chunk_sequence": row.get("chunk_sequence"),
+                    "section_title": row.get("section_title"),
+                    "source_title": source.get("title"),
+                    "source_type": source.get("source_type"),
+                }
+
+        verified: list[RetrievedChunk] = []
+        seen_chunk_ids: set[str] = set()
+        for candidate in chunks:
+            candidate_id = str(getattr(candidate, "chunk_id", ""))
+            canonical = canonical_by_id.get(candidate_id)
+            if not canonical or candidate_id in seen_chunk_ids:
+                continue
+
+            metadata = getattr(candidate, "metadata", None) or {}
+            candidate_run_id = metadata.get("processing_run_id")
+            if (
+                candidate_run_id is not None
+                and str(candidate_run_id) != canonical["processing_run_id"]
+            ):
+                continue
+            for field in ("document_id", "document_version_id"):
+                supplied = getattr(candidate, field, None)
+                authoritative = canonical[field]
+                if supplied is not None and str(supplied) != str(authoritative):
+                    break
+            else:
+                safe_metadata = {
+                    key: canonical[key]
+                    for key in (
+                        "processing_run_id",
+                        "chunk_sequence",
+                        "section_title",
+                        "source_title",
+                        "source_type",
+                    )
+                    if canonical[key] is not None
+                }
+                verified.append(
+                    RetrievedChunk(
+                        chunk_id=candidate.chunk_id,
+                        document_id=canonical["document_id"],
+                        document_version_id=canonical["document_version_id"],
+                        text=canonical["content_text"],
+                        similarity_score=candidate.similarity_score,
+                        metadata=safe_metadata,
+                    )
+                )
+                seen_chunk_ids.add(candidate_id)
+        return verified

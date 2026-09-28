@@ -23,6 +23,7 @@ from app.api.dev_auth import router as dev_auth_router
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
+    PublicAPIErrorResponse,
     PublicChatRequest,
     PublicChatResponse,
 )
@@ -159,11 +160,42 @@ app.include_router(generation_router, prefix="/api/v1")
 public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-@public_chat_router.post("/public", response_model=PublicChatResponse)
+@public_chat_router.post(
+    "/public",
+    response_model=PublicChatResponse,
+    summary="Ask a public institution-knowledge question",
+    description=(
+        "Authentication: Not required. Resolves the public institution code "
+        "server-side, retrieves only policy-authorized public knowledge, and "
+        "returns a stateless response without internal identifiers or diagnostics."
+    ),
+    responses={
+        401: {
+            "model": PublicAPIErrorResponse,
+            "description": "The question requires authenticated personal data.",
+        },
+        403: {
+            "model": PublicAPIErrorResponse,
+            "description": "The institution is not eligible for public chat.",
+        },
+        404: {
+            "model": PublicAPIErrorResponse,
+            "description": "The public institution code is unavailable.",
+        },
+        422: {
+            "model": PublicAPIErrorResponse,
+            "description": "The request body failed strict validation.",
+        },
+        500: {
+            "model": PublicAPIErrorResponse,
+            "description": "A safe public service error.",
+        },
+    },
+)
 def public_chat(request: PublicChatRequest) -> PublicChatResponse:
     """Process one PUBLIC (unauthenticated) chat request.
 
-    Phase 7.2:
+    Phase 7.3:
       * no authentication dependency — public AI requires no login;
       * the public institution code is resolved and validated server-side;
       * the strict request model exposes no retrieval identifiers or controls;
@@ -173,6 +205,7 @@ def public_chat(request: PublicChatRequest) -> PublicChatResponse:
         diagnostics, or authorization metadata;
       * personal-data questions from an unauthenticated caller are rejected
         with the standard 401 AUTH_REQUIRED error.
+      * requests are stateless and create no anonymous conversation history.
     """
     session_context = resolve_session_context(
         SessionContextRequest()

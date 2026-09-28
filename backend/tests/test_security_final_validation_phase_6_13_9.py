@@ -400,16 +400,22 @@ def _base_state():
         "knowledge_chunks": [
             {
                 "chunk_id": CHUNK_FAQ_A1,
+                "content_text": "Org A public fact",
+                "chunk_sequence": 1,
                 "processing_run_id": RUN_FAQ_A1,
                 "document_processing_runs": run_a,
             },
             {
                 "chunk_id": CHUNK_PRIVATE_A1,
+                "content_text": "CONFIDENTIAL private doc",
+                "chunk_sequence": 1,
                 "processing_run_id": RUN_PRIVATE_A1,
                 "document_processing_runs": run_private,
             },
             {
                 "chunk_id": CHUNK_FAQ_B1,
+                "content_text": "Org B secret fact",
+                "chunk_sequence": 1,
                 "processing_run_id": RUN_FAQ_B1,
                 "document_processing_runs": run_b,
             },
@@ -1739,7 +1745,7 @@ class TestPublicAISecurity:
         )
         _, provider = _run_public_chat(fake, request)
         texts = [c.text for c in provider.contexts[0].retrieved_knowledge]
-        assert "Public handbook fact" in texts
+        assert "Org A public fact" in texts
         assert "CONFIDENTIAL private doc" not in texts
 
     def test_explicit_private_knowledge_source_denied(self):
