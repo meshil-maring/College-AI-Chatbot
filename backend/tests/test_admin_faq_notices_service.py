@@ -29,6 +29,7 @@ def _faq(**overrides) -> dict:
         "answer": "8am to 10pm on weekdays.",
         "display_order": 0,
         "is_active": True,
+        "is_published": True,
     }
     row.update(overrides)
     return row
@@ -43,6 +44,7 @@ def _notice(**overrides) -> dict:
         "category": "exam",
         "priority": "high",
         "is_active": True,
+        "is_published": True,
         "is_pinned": False,
     }
     row.update(overrides)
@@ -63,9 +65,9 @@ def test_faq_marker_includes_type_prefix() -> None:
     assert admin_faq.faq_marker(FAQ_ID) == f"faq:{FAQ_ID}"
 
 
-def test_create_faq_persists_record_then_syncs_rag() -> None:
+def test_create_faq_stays_out_of_rag_until_published() -> None:
     db = MagicMock()
-    faq = _faq()
+    faq = _faq(is_published=False)
     with (
         patch("app.services.admin_faq.get_admin_client", return_value=db),
         patch("app.repositories.admin_knowledge.create_faq", return_value=faq),
@@ -76,26 +78,21 @@ def test_create_faq_persists_record_then_syncs_rag() -> None:
         )
 
     assert result == faq
-    sync_mock.assert_called_once()
-    kwargs = sync_mock.call_args.kwargs
-    assert kwargs["marker"] == f"faq:{FAQ_ID}"
-    assert kwargs["source_type"] == "faq"
-    assert kwargs["actor_user_id"] == ACTOR
-    assert faq["question"] in kwargs["canonical_text"]
+    sync_mock.assert_not_called()
 
 
-def test_create_faq_wraps_sync_failure() -> None:
+def test_publish_faq_wraps_sync_failure() -> None:
     db = MagicMock()
     with (
         patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.create_faq", return_value=_faq()),
+        patch("app.repositories.admin_knowledge.get_faq", return_value=_faq()),
         patch(
             "app.services.admin_faq.sync_canonical_text_record",
             side_effect=RuntimeError("pipeline down"),
         ),
     ):
         with pytest.raises(AppError) as exc:
-            admin_faq.create_faq(FaqCreate(question="Q?", answer="A"), ACTOR)
+            admin_faq.publish_faq(FAQ_ID, ACTOR)
     assert exc.value.code == "RAG_SYNC_FAILED"
 
 def test_update_faq_reactivates_with_resync() -> None:
@@ -188,9 +185,9 @@ def test_notice_marker_includes_type_prefix() -> None:
     assert admin_notices.notice_marker(NOTICE_ID) == f"notice:{NOTICE_ID}"
 
 
-def test_create_notice_persists_record_then_syncs_rag() -> None:
+def test_create_notice_stays_out_of_rag_until_published() -> None:
     db = MagicMock()
-    notice = _notice()
+    notice = _notice(is_published=False)
     with (
         patch("app.services.admin_notices.get_admin_client", return_value=db),
         patch(
@@ -204,12 +201,7 @@ def test_create_notice_persists_record_then_syncs_rag() -> None:
 
     assert result == notice
     create_mock.assert_called_once()
-    sync_mock.assert_called_once()
-    kwargs = sync_mock.call_args.kwargs
-    assert kwargs["marker"] == f"notice:{NOTICE_ID}"
-    assert kwargs["source_type"] == "notice"
-    assert notice["title"] in kwargs["canonical_text"]
-    assert notice["content"] in kwargs["canonical_text"]
+    sync_mock.assert_not_called()
 
 
 def test_update_notice_deactivation_removes_retrievable_content() -> None:

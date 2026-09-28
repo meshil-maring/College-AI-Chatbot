@@ -13,6 +13,8 @@ class RetrievalRequest(BaseModel):
     processing_run_id: UUID | None = None
     model_name: str | None = None
     context: dict | None = None
+    # Internal-only switch. Public HTTP clients never construct this schema.
+    public_only: bool = False
 
     @field_validator("query")
     @classmethod

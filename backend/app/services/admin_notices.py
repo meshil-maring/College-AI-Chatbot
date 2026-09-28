@@ -81,10 +81,9 @@ def get_notice(notice_id: UUID | str) -> dict:
 
 
 def create_notice(payload: NoticeCreate, actor_user_id: UUID | str) -> dict:
-    """Create the notice record (source of truth), then sync it into the RAG store."""
+    """Create an unpublished notice; publication performs the first RAG sync."""
     db = get_admin_client()
     notice = knowledge_repo.create_notice(db, payload, created_by_user_id=actor_user_id)
-    _sync_notice(notice, actor_user_id)
     return notice
 
 
@@ -101,8 +100,8 @@ def update_notice(
     if updated is None:
         raise AppError("Notice not found", status_code=404, code="NOTICE_NOT_FOUND")
 
-    if updated.get("is_active") is False:
-        # Deactivated notices must not remain retrievable.
+    if updated.get("is_active") is False or updated.get("is_published") is not True:
+        # Deactivated or unpublished notices must not remain retrievable.
         remove_canonical_text_record(notice_marker(notice_id), client=db)
 
     else:

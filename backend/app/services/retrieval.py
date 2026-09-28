@@ -13,6 +13,7 @@ from app.repositories.vector_search import (
     EMBEDDING_DIMENSIONS,
     search_similar_chunks,
 )
+from app.repositories.public_knowledge import search_public_chunks
 from app.schemas.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult
 from app.services.embeddings import embed_query
 from app.services.vector_search import search_chunks
@@ -49,16 +50,26 @@ def retrieve(
 
     start = time.perf_counter() if timings is not None else None
     try:
-        rows = search_chunks(
-            query_embedding,
-            top_k=request.top_k,
-            institution_id=_as_string(request.institution_id),
-            knowledge_source_id=_as_string(request.knowledge_source_id),
-            document_id=_as_string(request.document_id),
-            document_version_id=_as_string(request.document_version_id),
-            processing_run_id=_as_string(request.processing_run_id),
-            model_name=request.model_name or settings.embedding_model,
-        )
+        if request.public_only:
+            rows = search_public_chunks(
+                get_admin_client(),
+                query_embedding,
+                top_k=request.top_k,
+                institution_id=request.institution_id,
+                knowledge_source_id=request.knowledge_source_id,
+                model_name=request.model_name or settings.embedding_model,
+            )
+        else:
+            rows = search_chunks(
+                query_embedding,
+                top_k=request.top_k,
+                institution_id=_as_string(request.institution_id),
+                knowledge_source_id=_as_string(request.knowledge_source_id),
+                document_id=_as_string(request.document_id),
+                document_version_id=_as_string(request.document_version_id),
+                processing_run_id=_as_string(request.processing_run_id),
+                model_name=request.model_name or settings.embedding_model,
+            )
     except AppError as exc:
         raise AppError(
             "Retrieval failed",
@@ -78,7 +89,14 @@ def _as_string(value: object) -> str | None:
 def _map_result(row: dict) -> RetrievalResult:
     metadata = {
         key: row[key]
-        for key in ("processing_run_id", "chunk_sequence", "section_title", "model_name")
+        for key in (
+            "processing_run_id",
+            "chunk_sequence",
+            "section_title",
+            "source_title",
+            "source_type",
+            "model_name",
+        )
         if key in row and row[key] is not None
     }
     return RetrievalResult(

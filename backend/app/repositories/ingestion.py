@@ -4,7 +4,10 @@ from supabase import Client
 def get_knowledge_source(client: Client, knowledge_source_id: str) -> dict | None:
     response = (
         client.table("knowledge_sources")
-        .select("knowledge_source_id, institution_id, title, source_type, lifecycle_status")
+        .select(
+            "knowledge_source_id, institution_id, title, source_type, "
+            "lifecycle_status, visibility"
+        )
         .eq("knowledge_source_id", knowledge_source_id)
         .maybe_single()
         .execute()

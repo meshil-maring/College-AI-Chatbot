@@ -20,10 +20,15 @@ from app.api.student_auth import router as student_auth_router
 from app.api.students import router as students_router
 from app.api.student_notifications import router as student_notifications_router
 from app.api.dev_auth import router as dev_auth_router
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    PublicChatRequest,
+    PublicChatResponse,
+)
 from app.schemas.session import SessionContextRequest
 from app.services.chat import process_chat_request
-from app.services.public_chat import process_chat_request as process_public_chat_request
+from app.services.public_chat import process_public_request
 from app.services.generation_provider import OpenRouterGenerationProvider
 from app.services.session import resolve_session_context
 from app.core.startup_validation import run_startup_configuration_validation
@@ -154,26 +159,25 @@ app.include_router(generation_router, prefix="/api/v1")
 public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-@public_chat_router.post("/public", response_model=ChatResponse)
-def public_chat(request: ChatRequest) -> ChatResponse:
+@public_chat_router.post("/public", response_model=PublicChatResponse)
+def public_chat(request: PublicChatRequest) -> PublicChatResponse:
     """Process one PUBLIC (unauthenticated) chat request.
 
-    Phase 6.13.8:
+    Phase 7.2:
       * no authentication dependency — public AI requires no login;
-      * the client-supplied ``institution_id`` (when present) is validated
-        server-side (institution exists, is ACTIVE, belongs to a valid/active
-        organization) — invalid/inactive tenants fail closed;
-      * retrieval is institution-scoped and post-filtered at the
-        data-access boundary to PUBLIC knowledge sources only, so private
-        documents, student records, attendance, and results can never enter
-        the LLM context;
+      * the public institution code is resolved and validated server-side;
+      * the strict request model exposes no retrieval identifiers or controls;
+      * retrieval and final provenance verification require explicit public
+        visibility plus valid source/version/processing lifecycle state;
+      * the response projection exposes no internal IDs, model data, usage,
+        diagnostics, or authorization metadata;
       * personal-data questions from an unauthenticated caller are rejected
         with the standard 401 AUTH_REQUIRED error.
     """
     session_context = resolve_session_context(
-        SessionContextRequest(session_id=request.session_id)
+        SessionContextRequest()
     )
-    return process_public_chat_request(
+    return process_public_request(
         request,
         session_context,
         OpenRouterGenerationProvider(),

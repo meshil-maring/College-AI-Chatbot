@@ -29,7 +29,7 @@ STORAGE_PROVIDER = "r2"
 
 KNOWLEDGE_SOURCE_COLUMNS = (
     "knowledge_source_id, institution_id, source_type, title, description, "
-    "authority_level, lifecycle_status, effective_from, effective_until, "
+    "authority_level, lifecycle_status, visibility, effective_from, effective_until, "
     "created_at, updated_at"
 )
 
@@ -44,12 +44,12 @@ DOCUMENT_VERSION_COLUMNS = (
 
 FAQ_COLUMNS = (
     "faq_id, institution_id, category, question, answer, display_order, "
-    "is_active, created_at, updated_at"
+    "is_active, is_published, created_at, updated_at"
 )
 
 NOTICE_COLUMNS = (
     "notice_id, institution_id, title, content, category, priority, "
-    "is_active, is_pinned, published_at, expires_at, created_by, "
+    "is_active, is_published, is_pinned, published_at, expires_at, created_by, "
     "created_at, updated_at"
 )
 

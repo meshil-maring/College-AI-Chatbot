@@ -8,6 +8,7 @@ the (future) Admin API. Column names mirror the Admin-1 database schema:
 """
 
 from datetime import date, datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -29,6 +30,7 @@ class KnowledgeSourceCreate(BaseModel):
     lifecycle_status: str = "draft"
     effective_from: date | None = None
     effective_until: date | None = None
+    visibility: Literal["public", "authenticated", "restricted"] = "restricted"
 
 
 class KnowledgeSourceUpdate(BaseModel):
@@ -40,6 +42,7 @@ class KnowledgeSourceUpdate(BaseModel):
     lifecycle_status: str | None = None
     effective_from: date | None = None
     effective_until: date | None = None
+    visibility: Literal["public", "authenticated", "restricted"] | None = None
 
 
 class KnowledgeSourceResponse(BaseModel):
@@ -54,6 +57,7 @@ class KnowledgeSourceResponse(BaseModel):
     lifecycle_status: str
     effective_from: date | None
     effective_until: date | None
+    visibility: Literal["public", "authenticated", "restricted"] = "restricted"
     created_at: datetime
     updated_at: datetime
 
@@ -145,6 +149,7 @@ class FaqResponse(BaseModel):
     answer: str
     display_order: int
     is_active: bool
+    is_published: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -176,6 +181,7 @@ class NoticeUpdate(BaseModel):
     category: str | None = None
     priority: str | None = None
     is_active: bool | None = None
+    is_published: bool | None = None
     is_pinned: bool | None = None
     published_at: datetime | None = None
     expires_at: datetime | None = None
@@ -191,6 +197,7 @@ class NoticeResponse(BaseModel):
     category: str
     priority: str
     is_active: bool
+    is_published: bool = False
     is_pinned: bool
     published_at: datetime | None
     expires_at: datetime | None

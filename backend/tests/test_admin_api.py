@@ -261,7 +261,7 @@ def _faq_row() -> dict:
     }
 
 
-def test_create_faq_endpoint_triggers_rag_sync_and_audit() -> None:
+def test_create_faq_endpoint_defers_rag_until_publish_and_audits() -> None:
     faq = _faq_row()
     db = _audit_db(first_insert=faq)
     with (
@@ -281,13 +281,7 @@ def test_create_faq_endpoint_triggers_rag_sync_and_audit() -> None:
         )
 
     assert response.status_code == 201
-    sync_mock.assert_called_once()
-    kwargs = sync_mock.call_args.kwargs
-    assert kwargs["marker"] == f"faq:{FAQ_ID}"
-    assert kwargs["institution_id"] == INSTITUTION_ID
-    assert kwargs["source_type"] == "faq"
-    assert faq["question"] in kwargs["canonical_text"]
-    assert faq["answer"] in kwargs["canonical_text"]
+    sync_mock.assert_not_called()
     audit_rows = [r for r in _audit_rows(db) if "action" in r]
     assert audit_rows[0]["action"] == "faq.create"
 
@@ -341,7 +335,7 @@ def test_delete_faq_endpoint_removes_rag_content_and_audits() -> None:
     assert audit_rows[0]["action"] == "faq.delete"
 
 
-def test_create_notice_endpoint_triggers_rag_sync_and_audit() -> None:
+def test_create_notice_endpoint_defers_rag_until_publish_and_audits() -> None:
     notice = {
         "notice_id": NOTICE_ID,
         "institution_id": INSTITUTION_ID,
@@ -371,12 +365,7 @@ def test_create_notice_endpoint_triggers_rag_sync_and_audit() -> None:
         )
 
     assert response.status_code == 201
-    sync_mock.assert_called_once()
-    kwargs = sync_mock.call_args.kwargs
-    assert kwargs["marker"] == f"notice:{NOTICE_ID}"
-    assert kwargs["source_type"] == "notice"
-    assert notice["title"] in kwargs["canonical_text"]
-    assert notice["content"] in kwargs["canonical_text"]
+    sync_mock.assert_not_called()
     audit_rows = [r for r in _audit_rows(db) if "action" in r]
     assert audit_rows[0]["action"] == "notice.create"
 

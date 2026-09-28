@@ -80,10 +80,9 @@ def get_faq(faq_id: UUID | str) -> dict:
 
 
 def create_faq(payload: FaqCreate, actor_user_id: UUID | str) -> dict:
-    """Create the FAQ record (source of truth), then sync it into the RAG store."""
+    """Create an unpublished FAQ; publication performs the first RAG sync."""
     db = get_admin_client()
     faq = knowledge_repo.create_faq(db, payload)
-    _sync_faq(faq, actor_user_id)
     return faq
 
 
@@ -96,8 +95,8 @@ def update_faq(faq_id: UUID | str, payload: FaqUpdate, actor_user_id: UUID | str
     if updated is None:
         raise AppError("FAQ not found", status_code=404, code="FAQ_NOT_FOUND")
 
-    if updated.get("is_active") is False:
-        # Deactivated FAQs must not remain retrievable.
+    if updated.get("is_active") is False or updated.get("is_published") is not True:
+        # Deactivated or unpublished FAQs must not remain retrievable.
         remove_canonical_text_record(faq_marker(faq_id), client=db)
     else:
         _sync_faq(updated, actor_user_id)

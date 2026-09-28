@@ -241,6 +241,7 @@ class FakeClient:
                 'title': 'FAQ A',
                 'description': 'FAQ A',
                 'authority_level': 'standard',
+                'visibility': 'public',
                 'lifecycle_status': 'published',
             },
             {
@@ -250,6 +251,7 @@ class FakeClient:
                 'title': 'Notice A',
                 'description': 'Notice A',
                 'authority_level': 'standard',
+                'visibility': 'public',
                 'lifecycle_status': 'published',
             },
             {
@@ -259,6 +261,7 @@ class FakeClient:
                 'title': 'Handbook A',
                 'description': 'Handbook A',
                 'authority_level': 'standard',
+                'visibility': 'public',
                 'lifecycle_status': 'published',
             },
             {
@@ -268,6 +271,7 @@ class FakeClient:
                 'title': 'Private A',
                 'description': 'Private A',
                 'authority_level': 'standard',
+                'visibility': 'restricted',
                 'lifecycle_status': 'published',
             },
             {
@@ -277,6 +281,7 @@ class FakeClient:
                 'title': 'FAQ B',
                 'description': 'FAQ B',
                 'authority_level': 'standard',
+                'visibility': 'public',
                 'lifecycle_status': 'published',
             },
         ]

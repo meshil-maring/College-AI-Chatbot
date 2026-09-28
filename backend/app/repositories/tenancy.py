@@ -183,7 +183,7 @@ def get_institution_by_id(client: Client, institution_id: UUID | str) -> dict | 
 
 _KS_COLUMNS = (
     "knowledge_source_id, institution_id, source_type, title, description, "
-    "authority_level, lifecycle_status, effective_from, effective_until, "
+    "authority_level, lifecycle_status, visibility, effective_from, effective_until, "
     "created_at, updated_at"
 )
 

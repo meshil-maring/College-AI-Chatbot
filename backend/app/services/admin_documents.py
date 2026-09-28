@@ -435,6 +435,9 @@ def _get_or_create_canonical_knowledge_source(
         "title": title,
         "authority_level": "official",
         "lifecycle_status": "published",
+        # FAQ/notice synchronization is the existing deliberate public
+        # publication workflow. Type alone is never used for authorization.
+        "visibility": "public",
         "created_by_user_id": str(actor_user_id),
     }
     if institution_id is not None:

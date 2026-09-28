@@ -715,7 +715,9 @@ def _run_public_chat(user_query=GENERAL_QUERY, retrieved_chunks=None, provider=N
             public_chat, "_build_allowed_public_knowledge_source_ids", return_value={KS_A}
         ),
         patch.object(
-            public_chat, "_resolve_chunk_knowledge_sources", return_value={RUN_A: KS_A}
+            public_chat.PublicKnowledgePolicy,
+            "authorize_chunks",
+            side_effect=lambda chunks, **_kwargs: chunks,
         ),
     ):
         response = public_chat.process_chat_request(

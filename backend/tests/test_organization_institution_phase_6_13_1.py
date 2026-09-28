@@ -819,8 +819,9 @@ def test_public_chat_institution_id_is_now_validated_server_side() -> None:
     assert "institution_id=request.institution_id" in source
     # The public path now validates the institution before use.
     assert "_validate_public_institution" in source
-    # The public path now filters retrieved chunks by public source_type.
-    assert "_filter_to_public_chunks" in source
+    # Phase 7.2 re-verifies full source/version/run/chunk provenance.
+    assert "PublicKnowledgePolicy" in source
+    assert "authorize_chunks" in source
     # The public path rejects personal-data questions.
     assert "_reject_personal_query_if_needed" in source
 

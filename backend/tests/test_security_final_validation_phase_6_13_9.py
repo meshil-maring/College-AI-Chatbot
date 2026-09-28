@@ -339,6 +339,7 @@ def _ks_row(ks_id, inst_id, source_type="faq", lifecycle="published"):
         "title": f"Source {source_type}",
         "description": None,
         "authority_level": "official",
+        "visibility": "public" if source_type == "faq" else "restricted",
         "lifecycle_status": lifecycle,
         "effective_from": None,
         "effective_until": None,
@@ -347,15 +348,35 @@ def _ks_row(ks_id, inst_id, source_type="faq", lifecycle="published"):
     }
 
 
-def _run_row(run_id, ks_id):
+def _run_row(run_id, ks_row):
     return {
         "processing_run_id": run_id,
-        "document_versions": {"knowledge_source_id": ks_id},
+        "status": "ready",
+        "embedding_status": "embedded",
+        "completed_at": "2026-09-19T00:00:00Z",
+        "document_versions": {
+            "document_version_id": str(uuid4()),
+            "document_id": str(uuid4()),
+            "lifecycle_status": "published",
+            "effective_from": None,
+            "effective_until": None,
+            "documents": {
+                "document_id": str(uuid4()),
+                "knowledge_source_id": ks_row["knowledge_source_id"],
+                "knowledge_sources": ks_row,
+            },
+        },
     }
 
 
 def _base_state():
     """Org A {Inst A1, Inst A2}, Org B {Inst B1} — all ACTIVE."""
+    faq_a = _ks_row(KS_FAQ_A1, INST_A1, "faq")
+    private_a = _ks_row(KS_PRIVATE_A1, INST_A1, "private")
+    faq_b = _ks_row(KS_FAQ_B1, INST_B1, "faq")
+    run_a = _run_row(RUN_FAQ_A1, faq_a)
+    run_private = _run_row(RUN_PRIVATE_A1, private_a)
+    run_b = _run_row(RUN_FAQ_B1, faq_b)
     return {
         "organizations": [
             _org_row(ORG_A, "active"),
@@ -367,14 +388,31 @@ def _base_state():
             _inst_row(INST_B1, ORG_B, "active"),
         ],
         "knowledge_sources": [
-            _ks_row(KS_FAQ_A1, INST_A1, "faq"),
-            _ks_row(KS_PRIVATE_A1, INST_A1, "private"),
-            _ks_row(KS_FAQ_B1, INST_B1, "faq"),
+            faq_a,
+            private_a,
+            faq_b,
         ],
         "document_processing_runs": [
-            _run_row(RUN_FAQ_A1, KS_FAQ_A1),
-            _run_row(RUN_PRIVATE_A1, KS_PRIVATE_A1),
-            _run_row(RUN_FAQ_B1, KS_FAQ_B1),
+            run_a,
+            run_private,
+            run_b,
+        ],
+        "knowledge_chunks": [
+            {
+                "chunk_id": CHUNK_FAQ_A1,
+                "processing_run_id": RUN_FAQ_A1,
+                "document_processing_runs": run_a,
+            },
+            {
+                "chunk_id": CHUNK_PRIVATE_A1,
+                "processing_run_id": RUN_PRIVATE_A1,
+                "document_processing_runs": run_private,
+            },
+            {
+                "chunk_id": CHUNK_FAQ_B1,
+                "processing_run_id": RUN_FAQ_B1,
+                "document_processing_runs": run_b,
+            },
         ],
     }
 
