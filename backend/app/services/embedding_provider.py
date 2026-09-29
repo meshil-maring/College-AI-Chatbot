@@ -58,12 +58,14 @@ class OpenRouterEmbeddingProvider:
                 OPENROUTER_EMBEDDINGS_URL,
                 headers=headers,
                 json=request_body,
+                timeout=settings.embedding_request_timeout_seconds,
             )
         else:
             response = self._client.post(
                 OPENROUTER_EMBEDDINGS_URL,
                 headers=headers,
                 json=request_body,
+                timeout=settings.embedding_request_timeout_seconds,
             )
         if response.is_error:
             raise RuntimeError(f"OpenRouter embedding request failed ({response.status_code})")

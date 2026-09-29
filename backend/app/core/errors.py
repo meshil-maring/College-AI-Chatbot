@@ -8,10 +8,12 @@ class AppError(Exception):
         message: str,
         status_code: int = 500,
         code: str = "INTERNAL_ERROR",
+        headers: dict[str, str] | None = None,
     ):
         self.message = message
         self.status_code = status_code
         self.code = code
+        self.headers = headers or {}
         super().__init__(message)
 
 
@@ -21,6 +23,7 @@ async def app_error_handler(
 ) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
+        headers=exc.headers,
         content={
             "error": {
                 "code": exc.code,

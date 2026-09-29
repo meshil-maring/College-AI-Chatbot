@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     debug: bool = True
+    # Comma-separated host names accepted by TrustedHostMiddleware. An empty
+    # value uses loopback/test defaults locally and is rejected in production.
+    allowed_hosts: str = ""
+    # None means enabled locally and disabled in deployed environments.
+    api_docs_enabled: bool | None = None
 
     supabase_url: str = ""
     supabase_publishable_key: str = ""
@@ -42,6 +47,7 @@ class Settings(BaseSettings):
     embedding_model: str = "qwen/qwen3-embedding-8b"
     embedding_dimensions: int = 1536
     embedding_batch_size: int = 100
+    embedding_request_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
 
     # Phase 5.7b — bounded multi-turn conversational context.
     # Maximum number of persisted messages (user+assistant combined) included
@@ -75,6 +81,20 @@ class Settings(BaseSettings):
     public_generation_max_tokens: int = Field(default=800, gt=0, le=4096)
     public_generation_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
     public_response_max_chars: int = Field(default=12000, gt=0)
+    # Phase 7.8 -- process-local public abuse/resource controls.  The request
+    # schema retains its absolute 4,000-character contract; deployments may
+    # lower (but never raise) the effective message ceiling.
+    public_max_message_chars: int = Field(default=4000, gt=0, le=4000)
+    public_max_body_bytes: int = Field(default=8192, ge=4096, le=1_048_576)
+    public_body_read_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
+    public_rate_limit_enabled: bool = True
+    public_rate_limit_requests: int = Field(default=60, gt=0)
+    public_rate_limit_window_seconds: int = Field(default=60, gt=0, le=3600)
+    public_institution_rate_limit_requests: int = Field(default=180, gt=0)
+    public_global_rate_limit_requests: int = Field(default=600, gt=0)
+    public_concurrency_limit: int = Field(default=8, gt=0, le=1000)
+    public_institution_concurrency_limit: int = Field(default=4, gt=0, le=1000)
+    public_overload_retry_after_seconds: int = Field(default=2, gt=0, le=60)
     rewrite_history_exchanges: int = 2
     rewrite_max_history_chars: int = 1000
 
@@ -128,6 +148,42 @@ class Settings(BaseSettings):
             environment,
         )
         return self
+
+    @model_validator(mode="after")
+    def _validate_public_resource_controls(self) -> "Settings":
+        if self.public_institution_concurrency_limit > self.public_concurrency_limit:
+            raise ValueError(
+                "PUBLIC_INSTITUTION_CONCURRENCY_LIMIT must not exceed "
+                "PUBLIC_CONCURRENCY_LIMIT"
+            )
+        if self.public_max_body_bytes <= self.public_max_message_chars:
+            raise ValueError(
+                "PUBLIC_MAX_BODY_BYTES must leave room for the JSON request envelope"
+            )
+        return self
+
+    @property
+    def is_local_environment(self) -> bool:
+        return (self.environment or "").strip().lower() in DEV_TEST_ENVIRONMENTS
+
+    @property
+    def effective_allowed_hosts(self) -> list[str]:
+        configured = [
+            host.strip()
+            for host in (self.allowed_hosts or "").split(",")
+            if host.strip()
+        ]
+        if configured:
+            return configured
+        if self.is_local_environment:
+            return ["localhost", "127.0.0.1", "testserver"]
+        return []
+
+    @property
+    def effective_api_docs_enabled(self) -> bool:
+        if self.api_docs_enabled is not None:
+            return self.api_docs_enabled
+        return self.is_local_environment
 
 
 settings = Settings()

@@ -47,4 +47,30 @@ describe('publicChat client', () => {
       expect.objectContaining<Partial<PublicChatError>>({ kind: 'server', status: 502 }),
     )
   })
+
+  it.each([429, 503])('maps overload status %s to a safe busy error without retrying', async (status) => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({
+      error: { code: 'INTERNAL_DETAIL', message: 'provider and quota details' },
+    }), { status, headers: { 'content-type': 'application/json', 'retry-after': '2' } }))
+
+    await expect(publicChat({ institution_code: 'GIT', message: 'Hello' })).rejects.toEqual(
+      expect.objectContaining<Partial<PublicChatError>>({ kind: 'busy', status }),
+    )
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('distinguishes caller cancellation from a timeout', async () => {
+    vi.mocked(fetch).mockImplementationOnce((_input, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        reject(new DOMException('cancelled detail', 'AbortError'))
+      })
+    }))
+    const controller = new AbortController()
+    const request = publicChat(
+      { institution_code: 'GIT', message: 'Hello' },
+      { timeoutMs: 10_000, signal: controller.signal },
+    )
+    controller.abort()
+    await expect(request).rejects.toMatchObject({ kind: 'aborted' })
+  })
 })

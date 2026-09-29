@@ -36,10 +36,9 @@ def retrieve(
     except AppError:
         raise
     except Exception as exc:
-        # Phase 6.21 — production hardening: keep the raw traceback in the
-        # server log with context instead of printing it to stdout, where it
-        # could be captured by unfiltered log sinks.
-        logger.exception("Query embedding failed")
+        # Provider/network failures are expected operational events. Keep the
+        # log coarse and content-free rather than recording a traceback.
+        logger.error("event=query_embedding_failed category=provider")
         raise AppError(
             "Query embedding failed",
             status_code=500,

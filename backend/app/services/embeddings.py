@@ -2,6 +2,7 @@ import logging
 import math
 import threading
 import time
+import hashlib
 from collections import OrderedDict
 from collections.abc import Iterable
 from numbers import Real
@@ -69,7 +70,15 @@ def embed_query(
 ) -> list[float]:
     """Generate and validate one query embedding through the configured provider."""
     if provider is None:
-        cache_key = (settings.embedding_model, settings.embedding_dimensions, query)
+        # Keep anonymous/public message text out of process memory used by the
+        # optimization cache. The digest is only an exact-query lookup key;
+        # responses, retrieval results, and conversation turns are not cached.
+        query_digest = hashlib.sha256(query.encode("utf-8")).digest()
+        cache_key = (
+            settings.embedding_model,
+            settings.embedding_dimensions,
+            query_digest,
+        )
         cached = _cache_get(cache_key)
         if cached is not None:
             return list(cached)

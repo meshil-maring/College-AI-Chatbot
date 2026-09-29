@@ -185,7 +185,13 @@ function AuthGate() {
 }
 
 function App() {
-  const publicInstitutionCode = resolvePublicInstitutionCode(window.location.pathname)
+  const [pathname, setPathname] = useState(() => window.location.pathname)
+  useEffect(() => {
+    const updatePathname = (): void => setPathname(window.location.pathname)
+    window.addEventListener('popstate', updatePathname)
+    return () => window.removeEventListener('popstate', updatePathname)
+  }, [])
+  const publicInstitutionCode = resolvePublicInstitutionCode(pathname)
   if (publicInstitutionCode !== undefined) {
     return publicInstitutionCode === null
       ? <PublicChatRouteError />

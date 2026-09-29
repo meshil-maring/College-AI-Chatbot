@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.chat_response import ChatUsage, StructuredSource
 from app.schemas.generation import AIResponse, RetrievedChunk
+from app.config import settings
 
 
 class ChatRequest(BaseModel):
@@ -66,6 +67,8 @@ class PublicChatRequest(BaseModel):
         normalized = " ".join(value.split())
         if not normalized:
             raise ValueError("message must not be empty")
+        if len(normalized) > settings.public_max_message_chars:
+            raise ValueError("message exceeds the configured public limit")
         return normalized
 
 

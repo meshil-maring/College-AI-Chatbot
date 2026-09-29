@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { memo, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import type { PublicChatMessage, PublicChatSource } from '../../types/publicChat.ts'
 import { usePublicChat } from './usePublicChat.ts'
 
@@ -28,7 +28,7 @@ function SourceList({ sources }: { sources: PublicChatSource[] }) {
   )
 }
 
-function Message({ message }: { message: PublicChatMessage }) {
+const Message = memo(function Message({ message }: { message: PublicChatMessage }) {
   const user = message.role === 'user'
   return (
     <li className={user ? 'ml-auto max-w-[88%] sm:max-w-[78%]' : 'mr-auto max-w-[94%] sm:max-w-[84%]'}>
@@ -43,7 +43,7 @@ function Message({ message }: { message: PublicChatMessage }) {
       </article>
     </li>
   )
-}
+})
 
 function EmptyState({ onSuggestion }: { onSuggestion: (question: string) => void }) {
   const suggestions = [
@@ -76,14 +76,35 @@ function EmptyState({ onSuggestion }: { onSuggestion: (question: string) => void
 }
 
 export default function PublicChatPage({ institutionCode }: { institutionCode: string }) {
-  const { messages, isLoading, error, failedMessageId, sendMessage, retry, clear } = usePublicChat(institutionCode)
+  const {
+    messages,
+    isLoading,
+    error,
+    failedMessageId,
+    sendMessage,
+    retry,
+    startNewConversation,
+    clear,
+  } = usePublicChat(institutionCode)
   const [draft, setDraft] = useState('')
+  const [confirmingClear, setConfirmingClear] = useState(false)
   const bottomRef = useRef<HTMLDivElement | null>(null)
-  const canSend = !isLoading && draft.trim().length > 0 && draft.length <= 4000
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const clearButtonRef = useRef<HTMLButtonElement | null>(null)
+  const cancelClearRef = useRef<HTMLButtonElement | null>(null)
+  const canSend = !isLoading && failedMessageId === null && draft.trim().length > 0 && draft.length <= 4000
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'end' })
   }, [messages.length, isLoading, error])
+
+  useEffect(() => {
+    if (!isLoading && !confirmingClear) inputRef.current?.focus()
+  }, [confirmingClear, isLoading])
+
+  useEffect(() => {
+    if (confirmingClear) cancelClearRef.current?.focus()
+  }, [confirmingClear])
 
   const submit = (event?: FormEvent): void => {
     event?.preventDefault()
@@ -100,18 +121,61 @@ export default function PublicChatPage({ institutionCode }: { institutionCode: s
     }
   }
 
+  const beginNewConversation = (): void => {
+    startNewConversation()
+    setDraft('')
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  const closeClearConfirmation = (): void => {
+    setConfirmingClear(false)
+    setTimeout(() => clearButtonRef.current?.focus(), 0)
+  }
+
+  const confirmClear = (): void => {
+    clear()
+    setDraft('')
+    setConfirmingClear(false)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  const onClearDialogKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      closeClearConfirmation()
+      return
+    }
+    if (event.key !== 'Tab') return
+    const controls = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'),
+    )
+    if (controls.length === 0) return
+    const first = controls[0]
+    const last = controls[controls.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
+
   return (
     <div className="min-h-[100dvh] bg-slate-950 text-slate-100">
       <header className="border-b border-slate-800 bg-slate-950/95 px-4 py-4 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="min-w-0">
             <p className="truncate text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">{institutionCode}</p>
             <h1 className="truncate text-lg font-bold text-white sm:text-xl">Public College AI Assistant</h1>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
+            <button type="button" onClick={beginNewConversation} disabled={isLoading} className="rounded-lg px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-50">
+              New conversation
+            </button>
             {messages.length > 0 ? (
-              <button type="button" onClick={clear} disabled={isLoading} className="rounded-lg px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-50">
-                Clear chat
+              <button ref={clearButtonRef} type="button" onClick={() => setConfirmingClear(true)} disabled={isLoading} className="rounded-lg px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-50">
+                Clear conversation
               </button>
             ) : null}
             <a href="/" className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400">
@@ -154,6 +218,7 @@ export default function PublicChatPage({ institutionCode }: { institutionCode: s
             <label htmlFor="public-chat-message" className="sr-only">Ask a public college question</label>
             <div className="flex items-end gap-2 rounded-2xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-black/20 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500">
               <textarea
+                ref={inputRef}
                 id="public-chat-message"
                 rows={2}
                 maxLength={4000}
@@ -172,9 +237,37 @@ export default function PublicChatPage({ institutionCode }: { institutionCode: s
               <span>Enter to send · Shift+Enter for a new line</span>
               <span aria-live="polite">{draft.length}/4000</span>
             </div>
+            <p className="mt-1 px-1 text-[11px] text-slate-600">
+              History is stored only in this browser for {institutionCode}.
+            </p>
           </form>
         </div>
       </main>
+      {confirmingClear ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="clear-conversation-title"
+          aria-describedby="clear-conversation-description"
+          onKeyDown={onClearDialogKeyDown}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <h2 id="clear-conversation-title" className="text-lg font-bold text-white">Clear this conversation?</h2>
+            <p id="clear-conversation-description" className="mt-2 text-sm leading-6 text-slate-400">
+              This removes this college's conversation from this browser. Other colleges are not affected.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button ref={cancelClearRef} type="button" onClick={closeClearConfirmation} className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                Cancel
+              </button>
+              <button type="button" onClick={confirmClear} className="rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-rose-300">
+                Clear conversation
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

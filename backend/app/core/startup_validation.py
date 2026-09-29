@@ -60,6 +60,11 @@ def collect_configuration_checks(cfg: Settings) -> list[ConfigurationCheck]:
         _presence_check(cfg, "supabase_publishable_key", "SUPABASE_PUBLISHABLE_KEY"),
         _presence_check(cfg, "supabase_secret_key", "SUPABASE_SECRET_KEY"),
         _presence_check(cfg, "supabase_jwks_url", "SUPABASE_JWKS_URL"),
+        _presence_check(cfg, "openrouter_api_key", "OPENROUTER_API_KEY"),
+        _presence_check(cfg, "r2_endpoint_url", "R2_ENDPOINT_URL"),
+        _presence_check(cfg, "r2_access_key_id", "R2_ACCESS_KEY_ID"),
+        _presence_check(cfg, "r2_secret_access_key", "R2_SECRET_ACCESS_KEY"),
+        _presence_check(cfg, "r2_bucket", "R2_BUCKET"),
     ]
 
     environment = (cfg.environment or "").strip().lower()
@@ -90,6 +95,32 @@ def collect_configuration_checks(cfg: Settings) -> list[ConfigurationCheck]:
                 "enabled (set DEBUG=false outside local development/testing)"
                 if cfg.debug
                 else "disabled"
+            ),
+        )
+    )
+
+    allowed_hosts = cfg.effective_allowed_hosts
+    checks.append(
+        ConfigurationCheck(
+            name="ALLOWED_HOSTS",
+            ok=is_local or bool(allowed_hosts) and "*" not in allowed_hosts,
+            detail=(
+                "configured without wildcard"
+                if allowed_hosts and "*" not in allowed_hosts
+                else "must contain explicit deployment host names (wildcard is forbidden)"
+            ),
+        )
+    )
+
+    provider_supported = (cfg.ai_provider or "").strip().lower() == "openrouter"
+    checks.append(
+        ConfigurationCheck(
+            name="AI_PROVIDER",
+            ok=provider_supported,
+            detail=(
+                "supported provider configured"
+                if provider_supported
+                else "must be set to the supported openrouter provider"
             ),
         )
     )

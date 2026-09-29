@@ -13,7 +13,9 @@ export type PublicChatErrorKind =
   | 'institution'
   | 'auth_required'
   | 'timeout'
+  | 'aborted'
   | 'network'
+  | 'busy'
   | 'server'
   | 'malformed_response'
   | 'unknown'
@@ -40,8 +42,12 @@ export function publicChatErrorMessage(kind: PublicChatErrorKind): string {
       return 'That information is private. Please sign in to access student-specific information.'
     case 'timeout':
       return 'The AI service took too long to respond. Please try again.'
+    case 'aborted':
+      return 'The request was cancelled.'
     case 'network':
       return 'Unable to connect to the AI service. Please check your connection and try again.'
+    case 'busy':
+      return 'The chatbot is busy right now. Please try again shortly.'
     case 'server':
     case 'malformed_response':
       return "Sorry, I couldn't process that question right now. Please try again."
@@ -86,6 +92,7 @@ function classifyHttpError(status: number): PublicChatErrorKind {
   if (status === 403 || status === 404) return 'institution'
   if (status === 400 || status === 413 || status === 422) return 'validation'
   if (status === 408 || status === 504) return 'timeout'
+  if (status === 429 || status === 503) return 'busy'
   if (status >= 500) return 'server'
   return 'unknown'
 }
@@ -93,10 +100,21 @@ function classifyHttpError(status: number): PublicChatErrorKind {
 /** Sends only the narrow anonymous request. No auth or internal controls exist here. */
 export async function publicChat(
   request: PublicChatRequest,
-  timeoutMs: number = PUBLIC_CHAT_TIMEOUT_MS,
+  options: number | { timeoutMs?: number; signal?: AbortSignal } = PUBLIC_CHAT_TIMEOUT_MS,
 ): Promise<PublicChatResponse> {
+  const timeoutMs = typeof options === 'number'
+    ? options
+    : (options.timeoutMs ?? PUBLIC_CHAT_TIMEOUT_MS)
+  const externalSignal = typeof options === 'number' ? undefined : options.signal
   const controller = typeof AbortController === 'function' ? new AbortController() : null
-  const timeoutId = controller === null ? null : setTimeout(() => controller.abort(), timeoutMs)
+  let timedOut = false
+  const abortFromCaller = (): void => controller?.abort()
+  if (externalSignal?.aborted) abortFromCaller()
+  else externalSignal?.addEventListener('abort', abortFromCaller, { once: true })
+  const timeoutId = controller === null ? null : setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
   let response: Response
 
   try {
@@ -110,12 +128,13 @@ export async function publicChat(
       signal: controller?.signal,
     })
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new PublicChatError('timeout')
+    if (typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError') {
+      throw new PublicChatError(timedOut ? 'timeout' : 'aborted')
     }
     throw new PublicChatError('network')
   } finally {
     if (timeoutId !== null) clearTimeout(timeoutId)
+    externalSignal?.removeEventListener('abort', abortFromCaller)
   }
 
   if (!response.ok) throw new PublicChatError(classifyHttpError(response.status), response.status)

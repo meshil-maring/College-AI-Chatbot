@@ -54,6 +54,12 @@ def _production_settings(**overrides) -> Settings:
         supabase_publishable_key=FAKE_ANON_KEY,
         supabase_secret_key=FAKE_SERVICE_KEY,
         supabase_jwks_url="https://prod-ref.supabase.co/auth/v1/.well-known/jwks.json",
+        openrouter_api_key=FAKE_OPENROUTER_KEY,
+        r2_endpoint_url="https://example.r2.cloudflarestorage.com",
+        r2_access_key_id="fake-r2-access-key",
+        r2_secret_access_key="fake-r2-secret-key",
+        r2_bucket="documents",
+        allowed_hosts="api.example.edu",
     )
     base.update(overrides)
     return Settings(**base)
@@ -89,6 +95,13 @@ def test_fully_configured_production_settings_pass_validation():
         "SUPABASE_PUBLISHABLE_KEY",
         "SUPABASE_SECRET_KEY",
         "SUPABASE_JWKS_URL",
+        "OPENROUTER_API_KEY",
+        "R2_ENDPOINT_URL",
+        "R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY",
+        "R2_BUCKET",
+        "ALLOWED_HOSTS",
+        "AI_PROVIDER",
         "DEV_TEST_MODE",
         "DEBUG",
     } <= names

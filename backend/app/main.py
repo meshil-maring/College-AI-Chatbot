@@ -1,9 +1,11 @@
 import logging
+import time
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.config import settings
 from app.core.errors import AppError, app_error_handler
@@ -33,6 +35,13 @@ from app.services.public_chat import process_public_request
 from app.services.generation_provider import OpenRouterGenerationProvider
 from app.services.session import resolve_session_context
 from app.core.startup_validation import run_startup_configuration_validation
+from app.middleware.public_body_limit import PublicChatBodyLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.db.supabase import get_admin_client
+from app.services.public_abuse_controls import (
+    acquire_concurrency,
+    enforce_rate_limit,
+)
 
 # Phase 6.15.8 — fail fast on an invalid/incomplete deployment configuration.
 # In local development/testing this only logs a warning; anywhere else a
@@ -43,6 +52,18 @@ run_startup_configuration_validation(settings)
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
+    docs_url="/docs" if settings.effective_api_docs_enabled else None,
+    redoc_url="/redoc" if settings.effective_api_docs_enabled else None,
+    openapi_url="/openapi.json" if settings.effective_api_docs_enabled else None,
+)
+app.add_middleware(PublicChatBodyLimitMiddleware)
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.effective_allowed_hosts,
+)
+app.add_middleware(
+    SecurityHeadersMiddleware,
+    enable_hsts=not settings.is_local_environment,
 )
 
 app.add_exception_handler(AppError, app_error_handler)
@@ -170,6 +191,10 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
         "returns a stateless response without internal identifiers or diagnostics."
     ),
     responses={
+        400: {
+            "model": PublicAPIErrorResponse,
+            "description": "The public request is malformed.",
+        },
         401: {
             "model": PublicAPIErrorResponse,
             "description": "The question requires authenticated personal data.",
@@ -185,6 +210,18 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
         422: {
             "model": PublicAPIErrorResponse,
             "description": "The request body failed strict validation.",
+        },
+        413: {
+            "model": PublicAPIErrorResponse,
+            "description": "The public request body is too large.",
+        },
+        408: {
+            "model": PublicAPIErrorResponse,
+            "description": "The public request timed out before completion.",
+        },
+        429: {
+            "model": PublicAPIErrorResponse,
+            "description": "The public request rate limit was exceeded.",
         },
         500: {
             "model": PublicAPIErrorResponse,
@@ -204,7 +241,7 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
         },
     },
 )
-def public_chat(request: PublicChatRequest) -> PublicChatResponse:
+def public_chat(request: PublicChatRequest, http_request: Request) -> PublicChatResponse:
     """Process one PUBLIC (unauthenticated) chat request.
 
     Phase 7.3:
@@ -219,16 +256,48 @@ def public_chat(request: PublicChatRequest) -> PublicChatResponse:
         with the standard 401 AUTH_REQUIRED error.
       * requests are stateless and create no anonymous conversation history.
     """
-    session_context = resolve_session_context(
-        SessionContextRequest()
+    # Identity is the direct peer socket address. Forwarding headers are
+    # deliberately ignored because this repository has no trusted-proxy
+    # configuration; accepting them would create a trivial spoofing bypass.
+    client_identity = (
+        http_request.client.host if http_request.client is not None else "unknown"
     )
-    return process_public_request(
-        request,
-        session_context,
-        OpenRouterGenerationProvider(
-            timeout=settings.public_generation_timeout_seconds,
-        ),
-    )
+    enforce_rate_limit(client_identity, request.institution_code)
+    lease = acquire_concurrency(request.institution_code)
+    started_at = time.perf_counter()
+    status = 200
+    try:
+        session_context = resolve_session_context(SessionContextRequest())
+        return process_public_request(
+            request,
+            session_context,
+            OpenRouterGenerationProvider(
+                timeout=settings.public_generation_timeout_seconds,
+            ),
+        )
+    except AppError as exc:
+        status = exc.status_code
+        raise
+    except Exception:
+        status = 500
+        logger.error(
+            "event=public_chat_failed institution=%s status=500 category=internal",
+            request.institution_code,
+        )
+        raise AppError(
+            "An unexpected server error occurred. Please try again later.",
+            status_code=500,
+            code="INTERNAL_ERROR",
+        ) from None
+    finally:
+        lease.release()
+        duration_ms = int((time.perf_counter() - started_at) * 1000)
+        logger.info(
+            "event=public_chat_request institution=%s status=%s duration_ms=%s",
+            request.institution_code,
+            status,
+            duration_ms,
+        )
 
 app.include_router(public_chat_router, prefix="/api/v1")
 
@@ -245,11 +314,9 @@ def root():
     return {
         "service": settings.app_name,
         "version": settings.app_version,
-        "environment": settings.environment,
-        "message": "Backend is running. This is an API — use the frontend UI at "
-        "http://localhost:5173 or the interactive docs below.",
-        "docs": "/docs",
+        "message": "Backend API is running.",
         "health": "/health",
+        "readiness": "/ready",
     }
 
 
@@ -260,6 +327,26 @@ def health_check():
         "service": settings.app_name,
         "environment": settings.environment,
     }
+
+
+@app.get("/ready")
+def readiness_check():
+    """Run a bounded read-only check of the public chat's database dependency."""
+    try:
+        (
+            get_admin_client()
+            .table("institutions")
+            .select("institution_id")
+            .limit(1)
+            .execute()
+        )
+    except Exception:
+        logger.warning("event=readiness_failed dependency=database")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unavailable", "service": settings.app_name},
+        )
+    return {"status": "ready", "service": settings.app_name}
 
 
 @app.get("/api/v1/auth/me")
@@ -306,9 +393,19 @@ def start():
     """
     host = "0.0.0.0"
     port = 8000
-    print(f"Backend (UI entry point):  http://localhost:5173  (frontend dev server)")
-    print(f"API root:                  http://127.0.0.1:{port}/")
-    print(f"API docs (Swagger UI):     http://127.0.0.1:{port}/docs")
-    print(f"Health check:              http://127.0.0.1:{port}/health")
-    print(f"Note: {host}:{port} is the bind address and is NOT browsable.\n")
-    uvicorn.run("app.main:app", host=host, port=port, reload=True)
+    if settings.is_local_environment:
+        print(f"Backend (UI entry point):  http://localhost:5173  (frontend dev server)")
+        print(f"API root:                  http://127.0.0.1:{port}/")
+        if settings.effective_api_docs_enabled:
+            print(f"API docs (Swagger UI):     http://127.0.0.1:{port}/docs")
+        print(f"Health check:              http://127.0.0.1:{port}/health")
+        print(f"Readiness check:           http://127.0.0.1:{port}/ready")
+        print(f"Note: {host}:{port} is the bind address and is NOT browsable.\n")
+    uvicorn.run(
+        "app.main:app",
+        host=host,
+        port=port,
+        reload=settings.is_local_environment,
+        workers=1,
+        proxy_headers=False,
+    )

@@ -25,3 +25,12 @@ export interface PublicChatMessage {
   sources?: PublicChatSource[]
   createdAt: number
 }
+
+/** Browser-local conversation state. The ID is never an authorization value or API field. */
+export interface PublicConversation {
+  id: string
+  institutionCode: string
+  messages: PublicChatMessage[]
+  createdAt: number
+  updatedAt: number
+}
