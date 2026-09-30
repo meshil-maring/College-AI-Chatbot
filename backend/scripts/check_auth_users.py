@@ -59,7 +59,7 @@ def main():
         # Now try inserting into public.users referencing this auth user
         try:
             resp2 = admin.table("users").insert({
-                "user_id": "30000000-0000-0000-0000-000000000999",
+                "id": "30000000-0000-0000-0000-000000000999",
                 "auth_user_id": test_auth_id,
                 "email": "test-validation@collegeai.local",
                 "first_name": "Test",
@@ -81,7 +81,7 @@ def main():
         except Exception:
             pass
         try:
-            admin.table("users").delete().eq("user_id", "30000000-0000-0000-0000-000000000999").execute()
+            admin.table("users").delete().eq("id", "30000000-0000-0000-0000-000000000999").execute()
             print("Test public.users row cleaned up.")
         except Exception:
             pass

@@ -22,7 +22,7 @@ approval belongs exclusively to Phase 6.4.
 
 ## 3. Architecture Inspected (before implementing)
 
-- `public.users`: link row `auth_user_id → user_id`; email globally unique.
+- `public.users`: link row `auth_user_id → id`; email globally unique.
 - Supabase Auth: GoTrue owns credentials (`backend/app/api/auth.py`
   signup/login via `client.auth.sign_up` / `sign_in_with_password`).
 - JWT: `backend/app/core/security.py` (`verify_jwt`, `get_current_user`).

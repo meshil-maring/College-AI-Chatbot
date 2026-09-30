@@ -50,7 +50,7 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
     response = (
         client.table("users")
         .select(
-            "user_id, auth_user_id, email, "
+            "user_id:id, auth_user_id, email, "
             "user_roles(roles(name, is_active)), "
             "students(institution_id)"
         )
@@ -104,7 +104,7 @@ async def get_sign_in_context(auth_user_id: str) -> dict | None:
     response = (
         client.table("users")
         .select(
-            "user_id, status, "
+            "user_id:id, status, "
             "students(institution_id, approval_status, is_active)"
         )
         .eq("auth_user_id", auth_user_id)

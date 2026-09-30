@@ -72,7 +72,7 @@ Actual safe context fields exposed (`CONTEXT_FIELDS`):
 | Field | Source |
 |---|---|
 | student_id | students.student_id (PK) |
-| user_id | students.user_id (FK to users.user_id) |
+| user_id | students.user_id (FK to users.id) |
 | auth_user_id | JWT sub claim |
 | institution_id | students.institution_id (tenant key) |
 | student_number | students.student_number |

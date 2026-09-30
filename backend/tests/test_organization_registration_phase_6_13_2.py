@@ -161,7 +161,7 @@ class _UsersTable(_Q):
         if self._state.get("users_insert_error"):
             raise RuntimeError("users insert failed")
         created = dict(row)
-        created.setdefault("user_id", USER_ID)
+        created.setdefault("id", USER_ID)
         self._state.setdefault("inserted_users", []).append(dict(created))
         self._single = [created]
         return self

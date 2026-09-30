@@ -33,9 +33,9 @@ def get_user_token(email: str) -> tuple[str, str, str]:
     token = auth_res.session.access_token
     auth_user_id = auth_res.user.id
 
-    # Query public.users to get user_id
-    user_row = admin.table("users").select("user_id").eq("auth_user_id", auth_user_id).single().execute().data
-    user_id = user_row["user_id"]
+    # Query the authoritative public.users primary key.
+    user_row = admin.table("users").select("id").eq("auth_user_id", auth_user_id).single().execute().data
+    user_id = user_row["id"]
 
     return token, user_id, auth_user_id
 

@@ -626,7 +626,7 @@ def get_user_by_email(client: Client, email: str) -> dict | None:
     """Resolve an existing public.users row by account email (globally unique)."""
     response = (
         client.table("users")
-        .select("user_id, auth_user_id, email")
+        .select("user_id:id, auth_user_id, email")
         .eq("email", email.strip().lower())
         .maybe_single()
         .execute()

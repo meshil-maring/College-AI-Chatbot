@@ -239,7 +239,7 @@ returns as `null` renders as the explicit "not provided" em dash.
 
 All three surfaces authorize server-side. The backend chain is: authenticated
 JWT → `get_current_user` → `student_context.get_student_context` (students
-row resolved from users.user_id; approved + active + institution active) →
+row resolved from users.id through students.user_id; approved + active + institution active) →
 `assert_student_context_tenant` (defence-in-depth tenant match) →
 `list_published_notices` / `list_published_resources` with the student's OWN
 institution id as a mandatory equality filter. A student of Institution A

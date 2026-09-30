@@ -282,7 +282,7 @@ See §5.1. Full error surface: 409 (4 duplicate codes), 404
   (upper-cased, `maybe_single`) → `institution_id`; identifier lookup is
   strictly scoped to that institution (`student_auth.py:92–131`).
 * Authenticated identity resolution: JWT `sub` (auth_user_id) →
-  `public.users.user_id` → `students.user_id` → `institution_id`
+  `public.users.id` → `students.user_id` → `institution_id`
   (`get_current_user`, `security.py:56–94`). **Clients can never override
   the identity or tenant** (verified by
   `tests/test_personalized_security_6148.py` forgery tests — all passing).

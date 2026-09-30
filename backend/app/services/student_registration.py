@@ -226,7 +226,7 @@ def _find_user_by_email(db, email: str) -> dict | None:
     """Resolve an existing public.users row by account email (globally unique)."""
     response = (
         db.table("users")
-        .select("user_id, email")
+        .select("user_id:id, email")
         .eq("email", email)
         .maybe_single()
         .execute()
@@ -320,7 +320,7 @@ def _create_public_user(
     first_name: str,
     last_name: str,
 ) -> str:
-    """Insert the public.users link row; returns the generated user_id."""
+    """Insert the public.users link row; return its generated ``id`` as user_id."""
     response = (
         db.table("users")
         .insert(
@@ -336,9 +336,9 @@ def _create_public_user(
         .execute()
     )
     rows = response.data if isinstance(response.data, list) else [response.data]
-    if not rows or not rows[0].get("user_id"):
-        raise RuntimeError("public.users insert did not return a user_id")
-    return rows[0]["user_id"]
+    if not rows or not rows[0].get("id"):
+        raise RuntimeError("public.users insert did not return an id")
+    return rows[0]["id"]
 
 
 def _create_student_profile(
@@ -387,7 +387,7 @@ def _try_delete_auth_user(auth_user_id: str) -> None:
 def _try_delete_user_row(db, user_id: str) -> None:
     """Best-effort compensation: remove a freshly created public.users row."""
     try:
-        db.table("users").delete().eq("user_id", user_id).execute()
+        db.table("users").delete().eq("id", user_id).execute()
     except Exception:  # noqa: BLE001 - compensation must never mask the error
         pass
 

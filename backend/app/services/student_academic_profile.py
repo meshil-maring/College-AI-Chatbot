@@ -6,9 +6,9 @@ academic profile.
 Security model (reuses locked Phase 6 primitives; nothing weakened):
 
     Authenticated JWT
-        -> current_user (``get_current_user``: users.user_id +
+        -> current_user (``get_current_user``: users.id +
            server-resolved institution_id tenant)
-        -> students row via ``users.user_id`` (server-side only)
+        -> students row via ``students.user_id`` (server-side only)
         -> ``assert_tenant_object`` (tenant-bound users may only see their
            own institution's row; cross-tenant rows fail closed with 403
            TENANT_MISMATCH)

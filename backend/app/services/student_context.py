@@ -6,7 +6,7 @@ from the Supabase Auth JWT through the identity chain:
     Supabase Auth JWT
         -> auth_user_id (JWT "sub" claim)
         -> public.users.auth_user_id
-        -> public.users.user_id
+        -> public.users.id
         -> students.user_id
         -> students.student_id
         -> students.institution_id

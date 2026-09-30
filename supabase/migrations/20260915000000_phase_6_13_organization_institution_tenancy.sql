@@ -11,7 +11,7 @@
 --     institutions                 (EXISTING table, +organization_id, +status)
 --          |  institution_id  <-- STILL the one and only tenant key
 --     users                        (EXISTING)
---          |  user_id
+--          |  id
 --     user_roles                   (EXISTING, +scope_type/+scope_id)
 --     students                     (EXISTING, untouched)
 --
@@ -438,7 +438,7 @@ BEGIN
     ) THEN
         ALTER TABLE ONLY "public"."institution_join_requests"
             ADD CONSTRAINT "institution_join_requests_requested_by_fkey"
-    FOREIGN KEY ("requested_by_user_id") REFERENCES "public"."users" ("user_id");
+    FOREIGN KEY ("requested_by_user_id") REFERENCES "public"."users" ("id");
     END IF;
 END
 $$;
@@ -452,7 +452,7 @@ BEGIN
     ) THEN
         ALTER TABLE ONLY "public"."institution_join_requests"
             ADD CONSTRAINT "institution_join_requests_decided_by_fkey"
-    FOREIGN KEY ("decided_by_user_id") REFERENCES "public"."users" ("user_id");
+    FOREIGN KEY ("decided_by_user_id") REFERENCES "public"."users" ("id");
     END IF;
 END
 $$;
@@ -667,7 +667,7 @@ BEGIN
     ) THEN
         ALTER TABLE ONLY "public"."institution_membership_requests"
             ADD CONSTRAINT "institution_membership_requests_user_id_fkey"
-    FOREIGN KEY ("user_id") REFERENCES "public"."users" ("user_id");
+    FOREIGN KEY ("user_id") REFERENCES "public"."users" ("id");
     END IF;
 END
 $$;
@@ -681,7 +681,7 @@ BEGIN
     ) THEN
         ALTER TABLE ONLY "public"."institution_membership_requests"
             ADD CONSTRAINT "institution_membership_requests_decided_by_fkey"
-    FOREIGN KEY ("decided_by_user_id") REFERENCES "public"."users" ("user_id");
+    FOREIGN KEY ("decided_by_user_id") REFERENCES "public"."users" ("id");
     END IF;
 END
 $$;

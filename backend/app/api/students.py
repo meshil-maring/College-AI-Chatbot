@@ -2,7 +2,7 @@
 
 All "me" endpoints authenticate with the existing ``get_current_user``
 dependency. The student identity is resolved server-side from the
-authenticated JWT (users.user_id → students.user_id); the client can never
+authenticated JWT (users.id → students.user_id); the client can never
 supply another student's id.
 
 Tenant isolation: the authenticated user's tenant (institution_id, resolved

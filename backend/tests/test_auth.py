@@ -75,7 +75,7 @@ async def test_get_user_by_auth_id_uses_actual_users_schema():
         "institution_id": "30000000-0000-0000-0000-000000000001",
     }
     users_table.select.assert_called_once_with(
-        "user_id, auth_user_id, email, "
+        "user_id:id, auth_user_id, email, "
         "user_roles(roles(name, is_active)), "
         "students(institution_id)"
     )

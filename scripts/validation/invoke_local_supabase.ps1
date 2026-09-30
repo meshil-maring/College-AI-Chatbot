@@ -50,11 +50,11 @@ if ($Action -eq "reset" -and -not $ConfirmLocalReset) {
     throw "Reset requires -ConfirmLocalReset and always uses --local."
 }
 
-$supabaseArguments = switch ($Action) {
+$supabaseArguments = @(switch ($Action) {
     "start" { @("start") }
     "status" { @("status") }
     "reset" { @("db", "reset", "--local") }
-}
+})
 
 Push-Location $repositoryRoot
 try {

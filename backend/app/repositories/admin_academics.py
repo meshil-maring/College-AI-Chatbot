@@ -160,7 +160,7 @@ def get_student(client: Client, student_id: UUID | str) -> dict | None:
 
 
 def get_student_by_user_id(client: Client, user_id: UUID | str) -> dict | None:
-    """Return the student profile for a users.user_id, or None when absent."""
+    """Return the student profile for a users.id, via students.user_id."""
     response = (
         client.table("students")
         .select(STUDENT_COLUMNS)
@@ -174,7 +174,7 @@ def get_student_by_user_id(client: Client, user_id: UUID | str) -> dict | None:
 def get_student_approval_row_by_user_id(
     client: Client, user_id: UUID | str
 ) -> dict | None:
-    """Return the approval-relevant student projection for a ``users.user_id``.
+    """Return the approval-relevant student projection for a ``users.id``.
 
     Phase 6.22 (defect fix): ``get_student_by_user_id`` uses the locked
     ``STUDENT_COLUMNS`` projection, which does NOT include ``approval_status``.
@@ -201,7 +201,7 @@ def get_student_approval_row_by_user_id(
 def get_student_academic_profile_row(
     client: Client, user_id: UUID | str
 ) -> dict | None:
-    """Return the academic-profile row for a users.user_id, or None.
+    """Return the academic-profile row for a users.id, or None.
 
     Phase 6.14.1 helper. Uses the additive STUDENT_ACADEMIC_PROFILE_COLUMNS
     projection (identity + academic linkage columns). No authorization here —

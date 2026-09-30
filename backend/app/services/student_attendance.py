@@ -5,8 +5,8 @@ student retrieves ONLY their own attendance information.
 
 Security model (reuses locked Phase 6 primitives; nothing weakened):
 
-    Authenticated JWT -> current_user (get_current_user: users.user_id +
-    server-resolved institution_id tenant) -> students row via users.user_id
+    Authenticated JWT -> current_user (get_current_user: users.id +
+    server-resolved institution_id tenant) -> students row via students.user_id
     (server-side only) -> assert_tenant_object (cross-tenant rows fail
     closed with 403 TENANT_MISMATCH) -> own attendance rows via the
     existing attendance repository -> student-safe projection (whitelisted

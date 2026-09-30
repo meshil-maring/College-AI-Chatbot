@@ -191,7 +191,7 @@ class _FakeDb:
     def table(self, name):
         defaults = {
             "students": {"student_id": STUDENT_ID},
-            "users": {"user_id": USER_ID},
+            "users": {"id": USER_ID},
             "institution_membership_requests": {"request_id": REQUEST_ID},
         }.get(name, {})
         return _Table(

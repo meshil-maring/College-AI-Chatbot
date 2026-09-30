@@ -37,7 +37,7 @@ INSTITUTION = "institution"
 def resolve_authorization_context(current_user: dict[str, Any]) -> dict[str, Any]:
     """Resolve the full Phase 6.13 scope context for an authenticated user.
 
-    Server-side chain: JWT ``sub`` -> users.user_id -> user_roles(+scope).
+    Server-side chain: JWT ``sub`` -> users.id -> user_roles.user_id (+scope).
     The institution fallback preserves the locked Phase 6 behaviour for
     student accounts whose user_roles scope columns pre-date backfill.
 

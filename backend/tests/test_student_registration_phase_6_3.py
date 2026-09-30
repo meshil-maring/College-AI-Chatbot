@@ -123,7 +123,7 @@ def _db(state):
                     raise RuntimeError("boom")
                 state.setdefault("inserted_users", []).append(dict(row))
                 created = dict(row)
-                created.setdefault("user_id", USER_ID)
+                created.setdefault("id", USER_ID)
                 _q._single = [created]
                 return _q
 

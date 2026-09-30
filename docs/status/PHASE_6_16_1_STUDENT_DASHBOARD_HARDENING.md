@@ -46,7 +46,7 @@ independently, so the loads run concurrently, not chained):
 Notes:
 
 - Identity: every endpoint accepts NO identity parameter; the student is
-  resolved server-side from the JWT (`users.user_id → students.user_id`).
+  resolved server-side from the JWT (`users.id → students.user_id`).
 - Tenant: `assert_tenant_object` / server-resolved `institution_id` on every path; client-supplied `institution_id`/`student_id` values are ignored.
 - Authorization: only `approved`, `is_active` students get data; pending students get the existing `STUDENT_NOT_APPROVED` failure surfaced as a section error.
 - Read-only: only `GET` routes exist on `/students/me/*` (asserted by `test_only_get_is_registered_on_student_paths`).

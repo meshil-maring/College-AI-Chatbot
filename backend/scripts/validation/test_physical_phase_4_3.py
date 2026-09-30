@@ -33,8 +33,8 @@ def get_user_token(email: str) -> tuple[str, str, str]:
     auth_res = client.auth.verify_otp({"email": email, "token": otp, "type": "magiclink"})
     token = auth_res.session.access_token
     auth_user_id = auth_res.user.id
-    user_row = admin.table("users").select("user_id").eq("auth_user_id", auth_user_id).single().execute().data
-    return token, user_row["user_id"], auth_user_id
+    user_row = admin.table("users").select("id").eq("auth_user_id", auth_user_id).single().execute().data
+    return token, user_row["id"], auth_user_id
 
 
 def chat(headers: dict, payload: dict, timeout: float = 60.0) -> httpx.Response:

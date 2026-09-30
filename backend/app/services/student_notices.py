@@ -8,10 +8,10 @@ it only projects rows an administrator already published.
 Security model (reuses locked Phase 6 primitives; nothing weakened):
 
     Authenticated JWT
-        -> current_user (``get_current_user``: users.user_id + server-resolved
+        -> current_user (``get_current_user``: users.id + server-resolved
            institution_id tenant)
         -> ``student_context.get_student_context`` (students row resolved
-           server-side from users.user_id; eligibility: approved + active +
+           server-side from users.id; eligibility: approved + active +
            institution active)
         -> ``assert_student_context_tenant`` (defence-in-depth: the resolved
            student tenant must match the authenticated user's tenant)

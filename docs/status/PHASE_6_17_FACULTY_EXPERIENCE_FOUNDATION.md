@@ -102,7 +102,7 @@ Findings (all verified against code + existing tests):
    `require_roles("admin")`; faculty gets 403
    (`tests/test_attendance_phase_6_7.py::test_faculty_cannot_manage_attendance`).
 7. **Faculty on student surfaces** — `/students/me/*` resolve the student
-   identity server-side (`users.user_id -> students.user_id`). A faculty
+   identity server-side (`users.id -> students.user_id`). A faculty
    account has no `students` row, so every `/students/me/*` call fails
    closed with `404 STUDENT_PROFILE_NOT_FOUND`
    (`backend/app/services/student_context.py`).

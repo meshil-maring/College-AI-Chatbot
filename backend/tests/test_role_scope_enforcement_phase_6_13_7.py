@@ -2,7 +2,7 @@
 
 Server-side authorization is determined ONLY by the trusted chain:
 
-    JWT sub -> users.user_id -> user_roles(role, scope_type, scope_id,
+    JWT sub -> users.id -> user_roles.user_id (role, scope_type, scope_id,
     scope_organization_id) [+ students.institution_id for tenant-bound
     accounts] -> tenant lifecycle (institutions/organizations.status)
 

@@ -57,7 +57,7 @@ to their tenant (foreign -> 403); `assert_tenant_object` guards rows
 
 ## 6. Student / faculty boundaries
 
-- Student: `/students/me/*` resolve `users.user_id->students.user_id`
+- Student: `/students/me/*` resolve `users.id->students.user_id`
   server-side (client `student_id` inert); conversations
   ownership-scoped (foreign -> 404, no leak); chat tenant-scoped
   (foreign -> 403 before pipeline). 403 on all admin/approval/

@@ -18,7 +18,7 @@ Phase 6.2 — Student Database Model (Student Identity Extension)
 The existing architecture (Phase Admin-1) already provided:
 
 - **Table** `public.students` (no second table existed): `student_id` PK,
-  `user_id` (UNIQUE, FK → `users.user_id` ON DELETE CASCADE),
+  `user_id` (UNIQUE, FK → `users.id` ON DELETE CASCADE),
   `institution_id` (FK → `institutions.institution_id` ON DELETE RESTRICT —
   the Phase 6.1 canonical tenant key), `student_number`,
   `program_id` FK, `academic_year_id` FK, `enrollment_date`,
@@ -33,7 +33,7 @@ The existing architecture (Phase Admin-1) already provided:
 - **Auth boundary**: authentication is fully delegated to **Supabase Auth**
   (GoTrue) — JWT verified via `backend/app/core/security.py`
   (`verify_jwt`, `get_current_user`); the application user row is
-  `public.users` (`auth_user_id` → `user_id`); the JWT user's tenant is
+  `public.users` (`auth_user_id` → `id`); the JWT user's tenant is
   resolved from their one-to-one `students.institution_id`
   (`backend/app/db/supabase.py get_user_by_auth_id`). **No plaintext or
   duplicate password storage existed** — none was added.

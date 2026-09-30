@@ -309,7 +309,7 @@ def test_remove_membership_on_reject_uses_the_existing_scope_columns() -> None:
 
 
 def test_resolve_authorization_context_links_user_to_organization_and_institution() -> None:
-    """JWT sub -> users.user_id -> user_roles(+scope) -> institution -> organization."""
+    """JWT sub -> users.id -> user_roles.user_id (+scope) -> institution -> organization."""
     rows = [
         {
             "role_id": "e0000000-0000-0000-0000-000000000001",

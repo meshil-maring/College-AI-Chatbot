@@ -5,7 +5,7 @@ student's safe academic context from the EXISTING student-facing services:
 
     JWT
      |
-    current_user (get_current_user: users.user_id + server-resolved tenant)
+    current_user (get_current_user: users.id + server-resolved tenant)
      |
     Student Academic Context Resolver (this module)
      |-- Phase 6.14.1 profile service   (identity + institution labels)

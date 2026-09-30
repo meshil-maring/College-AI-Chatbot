@@ -38,9 +38,9 @@ Locked and reused verbatim (no redesign):
   publishes `notifySessionExpired(accessToken)`; AuthProvider clears the
   session and the login screen takes over. No second session mechanism.
 - Server-authoritative role resolution (`GET /auth/me` → `user.role`).
-- Tenant resolution from the JWT chain (`users.user_id → students.user_id →
+- Tenant resolution from the JWT chain (`users.id → students.user_id →
   students.institution_id`).
-- Student identity from the JWT (`users.user_id → students.user_id`); there is
+- Student identity from the JWT (`users.id → students.user_id`); there is
   NO `student_id` / `user_id` / `institution_id` parameter on any `/me/*` path.
 - Existing attendance APIs, results APIs, `StudentShell`, dashboard,
   `ChatShell` — all reused, none redesigned.

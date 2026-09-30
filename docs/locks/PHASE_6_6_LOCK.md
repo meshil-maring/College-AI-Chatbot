@@ -118,7 +118,7 @@ Verified existing authorization boundaries (recorded, not invented):
   ingestion policy (`_INGEST_ALLOWED`); `/ingest` asserts the target
   knowledge-source tenant.
 - `/api/v1/students/me/*` -> authenticated identity resolved
-  server-side (`users.user_id` -> `students.user_id`); client-supplied
+  server-side (`users.id` -> `students.user_id`); client-supplied
   student identity cannot redirect ownership.
 - `/api/v1/conversations*` -> authenticated user + ownership checks
   (foreign conversation -> existing 404 anti-enumeration response).

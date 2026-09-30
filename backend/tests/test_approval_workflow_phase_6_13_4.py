@@ -143,7 +143,7 @@ class _Table:
             # INSERT (new row, no existing rows matched): id injected by the fake.
             created = dict(payload)
             if table == "users":
-                created.setdefault("user_id", STAFF_USER)
+                created.setdefault("id", STAFF_USER)
             elif table == "institution_membership_requests":
                 created.setdefault("request_id", MEMBERSHIP_REQUEST_ID)
             self._state.setdefault(table, []).append(created)

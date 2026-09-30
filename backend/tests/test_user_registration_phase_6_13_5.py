@@ -130,7 +130,7 @@ def mk_patched(state, payload):
                     raise RuntimeError("boom")
                 state["inserted_users"].append(dict(row))
                 created = dict(row)
-                created.setdefault("user_id", USER_ID)
+                created.setdefault("id", USER_ID)
                 resp = MagicMock()
                 resp.data = created
                 return resp

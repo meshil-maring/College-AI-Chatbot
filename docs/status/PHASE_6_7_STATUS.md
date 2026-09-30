@@ -14,7 +14,7 @@ Found (reused, NOT duplicated):
 - `student_attendance(student_attendance_id, student_id, section_id, academic_year_id, semester_id, date DATE, status, notes, created_at)` with status CHECK IN (present,absent,late,excused) + not-blank, UNIQUE(student_id, section_id, date), FKs student CASCADE / section RESTRICT / AY RESTRICT / semester RESTRICT.
 - NO enrollment table exists — per-section enrollment cannot be verified (see section 17).
 - NO prior attendance write API/service beyond read projection `list_student_attendance`.
-- Auth: `get_current_user` (JWT) + `require_roles("admin")` for `/admin/*`; server-side `users.user_id -> students.user_id` for `/students/me/*`.
+- Auth: `get_current_user` (JWT) + `require_roles("admin")` for `/admin/*`; server-side `users.id -> students.user_id` for `/students/me/*`.
 - Tenant helpers: `user_tenant_id / scope_tenant / assert_tenant_object` -> 403 TENANT_MISMATCH.
 - Audit: `admin_audit_log` + `record_admin_action` via `_record_audit`.
 - RLS: no CREATE POLICY / RLS statements in any migration; service-role + application-layer guards remain the model.
@@ -75,7 +75,7 @@ Order: authenticate -> role (admin) -> _assert_student_tenant (assert_tenant_obj
 
 ## 11. Student self-access
 
-GET /students/me/attendance resolves users.user_id -> students.user_id server-side; tenant assert on profile; lists only own rows. No /{student_id} self path; no student create/update/delete (403 on admin paths). Missing profile -> 404 STUDENT_PROFILE_NOT_FOUND (never another student data, never silent empty broadening).
+GET /students/me/attendance resolves users.id -> students.user_id server-side; tenant assert on profile; lists only own rows. No /{student_id} self path; no student create/update/delete (403 on admin paths). Missing profile -> 404 STUDENT_PROFILE_NOT_FOUND (never another student data, never silent empty broadening).
 
 ## 12. Validation rules
 

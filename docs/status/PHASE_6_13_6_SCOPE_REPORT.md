@@ -24,7 +24,7 @@
 
 **None.** No schema change was required. Phase 6.13.6 reads only existing columns:
 
-- `public.users` (`auth_user_id`, `user_id`, `status`) — Phase Admin-1
+- `public.users` (`id`, `auth_user_id`, `status`) — authoritative users contract
 - `students` (`user_id`, `institution_id`, `email`, `register_number`, `university_roll_number`, `approval_status`, `is_active`, `status`) — Phases 6.2 / 6.3
 - `institutions` (`institution_id`, `code`, `organization_id`, `status`, `is_active`) — Phase 6.13 (`is_active` is trigger-derived from `status`)
 - `user_roles` (`scope_type`, `scope_id`, `scope_organization_id`) — Phase 6.13
@@ -93,7 +93,7 @@ Both paths normalize every denial to the failure response their respective locke
 
 ```text
 Authentication (who)  ->  Authorization (what)
-JWT sub -> users.user_id -> user_roles + scope  ->  RBAC (roles)  ->  scope checks
+JWT sub -> users.id -> user_roles.user_id + scope  ->  RBAC (roles)  ->  scope checks
 ```
 
 - Role and scope are read **only** from trusted server-side records (`user_roles`, `students`). The client cannot supply or override `role`, `roles`, `is_admin`, `user_id`, `auth_user_id`, `status`, `approval_status`, `institution_id`, `organization_id`, `scope_type`, `scope_id`, or `scope_organization_id` — all are rejected `422` by `extra="forbid"` (login) and by the Literal/forbidden schemas (student login).
