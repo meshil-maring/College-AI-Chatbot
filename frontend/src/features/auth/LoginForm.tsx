@@ -28,10 +28,23 @@ import PasswordField from './PasswordField.tsx'
 import { isEmailAddress } from '../../services/auth.ts'
 import { fetchDevAuthStatus } from '../../services/devAuth.ts'
 
-export default function LoginForm() {
+export type LoginAudience = 'general' | 'student' | 'admin' | 'staff' | 'faculty' | 'super_admin'
+
+const AUDIENCE_LABELS: Record<LoginAudience, string> = {
+  general: 'Secure platform access',
+  student: 'Student access',
+  admin: 'University administrator access',
+  staff: 'Staff access',
+  faculty: 'Teacher / faculty access',
+  super_admin: 'Platform administrator access',
+}
+
+export default function LoginForm({ audience = 'general' }: { audience?: LoginAudience }) {
   const { status, error, login } = useAuth()
   const [identifier, setIdentifier] = useState('')
-  const [institutionCode, setInstitutionCode] = useState('')
+  const [institutionCode, setInstitutionCode] = useState(
+    () => new URLSearchParams(window.location.search).get('institution')?.trim().toUpperCase() ?? '',
+  )
   const [password, setPassword] = useState('')
   const [fieldError, setFieldError] = useState<string | null>(null)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
@@ -96,9 +109,15 @@ export default function LoginForm() {
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
       <main className="max-w-md w-full py-16">
         <div className="rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl">
+          <a href="/" className="mb-5 inline-block rounded-sm text-sm text-slate-400 underline hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            Back to platform gateway
+          </a>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
+            {AUDIENCE_LABELS[audience]}
+          </p>
           <h1 className="text-3xl font-bold text-white tracking-tight">College AI Chatbot</h1>
           <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-            Sign in to continue. Authentication is handled entirely by the backend.
+            Sign in to continue. Your role and institution are resolved by the backend after authentication.
           </p>
 
           {displayedError !== null && (

@@ -95,6 +95,51 @@ class Settings(BaseSettings):
     public_concurrency_limit: int = Field(default=8, gt=0, le=1000)
     public_institution_concurrency_limit: int = Field(default=4, gt=0, le=1000)
     public_overload_retry_after_seconds: int = Field(default=2, gt=0, le=60)
+    # ------------------------------------------------------------------
+    # Phase 7.15 -- invitation email delivery boundary.
+    #
+    # `email_provider` selects the delivery implementation through the
+    # `EmailDeliveryProvider` abstraction. "local" (the default) captures
+    # messages in a process-local outbox and NEVER contacts an external
+    # service. Any other value names a production provider whose vendor
+    # integration is a later phase; the configuration boundary exists now so
+    # no provider is hard-coded.
+    #
+    # `email_provider_api_key` is a server-side secret: it is never returned
+    # through any API, never logged and never included in a frontend bundle
+    # (the frontend reads only `VITE_*` variables).
+    #
+    # `email_base_url` is the AUTHORITATIVE origin for invitation links. A
+    # production URL is therefore never built from an untrusted request Host
+    # header.
+    # ------------------------------------------------------------------
+    email_provider: str = "local"
+    email_from: str = "no-reply@localhost"
+    email_reply_to: str = ""
+    email_base_url: str = "http://localhost:5173"
+    email_provider_api_key: str = ""
+
+    # ------------------------------------------------------------------
+    # Phase 7.15 -- invitation abuse controls.
+    #
+    # Reuses the Phase 7.8 process-local sliding-window primitive, but with
+    # SEPARATE budgets because invitation traffic has different
+    # characteristics from public chat: a legitimate invitee performs a
+    # handful of operations, so the per-token acceptance budget is tight
+    # while the per-IP inspection budget stays generous enough for one
+    # confused person reloading a link a few times.
+    # ------------------------------------------------------------------
+    invitation_rate_limit_enabled: bool = True
+    invitation_rate_limit_window_seconds: int = Field(default=300, gt=0, le=3600)
+    invitation_inspect_ip_limit_requests: int = Field(default=60, gt=0)
+    invitation_accept_token_limit_requests: int = Field(default=5, gt=0)
+    invitation_accept_ip_limit_requests: int = Field(default=20, gt=0)
+    invitation_resend_invitation_limit_requests: int = Field(default=3, gt=0)
+    invitation_resend_actor_limit_requests: int = Field(default=20, gt=0)
+    invitation_resend_institution_limit_requests: int = Field(default=10, gt=0)
+    invitation_resend_ip_limit_requests: int = Field(default=5, gt=0)
+    invitation_retry_after_cap_seconds: int = Field(default=60, gt=0, le=600)
+
     rewrite_history_exchanges: int = 2
     rewrite_max_history_chars: int = 1000
 

@@ -34,8 +34,17 @@ describe('public chat route and conversation', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: 'Public College AI Assistant' })).toBeInTheDocument()
     expect(screen.getByText('GIT')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login')
     expect(authProviderSpy).not.toHaveBeenCalled()
     expect(screen.queryByRole('navigation', { name: /student|admin|staff|faculty/i })).not.toBeInTheDocument()
+  })
+
+  it('reuses the same public chat for the institution-facing /u route', () => {
+    window.history.replaceState({}, '', '/u/git/ai')
+    render(<App />)
+    expect(screen.getByRole('heading', { name: 'Public College AI Assistant' })).toBeInTheDocument()
+    expect(screen.getByText('GIT')).toBeInTheDocument()
+    expect(authProviderSpy).not.toHaveBeenCalled()
   })
 
   it('renders user/assistant messages and safe sources as text', async () => {
@@ -236,6 +245,7 @@ describe('public chat route and conversation', () => {
     window.history.replaceState({}, '', '/public-chat')
     render(<App />)
     expect(screen.getByRole('heading', { name: 'Public chat link incomplete' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Go to platform gateway' })).toHaveAttribute('href', '/')
     expect(authProviderSpy).not.toHaveBeenCalled()
   })
 })

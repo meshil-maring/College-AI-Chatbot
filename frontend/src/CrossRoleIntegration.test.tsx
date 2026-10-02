@@ -381,10 +381,10 @@ describe('role transition safety', () => {
     expect(authState.logout).toHaveBeenCalledTimes(1)
 
     // The (real) AuthProvider clears the session on logout: status becomes
-    // unauthenticated, so only the login form is rendered.
+    // unauthenticated, so the public gateway is rendered.
     setIdentity(null, null, 'unauthenticated')
     rerender(<App />)
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'College AI Platform' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
 
     // A different account signs in: the student shell, with no admin residue.

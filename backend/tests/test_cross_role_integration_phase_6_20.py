@@ -260,7 +260,7 @@ def test_role_resolution_matrix_is_unchanged():
     assert resolve_primary_role(["student", "staff"]) == "staff"
     assert resolve_primary_role(["faculty", "staff"]) == "staff"
     assert resolve_primary_role(["staff", "admin"]) == "admin"
-    assert resolve_primary_role(list(SUPPORTED_ROLES)) == "admin"
+    assert resolve_primary_role(list(SUPPORTED_ROLES)) == "super_admin"
     # Unsupported/null roles never resolve to a privileged role.
     assert resolve_primary_role(["unknown-role"]) is None
     assert resolve_primary_role([]) is None

@@ -137,7 +137,7 @@ def test_resolve_primary_role_admin_precedence_unchanged():
     """admin > staff > faculty > student precedence is untouched."""
     assert resolve_primary_role(["admin"]) == "admin"
     assert resolve_primary_role(["student", "admin"]) == "admin"
-    assert resolve_primary_role(list(SUPPORTED_ROLES)) == "admin"
+    assert resolve_primary_role(list(SUPPORTED_ROLES)) == "super_admin"
     assert resolve_primary_role(["unknown-role"]) is None
     assert resolve_primary_role(None) is None
 

@@ -178,7 +178,7 @@ export default function PublicChatPage({ institutionCode }: { institutionCode: s
                 Clear conversation
               </button>
             ) : null}
-            <a href="/" className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <a href="/login" className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400">
               Sign in
             </a>
           </div>
@@ -280,7 +280,7 @@ export function PublicChatRouteError() {
         <p className="mt-3 text-sm leading-6 text-slate-400">
           Use the public chat link supplied by your college. It includes the public institution code.
         </p>
-        <a href="/" className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">Go to sign in</a>
+        <a href="/" className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">Go to platform gateway</a>
       </div>
     </main>
   )

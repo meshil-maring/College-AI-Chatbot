@@ -10,6 +10,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.config import settings
 from app.core.errors import AppError, app_error_handler
 from app.core.security import get_current_user, resolve_primary_role, scope_tenant
+from app.api.platform import router as platform_router
+from app.api.admin_invitations import router as admin_invitations_router
 from app.api.ingestion import router as ingestion_router
 from app.api.auth import router as auth_router
 from app.api.registration import router as registration_router
@@ -140,6 +142,10 @@ app.include_router(admin_router, prefix="/api/v1")
 app.include_router(students_router, prefix="/api/v1")
 app.include_router(student_notifications_router, prefix="/api/v1")
 app.include_router(dev_auth_router, prefix="/api/v1")  # DEVELOPMENT / TESTING ONLY
+app.include_router(platform_router, prefix="/api/v1")
+# Phase 7.14: the invitation boundary is token-authorized, not session-
+# authorized, so it is mounted as its own router rather than under /platform.
+app.include_router(admin_invitations_router, prefix="/api/v1")
 
 generation_router = APIRouter(prefix="/generation", tags=["generation"])
 

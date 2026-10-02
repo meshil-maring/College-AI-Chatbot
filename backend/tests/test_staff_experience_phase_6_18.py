@@ -137,7 +137,7 @@ def test_staff_multi_role_precedence_unchanged():
     assert resolve_primary_role(["student", "staff"]) == "staff"
     assert resolve_primary_role(["faculty", "staff"]) == "staff"
     assert resolve_primary_role(["staff", "admin"]) == "admin"
-    assert resolve_primary_role(list(SUPPORTED_ROLES)) == "admin"
+    assert resolve_primary_role(list(SUPPORTED_ROLES)) == "super_admin"
 
 
 def test_auth_me_returns_staff_role_with_tenant():

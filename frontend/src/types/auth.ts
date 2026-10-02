@@ -67,13 +67,14 @@ export interface LoginResponse {
 /**
  * Phase 6.15.4 — canonical authenticated role.
  *
- * Mirrors the backend's ONLY existing role names (app/core/security.py
+ * Mirrors the backend's canonical role names (app/core/security.py
  * `SUPPORTED_ROLES` — the same names the Phase 6.6 RBAC `require_roles`
- * primitive and the `roles` table use). No new role is invented; `null`
+ * primitive and the `roles` table use). Phase 7.11 adds `super_admin` as a
+ * platform-level identity contract without granting tenant API access; `null`
  * (no supported role) is represented by `CurrentUser.role === null`, not by
- * a string.
+ * a client-invented string.
  */
-export type AuthRole = 'admin' | 'staff' | 'faculty' | 'student'
+export type AuthRole = 'super_admin' | 'admin' | 'staff' | 'faculty' | 'student'
 
 
 

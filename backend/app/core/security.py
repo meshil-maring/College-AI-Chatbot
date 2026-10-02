@@ -180,6 +180,44 @@ def require_roles(*allowed: str) -> Callable:
         return current_user
 
     return _dependency
+
+
+async def require_super_admin(
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Authorize the canonical, active, platform-scoped super_admin only.
+
+    Role and scope are resolved from the verified JWT's application user and
+    database grants. Tenant ids, URL values, frontend state, and JWT metadata
+    supplied by a client do not participate in this decision.
+    """
+    if resolve_primary_role(current_user.get("roles")) != "super_admin":
+        raise AppError(
+            "You do not have permission to perform this action",
+            status_code=403,
+            code="FORBIDDEN",
+        )
+    # Use a fresh database read on every protected request. This is deliberately
+    # not inferred from a tenant context or JWT metadata, and makes revocation
+    # effective without waiting for the browser session to expire.
+    from app.db.supabase import get_super_admin_authorization
+
+    authorization = await get_super_admin_authorization(current_user["auth_user_id"])
+    if authorization is None or authorization.get("status") != "active":
+        raise AppError(
+            "This account is not active",
+            status_code=403,
+            code="ACCOUNT_INACTIVE",
+        )
+    if not authorization.get("has_platform_grant", False):
+        raise AppError(
+            "You do not have permission to perform this action",
+            status_code=403,
+            code="FORBIDDEN",
+        )
+    return current_user
+
+
 def user_tenant_id(current_user: dict) -> UUID | None:
     """Return the authenticated user's tenant (institution_id), or None."""
     raw = current_user.get("institution_id") if current_user else None
@@ -191,16 +229,23 @@ def user_tenant_id(current_user: dict) -> UUID | None:
 # ============================================================================
 # Phase 6.15.4 — Canonical role resolution
 # ============================================================================
-# The role names below are the EXISTING Phase 6.6 RBAC role names (the only
-# roles the database can contain — see roles table and require_roles usage).
-# No new role is introduced and no authorization rule changes: this is a
-# read-only projection over the roles already resolved server-side by
-# get_current_user -> get_user_by_auth_id -> user_roles -> roles.
-SUPPORTED_ROLES: tuple[str, ...] = ("admin", "staff", "faculty", "student")
+# The role names below are the canonical identities that /auth/me may return
+# after resolving the roles table through the existing server-side chain.
+# Phase 7.11 added ``super_admin`` recognition; Phase 7.12 persists it and
+# authorizes it through a separate, fresh platform-scope check. It remains
+# deliberately absent from every tenant-level require_roles check.
+SUPPORTED_ROLES: tuple[str, ...] = (
+    "super_admin",
+    "admin",
+    "staff",
+    "faculty",
+    "student",
+)
 
 # Resolution precedence when an account holds several active roles. The most
-# privileged operational role wins; "admin" first keeps the existing
-# /admin/* behavior identical for multi-role accounts.
+# privileged role wins. A server-assigned super_admin identity selects only
+# the isolated platform placeholder; tenant endpoints remain independently
+# guarded by their existing role dependencies.
 _ROLE_PRECEDENCE: dict[str, int] = {
     role: index for index, role in enumerate(SUPPORTED_ROLES)
 }

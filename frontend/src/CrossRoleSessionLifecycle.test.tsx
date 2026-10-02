@@ -247,7 +247,7 @@ describe('logout across roles', () => {
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
 
-    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'College AI Platform' })).toBeInTheDocument()
     expect(window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBeNull()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
     // A deliberate sign-out shows no expiry message.
@@ -269,7 +269,7 @@ describe('multi-tab session synchronization', () => {
 
   it('another tab signing in as another role is adopted after /auth/me validation', async () => {
     render(<App />)
-    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'College AI Platform' })).toBeInTheDocument()
 
     vi.mocked(authService.fetchCurrentUser).mockResolvedValue(ME_STAFF)
     dispatchStorageEvent('other-tab-token')
@@ -326,7 +326,7 @@ describe('browser storage audit across roles', () => {
     const signOutButtons = await screen.findAllByRole('button', { name: 'Sign out' })
     await user.click(signOutButtons[0])
 
-    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'College AI Platform' })).toBeInTheDocument()
     await waitFor(() => {
       expect(window.localStorage.length).toBe(0)
     })

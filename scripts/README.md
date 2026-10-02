@@ -16,3 +16,17 @@ working directory:
 python scripts/write_migration.py
 python scripts/fix_indent.py
 ```
+
+## Validation and local provisioning
+
+Scripts under `scripts/validation` are active, narrowly scoped operational
+helpers. `manage_local_super_admin.ps1` assigns or revokes the Phase 7.12 role
+only against the verified loopback Supabase stack. It requires an explicit
+`local`/`test` environment and actor identifier, uses the transient local
+service-role credential without printing it, and records every idempotent
+result in `platform_role_audit_log`. It does not create or delete Auth users.
+
+`provision_local_demo_users.ps1` creates local-only demo accounts through the
+verified loopback stack. It refuses to run without an explicit ephemeral
+password, never contacts a remote Auth instance, and never prints the
+service-role credential.

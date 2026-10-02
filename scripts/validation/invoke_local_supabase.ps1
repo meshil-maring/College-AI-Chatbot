@@ -58,9 +58,25 @@ $supabaseArguments = @(switch ($Action) {
 
 Push-Location $repositoryRoot
 try {
-    & supabase @supabaseArguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Supabase local command failed with exit code $LASTEXITCODE."
+    if ($Action -eq "status") {
+        # `supabase status` prints local service-role and other development
+        # credentials. Parse it in memory and expose only non-secret health
+        # information so validation logs never become credential logs.
+        $localStatus = (& supabase status -o json | ConvertFrom-Json)
+        if ($LASTEXITCODE -ne 0) {
+            throw "Supabase local status failed with exit code $LASTEXITCODE."
+        }
+        if ([string]$localStatus.API_URL -ne "http://127.0.0.1:54321") {
+            throw "Local Supabase reported an unexpected API endpoint."
+        }
+        Write-Output "LOCAL_STACK_STATUS=RUNNING"
+        Write-Output "API_ENDPOINT=http://127.0.0.1:54321"
+    }
+    else {
+        & supabase @supabaseArguments
+        if ($LASTEXITCODE -ne 0) {
+            throw "Supabase local command failed with exit code $LASTEXITCODE."
+        }
     }
 }
 finally {

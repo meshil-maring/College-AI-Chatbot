@@ -15,9 +15,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import App from './App.tsx'
 import * as adminApi from './services/adminApi.ts'
+import * as platformApi from './services/platformApi.ts'
+import * as platformInstitutionsApi from './services/platformInstitutionsApi.ts'
 import type { DashboardSummary } from './types/admin.ts'
 
 vi.mock('./services/adminApi.ts')
+vi.mock('./services/platformApi.ts')
+vi.mock('./services/platformInstitutionsApi.ts')
 vi.mock('./services/devAuth.ts', () => ({
   fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
 }))
@@ -69,6 +73,9 @@ beforeEach(() => {
   vi.mocked(adminApi.getAdminIdentity).mockReset()
   vi.mocked(adminApi.getDashboardSummary).mockReset()
   vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
+  vi.mocked(platformApi.getPlatformIdentity).mockResolvedValue({ role: 'super_admin', scope: 'platform' })
+  vi.mocked(platformInstitutionsApi.listInstitutions).mockReset()
+  vi.mocked(platformInstitutionsApi.listInstitutions).mockResolvedValue([])
 })
 
 describe('App shell selection from the canonical /auth/me role', () => {
@@ -78,6 +85,42 @@ describe('App shell selection from the canonical /auth/me role', () => {
     expect(await screen.findByText('Admin Panel')).toBeInTheDocument()
     // No /admin/me probe is used for role resolution.
     expect(adminApi.getAdminIdentity).not.toHaveBeenCalled()
+  })
+
+  it('shows the platform institution workspace for the server-authoritative super_admin role', async () => {
+    authState.role = 'super_admin'
+    authState.user = {
+      authenticated: true,
+      user_id: 'platform-u1',
+      auth_user_id: 'platform-a1',
+      email: 'platform@test.com',
+      role: 'super_admin',
+      institution_id: null,
+    }
+    render(<App />)
+    // Phase 7.13: the Institutions section is real; every other platform area
+    // remains an explicit, non-functional placeholder.
+    expect(await screen.findByRole('heading', { name: 'Institutions' })).toBeInTheDocument()
+    expect(platformInstitutionsApi.listInstitutions).toHaveBeenCalledWith('test-token')
+    expect(screen.getByRole('button', { name: /create institution/i })).toBeInTheDocument()
+    expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
+  })
+
+  it('fails closed when a stale super_admin session is rejected by the platform endpoint', async () => {
+    authState.role = 'super_admin'
+    authState.user = {
+      authenticated: true,
+      user_id: 'platform-u1',
+      auth_user_id: 'platform-a1',
+      email: 'platform@test.com',
+      role: 'super_admin',
+      institution_id: null,
+    }
+    vi.mocked(platformApi.getPlatformIdentity).mockRejectedValueOnce(new Error('revoked'))
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Platform access restricted' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Institutions' })).not.toBeInTheDocument()
+    expect(platformInstitutionsApi.listInstitutions).not.toHaveBeenCalled()
   })
 
   it('shows the student shell for the student role', async () => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider.tsx'
-import LoginForm from './features/auth/LoginForm.tsx'
+import LoginForm, { type LoginAudience } from './features/auth/LoginForm.tsx'
 import ChangePasswordForm from './features/auth/ChangePasswordForm.tsx'
 import AdminShell from './features/admin/AdminShell.tsx'
 import StudentShell from './features/student/StudentShell.tsx'
@@ -8,17 +8,91 @@ import FacultyShell from './features/faculty/FacultyShell.tsx'
 import StaffShell from './features/staff/StaffShell.tsx'
 import { fetchDevAuthStatus } from './services/devAuth.ts'
 import PublicChatPage, { PublicChatRouteError } from './features/publicChat/PublicChatPage.tsx'
+import LandingPage from './features/landing/LandingPage.tsx'
+import InstitutionEntryPage from './features/landing/InstitutionEntryPage.tsx'
+import InstitutionGatewayPage from './features/landing/InstitutionGatewayPage.tsx'
+import SuperAdminShell from './features/superAdmin/SuperAdminShell.tsx'
+import AdminInvitationPage from './features/adminInvitation/AdminInvitationPage.tsx'
 
-export function resolvePublicInstitutionCode(pathname: string): string | null | undefined {
-  const match = pathname.match(/^\/public-chat(?:\/([^/]+))?\/?$/)
-  if (match === null) return undefined
-  if (match[1] === undefined) return null
+function decodeInstitutionCode(value: string | undefined): string | null {
+  if (value === undefined) return null
   try {
-    const code = decodeURIComponent(match[1]).trim().toUpperCase()
+    const code = decodeURIComponent(value).trim().toUpperCase()
     return /^[A-Z0-9][A-Z0-9_-]{0,31}$/.test(code) ? code : null
   } catch {
     return null
   }
+}
+
+export function resolvePublicInstitutionCode(pathname: string): string | null | undefined {
+  const match = pathname.match(/^\/public-chat(?:\/([^/]+))?\/?$/)
+  if (match === null) return undefined
+  return decodeInstitutionCode(match[1])
+}
+
+export type AppRoute =
+  | { readonly kind: 'home' }
+  | { readonly kind: 'login'; readonly audience: LoginAudience }
+  | { readonly kind: 'super-admin' }
+  | { readonly kind: 'admin-invitation'; readonly token: string }
+  | { readonly kind: 'institution-entry' }
+  | { readonly kind: 'institution'; readonly institutionCode: string }
+  | { readonly kind: 'institution-ai'; readonly institutionCode: string }
+  | { readonly kind: 'public-chat'; readonly institutionCode: string | null }
+  | { readonly kind: 'not-found' }
+
+/**
+ * Extract the opaque invitation token from `/admin-invite/{token}`.
+ *
+ * The token is returned VERBATIM — it is a base64url credential, not an
+ * identifier, so any case folding or re-encoding would corrupt it. Only the
+ * obviously-malformed shapes (empty, wrong segment count, unsafe characters) are
+ * rejected; every authorization decision is made by the server.
+ */
+function resolveInvitationToken(pathname: string): string | null | undefined {
+  const match = pathname.match(/^\/admin-invite\/([^/]+)\/?$/)
+  if (match === null) return undefined
+  let token: string
+  try {
+    token = decodeURIComponent(match[1])
+  } catch {
+    return null
+  }
+  // 32-256 chars of URL-safe base64, matching the backend's acceptance bounds.
+  return /^[A-Za-z0-9_-]{32,256}$/.test(token) ? token : null
+}
+
+export function resolveAppRoute(pathname: string): AppRoute {
+  const publicInstitutionCode = resolvePublicInstitutionCode(pathname)
+  if (publicInstitutionCode !== undefined) {
+    return { kind: 'public-chat', institutionCode: publicInstitutionCode }
+  }
+  // The invitation route is PUBLIC: the invited person has no account yet, so it
+  // is resolved before any AuthProvider gate and never depends on session state.
+  const invitationToken = resolveInvitationToken(pathname)
+  if (invitationToken !== undefined) {
+    return invitationToken === null
+      ? { kind: 'not-found' }
+      : { kind: 'admin-invitation', token: invitationToken }
+  }
+  if (pathname === '/' || pathname === '') return { kind: 'home' }
+  if (/^\/u\/?$/.test(pathname)) return { kind: 'institution-entry' }
+
+  const institutionMatch = pathname.match(/^\/u\/([^/]+)(?:\/(ai))?\/?$/)
+  if (institutionMatch !== null) {
+    const institutionCode = decodeInstitutionCode(institutionMatch[1])
+    if (institutionCode === null) return { kind: 'not-found' }
+    return institutionMatch[2] === 'ai'
+      ? { kind: 'institution-ai', institutionCode }
+      : { kind: 'institution', institutionCode }
+  }
+
+  if (/^\/super-admin\/?$/.test(pathname)) return { kind: 'super-admin' }
+  const loginMatch = pathname.match(/^\/login(?:\/(student|admin|staff|faculty))?\/?$/)
+  if (loginMatch !== null) {
+    return { kind: 'login', audience: (loginMatch[1] as LoginAudience | undefined) ?? 'general' }
+  }
+  return { kind: 'not-found' }
 }
 
 /** DEVELOPMENT / TESTING ONLY — collapsible "Change Password" panel. */
@@ -103,7 +177,7 @@ function RestoringShell() {
  * SAFELY: no privileged UI — the user sees a controlled access message and
  * can sign out. A role is only ever privileged when it equals 'admin'.
  *
- * Phase 6.20 — the four shells are additionally keyed on the canonical
+ * Phase 6.20 — role shells are additionally keyed on the canonical
  * identity, so a session replacement can never leave a previous role's (or a
  * previous tenant's) view state mounted. See `AuthenticatedShell`.
  */
@@ -132,6 +206,9 @@ function AuthenticatedShell() {
 
   if (role === 'admin') {
     return <AdminShell key={shellKey} />
+  }
+  if (role === 'super_admin') {
+    return <SuperAdminShell key={shellKey} />
   }
   if (role === 'faculty') {
     return <FacultyShell key={shellKey} />
@@ -168,7 +245,7 @@ function UnsupportedRoleShell({ onSignOut }: { onSignOut: () => void }) {
   )
 }
 
-function AuthGate() {
+function AuthGate({ audience = 'general' }: { audience?: LoginAudience }) {
   const { status } = useAuth()
   if (status === 'restoring') {
     return <RestoringShell />
@@ -181,7 +258,45 @@ function AuthGate() {
       </>
     )
   }
-  return <LoginForm />
+  return <LoginForm audience={audience} />
+}
+
+function RootGate() {
+  const { status, error } = useAuth()
+  if (status === 'restoring') return <RestoringShell />
+  if (status === 'authenticated') {
+    return (
+      <>
+        <AuthenticatedShell />
+        <DevChangePasswordPanel />
+      </>
+    )
+  }
+  // A rejected/expired saved session still lands on the shared login form so
+  // the established safe authentication error remains visible. Deliberate
+  // sign-out (no error) returns to the public demo gateway.
+  if (error !== null) return <LoginForm />
+  return <LandingPage />
+}
+
+function SuperAdminGate() {
+  const { status, role, logout } = useAuth()
+  if (status === 'restoring') return <RestoringShell />
+  if (status !== 'authenticated') return <LoginForm audience="super_admin" />
+  if (role === 'super_admin') return <SuperAdminShell />
+  return <UnsupportedRoleShell onSignOut={logout} />
+}
+
+function NotFoundPage() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center text-slate-100">
+      <section className="max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-xl">
+        <h1 className="text-2xl font-bold text-white">Page not found</h1>
+        <p className="mt-3 text-sm text-slate-400">This demo route is not available.</p>
+        <a href="/" className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">Return to College AI</a>
+      </section>
+    </main>
+  )
 }
 
 function App() {
@@ -191,15 +306,23 @@ function App() {
     window.addEventListener('popstate', updatePathname)
     return () => window.removeEventListener('popstate', updatePathname)
   }, [])
-  const publicInstitutionCode = resolvePublicInstitutionCode(pathname)
-  if (publicInstitutionCode !== undefined) {
-    return publicInstitutionCode === null
+  const route = resolveAppRoute(pathname)
+  if (route.kind === 'public-chat') {
+    return route.institutionCode === null
       ? <PublicChatRouteError />
-      : <PublicChatPage institutionCode={publicInstitutionCode} />
+      : <PublicChatPage institutionCode={route.institutionCode} />
   }
+  if (route.kind === 'institution-ai') return <PublicChatPage institutionCode={route.institutionCode} />
+  if (route.kind === 'institution-entry') return <InstitutionEntryPage />
+  if (route.kind === 'institution') return <InstitutionGatewayPage institutionCode={route.institutionCode} />
+  if (route.kind === 'not-found') return <NotFoundPage />
+  // Rendered outside <AuthProvider>: the invited person has no session yet.
+  if (route.kind === 'admin-invitation') return <AdminInvitationPage token={route.token} />
   return (
     <AuthProvider>
-      <AuthGate />
+      {route.kind === 'home' ? <RootGate /> : null}
+      {route.kind === 'login' ? <AuthGate audience={route.audience} /> : null}
+      {route.kind === 'super-admin' ? <SuperAdminGate /> : null}
     </AuthProvider>
   )
 }

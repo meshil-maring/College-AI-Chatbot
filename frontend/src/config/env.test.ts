@@ -34,6 +34,13 @@ function collectSourceFiles(dir: string): string[] {
 }
 
 describe('frontend environment configuration', () => {
+  // These two tests walk the WHOLE src/ tree synchronously, so their runtime
+  // grows with the size of the frontend. The default 5s vitest budget was
+  // already marginal and tipped over under parallel-suite CPU contention as
+  // new features were added. The assertions are unchanged — only the time
+  // allowed for an intentionally I/O-bound scan is made explicit.
+  const SCAN_TIMEOUT_MS = 30_000
+
   it('reads only the public VITE_API_BASE_URL variable anywhere in src/', () => {
     const usage = /import\.meta\.env\??\.([A-Za-z0-9_]+)/g
     const offenders: string[] = []
@@ -44,7 +51,7 @@ describe('frontend environment configuration', () => {
       }
     }
     expect(offenders).toEqual([])
-  })
+  }, SCAN_TIMEOUT_MS)
 
   it('uses no secret-shaped VITE_ variable name anywhere in src/', () => {
     const forbidden = /VITE_[A-Z_]*(SECRET|SERVICE_ROLE|PASSWORD|TOKEN|API_KEY|DATABASE)/
@@ -55,7 +62,7 @@ describe('frontend environment configuration', () => {
       if (match) offenders.push(`${file} -> ${match[0]}`)
     }
     expect(offenders).toEqual([])
-  })
+  }, SCAN_TIMEOUT_MS)
 
   it('keeps the API base URL default same-origin (/api), not localhost', () => {
     // The services resolve: (import.meta.env?.VITE_API_BASE_URL ?? '/api')

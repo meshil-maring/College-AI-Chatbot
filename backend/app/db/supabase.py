@@ -84,6 +84,38 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
     }
 
 
+async def get_super_admin_authorization(auth_user_id: str) -> dict | None:
+    """Read the fresh account lifecycle and platform grant for one Auth user.
+
+    This intentionally remains separate from ``get_user_by_auth_id`` so the
+    locked general authentication projection and return contract stay stable.
+    Platform authorization pays for this narrow second read to ensure that a
+    revocation takes effect on the very next protected request.
+    """
+    client = get_admin_client()
+    response = (
+        client.table("users")
+        .select("status, user_roles(scope_type, roles(name, is_active))")
+        .eq("auth_user_id", auth_user_id)
+        .maybe_single()
+        .execute()
+    )
+    if response is None or response.data is None:
+        return None
+    row = response.data
+    has_platform_grant = any(
+        grant.get("scope_type") == "platform"
+        and isinstance(grant.get("roles"), dict)
+        and grant["roles"].get("name") == "super_admin"
+        and grant["roles"].get("is_active", True)
+        for grant in (row.get("user_roles") or [])
+    )
+    return {
+        "status": row.get("status"),
+        "has_platform_grant": has_platform_grant,
+    }
+
+
 async def get_sign_in_context(auth_user_id: str) -> dict | None:
     """Phase 6.13.6 — resolve the sign-in status context for an auth account.
 
