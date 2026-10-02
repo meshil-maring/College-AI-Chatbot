@@ -53,7 +53,7 @@ PlatformAuditAction = Literal[
 # invitation lifecycle stays ``invited``/``accepted``/``cancelled``/``expired``
 # so the Phase 7.14 terminal-state trigger remains the single authority and no
 # redundant lifecycle field is introduced.
-EmailDeliveryStatus = Literal["pending", "sent", "failed"]
+EmailDeliveryStatus = Literal["pending", "sent", "delivered", "failed"]
 
 MAX_INVITE_EMAIL_LENGTH = 320
 MIN_PASSWORD_LENGTH = 8
@@ -227,7 +227,7 @@ class EmailDeliveryOutcome(BaseModel):
     delivery credential because the model has no field to leak it into.
     """
 
-    status: Literal["sent", "failed"]
+    status: Literal["pending", "sent", "failed"]
     provider: str
     detail: str | None = None
 

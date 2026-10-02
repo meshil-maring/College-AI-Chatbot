@@ -118,6 +118,28 @@ class Settings(BaseSettings):
     email_reply_to: str = ""
     email_base_url: str = "http://localhost:5173"
     email_provider_api_key: str = ""
+    # Passed to the vendor adapter on every request. Retries are additional to
+    # the first call and remain bounded; delays use capped exponential backoff.
+    email_provider_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    email_provider_max_retries: int = Field(default=2, ge=0, le=5)
+    email_provider_retry_base_seconds: float = Field(default=0.25, ge=0, le=10)
+    email_provider_retry_cap_seconds: float = Field(default=2.0, ge=0, le=60)
+    # Phase 7.17 durable outbox. The encryption key protects the one-time
+    # delivery secret at rest; deployments must provide a Fernet key. Local
+    # and test environments use an explicitly non-production deterministic
+    # key so automated tests can never depend on a real secret manager.
+    email_outbox_token_encryption_key: str = ""
+    email_worker_batch_size: int = Field(default=20, gt=0, le=200)
+    email_worker_lock_seconds: int = Field(default=120, ge=30, le=3600)
+    email_outbox_retry_limit: int = Field(default=3, gt=0, le=20)
+    # Phase 7.18 -- Mailgun is the only authorized production transport.
+    # These values are backend-only. `mailgun_base_url` supports Mailgun's US
+    # and EU API origins without baking a region into application code.
+    mailgun_api_key: str = ""
+    mailgun_domain: str = ""
+    mailgun_base_url: str = "https://api.mailgun.net"
+    mailgun_webhook_signing_key: str = ""
+    mailgun_webhook_tolerance_seconds: int = Field(default=900, ge=30, le=3600)
 
     # ------------------------------------------------------------------
     # Phase 7.15 -- invitation abuse controls.
@@ -204,6 +226,11 @@ class Settings(BaseSettings):
         if self.public_max_body_bytes <= self.public_max_message_chars:
             raise ValueError(
                 "PUBLIC_MAX_BODY_BYTES must leave room for the JSON request envelope"
+            )
+        if self.email_provider_retry_base_seconds > self.email_provider_retry_cap_seconds:
+            raise ValueError(
+                "EMAIL_PROVIDER_RETRY_BASE_SECONDS must not exceed "
+                "EMAIL_PROVIDER_RETRY_CAP_SECONDS"
             )
         return self
 

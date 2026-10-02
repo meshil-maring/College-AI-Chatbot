@@ -253,32 +253,35 @@ def insert_invitation(
     token_hash: str,
     expires_at: datetime,
     created_by: UUID | str,
+    protected_token: str,
 ) -> dict[str, Any]:
-    """Insert one INVITED invitation and return the stored row.
+    """Atomically insert one invitation and its durable email job.
 
     ``role_name`` is written by the server constant, never by a caller. The
-    supplied ``token_hash`` is the only credential-derived value that ever
-    reaches the database.
+    ``token_hash`` is the lookup digest. ``protected_token`` is authenticated
+    ciphertext for the worker; plaintext never reaches the database.
     """
-    response = (
-        client.table("platform_admin_invitations")
-        .insert(
-            {
-                "institution_id": str(institution_id),
-                "email": email.strip().lower(),
-                "token_hash": token_hash,
-                "role_name": INVITED_ROLE,
-                "status": STATUS_INVITED,
-                "expires_at": expires_at.isoformat(),
-                "created_by": str(created_by),
-            }
-        )
-        .execute()
-    )
-    rows = _rows(response)
-    if not rows or not rows[0].get("invitation_id"):
-        raise RuntimeError("platform_admin_invitations insert returned no row")
-    return rows[0]
+    if INVITED_ROLE != "admin":  # defensive pin; role is not an RPC argument
+        raise RuntimeError("invalid invitation role configuration")
+    response = client.rpc(
+        "phase717_create_invitation_with_outbox",
+        {
+            "p_institution_id": str(institution_id),
+            "p_email": email.strip().lower(),
+            "p_token_hash": token_hash,
+            "p_expires_at": expires_at.isoformat(),
+            "p_created_by": str(created_by),
+            "p_protected_token": protected_token,
+        },
+    ).execute()
+    data = response.data if response is not None else None
+    if isinstance(data, list):
+        row = data[0] if data else None
+    else:
+        row = data
+    if not isinstance(row, dict) or not row.get("invitation_id"):
+        raise RuntimeError("invitation/outbox transaction returned no row")
+    return row
 
 
 def rotate_invitation_token(
@@ -287,6 +290,9 @@ def rotate_invitation_token(
     *,
     token_hash: str,
     expires_at: datetime,
+    expected_updated_at: str | None = None,
+    protected_token: str,
+    lock_seconds: int,
 ) -> dict[str, Any] | None:
     """Supersede an invitation's token in place, or return None if not pending.
 
@@ -308,21 +314,21 @@ def rotate_invitation_token(
     migration additionally permits this one field pair to change while the row
     is pending, and continues to forbid every other identity field.
     """
-    response = (
-        client.table("platform_admin_invitations")
-        .update(
-            {
-                "token_hash": token_hash,
-                "expires_at": expires_at.isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
-        )
-        .eq("invitation_id", str(invitation_id))
-        .eq("status", STATUS_INVITED)
-        .execute()
-    )
-    rows = _rows(response)
-    return rows[0] if rows else None
+    response = client.rpc(
+        "phase717_rotate_invitation_with_outbox",
+        {
+            "p_invitation_id": str(invitation_id),
+            "p_token_hash": token_hash,
+            "p_expires_at": expires_at.isoformat(),
+            "p_expected_updated_at": expected_updated_at,
+            "p_protected_token": protected_token,
+            "p_lock_seconds": lock_seconds,
+        },
+    ).execute()
+    data = response.data if response is not None else None
+    if isinstance(data, list):
+        data = data[0] if data else None
+    return data if isinstance(data, dict) and data else None
 
 
 def record_email_delivery(

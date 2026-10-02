@@ -147,6 +147,7 @@ describe('Phase 7.14 admin roster', () => {
       invitation_token: 'a'.repeat(64),
       invitation_url: `/admin-invite/${'a'.repeat(64)}`,
       expires_in_hours: 24,
+      email_delivery: { status: 'sent', provider: 'local', detail: null },
     })
     render(
       <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
@@ -392,7 +393,7 @@ it('resends through the server and reveals the new one-time link', async () => {
       email_delivery: {
         status: 'failed',
         provider: 'production',
-        detail: 'EMAIL_PROVIDER_UNAVAILABLE',
+        detail: 'DELIVERY_TEMPORARY_FAILURE',
       },
       previous_token_invalidated: true,
       message: 'A new invitation link was issued, but the email could not be sent.',
@@ -404,7 +405,7 @@ it('resends through the server and reveals the new one-time link', async () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Resend' }))
     await userEvent.click(screen.getByRole('button', { name: 'Send new link' }))
 
-    expect(await screen.findByText(/email could not be sent/i)).toBeDefined()
+    expect(await screen.findByText(/Invitation could not be delivered/i)).toBeDefined()
     // The failure is never dressed up as success.
     expect(screen.queryByText(/emailed to the invited address/i)).toBeNull()
   })

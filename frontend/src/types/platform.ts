@@ -87,7 +87,7 @@ export type AdminInvitationStatus = 'invited' | 'accepted' | 'cancelled' | 'expi
  * separate is what stops a delivery outage from being mistaken for a revoked
  * or cancelled access grant.
  */
-export type EmailDeliveryStatus = 'pending' | 'sent' | 'failed'
+export type EmailDeliveryStatus = 'pending' | 'sent' | 'delivered' | 'failed'
 
 /**
  * What actually happened when the server tried to send the invitation email.
@@ -97,7 +97,7 @@ export type EmailDeliveryStatus = 'pending' | 'sent' | 'failed'
  * status code are exposed — never an API key, SMTP response or message body.
  */
 export interface EmailDeliveryOutcome {
-  readonly status: 'sent' | 'failed'
+  readonly status: 'pending' | 'sent' | 'failed'
   readonly provider: string
   readonly detail: string | null
 }

@@ -60,6 +60,17 @@ def _production_settings(**overrides) -> Settings:
         r2_secret_access_key="fake-r2-secret-key",
         r2_bucket="documents",
         allowed_hosts="api.example.edu",
+        email_provider="mailgun",
+        email_from="no-reply@example.edu",
+        email_base_url="https://app.example.edu",
+        email_provider_api_key="provider-key-placeholder",
+        mailgun_api_key="key-test-placeholder",
+        mailgun_domain="mg.example.edu",
+        mailgun_base_url="https://api.mailgun.net",
+        mailgun_webhook_signing_key="signing-test-placeholder",
+        email_outbox_token_encryption_key=(
+            "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+        ),
     )
     base.update(overrides)
     return Settings(**base)
@@ -104,6 +115,10 @@ def test_fully_configured_production_settings_pass_validation():
         "AI_PROVIDER",
         "DEV_TEST_MODE",
         "DEBUG",
+        "MAILGUN_API_KEY",
+        "MAILGUN_DOMAIN",
+        "MAILGUN_BASE_URL",
+        "MAILGUN_WEBHOOK_SIGNING_KEY",
     } <= names
 
 
@@ -129,6 +144,13 @@ def test_debug_true_stops_startup_outside_local_environments():
     with pytest.raises(RuntimeError) as exc_info:
         run_startup_configuration_validation(config)
     assert "DEBUG" in str(exc_info.value)
+
+
+def test_invalid_outbox_encryption_key_stops_production_startup():
+    config = _production_settings(email_outbox_token_encryption_key="not-a-fernet-key")
+    with pytest.raises(RuntimeError) as exc_info:
+        run_startup_configuration_validation(config)
+    assert "EMAIL_OUTBOX_TOKEN_ENCRYPTION_KEY" in str(exc_info.value)
 
 
 

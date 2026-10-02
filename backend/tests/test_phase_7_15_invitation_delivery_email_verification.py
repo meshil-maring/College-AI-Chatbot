@@ -158,7 +158,7 @@ class _FailingProvider:
 
     name = "failing"
 
-    def __init__(self, code: str = "EMAIL_PROVIDER_UNAVAILABLE") -> None:
+    def __init__(self, code: str = email_delivery.DELIVERY_TEMPORARY_FAILURE) -> None:
         self.code = code
         self.calls = 0
 
@@ -301,6 +301,7 @@ def test_missing_base_url_is_a_safe_configuration_error() -> None:
 
 
 def test_production_provider_is_selected_by_configuration(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
     monkeypatch.setattr(settings, "email_provider", "some-vendor")
     provider = email_delivery.get_email_provider()
     assert isinstance(provider, email_delivery.ProductionEmailProvider)
@@ -309,6 +310,7 @@ def test_production_provider_is_selected_by_configuration(monkeypatch) -> None:
 
 
 def test_production_provider_refuses_to_claim_success(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
     monkeypatch.setattr(settings, "email_provider", "some-vendor")
     monkeypatch.setattr(settings, "email_provider_api_key", "vendor-secret-key")
     result = email_delivery.deliver_invitation_email(
@@ -319,11 +321,12 @@ def test_production_provider_refuses_to_claim_success(monkeypatch) -> None:
         expires_at=FUTURE,
     )
     assert result.status == email_delivery.DELIVERY_FAILED
-    assert result.detail == "EMAIL_PROVIDER_UNAVAILABLE"
+    assert result.detail == email_delivery.DELIVERY_CONFIGURATION_ERROR
     assert "vendor-secret-key" not in str(result)
 
 
 def test_production_provider_reports_missing_configuration(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
     monkeypatch.setattr(settings, "email_provider", "some-vendor")
     monkeypatch.setattr(settings, "email_provider_api_key", "")
     result = email_delivery.deliver_invitation_email(
@@ -334,10 +337,11 @@ def test_production_provider_reports_missing_configuration(monkeypatch) -> None:
         expires_at=FUTURE,
     )
     assert result.status == email_delivery.DELIVERY_FAILED
-    assert result.detail == "EMAIL_PROVIDER_NOT_CONFIGURED"
+    assert result.detail == email_delivery.DELIVERY_CONFIGURATION_ERROR
 
 
 def test_provider_credentials_never_leave_the_provider(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "environment", "production")
     monkeypatch.setattr(settings, "email_provider", "some-vendor")
     monkeypatch.setattr(settings, "email_provider_api_key", "vendor-secret-key")
     provider = email_delivery.get_email_provider()
@@ -409,7 +413,7 @@ def test_delivery_helper_never_raises_for_a_provider_failure() -> None:
         expires_at=FUTURE,
     )
     assert result.status == email_delivery.DELIVERY_FAILED
-    assert result.detail == "EMAIL_PROVIDER_UNAVAILABLE"
+    assert result.detail == email_delivery.DELIVERY_TEMPORARY_FAILURE
 
 
 def test_delivery_helper_survives_an_unexpected_provider_crash() -> None:
@@ -427,7 +431,7 @@ def test_delivery_helper_survives_an_unexpected_provider_crash() -> None:
         expires_at=FUTURE,
     )
     assert result.status == email_delivery.DELIVERY_FAILED
-    assert result.detail == "EMAIL_DELIVERY_ERROR"
+    assert result.detail == email_delivery.DELIVERY_PERMANENT_FAILURE
 
 
 # ===========================================================================
@@ -1132,7 +1136,7 @@ def test_delivery_failure_is_reported_honestly_and_grants_nothing() -> None:
     assert response.status_code == 201
     body = response.json()
     assert body["email_delivery"]["status"] == "failed"
-    assert body["email_delivery"]["detail"] == "EMAIL_PROVIDER_UNAVAILABLE"
+    assert body["email_delivery"]["detail"] == email_delivery.DELIVERY_TEMPORARY_FAILURE
     # The invitation is still created and still live (recoverable by resend).
     assert body["invitation"]["status"] == "invited"
     # The failure is persisted as a failure, never optimistically as sent.

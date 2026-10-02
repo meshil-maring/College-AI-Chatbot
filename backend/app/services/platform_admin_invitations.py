@@ -43,6 +43,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
+from app.config import settings
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import platform_admin_invitations as invite_repo
@@ -65,6 +66,7 @@ from app.schemas.admin_invitations import (
     PlatformAuditListResponse,
 )
 from app.services import email_delivery
+from app.services import email_outbox_crypto
 from app.services import invitation_abuse_controls as abuse
 from app.services import student_registration as student_svc
 
@@ -201,8 +203,8 @@ def _to_invitation_view(row: dict[str, Any]) -> AdminInvitationView:
 def _delivery_outcome(result: email_delivery.EmailDeliveryResult) -> EmailDeliveryOutcome:
     """Convert a provider result into the safe API projection.
 
-    ``detail`` is the provider's bounded status code (e.g.
-    ``EMAIL_PROVIDER_NOT_CONFIGURED``), never a provider response body, a
+    ``detail`` is the application's bounded safe failure category (e.g.
+    ``DELIVERY_CONFIGURATION_ERROR``), never a provider response body, a
     credential or a token.
     """
     return EmailDeliveryOutcome(
@@ -210,6 +212,11 @@ def _delivery_outcome(result: email_delivery.EmailDeliveryResult) -> EmailDelive
         provider=result.provider,
         detail=result.detail or None,
     )
+
+
+def _queued_delivery() -> EmailDeliveryOutcome:
+    """Public projection for a durable job; no provider has run yet."""
+    return EmailDeliveryOutcome(status=email_delivery.DELIVERY_PENDING, provider="outbox")
 
 
 def _send_and_record_invitation_email(
@@ -241,12 +248,26 @@ def _send_and_record_invitation_email(
     access, creates no account and does not consume the invitation — the
     invitation simply remains a live invitation whose email has not arrived.
     """
+    delivery_attempt = int(invitation.get("email_delivery_attempts") or 0) + 1
+    # Commit an honest in-flight state before external I/O. Each repository
+    # call is its own request, so no database transaction remains open while a
+    # provider is allowed up to its explicit timeout.
+    try:
+        invite_repo.record_email_delivery(
+            client,
+            invitation["invitation_id"],
+            status=invite_repo.DELIVERY_PENDING,
+        )
+    except Exception:  # noqa: BLE001 - delivery still needs a controlled result
+        logger.warning("event=admin_invitation_delivery_pending_record_failed")
     result = email_delivery.deliver_invitation_email(
         email_delivery.get_email_provider(),
         to_email=str(invitation["email"]),
         institution_name=institution_name,
         raw_token=raw_token,
         expires_at=expires_at,
+        invitation_id=str(invitation["invitation_id"]),
+        delivery_attempt=delivery_attempt,
     )
     sent = result.status == email_delivery.DELIVERY_SENT
     try:
@@ -281,6 +302,7 @@ def _send_and_record_invitation_email(
             "invitation_id": str(invitation["invitation_id"]),
             "provider": result.provider,
             "delivery_status": result.status,
+            **({"failure_category": result.detail} if not sent else {}),
         },
     )
     return _delivery_outcome(result)
@@ -373,6 +395,7 @@ def create_invitation(
 
     raw_token = invite_repo.generate_invitation_token()
     token_hash = invite_repo.hash_invitation_token(raw_token)
+    protected_token = email_outbox_crypto.protect_invitation_token(raw_token)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=INVITATION_TTL_HOURS)
 
     row = invite_repo.insert_invitation(
@@ -382,6 +405,7 @@ def create_invitation(
         token_hash=token_hash,
         expires_at=expires_at,
         created_by=actor_user_id,
+        protected_token=protected_token,
     )
     platform_repo.record_institution_audit(
         client,
@@ -390,17 +414,20 @@ def create_invitation(
         institution_id=institution_id,
         details={"email": email, "expires_at": row.get("expires_at")},
     )
-    # Phase 7.15: the invitation row is committed FIRST, then the email is
-    # attempted, then the real outcome is recorded. A delivery failure leaves a
-    # perfectly valid invitation behind (recoverable by resending) and grants
-    # nothing at all — no Auth account, no role, no consumed token.
-    delivery = _send_and_record_invitation_email(
-        client,
-        invitation=row,
-        institution_name=str(institution.get("name", "")),
-        raw_token=raw_token,
-        expires_at=expires_at,
-        actor_user_id=actor_user_id,
+    # Phase 7.17: the database function committed the invitation and durable
+    # outbox row together. Provider I/O belongs to the worker, not this request.
+    # The fallback is only for older isolated test doubles without an outbox id.
+    delivery = (
+        _queued_delivery()
+        if row.get("email_outbox_id")
+        else _send_and_record_invitation_email(
+            client,
+            invitation=row,
+            institution_name=str(institution.get("name", "")),
+            raw_token=raw_token,
+            expires_at=expires_at,
+            actor_user_id=actor_user_id,
+        )
     )
     # The raw token is returned HERE and nowhere else — it is not stored, not
     # logged, and not written to the audit ledger (whose details carry only the
@@ -496,6 +523,7 @@ def resend_invitation(
 
     raw_token = invite_repo.generate_invitation_token()
     token_hash = invite_repo.hash_invitation_token(raw_token)
+    protected_token = email_outbox_crypto.protect_invitation_token(raw_token)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=INVITATION_TTL_HOURS)
 
     # The single point at which the old token stops working. If this returns
@@ -506,6 +534,9 @@ def resend_invitation(
         invitation_id,
         token_hash=token_hash,
         expires_at=expires_at,
+        expected_updated_at=invitation.get("updated_at"),
+        protected_token=protected_token,
+        lock_seconds=settings.email_worker_lock_seconds,
     )
     if rotated is None:
         raise AppError(
@@ -514,10 +545,11 @@ def resend_invitation(
             code="INVITATION_NOT_RESENDABLE",
         )
 
-    try:
-        invite_repo.increment_resend_count(client, invitation_id)
-    except Exception:  # noqa: BLE001 - advisory counter only
-        logger.warning("event=admin_invitation_resend_count_failed")
+    if not rotated.get("email_outbox_id"):
+        try:
+            invite_repo.increment_resend_count(client, invitation_id)
+        except Exception:  # noqa: BLE001 - legacy test-double path only
+            logger.warning("event=admin_invitation_resend_count_failed")
 
     platform_repo.record_institution_audit(
         client,
@@ -532,17 +564,24 @@ def resend_invitation(
     )
 
     source = _rotated_source(rotated, invitation)
-    delivery = _send_and_record_invitation_email(
-        client,
-        invitation=source,
-        institution_name=str(institution.get("name", "")),
-        raw_token=raw_token,
-        expires_at=expires_at,
-        actor_user_id=actor_user_id,
+    delivery = (
+        _queued_delivery()
+        if source.get("email_outbox_id")
+        else _send_and_record_invitation_email(
+            client,
+            invitation=source,
+            institution_name=str(institution.get("name", "")),
+            raw_token=raw_token,
+            expires_at=expires_at,
+            actor_user_id=actor_user_id,
+        )
     )
     message = (
         RESEND_MESSAGE
-        if delivery.status == email_delivery.DELIVERY_SENT
+        if delivery.status in {
+            email_delivery.DELIVERY_SENT,
+            email_delivery.DELIVERY_PENDING,
+        }
         else "A new invitation link was issued, but the email could not be sent. "
         "Try resending again."
     )

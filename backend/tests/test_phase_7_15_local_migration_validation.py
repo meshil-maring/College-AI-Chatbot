@@ -338,9 +338,11 @@ def test_phase_7_14_audit_actions_still_work(local_db, institution_id, actor_id)
         assert written and written[0]["action"] == action
 
 
-def test_the_migration_file_is_the_newest_ledger_entry() -> None:
-    """The file on disk is the file that was applied, and it sorts last."""
+def test_the_migration_file_remains_an_ordered_ledger_entry() -> None:
+    """Later phases may append migrations but cannot replace Phase 7.15."""
     assert MIGRATION.exists()
     siblings = sorted(p.name for p in MIGRATION.parent.glob("*.sql"))
     assert MIGRATION.name in siblings
-    assert siblings[-1] == MIGRATION.name
+    assert siblings.index(MIGRATION.name) < siblings.index(
+        "20261002000000_phase_7_17_email_outbox_worker.sql"
+    )

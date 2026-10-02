@@ -1,81 +1,81 @@
-"""Phase 7.15 — email delivery abstraction for University Admin invitations.
+"""Provider-neutral invitation email delivery with fail-closed production use.
 
-The invitation service NEVER talks to an email vendor. It builds a neutral
-:class:`InvitationEmail` and hands it to an :class:`EmailDeliveryProvider`:
-
-    Invitation Service
-            ↓
-    EmailDeliveryProvider  (the protocol in this module)
-            ↓
-    ┌───────────────────┬────────────────────┐
-    │ LocalEmailProvider│ ProductionProvider  │
-    │ (outbox capture)  │ (configuration only)│
-    └───────────────────┴────────────────────┘
-
-Design constraints enforced here
---------------------------------
-* **No vendor is hard-coded.** ``EMAIL_PROVIDER`` selects an implementation.
-  ``local`` (the default) is the only one implemented in this phase; a
-  production provider resolves its credentials from server-side settings and
-  refuses to claim success while no vendor integration exists.
-* **Credentials never leave the server.** ``EMAIL_PROVIDER_API_KEY`` is read
-  only inside :class:`ProductionEmailProvider`, is never returned through an
-  API, never logged and never placed in a message body or audit record.
-* **The local provider never contacts anything.** It appends to a bounded,
-  process-local outbox so tests can assert on the exact invitation URL. The
-  outbox is never written to the application log, so a captured token does
-  not silently become a log line in a deployed environment.
-* **A delivery result is always explicit.** ``send_invitation`` either
-  returns a success result or raises :class:`EmailDeliveryError`; it can never
-  report success silently.
+The invitation service supplies an already-rendered message. Local and test
+environments capture it in memory. Production delegates to a vendor adapter;
+this repository intentionally registers no adapter until a vendor is selected.
+The production boundary owns timeout, retry, idempotency, and error semantics.
 """
 
 from __future__ import annotations
 
 import logging
 import threading
+import time
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Protocol, runtime_checkable
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from enum import StrEnum
+from typing import Callable, Protocol, runtime_checkable
+from urllib.parse import quote
+
+import httpx
 
 from app.config import settings
 from app.core.errors import AppError
 
 logger = logging.getLogger(__name__)
 
-# Provider identifiers understood by :func:`get_email_provider`.
 PROVIDER_LOCAL = "local"
-
-# Maximum number of messages the local outbox retains. The outbox is a test and
-# development affordance; bounding it keeps a long-running process from
-# accumulating invitation tokens in memory.
+PROVIDER_TEST = "test"
+PROVIDER_MAILGUN = "mailgun"
 OUTBOX_MAX_MESSAGES = 100
 
 DELIVERY_SENT = "sent"
 DELIVERY_FAILED = "failed"
+DELIVERY_PENDING = "pending"
+DELIVERY_TEMPORARY_FAILURE = "DELIVERY_TEMPORARY_FAILURE"
+DELIVERY_PERMANENT_FAILURE = "DELIVERY_PERMANENT_FAILURE"
+DELIVERY_CONFIGURATION_ERROR = "DELIVERY_CONFIGURATION_ERROR"
+DELIVERY_TIMEOUT = "DELIVERY_TIMEOUT"
+DELIVERY_RATE_LIMITED = "DELIVERY_RATE_LIMITED"
+DELIVERY_MALFORMED_RESPONSE = "DELIVERY_MALFORMED_RESPONSE"
+SAFE_DELIVERY_FAILURE_CATEGORIES = frozenset(
+    {
+        DELIVERY_TEMPORARY_FAILURE,
+        DELIVERY_PERMANENT_FAILURE,
+        DELIVERY_CONFIGURATION_ERROR,
+        DELIVERY_TIMEOUT,
+        DELIVERY_RATE_LIMITED,
+        DELIVERY_MALFORMED_RESPONSE,
+    }
+)
+
+
+class ProviderHealthState(StrEnum):
+    CONFIGURED = "configured"
+    NOT_CONFIGURED = "not_configured"
+    TEMPORARILY_UNAVAILABLE = "temporarily_unavailable"
 
 
 class EmailDeliveryError(AppError):
-    """A delivery attempt failed.
+    """Safe, categorized provider failure with bounded retry metadata."""
 
-    Subclasses ``AppError`` so the existing project error handler renders the
-    standard ``{"error": {"code", "message"}}`` envelope. The message is always
-    safe: it never contains a token, a password or a provider credential.
-    """
-
-    def __init__(self, message: str, code: str = "EMAIL_DELIVERY_FAILED") -> None:
+    def __init__(
+        self,
+        message: str,
+        code: str = DELIVERY_PERMANENT_FAILURE,
+        *,
+        retryable: bool = False,
+        retry_after_seconds: float | None = None,
+    ) -> None:
         super().__init__(message, status_code=502, code=code)
+        self.retryable = retryable
+        self.retry_after_seconds = retry_after_seconds
 
 
 @dataclass(frozen=True)
 class InvitationEmail:
-    """A fully rendered invitation email, ready for any provider.
-
-    Only non-sensitive content lives here. There is deliberately no password
-    field, no service credential and no database identifier: the invitation
-    token appears only inside :attr:`invitation_url`, which is built from the
-    configured application base URL and never from a request ``Host`` header.
-    """
+    """Fully rendered provider input; authorization stays outside this type."""
 
     to_email: str
     subject: str
@@ -83,29 +83,53 @@ class InvitationEmail:
     institution_name: str
     invitation_url: str
     expires_at: str | None
+    # Stable across retries for one application attempt. Never a raw token.
+    idempotency_key: str = ""
 
 
 @dataclass(frozen=True)
 class EmailDeliveryResult:
-    """The outcome of one delivery attempt.
-
-    ``status`` is ``sent`` or ``failed``. ``provider`` is the provider
-    identifier for auditing — never a credential.
-    """
-
     status: str
     provider: str
     detail: str = ""
+    provider_message_id: str | None = None
+    retryable: bool = False
+    retry_after_seconds: float | None = None
+
+
+@dataclass(frozen=True)
+class ProviderSendResult:
+    """Minimum normalized success response required from a vendor adapter."""
+
+    message_id: str
+
+
+@dataclass(frozen=True)
+class ProviderHealth:
+    state: ProviderHealthState
+    provider: str
 
 
 @runtime_checkable
 class EmailDeliveryProvider(Protocol):
-    """The boundary every invitation email must cross."""
-
     name: str
 
-    def send_invitation(self, email: InvitationEmail) -> EmailDeliveryResult:
-        """Deliver one invitation email or raise :class:`EmailDeliveryError`."""
+    def send_invitation(self, email: InvitationEmail) -> EmailDeliveryResult: ...
+
+
+@runtime_checkable
+class ProductionEmailTransport(Protocol):
+    """Small vendor-specific seam below the existing provider abstraction."""
+
+    def send_invitation(
+        self,
+        email: InvitationEmail,
+        *,
+        from_address: str,
+        reply_to: str | None,
+        timeout_seconds: float,
+        idempotency_key: str,
+    ) -> ProviderSendResult: ...
 
 
 @dataclass
@@ -117,16 +141,8 @@ _local_outbox = _Outbox()
 _local_outbox_lock = threading.Lock()
 
 
-# __APPEND_1__
 class LocalEmailProvider:
-    """Development/test provider that captures messages instead of sending.
-
-    It performs NO network I/O, requires NO credentials and cannot reach an
-    external email service. Captured messages are held in a bounded in-process
-    outbox so a test can read the exact invitation URL; they are deliberately
-    never written to the log, so a captured token can never become a
-    production log line.
-    """
+    """Development capture provider. It performs no external I/O."""
 
     name = PROVIDER_LOCAL
 
@@ -139,7 +155,6 @@ class LocalEmailProvider:
             if len(self._outbox.messages) > OUTBOX_MAX_MESSAGES:
                 del self._outbox.messages[:-OUTBOX_MAX_MESSAGES]
             captured = len(self._outbox.messages)
-        # Operational counter only: no recipient, no subject, no token.
         logger.info(
             "event=admin_invitation_email_captured provider=%s captured=%d",
             self.name,
@@ -149,77 +164,356 @@ class LocalEmailProvider:
             status=DELIVERY_SENT,
             provider=self.name,
             detail="captured by the local delivery outbox",
+            provider_message_id=f"{self.name}:{email.idempotency_key or captured}",
         )
 
 
-class ProductionEmailProvider:
-    """Configuration-only production provider boundary.
+class TestEmailProvider(LocalEmailProvider):
+    """Deterministic test capture, separately identifiable from local."""
 
-    Credentials are resolved here and nowhere else. No vendor is hard-coded:
-    the vendor integration itself is a later phase, so until one exists this
-    provider refuses to report success. That refusal is deliberate — a
-    provider that claimed to have sent an invitation it never sent would be a
-    delivery-failure bug of the worst kind.
+    name = PROVIDER_TEST
+
+
+class ProductionEmailProvider:
+    """Reliable provider-neutral production delivery boundary.
+
+    The same idempotency key is sent on every bounded retry. The transport must
+    apply that key using its provider's idempotency mechanism. If a selected
+    provider cannot guarantee this, its adapter must classify uncertain errors
+    as non-retryable to avoid duplicate mail.
     """
 
     name = "production"
 
-    def __init__(self, *, provider_name: str, from_address: str) -> None:
+    def __init__(
+        self,
+        *,
+        provider_name: str,
+        from_address: str,
+        reply_to: str | None = None,
+        transport: ProductionEmailTransport | None = None,
+        timeout_seconds: float | None = None,
+        max_retries: int | None = None,
+        retry_base_seconds: float | None = None,
+        retry_cap_seconds: float | None = None,
+        api_key: str | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
         self._provider_name = provider_name
         self._from_address = from_address
-        # Read into a private attribute only: never returned, never logged.
-        self._api_key = (settings.email_provider_api_key or "").strip()
+        self._reply_to = reply_to
+        self._api_key = (
+            settings.email_provider_api_key if api_key is None else api_key
+        ).strip()
+        self._transport = transport
+        self._timeout_seconds = (
+            settings.email_provider_timeout_seconds
+            if timeout_seconds is None
+            else timeout_seconds
+        )
+        self._max_retries = (
+            settings.email_provider_max_retries if max_retries is None else max_retries
+        )
+        self._retry_base_seconds = (
+            settings.email_provider_retry_base_seconds
+            if retry_base_seconds is None
+            else retry_base_seconds
+        )
+        self._retry_cap_seconds = (
+            settings.email_provider_retry_cap_seconds
+            if retry_cap_seconds is None
+            else retry_cap_seconds
+        )
+        self._sleep = sleep
+        self._health_state = (
+            ProviderHealthState.CONFIGURED
+            if self.is_configured
+            else ProviderHealthState.NOT_CONFIGURED
+        )
 
     @property
     def is_configured(self) -> bool:
-        return bool(self._api_key) and bool(self._from_address.strip())
+        return (
+            bool(self._provider_name.strip())
+            and bool(self._api_key)
+            and bool(self._from_address.strip())
+            and self._transport is not None
+        )
+
+    def health(self) -> ProviderHealth:
+        return ProviderHealth(
+            state=self._health_state,
+            provider=self._provider_name or self.name,
+        )
+
+    def _retry_delay(self, retry_index: int, exc: EmailDeliveryError) -> float:
+        if exc.retry_after_seconds is not None:
+            return min(max(exc.retry_after_seconds, 0.0), self._retry_cap_seconds)
+        return min(
+            self._retry_base_seconds * (2 ** max(0, retry_index - 1)),
+            self._retry_cap_seconds,
+        )
 
     def send_invitation(self, email: InvitationEmail) -> EmailDeliveryResult:
-        if not self.is_configured:
+        if (
+            not self._provider_name.strip()
+            or not self._api_key
+            or not self._from_address.strip()
+            or self._transport is None
+            or not email.idempotency_key
+        ):
             raise EmailDeliveryError(
-                "Invitation email could not be sent: the email provider is not "
-                "configured on this server.",
-                code="EMAIL_PROVIDER_NOT_CONFIGURED",
+                "Invitation could not be delivered.",
+                code=DELIVERY_CONFIGURATION_ERROR,
             )
-        # No vendor integration is implemented in this phase, so the attempt is
-        # reported as failed rather than pretended into a success.
-        raise EmailDeliveryError(
-            "Invitation email could not be sent: the configured email provider "
-            "integration is not available.",
-            code="EMAIL_PROVIDER_UNAVAILABLE",
+
+        started = time.monotonic()
+        for attempt in range(self._max_retries + 1):
+            try:
+                response = self._transport.send_invitation(
+                    email,
+                    from_address=self._from_address,
+                    reply_to=self._reply_to,
+                    timeout_seconds=self._timeout_seconds,
+                    idempotency_key=email.idempotency_key,
+                )
+                if (
+                    not isinstance(response, ProviderSendResult)
+                    or not response.message_id.strip()
+                ):
+                    raise EmailDeliveryError(
+                        "Invitation could not be delivered.",
+                        code=DELIVERY_MALFORMED_RESPONSE,
+                    )
+                logger.info(
+                    "event=admin_invitation_email_sent provider=%s attempts=%d duration_ms=%d",
+                    self._provider_name,
+                    attempt + 1,
+                    int((time.monotonic() - started) * 1000),
+                )
+                self._health_state = ProviderHealthState.CONFIGURED
+                return EmailDeliveryResult(
+                    DELIVERY_SENT,
+                    self._provider_name,
+                    provider_message_id=response.message_id,
+                )
+            except TimeoutError:
+                exc = EmailDeliveryError(
+                    "Invitation could not be delivered.",
+                    code=DELIVERY_TIMEOUT,
+                    retryable=True,
+                )
+            except OSError:
+                exc = EmailDeliveryError(
+                    "Invitation could not be delivered.",
+                    code=DELIVERY_TEMPORARY_FAILURE,
+                    retryable=True,
+                )
+            except EmailDeliveryError as error:
+                exc = error
+
+            if not exc.retryable or attempt >= self._max_retries:
+                if exc.retryable:
+                    self._health_state = ProviderHealthState.TEMPORARILY_UNAVAILABLE
+                raise exc
+            delay = self._retry_delay(attempt + 1, exc)
+            logger.warning(
+                "event=admin_invitation_email_retry provider=%s code=%s retry=%d delay_ms=%d",
+                self._provider_name,
+                exc.code,
+                attempt + 1,
+                int(delay * 1000),
+            )
+            self._sleep(delay)
+
+        raise AssertionError("bounded email retry loop exhausted unexpectedly")
+
+
+def normalize_provider_message_id(value: str) -> str:
+    """Normalize RFC-2392-style IDs for send/webhook correlation."""
+    normalized = value.strip()
+    if normalized.startswith("<") and normalized.endswith(">"):
+        normalized = normalized[1:-1].strip()
+    return normalized
+
+
+def _retry_after_seconds(value: str | None) -> float | None:
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value.strip()))
+    except ValueError:
+        try:
+            retry_at = parsedate_to_datetime(value)
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=timezone.utc)
+            return max(0.0, (retry_at - datetime.now(timezone.utc)).total_seconds())
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+
+class MailgunEmailTransport:
+    """Mailgun HTTP API adapter below the provider-neutral boundary."""
+
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        domain: str,
+        base_url: str,
+        client: httpx.Client | None = None,
+    ) -> None:
+        self._api_key = api_key.strip()
+        self._domain = domain.strip()
+        self._base_url = base_url.strip().rstrip("/")
+        self._client = client
+
+    def _request(
+        self, url: str, data: dict[str, str], timeout_seconds: float
+    ) -> httpx.Response:
+        kwargs = {
+            "auth": ("api", self._api_key),
+            # `(None, value)` makes httpx emit a multipart text field, matching
+            # Mailgun's documented Messages API contract.
+            "files": {name: (None, value) for name, value in data.items()},
+            "timeout": timeout_seconds,
+        }
+        if self._client is not None:
+            return self._client.post(url, **kwargs)
+        with httpx.Client() as client:
+            return client.post(url, **kwargs)
+
+    def send_invitation(
+        self,
+        email: InvitationEmail,
+        *,
+        from_address: str,
+        reply_to: str | None,
+        timeout_seconds: float,
+        idempotency_key: str,
+    ) -> ProviderSendResult:
+        # Mailgun's Messages API has no general send idempotency key. The
+        # stable application key remains useful for local attempt identity but
+        # is deliberately not placed in message headers/user variables (which
+        # would expose an internal identifier in the delivered message).
+        del idempotency_key
+        if not all((self._api_key, self._domain, self._base_url, from_address.strip())):
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_CONFIGURATION_ERROR,
+            )
+        url = f"{self._base_url}/v3/{quote(self._domain, safe='.')}/messages"
+        form = {
+            "from": from_address,
+            "to": email.to_email,
+            "subject": email.subject,
+            "text": email.body,
+        }
+        if reply_to:
+            form["h:Reply-To"] = reply_to
+        try:
+            response = self._request(url, form, timeout_seconds)
+        except httpx.TimeoutException as exc:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_TIMEOUT,
+                retryable=True,
+            ) from exc
+        except httpx.TransportError as exc:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_TEMPORARY_FAILURE,
+                retryable=True,
+            ) from exc
+
+        if response.status_code == 429:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_RATE_LIMITED,
+                retryable=True,
+                retry_after_seconds=_retry_after_seconds(response.headers.get("Retry-After")),
+            )
+        if response.status_code in {401, 403}:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_CONFIGURATION_ERROR,
+            )
+        if 500 <= response.status_code <= 599:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_TEMPORARY_FAILURE,
+                retryable=True,
+            )
+        if response.status_code != 200:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_PERMANENT_FAILURE,
+            )
+        try:
+            payload = response.json()
+        except (ValueError, TypeError) as exc:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_MALFORMED_RESPONSE,
+            ) from exc
+        message_id = normalize_provider_message_id(
+            payload.get("id", "") if isinstance(payload, dict) else ""
         )
+        if not message_id:
+            raise EmailDeliveryError(
+                "Invitation could not be delivered.",
+                code=DELIVERY_MALFORMED_RESPONSE,
+            )
+        return ProviderSendResult(message_id=message_id)
+
+
+def _build_production_transport(
+    provider_name: str, api_key: str
+) -> ProductionEmailTransport | None:
+    """Register only the Phase 7.18-authorized Mailgun transport."""
+    if provider_name == PROVIDER_MAILGUN:
+        return MailgunEmailTransport(
+            api_key=api_key,
+            domain=settings.mailgun_domain,
+            base_url=settings.mailgun_base_url,
+        )
+    return None
 
 
 def get_email_provider() -> EmailDeliveryProvider:
-    """Resolve the configured provider — the only supported selection path."""
-    name = (settings.email_provider or PROVIDER_LOCAL).strip().lower()
-    if name in {"", PROVIDER_LOCAL, "test", "capture"}:
+    """Select by environment first; production can never capture locally."""
+    environment = (settings.environment or "").strip().lower()
+    if environment in {"test", "testing"}:
+        return TestEmailProvider()
+    if environment in {"development", "dev", "local"}:
         return LocalEmailProvider()
+
+    name = (settings.email_provider or "").strip().lower()
+    api_key = (
+        settings.mailgun_api_key
+        if name == PROVIDER_MAILGUN
+        else settings.email_provider_api_key
+    ).strip()
     return ProductionEmailProvider(
         provider_name=name,
         from_address=settings.email_from,
+        reply_to=get_email_reply_to(),
+        transport=_build_production_transport(name, api_key),
+        api_key=api_key,
     )
 
 
 def get_email_sender_address() -> str:
-    """Return the configured ``From`` address (never a credential)."""
     return (settings.email_from or "").strip()
 
 
 def get_email_reply_to() -> str | None:
-    """Return the configured ``Reply-To`` address, or None when unset."""
     reply_to = (settings.email_reply_to or "").strip()
     return reply_to or None
 
 
 def build_invitation_url(raw_token: str) -> str:
-    """Return the user-facing invitation URL from the CONFIGURED base URL.
-
-    The base URL is a server setting. A request ``Host`` / ``X-Forwarded-Host``
-    header is deliberately never consulted, so an attacker cannot poison the
-    link a Super Admin or invitee receives and redirect acceptance to a host
-    they control.
-    """
+    """Build only from trusted configuration, never request Host headers."""
     base = (settings.email_base_url or "").strip().rstrip("/")
     if not base:
         raise AppError(
@@ -233,13 +527,6 @@ def build_invitation_url(raw_token: str) -> str:
 def render_invitation_email(
     *, institution_name: str, invitation_url: str, expires_at: datetime | str | None
 ) -> tuple[str, str]:
-    """Render the invitation email as ``(subject, body)``.
-
-    The body carries only what the invited person needs: who is inviting them,
-    what they are invited to do, the one-time link and the expiry. It never
-    contains a password, a token hash, a service credential, a database
-    identifier or any student data.
-    """
     subject = f"You have been invited to administer {institution_name}"
     expiry_text = (
         expires_at.isoformat()
@@ -276,8 +563,8 @@ def build_invitation_email(
     institution_name: str,
     raw_token: str,
     expires_at: datetime | str | None,
+    idempotency_key: str = "",
 ) -> InvitationEmail:
-    """Build the complete invitation email from configured, trusted inputs."""
     invitation_url = build_invitation_url(raw_token)
     subject, body = render_invitation_email(
         institution_name=institution_name,
@@ -291,7 +578,15 @@ def build_invitation_email(
         institution_name=institution_name,
         invitation_url=invitation_url,
         expires_at=None if expires_at is None else str(expires_at),
+        idempotency_key=idempotency_key,
     )
+
+
+def build_delivery_idempotency_key(invitation_id: str, delivery_attempt: int) -> str:
+    """Create a stable non-secret identity: invitation_id + attempt number."""
+    if not invitation_id.strip() or delivery_attempt < 1:
+        raise ValueError("delivery identity requires invitation id and positive attempt")
+    return f"admin-invitation:{invitation_id}:{delivery_attempt}"
 
 
 def deliver_invitation_email(
@@ -301,16 +596,18 @@ def deliver_invitation_email(
     institution_name: str,
     raw_token: str,
     expires_at: datetime | str | None,
+    invitation_id: str | None = None,
+    delivery_attempt: int | None = None,
+    idempotency_key: str | None = None,
 ) -> EmailDeliveryResult:
-    """Send one invitation email, mapping any provider error to a safe failure.
-
-    The caller records the result. This helper never raises for a delivery
-    failure — it returns ``status="failed"`` — so the invitation service can
-    always write the audit record that makes the failure auditable and
-    retryable.
-    """
+    """Deliver once at the service boundary and return only safe failures."""
     resolved = provider if provider is not None else get_email_provider()
     provider_name = getattr(resolved, "name", "unknown")
+    resolved_idempotency_key = idempotency_key or (
+        build_delivery_idempotency_key(invitation_id, delivery_attempt)
+        if invitation_id is not None and delivery_attempt is not None
+        else ""
+    )
     try:
         return resolved.send_invitation(
             build_invitation_email(
@@ -318,36 +615,42 @@ def deliver_invitation_email(
                 institution_name=institution_name,
                 raw_token=raw_token,
                 expires_at=expires_at,
+                idempotency_key=resolved_idempotency_key,
             )
         )
     except EmailDeliveryError as exc:
+        safe_code = (
+            exc.code
+            if exc.code in SAFE_DELIVERY_FAILURE_CATEGORIES
+            else DELIVERY_PERMANENT_FAILURE
+        )
         logger.warning(
             "event=admin_invitation_email_failed provider=%s code=%s",
             provider_name,
-            exc.code,
+            safe_code,
         )
         return EmailDeliveryResult(
-            status=DELIVERY_FAILED, provider=provider_name, detail=exc.code
+            DELIVERY_FAILED,
+            provider_name,
+            safe_code,
+            retryable=exc.retryable,
+            retry_after_seconds=exc.retry_after_seconds,
         )
-    except Exception:  # noqa: BLE001 - a provider must never break the caller
+    except Exception:  # noqa: BLE001 - provider failures must not break auditing
         logger.warning(
             "event=admin_invitation_email_failed provider=%s category=unexpected",
             provider_name,
         )
         return EmailDeliveryResult(
-            status=DELIVERY_FAILED,
-            provider=provider_name,
-            detail="EMAIL_DELIVERY_ERROR",
+            DELIVERY_FAILED, provider_name, DELIVERY_PERMANENT_FAILURE
         )
 
 
 def captured_emails() -> list[InvitationEmail]:
-    """Return a copy of the local outbox (tests and local development only)."""
     with _local_outbox_lock:
         return list(_local_outbox.messages)
 
 
 def reset_email_outbox() -> None:
-    """Test hook; production code never clears the outbox."""
     with _local_outbox_lock:
         _local_outbox.messages.clear()

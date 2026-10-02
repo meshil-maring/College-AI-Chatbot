@@ -114,12 +114,20 @@ export default function AdminRosterPanel({
   const invite = (): Promise<void> =>
     run('invite', async () => {
       const result = await createInvitation(token, institutionId, { email: email.trim() })
-      // The raw link lives only in this component state, for the copy action.
-      setCreated(result)
+      // Raw-link fallback is limited to responses from the explicit local/test
+      // capture providers. A production provider response never renders it.
+      setCreated(
+        result.email_delivery?.provider === 'local' || result.email_delivery?.provider === 'test'
+          ? result
+          : null,
+      )
       setCopied(false)
       setEmail('')
       setShowInvite(false)
-      return `Invitation created for ${result.invitation.email}. It expires in ${result.expires_in_hours} hours.`
+      if (result.email_delivery?.status === 'pending') return 'Invitation email queued'
+      return result.email_delivery?.status === 'sent'
+        ? 'Invitation sent'
+        : 'Invitation could not be delivered. Try again later.'
     })
 
   return (
@@ -273,9 +281,16 @@ export default function AdminRosterPanel({
               // The new one-time link is surfaced here, exactly as on creation,
               // so the operator has a fallback if the email does not arrive. It
               // is held in component state only — never persisted or logged.
-              setResent(result)
+              setResent(
+                result.email_delivery.provider === 'local' || result.email_delivery.provider === 'test'
+                  ? result
+                  : null,
+              )
               setCopied(false)
-              return result.message
+              if (result.email_delivery.status === 'pending') return 'Invitation email queued'
+              return result.email_delivery.status === 'sent'
+                ? result.message
+                : 'Invitation could not be delivered. Try again later.'
             })
           }}
         />

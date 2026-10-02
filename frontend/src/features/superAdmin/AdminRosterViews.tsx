@@ -84,13 +84,14 @@ function deliveryLabel(status: string | null, attempts: number | null): string {
       ? `Email not sent (${attempts} attempt${attempts === 1 ? '' : 's'})`
       : 'Email not sent'
   }
+  if (status === 'delivered') return 'Email delivered'
   if (status === 'sent') return 'Email sent'
   return 'Email pending'
 }
 
 function deliveryClass(status: string | null): string {
   if (status === 'failed') return 'text-rose-300'
-  if (status === 'sent') return 'text-emerald-300'
+  if (status === 'sent' || status === 'delivered') return 'text-emerald-300'
   return 'text-slate-400'
 }
 
