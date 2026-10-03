@@ -33,12 +33,24 @@ ADMIN_CLAIMS = {
     "exp": 9999999999,
 }
 
+
+def _assignment(role: str) -> dict:
+    return {
+        "role": role,
+        "scope_type": "institution",
+        "scope_id": INSTITUTION_A,
+        "scope_organization_id": None,
+        "is_active": True,
+    }
+
 ADMIN_USER = {
     "user_id": USER_ID,
     "auth_user_id": ADMIN_CLAIMS["sub"],
     "email": ADMIN_CLAIMS["email"],
+    "status": "active",
     "roles": ["admin"],
     "institution_id": INSTITUTION_A,
+    "role_assignments": [_assignment("admin")],
 }
 
 NON_ADMIN_USERS = {
@@ -46,22 +58,28 @@ NON_ADMIN_USERS = {
         "user_id": USER_ID,
         "auth_user_id": ADMIN_CLAIMS["sub"],
         "email": "student@college.edu",
+        "status": "active",
         "roles": ["student"],
         "institution_id": INSTITUTION_A,
+        "role_assignments": [_assignment("student")],
     },
     "faculty": {
         "user_id": USER_ID,
         "auth_user_id": ADMIN_CLAIMS["sub"],
         "email": "faculty@college.edu",
+        "status": "active",
         "roles": ["faculty"],
         "institution_id": INSTITUTION_A,
+        "role_assignments": [_assignment("faculty")],
     },
     "staff": {
         "user_id": USER_ID,
         "auth_user_id": ADMIN_CLAIMS["sub"],
         "email": "staff@college.edu",
+        "status": "active",
         "roles": ["staff"],
         "institution_id": INSTITUTION_A,
+        "role_assignments": [_assignment("staff")],
     },
 }
 
@@ -102,6 +120,19 @@ def _patch_admin_auth(user=ADMIN_USER):
                 new=AsyncMock(return_value=user),
             )
         )
+        stack.enter_context(
+            patch("app.services.authorization.get_admin_client", return_value=MagicMock())
+        )
+        stack.enter_context(
+            patch(
+                "app.services.authorization.tenancy_repo.get_institution_by_id",
+                return_value={
+                    "institution_id": INSTITUTION_A,
+                    "status": "active",
+                    "is_active": True,
+                },
+            )
+        )
         yield
 
 
@@ -116,6 +147,19 @@ def _patch_role_auth(role: str):
             patch(
                 "app.db.supabase.get_user_by_auth_id",
                 new=AsyncMock(return_value=user),
+            )
+        )
+        stack.enter_context(
+            patch("app.services.authorization.get_admin_client", return_value=MagicMock())
+        )
+        stack.enter_context(
+            patch(
+                "app.services.authorization.tenancy_repo.get_institution_by_id",
+                return_value={
+                    "institution_id": INSTITUTION_A,
+                    "status": "active",
+                    "is_active": True,
+                },
             )
         )
         yield
@@ -184,7 +228,10 @@ def test_admin_dashboard_scoped_to_own_tenant():
     ) as dash_mock:
         response = client.get("/api/v1/admin/dashboard", headers=AUTH_HEADERS)
     assert response.status_code == 200
-    dash_mock.assert_called_once_with(institution_id=UUID(INSTITUTION_A))
+    dash_mock.assert_called_once_with(
+        institution_id=UUID(INSTITUTION_A),
+        actor_user_id=USER_ID,
+    )
 
 
 def test_admin_list_students_scoped_to_own_tenant():

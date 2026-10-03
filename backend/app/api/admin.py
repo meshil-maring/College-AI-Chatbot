@@ -1,9 +1,20 @@
 """Admin API (Phase Admin-3).
 
-Every endpoint requires the ``admin`` role via the existing
-``require_roles("admin")`` dependency. Every mutation writes an entry to
-``admin_audit_log`` (actor resolved server-side from the authenticated JWT).
-No tokens or credentials are ever logged or echoed in errors.
+Every endpoint below ``/api/v1/admin`` depends on ONE common authorization
+dependency:
+
+    * ``_ADMIN``    -> ``require_institution_roles("admin")``
+    * ``_APPROVAL`` -> ``require_institution_roles("admin", "staff")``
+
+Both require an ACTIVE account, an allowed role, and an ACTIVE institution
+scope resolved from the server-owned ``user_roles.scope_type/scope_id`` grant.
+A missing, organization-scoped, platform-scoped, or inactive institution scope
+FAILS CLOSED; it is never treated as unrestricted. Platform-wide authority
+belongs exclusively to the separate Super Admin surface (``/api/v1/platform/*``).
+
+Every mutation writes an entry to ``admin_audit_log`` (actor resolved server-side
+from the authenticated JWT). No tokens or credentials are ever logged or echoed
+in errors.
 
 The RAG document workflow reuses the existing locked ingestion services —
 nothing in the RAG implementation itself is modified.
@@ -14,7 +25,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Form, UploadFile
 
 from app.core.errors import AppError
-from app.core.security import assert_tenant_object, require_roles, scope_tenant, user_tenant_id
+from app.core.security import (
+    assert_tenant_object,
+    require_institution_roles,
+    scope_tenant,
+    user_tenant_id,
+)
 from app.db.supabase import get_admin_client
 from app.repositories import admin_knowledge as knowledge_repo
 from app.repositories.admin_audit import (
@@ -48,7 +64,7 @@ from app.services.admin_academics import (
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
-_ADMIN = require_roles("admin")
+_ADMIN = require_institution_roles("admin")
 
 # Phase 6.4 — approval authorization reuses the existing RBAC primitive
 # (require_roles) with the existing role names. The "staff" role already
@@ -56,7 +72,7 @@ _ADMIN = require_roles("admin")
 # approval permits admin + staff without introducing any new role or second
 # RBAC system. Students (and any other role) get the standard 403 FORBIDDEN;
 # unauthenticated requests get 401 via get_current_user.
-_APPROVAL = require_roles("admin", "staff")
+_APPROVAL = require_institution_roles("admin", "staff")
 
 
 # ============================================================================
@@ -74,6 +90,15 @@ def _scope_institution(current_user: dict, requested: UUID | None) -> UUID | Non
 
 def _assert_row_tenant(current_user: dict, institution_id: UUID | str | None) -> None:
     """Guard a fetched/created row against cross-tenant access."""
+    # Global rows may be readable through public/student policy, but a
+    # University Admin operation is always institution-owned. In particular,
+    # this prevents a tenant admin from mutating global FAQ/notice rows.
+    if institution_id is None:
+        raise AppError(
+            "This resource does not belong to your institution",
+            status_code=403,
+            code="TENANT_MISMATCH",
+        )
     assert_tenant_object(current_user, institution_id)
 
 
@@ -136,7 +161,10 @@ def dashboard(
 ) -> dict:
     """Counts across admin-managed tables plus recent audit activity."""
     institution_id = _scope_institution(current_user, institution_id)
-    return admin_dashboard.get_dashboard_summary(institution_id=institution_id)
+    return admin_dashboard.get_dashboard_summary(
+        institution_id=institution_id,
+        actor_user_id=current_user["user_id"],
+    )
 
 
 # ============================================================================
@@ -236,8 +264,13 @@ def list_documents(
 ) -> list[dict]:
     db = get_admin_client()
     ks = knowledge_repo.get_knowledge_source_detail(db, knowledge_source_id)
-    if ks is not None:
-        _assert_row_tenant(current_user, ks.get("institution_id"))
+    if ks is None:
+        raise AppError(
+            "Knowledge source not found",
+            status_code=404,
+            code="KNOWLEDGE_SOURCE_NOT_FOUND",
+        )
+    _assert_row_tenant(current_user, ks.get("institution_id"))
     return knowledge_repo.list_documents_for_source(db, knowledge_source_id)
 
 
@@ -251,8 +284,13 @@ def get_document(
     if doc is None:
         raise AppError("Document not found", status_code=404, code="DOCUMENT_NOT_FOUND")
     ks = knowledge_repo.get_knowledge_source_detail(db, doc["knowledge_source_id"])
-    if ks is not None:
-        _assert_row_tenant(current_user, ks.get("institution_id"))
+    if ks is None:
+        raise AppError(
+            "Knowledge source not found",
+            status_code=404,
+            code="KNOWLEDGE_SOURCE_NOT_FOUND",
+        )
+    _assert_row_tenant(current_user, ks.get("institution_id"))
     return doc
 
 
@@ -266,8 +304,13 @@ async def upload_document(
     """Admin upload → ingestion → extraction → chunking → embedding → retrieval."""
     db = get_admin_client()
     ks = knowledge_repo.get_knowledge_source_detail(db, knowledge_source_id)
-    if ks is not None:
-        _assert_row_tenant(current_user, ks.get("institution_id"))
+    if ks is None:
+        raise AppError(
+            "Knowledge source not found",
+            status_code=404,
+            code="KNOWLEDGE_SOURCE_NOT_FOUND",
+        )
+    _assert_row_tenant(current_user, ks.get("institution_id"))
     result = await admin_documents.upload_document(
         file=file,
         knowledge_source_id=str(knowledge_source_id),
@@ -299,10 +342,16 @@ async def upload_document_version(
     """Register a new document version; superseded content leaves retrieval."""
     db = get_admin_client()
     doc = knowledge_repo.get_document_with_versions(db, document_id)
-    if doc is not None:
-        ks = knowledge_repo.get_knowledge_source_detail(db, doc["knowledge_source_id"])
-        if ks is not None:
-            _assert_row_tenant(current_user, ks.get("institution_id"))
+    if doc is None:
+        raise AppError("Document not found", status_code=404, code="DOCUMENT_NOT_FOUND")
+    ks = knowledge_repo.get_knowledge_source_detail(db, doc["knowledge_source_id"])
+    if ks is None:
+        raise AppError(
+            "Knowledge source not found",
+            status_code=404,
+            code="KNOWLEDGE_SOURCE_NOT_FOUND",
+        )
+    _assert_row_tenant(current_user, ks.get("institution_id"))
     result = await admin_documents.update_document(
         file=file,
         document_id=document_id,
@@ -332,10 +381,16 @@ def delete_document(
 ) -> dict:
     db = get_admin_client()
     doc = knowledge_repo.get_document_with_versions(db, document_id)
-    if doc is not None:
-        ks = knowledge_repo.get_knowledge_source_detail(db, doc["knowledge_source_id"])
-        if ks is not None:
-            _assert_row_tenant(current_user, ks.get("institution_id"))
+    if doc is None:
+        raise AppError("Document not found", status_code=404, code="DOCUMENT_NOT_FOUND")
+    ks = knowledge_repo.get_knowledge_source_detail(db, doc["knowledge_source_id"])
+    if ks is None:
+        raise AppError(
+            "Knowledge source not found",
+            status_code=404,
+            code="KNOWLEDGE_SOURCE_NOT_FOUND",
+        )
+    _assert_row_tenant(current_user, ks.get("institution_id"))
     result = admin_documents.delete_document(document_id)
     _record_audit(
         current_user,
@@ -557,19 +612,18 @@ def create_student(
 # NOTE: these routes are declared BEFORE "/students/{student_id}" so that
 # FastAPI matches the literal "/students/pending" path first.
 #
-# Tenant authority (OPTION A — reviewed authorization policy):
+# Tenant authority (Phase 7.20 — reviewed authorization policy):
 #
-#   * institution-bound ADMIN / STAFF  -> strictly their OWN institution.
+#   * institution-bound ADMIN / STAFF  -> strictly their OWN institution, and
+#     only when the dependency resolved an ACTIVE institution scope from the
+#     server-owned ``user_roles`` grant.
 #     No query/body institution_id can override scope; a foreign
 #     institution_id is rejected with 403 TENANT_MISMATCH.
-#   * platform-level ADMIN (no students profile -> tenant None)
-#     -> global approval authority (Phase 6.1 platform-account convention;
-#        the existing admin CRUD already lets a platform admin read/update
-#        any student incl. approval_status). May pass an OPTIONAL
-#        institution_id filter on the pending list.
-#   * platform-level STAFF (or any other tenant-less role) -> 403 FORBIDDEN.
-#     A tenant-less account never gains approval authority without the
-#     platform-admin role — this closes the privilege-escalation surface.
+#   * tenant-less ADMIN / STAFF (platform or organization grant) -> 403. The
+#     Phase 6.1 "platform-admin global approval authority" convention was
+#     REMOVED in Phase 7.20: an ordinary role without an institution grant is
+#     never treated as unrestricted. Platform-wide authority lives only in the
+#     isolated super_admin surface.
 #   * students / faculty / unauthenticated -> standard 403 / 401.
 #
 # Approval/rejection bodies accept NO fields, so institution_id / role /
@@ -584,21 +638,19 @@ def create_student(
 def _approval_scope(current_user: dict) -> tuple[UUID | None, bool]:
     """Resolve the approval scope for the authenticated caller.
 
-    Returns ``(tenant, is_platform_admin)``:
-      * tenant-bound admin/staff  -> (own tenant, False)
-      * platform-level admin      -> (None, True)   [global authority]
-      * anything else w/o tenant  -> 403 FORBIDDEN  [no silent escalation]
+    The ``_APPROVAL`` dependency has already required an ACTIVE, institution
+    scoped grant, so the only accepted outcome is that institution. This helper
+    fails closed if that scope is absent (defense in depth — it must never
+    degrade to an unrestricted global queue).
     """
     tenant = user_tenant_id(current_user)
-    if tenant is not None:
-        return tenant, False
-    if "admin" in (current_user.get("roles") or []):
-        return None, True
-    raise AppError(
-        "You do not have permission to perform this action",
-        status_code=403,
-        code="FORBIDDEN",
-    )
+    if tenant is None:
+        raise AppError(
+            "No institution scope could be resolved for this account",
+            status_code=403,
+            code="SCOPE_MISSING",
+        )
+    return tenant, False
 
 
 @router.get("/students/pending")
@@ -615,11 +667,7 @@ def list_pending_students(
     Platform-level admins: global queue, optionally filtered by an explicit
     institution_id (Phase 6.1 platform passthrough).
     """
-    tenant, is_platform_admin = _approval_scope(current_user)
-    if is_platform_admin:
-        return admin_academics.list_pending_approvals(
-            institution_id, limit=limit, offset=offset
-        )
+    tenant, _is_platform_admin = _approval_scope(current_user)
     effective = scope_tenant(current_user, institution_id)
     return admin_academics.list_pending_approvals(
         effective, limit=limit, offset=offset
@@ -961,11 +1009,19 @@ def list_audit_logs(
     status: str | None = None,
     current_user: dict = Depends(_ADMIN),
 ) -> list[dict]:
+    if actor_user_id is not None and str(actor_user_id) != str(current_user["user_id"]):
+        raise AppError(
+            "You do not have permission to view another actor's audit records",
+            status_code=403,
+            code="FORBIDDEN",
+        )
     db = get_admin_client()
     return list_audit_entries(
         db,
         limit=limit,
-        actor_user_id=actor_user_id,
+        # The legacy audit table has no immutable institution_id. Until it does,
+        # own-actor filtering is the conservative tenant-safe read contract.
+        actor_user_id=current_user["user_id"],
         table_name=table_name,
         action=action,
         status=status,
@@ -978,6 +1034,12 @@ def get_audit_log(audit_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
     entry = get_audit_entry(db, audit_id)
     if entry is None:
         raise AppError("Audit entry not found", status_code=404, code="AUDIT_NOT_FOUND")
+    if str(entry.get("actor_user_id")) != str(current_user["user_id"]):
+        raise AppError(
+            "You do not have permission to view this audit record",
+            status_code=403,
+            code="FORBIDDEN",
+        )
     return entry
 
 

@@ -58,6 +58,7 @@ def _user(uid: str = SUID, tenant: str = TA) -> dict:
         "auth_user_id": "a1",
         "email": "s@c.edu",
         "roles": ["student"],
+        "status": "active",
         "institution_id": tenant,
     }
 

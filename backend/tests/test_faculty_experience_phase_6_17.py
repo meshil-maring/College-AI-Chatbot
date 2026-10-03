@@ -22,8 +22,10 @@ below rely on frontend filtering.
 
 import io
 from contextlib import ExitStack, contextmanager
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.security import resolve_primary_role
@@ -52,8 +54,33 @@ FACULTY_USER = {
     "auth_user_id": FACULTY_CLAIMS["sub"],
     "email": FACULTY_CLAIMS["email"],
     "roles": ["faculty"],
+    "status": "active",
     "institution_id": INSTITUTION_A,
+    "role_assignments": [
+        {
+            "role": "faculty",
+            "scope_type": "institution",
+            "scope_id": INSTITUTION_A,
+            "scope_organization_id": None,
+            "is_active": True,
+        }
+    ],
 }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Provide an ACTIVE institution to the scoped admin dependency only."""
+    db = MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={
+            "institution_id": INSTITUTION_A,
+            "status": "active",
+            "is_active": True,
+        }
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=db):
+        yield
 
 AUTH_HEADERS = {"Authorization": "Bearer valid.token.here"}
 

@@ -87,12 +87,34 @@ async def get_current_user(
             code="USER_NOT_FOUND",
         )
 
+    role_assignments = user.get("role_assignments") or []
+    primary_role = resolve_primary_role(user.get("roles", []))
+    scoped_institutions = {
+        str(grant["scope_id"])
+        for grant in role_assignments
+        if grant.get("role") == primary_role
+        and grant.get("is_active", True)
+        and grant.get("scope_type") == "institution"
+        and grant.get("scope_id") is not None
+    }
+    # Non-student tenant scope comes only from the primary role assignment.
+    # A student profile remains the legitimate fallback for the student role.
+    if len(scoped_institutions) == 1:
+        institution_id = next(iter(scoped_institutions))
+    elif primary_role == "student":
+        institution_id = user.get("student_institution_id", user.get("institution_id"))
+    else:
+        institution_id = None
+
     return {
         "user_id": user["user_id"],
         "auth_user_id": auth_user_id,
         "email": claims.get("email"),
         "roles": user.get("roles", []),
-        "institution_id": user.get("institution_id"),
+        "status": user.get("status"),
+        "institution_id": institution_id,
+        # Internal server-owned grants. They are never returned by /auth/me.
+        "role_assignments": role_assignments,
     }
 
 
@@ -106,9 +128,16 @@ async def get_current_user(
 #   Student of A -> institution_id = A (resolved from students.user_id)
 #   Student of B -> institution_id = B
 #
-# Accounts WITH a tenant may only ever touch rows belonging to their own
-# institution. Accounts WITHOUT a tenant (platform-level, e.g. admins without
-# a students profile) keep the previous unrestricted behaviour.
+# Phase 7.20: `institution_id` in `current_user` is projected from the
+# server-owned `user_roles` institution grant for every non-student role, and
+# from the student profile for the student role. The helpers below are pure
+# guards on that server-owned value.
+#
+# A tenant-less account is NOT privileged. `scope_tenant`/`assert_tenant_object`
+# are defensive row guards that are only ever reached AFTER an authorization
+# dependency (`require_institution_roles` / `require_super_admin`) has already
+# resolved and validated an institution scope, so the tenantless branch can no
+# longer be used to reach institution-admin operations.
 
 
 def user_tenant_id(current_user: dict) -> UUID | None:
@@ -178,6 +207,36 @@ def require_roles(*allowed: str) -> Callable:
                 code="FORBIDDEN",
             )
         return current_user
+
+    return _dependency
+
+
+def require_institution_roles(*allowed: str) -> Callable:
+    """Require an active institution-scoped grant for one allowed role.
+
+    Unlike the legacy ``require_roles`` helper, this dependency never treats a
+    missing tenant as platform authority. Scope is read from the server-owned
+    role assignments loaded by ``get_current_user`` and institution lifecycle
+    is verified for every request. The returned user copy is pinned to the
+    resolved institution so existing resource guards receive authoritative
+    scope without accepting a request/body/query tenant as authorization.
+    """
+
+    allowed_roles = tuple(allowed)
+
+    async def _dependency(current_user: dict = Depends(get_current_user)) -> dict:
+        from app.services.authorization import (
+            resolve_institution_authorization_context,
+        )
+
+        context = resolve_institution_authorization_context(
+            current_user,
+            allowed_roles=allowed_roles,
+        )
+        scoped_user = dict(current_user)
+        scoped_user["institution_id"] = str(context.institution_id)
+        scoped_user["authorization_context"] = context
+        return scoped_user
 
     return _dependency
 

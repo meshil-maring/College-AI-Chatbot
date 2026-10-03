@@ -32,6 +32,7 @@ import itertools
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -88,13 +89,36 @@ PHASE_ADMIN_1_MIGRATION = (
 
 
 def _user(tenant=None, roles=("admin",)):
+    """A principal shaped like ``get_current_user`` after Phase 7.20."""
     return {
         "user_id": str(uuid4()),
         "auth_user_id": str(uuid4()),
         "email": "results@example.com",
         "roles": list(roles),
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if tenant else "platform",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in roles
+        ],
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Provide an ACTIVE institution to the scoped admin dependency only."""
+    db = MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={"institution_id": TENANT_A, "status": "active", "is_active": True}
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=db):
+        yield
 
 
 def _as(user):
@@ -1067,8 +1091,8 @@ def test_staff_and_faculty_roles_cannot_mutate_results() -> None:
         assert response.json()["error"]["code"] == "FORBIDDEN", role
 
 
-def test_platform_admin_can_create_test_results_globally() -> None:
-    """Platform admins (no tenant) keep the locked global authority."""
+def test_tenantless_admin_cannot_create_test_results() -> None:
+    """Phase 7.20: a tenant-less ordinary admin has no institution authority."""
     _as(_user(tenant=None))
     db = _audit_db({"test_result_id": TEST_RESULT_ID})
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
@@ -1080,8 +1104,8 @@ def test_platform_admin_can_create_test_results_globally() -> None:
         response = client.post(
             "/api/v1/admin/test-results", json=_test_create_payload()
         )
-    assert response.status_code == 201
-    assert response.json()["test_result_id"] == TEST_RESULT_ID
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "FORBIDDEN"
 
 
 def test_tenant_admin_cannot_create_results_for_foreign_student() -> None:
@@ -1174,12 +1198,16 @@ def test_tenant_admin_can_manage_own_tenant_results() -> None:
 
 
 def test_result_creation_is_audited() -> None:
-    _as(_user(tenant=None))
+    _as(_user(tenant=TENANT_A))
     db = _audit_db({"student_result_id": RESULT_ID})
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
         patch("app.services.results.get_admin_client", return_value=db),
         patch("app.api.admin.get_admin_client", return_value=db),
+        patch(
+            "app.services.admin_academics.get_student",
+            return_value=_student_context(),
+        ),
     p_student, p_year, p_sem, p_course, p_prog,
     ):
         response = client.post(
@@ -1201,7 +1229,7 @@ def test_result_creation_is_audited() -> None:
 
 
 def test_malformed_uuids_are_rejected() -> None:
-    _as(_user(tenant=None))
+    _as(_user(tenant=TENANT_A))
     response = client.get("/api/v1/admin/results/not-a-uuid")
     assert response.status_code == 422
 
@@ -1212,7 +1240,7 @@ def test_malformed_uuids_are_rejected() -> None:
 def test_extra_fields_are_rejected_on_result_payloads() -> None:
     """extra='forbid': control fields (institution_id, role, user_id,
     approval_status) can never be injected as trusted security fields."""
-    _as(_user(tenant=None))
+    _as(_user(tenant=TENANT_A))
     payload = _test_create_payload(institution_id=TENANT_B, role="admin")
     response = client.post("/api/v1/admin/test-results", json=payload)
     assert response.status_code == 422

@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.admin import _ADMIN, _APPROVAL
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
@@ -24,11 +25,14 @@ ADMIN_USER = {
     "auth_user_id": "70000000-0000-0000-0000-0000000000aa",
     "email": "admin@example.com",
     "roles": ["admin"],
+    "status": "active",
+    "institution_id": "30000000-0000-0000-0000-000000000001",
 }
 STUDENT_USER = {
     "user_id": "70000000-0000-0000-0000-000000000002",
     "auth_user_id": "70000000-0000-0000-0000-0000000000bb",
     "email": "student@example.com",
+    "status": "active",
     "roles": ["student"],
 }
 INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
@@ -46,8 +50,34 @@ DOC_ID = str(uuid4())
 def admin_auth():
     """All tests in this module run as an authenticated admin by default."""
     app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
-    yield
-    app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides[_ADMIN] = lambda: ADMIN_USER
+    app.dependency_overrides[_APPROVAL] = lambda: ADMIN_USER
+    with (
+        patch(
+            "app.api.admin.admin_academics.get_student",
+            return_value={
+                "student_id": STUDENT_ID,
+                "institution_id": INSTITUTION_ID,
+            },
+        ),
+        patch(
+            "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+            return_value={
+                "knowledge_source_id": KS_ID,
+                "institution_id": INSTITUTION_ID,
+            },
+        ),
+        patch(
+            "app.api.admin.knowledge_repo.get_document_with_versions",
+            return_value={
+                "document_id": DOC_ID,
+                "knowledge_source_id": KS_ID,
+            },
+        ),
+    ):
+        yield
+    for dependency in (get_current_user, _ADMIN, _APPROVAL):
+        app.dependency_overrides.pop(dependency, None)
 
 
 def _audit_db(first_insert: dict | None = None):
@@ -81,12 +111,14 @@ def _audit_rows(db):
 
 def test_admin_endpoint_requires_authentication() -> None:
     app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(_ADMIN, None)
     response = client.get("/api/v1/admin/me")
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "AUTH_REQUIRED"
 
 
 def test_admin_endpoint_forbidden_for_non_admin_role() -> None:
+    app.dependency_overrides.pop(_ADMIN, None)
     app.dependency_overrides[get_current_user] = lambda: STUDENT_USER
     response = client.get("/api/v1/admin/me")
     assert response.status_code == 403
@@ -158,7 +190,13 @@ def test_update_knowledge_source_404_when_missing() -> None:
     db.table.return_value.update.return_value.eq.return_value.execute.return_value = (
         MagicMock(data=[])
     )
-    with patch("app.api.admin.get_admin_client", return_value=db):
+    with (
+        patch("app.api.admin.get_admin_client", return_value=db),
+        patch(
+            "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+            return_value=None,
+        ),
+    ):
         response = client.patch(
             f"/api/v1/admin/knowledge-sources/{KS_ID}", json={"title": "New"}
         )
@@ -740,15 +778,12 @@ def test_create_attendance_reports_duplicate_as_conflict() -> None:
 
 def test_list_audit_logs_endpoint() -> None:
     entry = {"audit_id": str(uuid4()), "action": "faq.create", "table_name": "faqs"}
-    db = _audit_db()
-    (
-        db.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value
-    ).execute.return_value = MagicMock(data=[entry])
-    with patch("app.api.admin.get_admin_client", return_value=db):
+    with patch("app.api.admin.list_audit_entries", return_value=[entry]) as audit:
         response = client.get("/api/v1/admin/audit-logs?action=faq.create")
 
     assert response.status_code == 200
     assert response.json()[0]["action"] == "faq.create"
+    assert audit.call_args.kwargs["actor_user_id"] == ADMIN_USER["user_id"]
 
 
 def test_get_audit_log_404_when_missing() -> None:

@@ -634,8 +634,8 @@ def test_public_user_id_constant_is_unchanged() -> None:
     assert PUBLIC_USER_ID == UUID("00000000-0000-0000-0000-000000000001")
 
 
-def test_get_user_by_auth_id_projection_never_needs_the_scope_columns() -> None:
-    """Authentication must keep working before AND after the 6.13 migration."""
+def test_get_user_by_auth_id_projection_includes_authoritative_scope_columns() -> None:
+    """Phase 7.20 projects scoped grants for downstream authorization."""
     from app.db import supabase as supabase_db
 
     client = MagicMock()
@@ -644,7 +644,13 @@ def test_get_user_by_auth_id_projection_never_needs_the_scope_columns() -> None:
         "user_id": USER_ID,
         "auth_user_id": "auth-1",
         "email": "student@example.com",
-        "user_roles": [{"roles": {"name": "student", "is_active": True}}],
+        "status": "active",
+        "user_roles": [{
+            "scope_type": "institution",
+            "scope_id": INST_A1,
+            "scope_organization_id": ORG_A,
+            "roles": {"name": "student", "is_active": True},
+        }],
         # PostgREST embeds a one-to-one relation as an object ...
         "students": {"institution_id": INST_A1},
     }
@@ -655,16 +661,13 @@ def test_get_user_by_auth_id_projection_never_needs_the_scope_columns() -> None:
         result = asyncio.run(supabase_db.get_user_by_auth_id("auth-1"))
 
     projection = client.table.return_value.select.call_args.args[0]
-    assert "user_roles(roles(name, is_active))" in projection
+    assert "scope_type" in projection
+    assert "scope_id" in projection
     assert "students(institution_id)" in projection
-    assert "scope_type" not in projection
-    assert result == {
-        "user_id": USER_ID,
-        "auth_user_id": "auth-1",
-        "email": "student@example.com",
-        "roles": ["student"],
-        "institution_id": INST_A1,
-    }
+    assert result["status"] == "active"
+    assert result["roles"] == ["student"]
+    assert result["institution_id"] == INST_A1
+    assert result["role_assignments"][0]["scope_id"] == INST_A1
 
 
 def test_get_user_by_auth_id_handles_list_embeds_and_tenantless_accounts() -> None:
@@ -676,10 +679,16 @@ def test_get_user_by_auth_id_handles_list_embeds_and_tenantless_accounts() -> No
         "user_id": USER_ID,
         "auth_user_id": "auth-2",
         "email": "admin@example.com",
+        "status": "active",
         # ... and as a list when PostgREST cannot infer the cardinality.
         "students": [{"institution_id": INST_B1}],
         "user_roles": [
-            {"roles": {"name": "admin", "is_active": True}},
+            {
+                "scope_type": "institution",
+                "scope_id": INST_B1,
+                "scope_organization_id": ORG_B,
+                "roles": {"name": "admin", "is_active": True},
+            },
             {"roles": {"name": "disabled", "is_active": False}},
         ],
     }
@@ -696,6 +705,7 @@ def test_get_user_by_auth_id_handles_list_embeds_and_tenantless_accounts() -> No
         "user_id": USER_ID,
         "auth_user_id": "auth-3",
         "email": "platform@example.com",
+        "status": "active",
         "students": None,
         "user_roles": [],
     }
@@ -707,7 +717,15 @@ def test_get_user_by_auth_id_handles_list_embeds_and_tenantless_accounts() -> No
     assert tenantless["roles"] == []
 
 
-def test_get_current_user_contract_is_unchanged() -> None:
+def test_get_current_user_projects_the_authoritative_contract() -> None:
+    """Phase 7.20: auth projects server-owned role grants for scoped authorization.
+
+    The projection now carries the account lifecycle plus the ``user_roles``
+    grant rows so downstream institution-scoped dependencies can resolve an
+    authoritative tenant. A non-student institution binding is derived ONLY from
+    the primary role's institution grant - never from a client field or from an
+    unrelated student profile.
+    """
     with pytest.raises(AppError) as excinfo:
         asyncio.run(get_current_user(None))
     assert (excinfo.value.status_code, excinfo.value.code) == (401, "AUTH_REQUIRED")
@@ -724,21 +742,42 @@ def test_get_current_user_contract_is_unchanged() -> None:
                     "user_id": USER_ID,
                     "auth_user_id": "auth-1",
                     "email": "user@example.com",
+                    "status": "active",
                     "roles": ["admin"],
-                    "institution_id": INST_A1,
+                    # No student profile: the tenant must come from user_roles.
+                    "institution_id": None,
+                    "student_institution_id": None,
+                    "role_assignments": [
+                        {
+                            "role": "admin",
+                            "scope_type": "institution",
+                            "scope_id": INST_A1,
+                            "scope_organization_id": ORG_A,
+                            "is_active": True,
+                        }
+                    ],
                 }
             ),
         ),
     ):
         current_user = asyncio.run(get_current_user("Bearer test.token"))
 
-    # The 6.13 scope layer is resolved separately — auth itself stays scope-free.
     assert current_user == {
         "user_id": USER_ID,
         "auth_user_id": "auth-1",
         "email": "user@example.com",
         "roles": ["admin"],
+        "status": "active",
         "institution_id": INST_A1,
+        "role_assignments": [
+            {
+                "role": "admin",
+                "scope_type": "institution",
+                "scope_id": INST_A1,
+                "scope_organization_id": ORG_A,
+                "is_active": True,
+            }
+        ],
     }
 
 

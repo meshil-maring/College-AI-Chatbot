@@ -22,6 +22,7 @@ client = TestClient(app, raise_server_exceptions=False)
 
 DV_ID = "d0000000-0000-0000-0000-000000000001"
 RUN_ID = "a0000000-0000-0000-0000-000000000001"
+INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
 R2_BUCKET = "college-ai-knowledge"
 OBJECT_KEY = "inst/ks/ver/doc.pdf"
 
@@ -37,6 +38,17 @@ FAKE_USER = {
     "auth_user_id": FAKE_CLAIMS["sub"],
     "email": FAKE_CLAIMS["email"],
     "roles": ["staff"],
+    "institution_id": INSTITUTION_ID,
+    "status": "active",
+    "role_assignments": [
+        {
+            "role": "staff",
+            "scope_type": "institution",
+            "scope_id": INSTITUTION_ID,
+            "scope_organization_id": None,
+            "is_active": True,
+        }
+    ],
 }
 FAKE_RUN_QUEUED = {
     "processing_run_id": RUN_ID,
@@ -62,6 +74,18 @@ def _patch_auth():
     p1 = patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS)
     p2 = patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=FAKE_USER))
     return p1, p2
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    with (
+        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch(
+            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            return_value={"status": "active", "is_active": True},
+        ),
+    ):
+        yield
 
 
 def _make_pdf(text: str = "Phase 3.4 PDF content") -> bytes:

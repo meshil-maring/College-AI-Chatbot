@@ -9,9 +9,11 @@ concurrency races, audit logging, and data-protection (no secrets leaked).
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.admin import _APPROVAL
@@ -30,13 +32,46 @@ STUDENT_B = "30000000-0000-0000-0000-000000000152"
 
 
 def _user(tenant=None, roles=("admin",)):
+    """A principal shaped exactly like ``get_current_user`` after Phase 7.20.
+
+    Institution scope for every non-student role comes from the server-owned
+    ``user_roles`` grant (``role_assignments``); a tenant-less account therefore
+    holds a ``platform`` grant, never an institution grant.
+    """
     return {
         "user_id": str(uuid4()),
         "auth_user_id": str(uuid4()),
         "email": "approver@example.com",
         "roles": list(roles),
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if tenant else "platform",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in roles
+        ],
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Give the scoped admin dependency an ACTIVE institution to resolve.
+
+    ``require_institution_roles`` verifies institution lifecycle through the
+    authorization module's service-role client; only that client is stubbed so
+    the real guard logic still runs.
+    """
+    client = MagicMock()
+    client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={"institution_id": TENANT_A, "status": "active", "is_active": True}
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=client):
+        yield
 
 
 def _pending_row(student_id=STUDENT_A, tenant=TENANT_A, **over):
@@ -495,11 +530,12 @@ def test_approval_response_leaks_no_secrets():
 
 
 # ============================================================================
-# Platform-level policy (review decision — OPTION A)
+# Tenant-less policy (Phase 7.20 — fail closed)
 # ============================================================================
-# Institution-bound admin/staff: strictly own tenant. Platform-level ADMIN:
-# global approval authority (Phase 6.1 convention). Platform-level STAFF (or
-# any other tenant-less role): 403 — no silent escalation.
+# Institution-bound admin/staff: strictly own tenant. A tenant-less ordinary
+# admin/staff account (platform grant) has NO institution authority and is
+# denied — it can never fall through to a global approval queue. Platform-wide
+# approval authority lives only in the isolated super_admin surface.
 
 
 def test_institution_staff_cannot_approve_other_tenant_student():
@@ -569,45 +605,41 @@ def test_platform_admin_can_reject_college_b_student():
     assert m.call_args.args[1:] == (STUDENT_B, TENANT_B, "rejected")
 
 
-def test_platform_admin_endpoint_approves_any_tenant():
+def test_tenantless_admin_cannot_approve_any_tenant():
+    """Phase 7.20: a tenant-less ordinary admin has no institution authority."""
     _as(_user(None, roles=("admin",)))
-    row = _pending_row(STUDENT_B, TENANT_B, approval_status="approved")
     try:
-        with (
-            patch("app.api.admin.admin_academics.approve_student", return_value=row) as m,
-            patch("app.api.admin._record_audit"),
-        ):
+        with patch("app.api.admin.admin_academics.approve_student") as m:
             resp = client.post(f"/api/v1/admin/students/{STUDENT_B}/approve")
     finally:
         _clear()
-    assert resp.status_code == 200, resp.text
-    assert m.call_args.args[1] is None  # global authority, server-resolved
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "FORBIDDEN"
+    m.assert_not_called()
 
 
-def test_platform_admin_lists_pending_globally():
+def test_tenantless_admin_cannot_list_pending_globally():
     _as(_user(None, roles=("admin",)))
     try:
-        with patch(
-            "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
-        ) as m:
+        with patch("app.api.admin.admin_academics.list_pending_approvals") as m:
             resp = client.get("/api/v1/admin/students/pending")
     finally:
         _clear()
-    assert resp.status_code == 200
-    assert m.call_args.args[0] is None  # unfiltered global queue
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "FORBIDDEN"
+    m.assert_not_called()
 
 
-def test_platform_admin_list_can_filter_by_explicit_institution():
+def test_tenantless_admin_cannot_filter_by_institution():
     _as(_user(None, roles=("admin",)))
     try:
-        with patch(
-            "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
-        ) as m:
+        with patch("app.api.admin.admin_academics.list_pending_approvals") as m:
             resp = client.get(f"/api/v1/admin/students/pending?institution_id={TENANT_B}")
     finally:
         _clear()
-    assert resp.status_code == 200
-    assert str(m.call_args.args[0]) == TENANT_B
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "FORBIDDEN"
+    m.assert_not_called()
 
 
 def test_platform_staff_cannot_approve():

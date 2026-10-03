@@ -7,6 +7,7 @@ failure mapping, conversation ownership, mutation safety, error leakage.
 """
 
 from contextlib import ExitStack, contextmanager
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -40,8 +41,29 @@ def _user(role="student", tenant=TENANT_A):
         "auth_user_id": CLAIMS["sub"],
         "email": f"{role}@college.edu",
         "roles": [role],
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if tenant else "platform",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+        ],
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Provide an ACTIVE institution to the scoped admin dependency only."""
+    db = MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={"institution_id": TENANT_A, "status": "active", "is_active": True}
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=db):
+        yield
 
 
 @contextmanager

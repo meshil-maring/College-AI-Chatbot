@@ -489,14 +489,51 @@ def test_12d_non_active_users_status_denied():
 
 
 def _auth_user(user: dict, roles: tuple[str, ...], institution_id=None) -> dict:
-    """The ``get_user_by_auth_id`` projection for a non-student account."""
+    """The ``get_user_by_auth_id`` projection for a non-student account.
+
+    Phase 7.20: the projection also carries the account lifecycle and the
+    server-owned ``user_roles`` grants. Institution scope for a non-student role
+    comes ONLY from that grant; a tenant-less account holds a platform grant.
+    """
+    scope_id = str(institution_id) if institution_id else None
     return {
         "user_id": str(user["user_id"]),
         "auth_user_id": user["auth_user_id"],
         "email": user["email"],
+        "status": "active",
         "roles": list(roles),
-        "institution_id": str(institution_id) if institution_id else None,
+        "institution_id": scope_id,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if scope_id else "platform",
+                "scope_id": scope_id,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in roles
+        ],
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Provide an ACTIVE institution to the scoped admin dependency only.
+
+    ``require_institution_roles`` verifies institution lifecycle through the
+    authorization module's service-role client; only that client is stubbed so
+    the sign-in and tenant-resolution tests keep resolving their own rows.
+    """
+    db = MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={
+            "institution_id": str(INSTITUTION_A),
+            "status": "active",
+            "is_active": True,
+        }
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=db):
+        yield
 
 
 def _as_authenticated(fake_user: dict):
@@ -617,7 +654,9 @@ def test_15_admin_login_remains_compatible():
     assert response.json()["user"]["email"] == ADMIN_EMAIL
 
     user = {"user_id": uuid4(), "auth_user_id": FAKE_CLAIMS["sub"], "email": ADMIN_EMAIL}
-    verify, db = _as_authenticated(_auth_user(user, roles=("admin",)))
+    verify, db = _as_authenticated(
+        _auth_user(user, roles=("admin",), institution_id=INSTITUTION_A)
+    )
     with verify, db:
         me = client.get(
             "/api/v1/admin/me", headers={"Authorization": "Bearer valid.token.here"}

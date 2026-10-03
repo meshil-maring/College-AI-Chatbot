@@ -9,6 +9,7 @@ assertions — delegation contract, no status updates — are unchanged.
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.errors import AppError
@@ -17,6 +18,7 @@ from app.main import app
 client = TestClient(app, raise_server_exceptions=False)
 
 RUN_ID = "a0000000-0000-0000-0000-000000000003"
+INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
 
 FAKE_CLAIMS = {
     "sub": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
@@ -29,6 +31,17 @@ FAKE_USER = {
     "auth_user_id": FAKE_CLAIMS["sub"],
     "email": FAKE_CLAIMS["email"],
     "roles": ["staff"],
+    "institution_id": INSTITUTION_ID,
+    "status": "active",
+    "role_assignments": [
+        {
+            "role": "staff",
+            "scope_type": "institution",
+            "scope_id": INSTITUTION_ID,
+            "scope_organization_id": None,
+            "is_active": True,
+        }
+    ],
 }
 
 FAKE_RUN = {
@@ -56,6 +69,18 @@ def _patch_auth():
             new=AsyncMock(return_value=FAKE_USER),
         ),
     )
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    with (
+        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch(
+            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            return_value={"status": "active", "is_active": True},
+        ),
+    ):
+        yield
 
 
 def _patch_db():

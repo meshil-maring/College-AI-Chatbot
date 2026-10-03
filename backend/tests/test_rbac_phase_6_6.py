@@ -11,6 +11,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.admin import _ADMIN, _APPROVAL
@@ -28,13 +29,42 @@ RUN_ID = "a0000000-0000-0000-0000-000000000001"
 
 
 def _user(tenant=None, roles=("admin",)):
+    assignments = [
+        {
+            "role": role,
+            "scope_type": "institution",
+            "scope_id": tenant,
+            "scope_organization_id": None,
+            "is_active": True,
+        }
+        for role in roles
+        if tenant is not None
+    ]
     return {
         "user_id": str(uuid4()),
         "auth_user_id": str(uuid4()),
         "email": "rbac@example.com",
         "roles": list(roles),
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": assignments,
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_scope_lookup():
+    with (
+        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch(
+            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            side_effect=lambda _db, institution_id: {
+                "institution_id": str(institution_id),
+                "status": "active",
+                "is_active": True,
+            },
+        ),
+    ):
+        yield
 
 
 def _as(user):
@@ -108,7 +138,7 @@ def test_unauthenticated_conversations_and_chat_are_401():
     assert (r1.status_code, r2.status_code, r3.status_code) == (401, 401, 401)
 
 def test_admin_can_access_permitted_admin_operation():
-    _as(_user(None, roles=("admin",)))
+    _as(_user(TENANT_A, roles=("admin",)))
     try:
         resp = client.get("/api/v1/admin/me")
     finally:
@@ -148,7 +178,7 @@ def test_institution_admin_forced_to_own_institution():
     assert str(list_students.call_args.args[0]) == TENANT_A
 
 
-def test_platform_admin_retains_global_authority():
+def test_tenantless_ordinary_admin_has_no_global_authority():
     _as(_user(None, roles=("admin",)))
     try:
         with patch(
@@ -159,8 +189,9 @@ def test_platform_admin_retains_global_authority():
             )
     finally:
         _clear()
-    assert resp.status_code == 200
-    assert str(list_students.call_args.args[0]) == TENANT_B
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "SCOPE_MISSING"
+    list_students.assert_not_called()
 
 
 def test_staff_can_approve_own_tenant_student():
@@ -206,8 +237,8 @@ def test_platform_staff_cannot_obtain_platform_admin_authority():
         _clear()
     assert r1.status_code == 403
     assert r2.status_code == 403
-    assert r1.json()["error"]["code"] == "FORBIDDEN"
-    assert r2.json()["error"]["code"] == "FORBIDDEN"
+    assert r1.json()["error"]["code"] == "SCOPE_MISSING"
+    assert r2.json()["error"]["code"] == "SCOPE_MISSING"
     approve.assert_not_called()
 
 def test_faculty_can_reach_permitted_ingestion_operation():
@@ -216,6 +247,16 @@ def test_faculty_can_reach_permitted_ingestion_operation():
         "auth_user_id": str(uuid4()),
         "email": "faculty@college.edu",
         "roles": ["faculty"],
+        "status": "active",
+        "role_assignments": [
+            {
+                "role": "faculty",
+                "scope_type": "institution",
+                "scope_id": TENANT_A,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+        ],
     }
     run = {
         "processing_run_id": RUN_ID,
@@ -275,7 +316,17 @@ def test_faculty_cannot_cross_tenant_on_ingest():
         "auth_user_id": str(uuid4()),
         "email": "faculty@college.edu",
         "roles": ["faculty"],
+        "status": "active",
         "institution_id": TENANT_A,
+        "role_assignments": [
+            {
+                "role": "faculty",
+                "scope_type": "institution",
+                "scope_id": TENANT_A,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+        ],
     }
     ks = {"knowledge_source_id": KS_ID, "institution_id": TENANT_B}
     claims = {"sub": faculty["auth_user_id"], "email": faculty["email"]}

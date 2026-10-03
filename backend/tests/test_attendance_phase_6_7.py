@@ -23,6 +23,7 @@ from __future__ import annotations
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -63,13 +64,40 @@ PHASE_6_7_MIGRATION = (
 
 
 def _user(tenant=None, roles=("admin",)):
+    """A principal shaped like ``get_current_user`` after Phase 7.20.
+
+    Non-student institution scope is carried by the server-owned
+    ``user_roles`` grant; a tenant-less account holds a platform grant.
+    """
     return {
         "user_id": str(uuid4()),
         "auth_user_id": str(uuid4()),
         "email": "attendance@example.com",
         "roles": list(roles),
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if tenant else "platform",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in roles
+        ],
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Provide an ACTIVE institution to the scoped admin dependency only."""
+    db = MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={"institution_id": TENANT_A, "status": "active", "is_active": True}
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=db):
+        yield
 
 
 def _as(user):
@@ -819,18 +847,19 @@ def test_admin_can_delete_own_tenant_attendance() -> None:
     assert resp.json()["deleted"] is True
 
 
-def test_platform_admin_retains_global_attendance_authority() -> None:
+def test_tenantless_admin_cannot_use_global_attendance_authority() -> None:
+    """Phase 7.20: a tenant-less ordinary admin has no institution authority."""
     _as(_user(None, roles=("admin",)))
     with patch(
-        "app.api.admin.attendance.list_attendance_for_student",
-        return_value=[_attendance_row()],
+        "app.api.admin.attendance.list_attendance_for_student"
     ) as list_mock:
         try:
             resp = client.get(f"/api/v1/admin/students/{STUDENT_B}/attendance")
         finally:
             _clear()
-    assert resp.status_code == 200
-    assert str(list_mock.call_args.args[0]) == STUDENT_B
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "FORBIDDEN"
+    list_mock.assert_not_called()
 
 
 def test_platform_staff_does_not_gain_global_attendance_authority() -> None:

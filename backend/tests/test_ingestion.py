@@ -41,6 +41,17 @@ FAKE_USER = {
     "auth_user_id": FAKE_CLAIMS["sub"],
     "email": FAKE_CLAIMS["email"],
     "roles": ["staff"],
+    "institution_id": INSTITUTION_ID,
+    "status": "active",
+    "role_assignments": [
+        {
+            "role": "staff",
+            "scope_type": "institution",
+            "scope_id": INSTITUTION_ID,
+            "scope_organization_id": None,
+            "is_active": True,
+        }
+    ],
 }
 FAKE_KS = {
     "knowledge_source_id": KS_ID,
@@ -62,6 +73,18 @@ def _patch_auth():
     p1 = patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS)
     p2 = patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=FAKE_USER))
     return p1, p2
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    with (
+        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch(
+            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            return_value={"status": "active", "is_active": True},
+        ),
+    ):
+        yield
 
 
 def _make_db_mock(ks=FAKE_KS):
@@ -289,7 +312,23 @@ def test_ingest_requires_auth():
 def _post_ingest_as(role: str | None):
     """POST /ingest with a user whose only role is `role` (or no roles if None)."""
     claims = {**FAKE_CLAIMS}
-    user = {**FAKE_USER, "roles": [role] if role else []}
+    user = {
+        **FAKE_USER,
+        "roles": [role] if role else [],
+        "role_assignments": (
+            [
+                {
+                    "role": role,
+                    "scope_type": "institution",
+                    "scope_id": INSTITUTION_ID,
+                    "scope_organization_id": None,
+                    "is_active": True,
+                }
+            ]
+            if role
+            else []
+        ),
+    }
     p1 = patch("app.core.security.verify_jwt", return_value=claims)
     p2 = patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user))
     db = _make_db_mock()

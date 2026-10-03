@@ -55,8 +55,14 @@ async def test_get_user_by_auth_id_uses_actual_users_schema():
         "user_id": "10000000-0000-0000-0000-000000000001",
         "auth_user_id": FAKE_CLAIMS["sub"],
         "email": FAKE_CLAIMS["email"],
+        "status": "active",
         "user_roles": [
-            {"roles": {"name": "student", "is_active": True}},
+            {
+                "scope_type": "institution",
+                "scope_id": "30000000-0000-0000-0000-000000000001",
+                "scope_organization_id": None,
+                "roles": {"name": "student", "is_active": True},
+            },
             {"roles": {"name": "disabled", "is_active": False}},
         ],
         "students": [
@@ -71,12 +77,24 @@ async def test_get_user_by_auth_id_uses_actual_users_schema():
         "user_id": "10000000-0000-0000-0000-000000000001",
         "auth_user_id": FAKE_CLAIMS["sub"],
         "email": FAKE_CLAIMS["email"],
+        "status": "active",
         "roles": ["student"],
         "institution_id": "30000000-0000-0000-0000-000000000001",
+        "student_institution_id": "30000000-0000-0000-0000-000000000001",
+        "role_assignments": [
+            {
+                "role": "student",
+                "scope_type": "institution",
+                "scope_id": "30000000-0000-0000-0000-000000000001",
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+        ],
     }
     users_table.select.assert_called_once_with(
-        "user_id:id, auth_user_id, email, "
-        "user_roles(roles(name, is_active)), "
+        "user_id:id, auth_user_id, email, status, "
+        "user_roles(scope_type, scope_id, scope_organization_id, "
+        "roles(name, is_active)), "
         "students(institution_id)"
     )
     users_table.select.return_value.eq.assert_called_once_with(
@@ -93,8 +111,14 @@ async def test_get_user_by_auth_id_without_student_profile_has_no_tenant():
         "user_id": "30000000-0000-0000-0000-000000000102",
         "auth_user_id": FAKE_CLAIMS["sub"],
         "email": FAKE_CLAIMS["email"],
+        "status": "active",
         "user_roles": [
-            {"roles": {"name": "admin", "is_active": True}},
+            {
+                "scope_type": "platform",
+                "scope_id": None,
+                "scope_organization_id": None,
+                "roles": {"name": "admin", "is_active": True},
+            },
         ],
         "students": [],
     }
@@ -117,8 +141,14 @@ async def test_get_user_by_auth_id_handles_one_to_one_students_object():
         "user_id": "30000000-0000-0000-0000-000000000103",
         "auth_user_id": FAKE_CLAIMS["sub"],
         "email": FAKE_CLAIMS["email"],
+        "status": "active",
         "user_roles": [
-            {"roles": {"name": "student", "is_active": True}},
+            {
+                "scope_type": "institution",
+                "scope_id": "30000000-0000-0000-0000-000000000001",
+                "scope_organization_id": None,
+                "roles": {"name": "student", "is_active": True},
+            },
         ],
         "students": {
             "institution_id": "30000000-0000-0000-0000-000000000001",
@@ -132,8 +162,19 @@ async def test_get_user_by_auth_id_handles_one_to_one_students_object():
         "user_id": "30000000-0000-0000-0000-000000000103",
         "auth_user_id": FAKE_CLAIMS["sub"],
         "email": FAKE_CLAIMS["email"],
+        "status": "active",
         "roles": ["student"],
         "institution_id": "30000000-0000-0000-0000-000000000001",
+        "student_institution_id": "30000000-0000-0000-0000-000000000001",
+        "role_assignments": [
+            {
+                "role": "student",
+                "scope_type": "institution",
+                "scope_id": "30000000-0000-0000-0000-000000000001",
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+        ],
     }
 
 

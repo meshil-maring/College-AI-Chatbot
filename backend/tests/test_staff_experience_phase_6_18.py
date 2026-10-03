@@ -30,9 +30,11 @@ below rely on frontend filtering.
 
 import io
 from contextlib import ExitStack, contextmanager
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
@@ -54,16 +56,50 @@ STAFF_CLAIMS = {
     "exp": 9999999999,
 }
 
-STAFF_USER = {
-    "id": USER_ID,
-    "user_id": USER_ID,
-    "auth_user_id": STAFF_CLAIMS["sub"],
-    "email": STAFF_CLAIMS["email"],
-    "roles": ["staff"],
-    "institution_id": INSTITUTION_A,
-}
+def _staff_user(institution_id=INSTITUTION_A):
+    """A staff principal with a server-owned ``user_roles`` grant (Phase 7.20).
 
-TENANT_LESS_STAFF_USER = dict(STAFF_USER, institution_id=None)
+    A tenant-less staff account holds a platform grant, never an institution
+    grant, so the approval/ingestion scope can never widen to a global queue.
+    """
+    return {
+        "id": USER_ID,
+        "user_id": USER_ID,
+        "auth_user_id": STAFF_CLAIMS["sub"],
+        "email": STAFF_CLAIMS["email"],
+        "roles": ["staff"],
+        "status": "active",
+        "institution_id": institution_id,
+        "role_assignments": [
+            {
+                "role": "staff",
+                "scope_type": "institution" if institution_id else "platform",
+                "scope_id": institution_id,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+        ],
+    }
+
+
+STAFF_USER = _staff_user()
+
+TENANT_LESS_STAFF_USER = _staff_user(None)
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Provide an ACTIVE institution to the scoped admin dependency only."""
+    db = MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={
+            "institution_id": INSTITUTION_A,
+            "status": "active",
+            "is_active": True,
+        }
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=db):
+        yield
 
 AUTH_HEADERS = {"Authorization": "Bearer valid.token.here"}
 

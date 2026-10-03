@@ -163,20 +163,24 @@ def test_admin_list_students_forced_to_own_institution(tenant_admin_override):
     assert list_students.call_args.args[0] == UUID(TENANT_A)
 
 
-def test_platform_admin_can_list_any_institution():
-    """Platform-level admins (no tenant) keep the previous unrestricted scope."""
-    app.dependency_overrides[_ADMIN] = lambda: _user(None, roles=("admin",))
+def test_tenantless_admin_cannot_list_any_institution():
+    """Phase 7.20 removes tenantless ordinary-admin passthrough."""
+    app.dependency_overrides[get_current_user] = lambda: {
+        **_user(None, roles=("admin",)),
+        "status": "active",
+        "role_assignments": [],
+    }
     try:
         with patch(
             "app.api.admin.admin_academics.list_students", return_value=[]
         ) as list_students:
             response = client.get(f"/api/v1/admin/students?institution_id={TENANT_B}")
     finally:
-        app.dependency_overrides.pop(_ADMIN, None)
+        app.dependency_overrides.pop(get_current_user, None)
 
-    assert response.status_code == 200
-    assert list_students.call_args.args[0] == UUID(TENANT_B)
-    assert_tenant_object(_user(None), TENANT_B)  # platform account
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "SCOPE_MISSING"
+    list_students.assert_not_called()
 
 
 def test_assert_tenant_object_rejects_cross_tenant_row():

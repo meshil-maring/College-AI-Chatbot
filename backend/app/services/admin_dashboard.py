@@ -29,31 +29,73 @@ def _count(
     return response.count or 0
 
 
+def _count_related(
+    client: Client,
+    table: str,
+    id_column: str,
+    relationship: str,
+    institution_id: UUID | str,
+) -> int:
+    """Count child rows through an inner join to an institution-owned parent."""
+    response = (
+        client.table(table)
+        .select(
+            f"{id_column}, {relationship}!inner(institution_id)",
+            count="exact",
+        )
+        .eq(f"{relationship}.institution_id", str(institution_id))
+        .execute()
+    )
+    return response.count or 0
+
+
 def get_dashboard_summary(
-    institution_id: UUID | str | None = None,
+    institution_id: UUID | str,
+    actor_user_id: UUID | str,
     client: Client | None = None,
     recent_audit_limit: int = 10,
 ) -> dict:
     """Return dashboard counts plus the most recent audit-log entries.
 
-    ``institution_id`` scopes the institution-owned tables (knowledge sources,
-    FAQs, notices, students). Platform-wide tables (documents, results, test
-    results, attendance) are counted globally because they carry no direct
-    institution column.
+    Every count is scoped to the authoritative institution. Tables without a
+    direct institution column are filtered through their owning knowledge
+    source or student relationship. The legacy audit table has no immutable
+    institution column, so recent activity is conservatively restricted to the
+    authenticated actor.
     """
     db = client or get_admin_client()
 
     counts = {
         "knowledge_sources": _count(db, "knowledge_sources", institution_id),
-        "documents": _count(db, "documents"),
+        "documents": _count_related(
+            db,
+            "documents",
+            "document_id",
+            "knowledge_sources",
+            institution_id,
+        ),
         "faqs": _count(db, "faqs", institution_id, is_active=True),
         "notices": _count(db, "notices", institution_id, is_active=True),
         "students": _count(db, "students", institution_id),
-        "student_results": _count(db, "student_results"),
-        "test_results": _count(db, "test_results"),
-        "attendance_records": _count(db, "student_attendance"),
+        "student_results": _count_related(
+            db, "student_results", "student_result_id", "students", institution_id
+        ),
+        "test_results": _count_related(
+            db, "test_results", "test_result_id", "students", institution_id
+        ),
+        "attendance_records": _count_related(
+            db,
+            "student_attendance",
+            "student_attendance_id",
+            "students",
+            institution_id,
+        ),
     }
 
-    recent_audit = list_audit_entries(db, limit=recent_audit_limit)
+    recent_audit = list_audit_entries(
+        db,
+        limit=recent_audit_limit,
+        actor_user_id=actor_user_id,
+    )
 
     return {"counts": counts, "recent_audit": recent_audit}

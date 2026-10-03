@@ -62,6 +62,7 @@ def _student_user(user_id=STUDENT_USER_ID, tenant=TENANT_A):
         "auth_user_id": STUDENT_AUTH_USER_ID,
         "email": "student@college.edu",
         "roles": ["student"],
+        "status": "active",
         "institution_id": tenant,
     }
 

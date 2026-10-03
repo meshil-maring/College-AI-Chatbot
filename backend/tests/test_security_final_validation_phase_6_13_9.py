@@ -116,7 +116,36 @@ def _user(tenant=None, roles=("admin",), user_id=None):
         "email": "phase6139@example.com",
         "roles": list(roles),
         "institution_id": tenant,
+        "status": "active",
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if tenant else "platform",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in roles
+        ],
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Supply an ACTIVE institution to the scoped admin dependency only.
+
+    Phase 7.20's ``require_institution_roles`` resolves the caller's institution
+    from the server-owned ``user_roles`` grant and verifies its lifecycle through
+    the authorization module's service-role client. This fixture swaps ONLY that
+    client so endpoint tests exercise the real guard. The tenancy repository is
+    deliberately left untouched so the public-AI pipeline and the lifecycle
+    security tests keep resolving real institution rows.
+    """
+    with patch(
+        "app.services.authorization.get_admin_client",
+        return_value=_FakeClient(_base_state()),
+    ):
+        yield
 
 
 def _as(user):

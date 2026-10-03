@@ -38,20 +38,20 @@ def get_admin_client() -> Client:
 
 
 async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
-    """Return the public.users row whose auth_user_id matches, including active role names.
+    """Return the application identity and authoritative scoped role grants.
 
-    The row's tenant is resolved from the one-to-one public.students profile
-    (students.institution_id) when the account has one — this is the value the
-    rest of the application uses for tenant isolation. Platform-level accounts
-    without a student profile (e.g. admins) resolve to institution_id=None and
-    are treated as unrestricted.
+    ``user_roles.scope_*`` is the authority for non-student role scope.  The
+    students relation remains available only as the legitimate student-profile
+    tenant source; it is never used to manufacture scope for an admin, staff or
+    faculty grant.
     """
     client = get_admin_client()
     response = (
         client.table("users")
         .select(
-            "user_id:id, auth_user_id, email, "
-            "user_roles(roles(name, is_active)), "
+            "user_id:id, auth_user_id, email, status, "
+            "user_roles(scope_type, scope_id, scope_organization_id, "
+            "roles(name, is_active)), "
             "students(institution_id)"
         )
         .eq("auth_user_id", auth_user_id)
@@ -61,11 +61,24 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
     if response is None or response.data is None:
         return None
     row = response.data
-    roles = [
-        ur["roles"]["name"]
-        for ur in (row.get("user_roles") or [])
-        if ur.get("roles") and ur["roles"].get("is_active", True)
-    ]
+    role_assignments = []
+    for grant in row.get("user_roles") or []:
+        role = grant.get("roles")
+        if not isinstance(role, dict) or not role.get("is_active", True):
+            continue
+        role_name = role.get("name")
+        if not role_name:
+            continue
+        role_assignments.append(
+            {
+                "role": role_name,
+                "scope_type": grant.get("scope_type"),
+                "scope_id": grant.get("scope_id"),
+                "scope_organization_id": grant.get("scope_organization_id"),
+                "is_active": True,
+            }
+        )
+    roles = [grant["role"] for grant in role_assignments]
     student_links = row.get("students") or []
     # PostgREST embeds the students relation as a single object when the FK is
     # detected as one-to-one, and as a list otherwise. Handle both shapes.
@@ -79,8 +92,11 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         "user_id": row["user_id"],
         "auth_user_id": row["auth_user_id"],
         "email": row["email"],
+        "status": row.get("status"),
         "roles": roles,
         "institution_id": institution_id,
+        "student_institution_id": institution_id,
+        "role_assignments": role_assignments,
     }
 
 

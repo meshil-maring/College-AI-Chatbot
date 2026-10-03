@@ -22,6 +22,7 @@ trusted.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
@@ -32,6 +33,109 @@ from app.repositories import tenancy as tenancy_repo
 PLATFORM = "platform"
 ORGANIZATION = "organization"
 INSTITUTION = "institution"
+
+
+@dataclass(frozen=True, slots=True)
+class AuthorizationContext:
+    """Minimal, server-owned context for one institution operation."""
+
+    user_id: UUID
+    role: str
+    scope_type: str
+    institution_id: UUID
+    is_active: bool
+
+
+def resolve_institution_authorization_context(
+    current_user: dict[str, Any],
+    *,
+    allowed_roles: tuple[str, ...],
+) -> AuthorizationContext:
+    """Resolve one active institution grant and fail closed otherwise.
+
+    Role assignments originate in the ``public.users -> user_roles -> roles``
+    projection loaded after JWT verification. Client input never participates.
+    A platform or organization grant is not an institution grant, and a
+    missing/ambiguous institution scope is never interpreted as unrestricted.
+    """
+
+    user_id = current_user.get("user_id")
+    if not user_id:
+        raise AppError(
+            "Invalid authenticated user context",
+            status_code=400,
+            code="INVALID_USER_CONTEXT",
+        )
+
+    if current_user.get("status") != ACTIVE_STATUS:
+        raise AppError(
+            "This account is not active",
+            status_code=403,
+            code="ACCOUNT_INACTIVE",
+        )
+
+    active_roles = set(current_user.get("roles") or [])
+    if not active_roles.intersection(allowed_roles):
+        raise _scope_forbidden()
+
+    assignments = current_user.get("role_assignments")
+    if not isinstance(assignments, list):
+        raise _scope_missing()
+
+    matching_role_grants = [
+        grant
+        for grant in assignments
+        if isinstance(grant, dict)
+        and grant.get("role") in allowed_roles
+        and grant.get("role") in active_roles
+        and grant.get("is_active", True)
+    ]
+    institution_grants = [
+        grant
+        for grant in matching_role_grants
+        if grant.get("scope_type") == INSTITUTION
+        and grant.get("scope_id") is not None
+    ]
+    if not institution_grants:
+        if matching_role_grants:
+            # The role exists, but its organization/platform/missing scope is
+            # not sufficient for a University Admin operation.
+            raise _scope_forbidden()
+        raise _scope_missing()
+
+    institution_ids = {UUID(str(grant["scope_id"])) for grant in institution_grants}
+    if len(institution_ids) != 1:
+        raise _scope_inconsistent()
+    institution_id = next(iter(institution_ids))
+
+    # Preserve the dependency's declared precedence (admin before staff for
+    # the approval surface) while requiring that exact role's institution row.
+    selected_role = next(
+        role
+        for role in allowed_roles
+        if any(
+            grant.get("role") == role
+            and UUID(str(grant["scope_id"])) == institution_id
+            for grant in institution_grants
+        )
+    )
+
+    db = get_admin_client()
+    institution = tenancy_repo.get_institution_by_id(db, institution_id)
+    if (
+        institution is None
+        or institution.get("status") != ACTIVE_STATUS
+        or not institution.get("is_active", False)
+    ):
+        raise _tenant_inactive()
+
+    return AuthorizationContext(
+        user_id=UUID(str(user_id)),
+        role=selected_role,
+        scope_type=INSTITUTION,
+        institution_id=institution_id,
+        is_active=True,
+    )
 
 
 def resolve_authorization_context(current_user: dict[str, Any]) -> dict[str, Any]:

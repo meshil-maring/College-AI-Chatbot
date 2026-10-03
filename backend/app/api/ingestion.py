@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Form, UploadFile
 
 from app.core.errors import AppError
-from app.core.security import assert_tenant_object, require_roles
+from app.core.security import assert_tenant_object, require_institution_roles
 from app.db.supabase import get_admin_client
 from app.repositories import admin_knowledge as knowledge_repo
 from app.repositories.ingestion import (
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 logger = logging.getLogger(__name__)
 
-_INGEST_ALLOWED = require_roles("admin", "staff", "faculty")
+_INGEST_ALLOWED = require_institution_roles("admin", "staff", "faculty")
 
 
 def _assert_run_tenant(

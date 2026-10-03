@@ -31,6 +31,7 @@ def _principal(role: str, *, institution_id: str | None = None) -> dict:
         "email": "user@example.test",
         "roles": [role],
         "institution_id": institution_id,
+        "status": "active",
     }
 
 

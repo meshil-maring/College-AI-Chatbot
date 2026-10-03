@@ -40,9 +40,15 @@ def _db():
 
 def test_dashboard_summary_returns_counts_for_all_tables() -> None:
     db = _db()
+    institution_id = str(uuid4())
+    actor_user_id = str(uuid4())
     recent = [{"audit_id": str(uuid4()), "action": "faq.create"}]
     with patch("app.services.admin_dashboard.list_audit_entries", return_value=recent):
-        summary = svc.get_dashboard_summary(client=db)
+        summary = svc.get_dashboard_summary(
+            institution_id=institution_id,
+            actor_user_id=actor_user_id,
+            client=db,
+        )
 
     assert summary["counts"]["knowledge_sources"] == 4
     assert summary["counts"]["documents"] == 11
@@ -59,11 +65,14 @@ def test_dashboard_summary_scopes_institution_owned_tables() -> None:
     db = _db()
     institution_id = str(uuid4())
     with patch("app.services.admin_dashboard.list_audit_entries", return_value=[]):
-        svc.get_dashboard_summary(institution_id=institution_id, client=db)
+        svc.get_dashboard_summary(
+            institution_id=institution_id,
+            actor_user_id=str(uuid4()),
+            client=db,
+        )
 
-    expected_scoped = {"knowledge_sources", "faqs", "notices", "students"}
-    global_tables = {"documents", "student_results", "test_results", "student_attendance"}
-    for name in expected_scoped:
+    direct_scoped = {"knowledge_sources", "faqs", "notices", "students"}
+    for name in direct_scoped:
         eq_args = [
             call.args
             for call in db._registry[name].select.return_value.eq.call_args_list
@@ -74,18 +83,32 @@ def test_dashboard_summary_scopes_institution_owned_tables() -> None:
         chained = db._registry[name].select.return_value.eq.return_value
         eq_args = [call.args for call in chained.eq.call_args_list]
         assert ("is_active", True) in eq_args
-    # global (platform-wide) tables are not institution-scoped
-    for name in global_tables:
-        assert db._registry[name].select.return_value.eq.call_count == 0
+    related_scopes = {
+        "documents": "knowledge_sources.institution_id",
+        "student_results": "students.institution_id",
+        "test_results": "students.institution_id",
+        "student_attendance": "students.institution_id",
+    }
+    for name, field in related_scopes.items():
+        db._registry[name].select.return_value.eq.assert_called_once_with(
+            field, institution_id
+        )
 
 
 def test_dashboard_summary_limits_recent_audit_entries() -> None:
     db = _db()
+    institution_id = str(uuid4())
+    actor_user_id = str(uuid4())
     with patch(
         "app.services.admin_dashboard.list_audit_entries", return_value=[]
     ) as audit_mock:
-        svc.get_dashboard_summary(client=db, recent_audit_limit=5)
-    audit_mock.assert_called_once_with(db, limit=5)
+        svc.get_dashboard_summary(
+            institution_id=institution_id,
+            actor_user_id=actor_user_id,
+            client=db,
+            recent_audit_limit=5,
+        )
+    audit_mock.assert_called_once_with(db, limit=5, actor_user_id=actor_user_id)
 
 
 def test_count_returns_zero_when_count_missing() -> None:
@@ -94,4 +117,28 @@ def test_count_returns_zero_when_count_missing() -> None:
         count=None, data=[]
     )
     assert svc._count(db, "faqs") == 0
+
+
+def test_related_count_uses_inner_tenant_relationship() -> None:
+    db = MagicMock()
+    response = MagicMock(count=7, data=[])
+    chain = db.table.return_value.select.return_value
+    chain.eq.return_value.execute.return_value = response
+    institution_id = str(uuid4())
+
+    assert (
+        svc._count_related(
+            db,
+            "documents",
+            "document_id",
+            "knowledge_sources",
+            institution_id,
+        )
+        == 7
+    )
+    db.table.assert_called_once_with("documents")
+    db.table.return_value.select.assert_called_once_with(
+        "document_id, knowledge_sources!inner(institution_id)", count="exact"
+    )
+    chain.eq.assert_called_once_with("knowledge_sources.institution_id", institution_id)
 

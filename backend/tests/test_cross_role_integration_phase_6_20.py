@@ -31,9 +31,11 @@ assuming uniform 403s.
 """
 
 from contextlib import ExitStack, contextmanager
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
@@ -66,15 +68,45 @@ CLAIMS = {
 
 
 def _user(role: str | None, institution_id: str | None = INSTITUTION_A) -> dict:
-    """One authenticated principal for a server-resolved role."""
+    """One authenticated principal for a server-resolved role.
+
+    Phase 7.20: institution scope is carried by the server-owned ``user_roles``
+    grant (``role_assignments``); a tenant-less account holds a platform grant.
+    """
     roles = [] if role is None else [role]
     return {
         "user_id": USER_ID,
         "auth_user_id": CLAIMS["sub"],
         "email": f"{role or 'unsupported'}@college.edu",
         "roles": roles,
+        "status": "active",
         "institution_id": institution_id,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if institution_id else "platform",
+                "scope_id": institution_id,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in roles
+        ],
     }
+
+
+@pytest.fixture(autouse=True)
+def _active_institution_authorization():
+    """Provide an ACTIVE institution to the scoped admin dependency only."""
+    db = MagicMock()
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
+        data={
+            "institution_id": INSTITUTION_A,
+            "status": "active",
+            "is_active": True,
+        }
+    )
+    with patch("app.services.authorization.get_admin_client", return_value=db):
+        yield
 
 
 USERS = {
@@ -312,8 +344,9 @@ def test_unsupported_role_resolves_to_no_privileged_context():
         response = client.get("/api/v1/auth/me", headers=AUTH_HEADERS)
     assert response.status_code == 200
     assert response.json()["role"] is None
-    # And it is still an authenticated, tenant-bound session.
-    assert response.json()["institution_id"] == INSTITUTION_A
+    # Phase 7.20: with no supported role there is no ``user_roles`` grant, so no
+    # institution scope is projected (an unrelated tenant is never inherited).
+    assert response.json()["institution_id"] is None
 
 
 
@@ -659,10 +692,13 @@ def test_faculty_a_cannot_use_faculty_bs_tenant_on_the_chat_contract():
     )
 
 
-def test_platform_level_admin_keeps_its_documented_global_authority():
-    """Pre-existing Phase 6.1 convention (unchanged by this phase): a
-    platform-level admin has no institution, so an explicit institution filter
-    is honoured. Tenant-BOUND accounts never get this passthrough."""
+def test_platform_level_admin_gains_no_global_authority():
+    """Phase 7.20: a tenant-less ordinary admin keeps NO global authority.
+
+    The legacy Phase 6.1 tenant-less passthrough is removed: an explicit
+    institution filter can no longer be honoured for an account without an
+    institution-scoped ``user_roles`` grant.
+    """
     with _auth("platform_admin"), patch(
         "app.api.admin.admin_academics.list_students", return_value=[]
     ) as list_mock:
@@ -671,8 +707,9 @@ def test_platform_level_admin_keeps_its_documented_global_authority():
             params={"institution_id": INSTITUTION_B},
             headers=AUTH_HEADERS,
         )
-    assert response.status_code == 200
-    assert list_mock.call_args.args[0] == UUID(INSTITUTION_B)
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "FORBIDDEN"
+    list_mock.assert_not_called()
 
 
 def test_tenantless_privileged_accounts_gain_no_operational_authority():
