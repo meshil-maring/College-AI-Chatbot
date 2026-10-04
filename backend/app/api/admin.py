@@ -22,7 +22,7 @@ nothing in the RAG implementation itself is modified.
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi import APIRouter, Depends, Form, Request, UploadFile
 
 from app.core.errors import AppError
 from app.core.security import (
@@ -43,6 +43,15 @@ from app.schemas.admin import (
     KnowledgeSourceCreate,
     KnowledgeSourceUpdate,
 )
+from app.schemas.admin_dashboard import DashboardResponse
+from app.schemas.admin_invitations import AdminInvitationResendResponse
+from app.schemas.admin_memberships import (
+    MembershipDecisionBody,
+    MembershipDecisionResult,
+    MembershipLifecycleResult,
+    MembershipRequestList,
+    MembershipRoster,
+)
 from app.services import (
     admin_academics,
     admin_dashboard,
@@ -50,6 +59,7 @@ from app.services import (
     admin_faq,
     admin_notices,
     attendance,
+    admin_memberships,
 )
 from app.services.admin_academics import (
     AttendanceCreate,
@@ -154,16 +164,131 @@ def admin_me(current_user: dict = Depends(_ADMIN)) -> dict:
 # ============================================================================
 
 
-@router.get("/dashboard")
+@router.get("/dashboard", response_model=DashboardResponse)
 def dashboard(
-    institution_id: UUID | None = None,
     current_user: dict = Depends(_ADMIN),
-) -> dict:
-    """Counts across admin-managed tables plus recent audit activity."""
-    institution_id = _scope_institution(current_user, institution_id)
+) -> DashboardResponse:
+    """Operational overview of the authenticated admin's own institution.
+
+    Phase 7.21 — the institution comes from ``require_institution_roles`` (the
+    server-resolved Phase 7.20 authorization context), never from a query
+    parameter. The previous optional ``institution_id`` query parameter is
+    GONE: a client-supplied tenant can no longer even be *accepted*, so it can
+    neither widen nor redirect the scope. FastAPI ignores unknown query
+    parameters, so an old client sending ``?institution_id=<other tenant>``
+    simply receives its own institution's data.
+
+    The response is an explicit ``DashboardResponse`` (see
+    ``app/schemas/admin_dashboard.py``): counts, display strings, and bounded
+    recent notices only. No raw database row, no audit record, no internal id,
+    no platform or provider information is ever serialized here.
+    """
     return admin_dashboard.get_dashboard_summary(
-        institution_id=institution_id,
-        actor_user_id=current_user["user_id"],
+        institution_id=user_tenant_id(current_user),
+    )
+
+
+# ============================================================================
+# Staff / Faculty onboarding and roster (Phase 7.23)
+# ============================================================================
+
+
+@router.get("/memberships/requests", response_model=MembershipRequestList)
+def list_membership_requests(
+    role: str | None = None,
+    status: str | None = None,
+    current_user: dict = Depends(_ADMIN),
+) -> MembershipRequestList:
+    return admin_memberships.list_requests(
+        user_tenant_id(current_user), role=role, status=status
+    )
+
+
+@router.post(
+    "/memberships/requests/{request_id}/approve",
+    response_model=MembershipDecisionResult,
+)
+def approve_membership_request(
+    request_id: UUID,
+    body: MembershipDecisionBody | None = None,
+    current_user: dict = Depends(_ADMIN),
+) -> MembershipDecisionResult:
+    return admin_memberships.decide_request(
+        current_user,
+        user_tenant_id(current_user),
+        request_id,
+        approve=True,
+        reason=body.reason if body else None,
+    )
+
+
+@router.post(
+    "/memberships/requests/{request_id}/reject",
+    response_model=MembershipDecisionResult,
+)
+def reject_membership_request(
+    request_id: UUID,
+    body: MembershipDecisionBody | None = None,
+    current_user: dict = Depends(_ADMIN),
+) -> MembershipDecisionResult:
+    return admin_memberships.decide_request(
+        current_user,
+        user_tenant_id(current_user),
+        request_id,
+        approve=False,
+        reason=body.reason if body else None,
+    )
+
+
+@router.get("/memberships", response_model=MembershipRoster)
+def list_membership_roster(
+    role: str | None = None,
+    status: str | None = None,
+    current_user: dict = Depends(_ADMIN),
+) -> MembershipRoster:
+    return admin_memberships.list_roster(
+        user_tenant_id(current_user), role=role, status=status
+    )
+
+
+@router.post(
+    "/memberships/{user_id}/deactivate",
+    response_model=MembershipLifecycleResult,
+)
+def deactivate_membership(
+    user_id: UUID,
+    current_user: dict = Depends(_ADMIN),
+) -> MembershipLifecycleResult:
+    return admin_memberships.set_active(
+        current_user, user_tenant_id(current_user), user_id, active=False
+    )
+
+
+@router.post(
+    "/memberships/{user_id}/reactivate",
+    response_model=MembershipLifecycleResult,
+)
+def reactivate_membership(
+    user_id: UUID,
+    current_user: dict = Depends(_ADMIN),
+) -> MembershipLifecycleResult:
+    return admin_memberships.set_active(
+        current_user, user_tenant_id(current_user), user_id, active=True
+    )
+
+
+@router.post(
+    "/memberships/invitations/{invitation_id}/resend",
+    response_model=AdminInvitationResendResponse,
+)
+def resend_membership_invitation(
+    invitation_id: UUID,
+    request: Request,
+    current_user: dict = Depends(_ADMIN),
+) -> AdminInvitationResendResponse:
+    peer = request.client.host if request.client else "unknown"
+    return admin_memberships.resend(
+        current_user, user_tenant_id(current_user), invitation_id, peer
     )
 
 

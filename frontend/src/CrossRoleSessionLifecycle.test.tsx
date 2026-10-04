@@ -34,6 +34,7 @@ import {
 } from './services/sessionEvents.ts'
 import type { CurrentUser } from './types/auth.ts'
 import type { DashboardSummary } from './types/admin.ts'
+import { emptyDashboardSummary } from './test/adminDashboardFixtures.ts'
 
 vi.mock('./services/auth.ts', async () => {
   const actual = await vi.importActual<typeof import('./services/auth.ts')>(
@@ -112,19 +113,7 @@ const SHELL_MARKERS: Readonly<Record<string, string>> = {
   student: 'Student navigation',
 }
 
-const DASHBOARD_SUMMARY: DashboardSummary = {
-  counts: {
-    knowledge_sources: 0,
-    documents: 0,
-    faqs: 0,
-    notices: 0,
-    students: 0,
-    student_results: 0,
-    test_results: 0,
-    attendance_records: 0,
-  },
-  recent_audit: [],
-}
+const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
 
 /** A 401 reported by an authenticated request is what the client publishes. */
 function reportSessionExpired(token: string): void {

@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
 from app.main import app
+from tests.dashboard_contract import build_dashboard
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -224,14 +225,13 @@ def test_admin_me_returns_identity_and_status():
 
 def test_admin_dashboard_scoped_to_own_tenant():
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_dashboard.get_dashboard_summary", return_value={}
+        "app.api.admin.admin_dashboard.get_dashboard_summary",
+        return_value=build_dashboard(),
     ) as dash_mock:
         response = client.get("/api/v1/admin/dashboard", headers=AUTH_HEADERS)
     assert response.status_code == 200
-    dash_mock.assert_called_once_with(
-        institution_id=UUID(INSTITUTION_A),
-        actor_user_id=USER_ID,
-    )
+    # Phase 7.21: the tenant comes only from the server authorization context.
+    dash_mock.assert_called_once_with(institution_id=UUID(INSTITUTION_A))
 
 
 def test_admin_list_students_scoped_to_own_tenant():

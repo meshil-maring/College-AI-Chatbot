@@ -40,6 +40,7 @@ import { mockAllLoaded } from './features/student/studentTestFixtures.ts'
 import * as adminApi from './services/adminApi.ts'
 import type { CurrentUser } from './types/auth.ts'
 import type { DashboardSummary } from './types/admin.ts'
+import { buildDashboardSummary } from './test/adminDashboardFixtures.ts'
 
 vi.mock('./services/devAuth.ts', () => ({
   fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
@@ -128,19 +129,7 @@ const STUDENT_B: CurrentUser = {
   institution_id: INSTITUTION_B,
 }
 
-const DASHBOARD_SUMMARY: DashboardSummary = {
-  counts: {
-    knowledge_sources: 3,
-    documents: 5,
-    faqs: 2,
-    notices: 4,
-    students: 120,
-    student_results: 60,
-    test_results: 40,
-    attendance_records: 800,
-  },
-  recent_audit: [],
-}
+const DASHBOARD_SUMMARY: DashboardSummary = buildDashboardSummary()
 
 const NAV_LANDMARKS: Readonly<Record<string, string>> = {
   admin: 'Admin navigation',
@@ -338,15 +327,22 @@ describe('role -> navigation isolation', () => {
 describe('role transition safety', () => {
   it('admin -> student leaves no admin shell, navigation, or dashboard state', async () => {
     const { rerender } = render(<App />)
-    expect(await screen.findByText('Overview')).toBeInTheDocument()
+    // Phase 7.21: the admin dashboard is identified by its labelled overview
+    // region rather than the removed flat "Overview" heading.
+    expect(
+      await screen.findByRole('region', { name: 'Institution overview' }),
+    ).toBeInTheDocument()
 
     setIdentity(STUDENT_B, 'student')
     rerender(<App />)
 
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Admin navigation' })).not.toBeInTheDocument()
-    expect(screen.queryByText('Overview')).not.toBeInTheDocument()
-    expect(screen.queryByText('Recent Activity')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('region', { name: 'Institution overview' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Key metrics' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Quick actions' })).not.toBeInTheDocument()
     expect(screen.queryByText('Signed in as admin.a@college.edu')).not.toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
   })

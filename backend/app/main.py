@@ -9,7 +9,12 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.config import settings
 from app.core.errors import AppError, app_error_handler
-from app.core.security import get_current_user, resolve_primary_role, scope_tenant
+from app.core.security import (
+    get_current_user,
+    require_institution_roles,
+    resolve_primary_role,
+    scope_tenant,
+)
 from app.api.platform import router as platform_router
 from app.api.admin_invitations import router as admin_invitations_router
 from app.api.mailgun_webhooks import router as mailgun_webhooks_router
@@ -151,18 +156,24 @@ app.include_router(mailgun_webhooks_router, prefix="/api/v1")
 
 generation_router = APIRouter(prefix="/generation", tags=["generation"])
 
+# Phase 7.22: authenticated AI is an institution capability. Reuse the Phase
+# 7.20 authorization context so a tenant-less or inactive staff/faculty account
+# cannot be mistaken for a platform principal by the legacy `scope_tenant`
+# helper and select an institution in the request body.
+_INSTITUTION_CHAT = require_institution_roles("admin", "staff", "faculty", "student")
+
 
 @generation_router.post("/chat", response_model=ChatResponse)
 def chat(
     request: ChatRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(_INSTITUTION_CHAT),
 ) -> ChatResponse:
     """Process one chat request with persistent conversation and message records.
 
-    Tenant isolation: the client-supplied ``institution_id`` is validated
-    against the authenticated user's tenant (resolved server-side from their
-    students profile). A student of College A can never retrieve College B's
-    knowledge — a mismatch is rejected with 403 TENANT_MISMATCH.
+    Tenant isolation: an active institution grant is resolved before this
+    handler runs, and the client-supplied ``institution_id`` must match it.
+    A principal of College A can never retrieve College B's knowledge;
+    missing/inactive scope fails closed and a mismatch returns 403.
     """
     tenant_id = scope_tenant(current_user, request.institution_id)
     request = request.model_copy(update={"institution_id": tenant_id})
@@ -288,7 +299,7 @@ def public_chat(request: PublicChatRequest, http_request: Request) -> PublicChat
         raise
     except Exception:
         status = 500
-        logger.error(
+        logger.exception(
             "event=public_chat_failed institution=%s status=500 category=internal",
             request.institution_code,
         )

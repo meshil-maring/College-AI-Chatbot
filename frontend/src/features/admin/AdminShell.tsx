@@ -42,6 +42,7 @@ import StudentManager from './StudentManager.tsx'
 import ResultsManager from './ResultsManager.tsx'
 import TestResultsManager from './TestResultsManager.tsx'
 import AttendanceManager from './AttendanceManager.tsx'
+import StaffFacultyManager from './StaffFacultyManager.tsx'
 import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adminNavigation.ts'
 
 export default function AdminShell() {
@@ -122,7 +123,13 @@ export default function AdminShell() {
                 {ADMIN_VIEW_HEADINGS[currentView]}
               </h1>
             ) : null}
-            {currentView === 'dashboard' ? <AdminDashboard /> : null}
+            {currentView === 'dashboard' ? (
+              // Phase 7.21 — the dashboard's quick actions switch to EXISTING
+              // admin views through the same `currentView` state the header
+              // navigation already uses. No new screen, no second dashboard.
+              <AdminDashboard onNavigate={setCurrentView} />
+            ) : null}
+
             {currentView === 'approvals' ? (
               accessToken !== null ? (
                 <AdminApprovals accessToken={accessToken} />
@@ -134,6 +141,15 @@ export default function AdminShell() {
                   <p className="text-sm text-slate-300">
                     Your session could not be verified. Please sign in again.
                   </p>
+                </section>
+              )
+            ) : null}
+            {currentView === 'staff-faculty' ? (
+              accessToken !== null ? (
+                <StaffFacultyManager accessToken={accessToken} />
+              ) : (
+                <section role="status" className="rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+                  <p className="text-sm text-slate-300">Your session could not be verified. Please sign in again.</p>
                 </section>
               )
             ) : null}

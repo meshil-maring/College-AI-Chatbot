@@ -40,10 +40,11 @@ from supabase import Client
 # Long enough that guessing is infeasible, short enough to paste into a URL.
 TOKEN_BYTES = 48
 
-# The invited role is fixed. It is NOT read from any request body, query
-# parameter or client-controlled field, so an invitation can never be replayed
-# into a different privilege level.
+# The legacy platform route remains fixed to this role. Phase 7.23 also lets an
+# institution-admin service pass one of the two server-derived membership
+# roles; no HTTP request accepts this value directly.
 INVITED_ROLE = "admin"
+INSTITUTION_INVITED_ROLES = frozenset({"admin", "staff", "faculty"})
 
 STATUS_INVITED = "invited"
 STATUS_ACCEPTED = "accepted"
@@ -145,7 +146,7 @@ def get_invitation_by_id(
 
 
 def find_pending_invitation(
-    client: Client, *, institution_id: UUID | str, email: str
+    client: Client, *, institution_id: UUID | str, email: str, role_name: str | None = None
 ) -> dict[str, Any] | None:
     """Return an outstanding (not yet terminal) invitation for one invitee.
 
@@ -159,10 +160,10 @@ def find_pending_invitation(
         .eq("institution_id", str(institution_id))
         .eq("email", email.strip().lower())
         .eq("status", STATUS_INVITED)
-        .order("created_at", desc=True)
-        .limit(1)
-        .execute()
     )
+    if role_name is not None:
+        response = response.eq("role_name", role_name)
+    response = response.order("created_at", desc=True).limit(1).execute()
     rows = _rows(response)
     return rows[0] if rows else None
 
@@ -261,18 +262,19 @@ def insert_invitation(
     ``token_hash`` is the lookup digest. ``protected_token`` is authenticated
     ciphertext for the worker; plaintext never reaches the database.
     """
-    if INVITED_ROLE != "admin":  # defensive pin; role is not an RPC argument
-        raise RuntimeError("invalid invitation role configuration")
+    if INVITED_ROLE != "admin":
+        raise RuntimeError("invalid platform invitation role configuration")
+    parameters = {
+        "p_institution_id": str(institution_id),
+        "p_email": email.strip().lower(),
+        "p_token_hash": token_hash,
+        "p_expires_at": expires_at.isoformat(),
+        "p_created_by": str(created_by),
+        "p_protected_token": protected_token,
+    }
     response = client.rpc(
         "phase717_create_invitation_with_outbox",
-        {
-            "p_institution_id": str(institution_id),
-            "p_email": email.strip().lower(),
-            "p_token_hash": token_hash,
-            "p_expires_at": expires_at.isoformat(),
-            "p_created_by": str(created_by),
-            "p_protected_token": protected_token,
-        },
+        parameters,
     ).execute()
     data = response.data if response is not None else None
     if isinstance(data, list):

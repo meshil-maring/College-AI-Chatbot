@@ -58,7 +58,15 @@ KNOWLEDGE_SOURCE_ID = "90000000-0000-0000-0000-000000000001"
 
 @pytest.fixture(autouse=True)
 def _cleanup_dependency_overrides():
-    yield
+    with patch(
+        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        side_effect=lambda _db, institution_id: {
+            "institution_id": str(institution_id),
+            "status": "active",
+            "is_active": True,
+        },
+    ):
+        yield
     app.dependency_overrides.pop(get_current_user, None)
 
 
@@ -68,12 +76,24 @@ def _cleanup_dependency_overrides():
 
 
 def _student_user(user_id=STUDENT_USER_ID, tenant=TENANT_A, auth_user_id=AUTH_USER_ID, roles=None):
+    resolved_roles = roles or ["student"]
     return {
         "user_id": user_id,
         "auth_user_id": auth_user_id,
         "email": "student@college.edu",
-        "roles": roles or ["student"],
+        "roles": resolved_roles,
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in resolved_roles
+        ],
     }
 
 

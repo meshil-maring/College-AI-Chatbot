@@ -20,6 +20,7 @@ describe('buildAdminNavigation', () => {
     expect(navigation.map((item) => item.key)).toEqual([
       'dashboard',
       'approvals',
+      'staff-faculty',
       'students',
       'attendance',
       'results',

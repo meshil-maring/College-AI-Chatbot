@@ -112,6 +112,7 @@ export interface AdminInvitationView {
   readonly invitation_id: string
   readonly institution_id: string
   readonly email: string
+  readonly role_name?: 'admin' | 'staff' | 'faculty'
   readonly status: AdminInvitationStatus
   readonly expires_at: string | null
   readonly created_at: string | null
@@ -173,6 +174,7 @@ export interface AdminInvitationPublicView {
   readonly institution_name: string
   readonly institution_code: string
   readonly email: string
+  readonly role?: 'admin' | 'staff' | 'faculty'
   readonly expires_at: string | null
   /**
    * The SERVER's verification state, not the browser's. The acceptance request
@@ -188,7 +190,7 @@ export interface AdminInvitationAcceptance {
   readonly institution_id: string
   readonly institution_name: string
   readonly email: string
-  readonly role: 'admin'
+  readonly role: 'admin' | 'staff' | 'faculty'
   readonly scope: 'institution'
   readonly message: string
 }

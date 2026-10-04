@@ -27,14 +27,38 @@ TEST_USER_ID = uuid4()
 
 def _mock_get_current_user():
     """Mock authentication to return a test user."""
-    return {"user_id": str(TEST_USER_ID), "auth_user_id": str(uuid4()), "email": "test@example.com"}
+    return {
+        "user_id": str(TEST_USER_ID),
+        "auth_user_id": str(uuid4()),
+        "email": "test@example.com",
+        "roles": ["student"],
+        "status": "active",
+        "institution_id": INSTITUTION_ID,
+        "role_assignments": [
+            {
+                "role": "student",
+                "scope_type": "institution",
+                "scope_id": INSTITUTION_ID,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+        ],
+    }
 
 
 @pytest.fixture(autouse=True)
 def override_auth_dependency():
     """Override get_current_user dependency for generation API tests, clean up after."""
     app.dependency_overrides[get_current_user] = _mock_get_current_user
-    yield
+    with patch(
+        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        return_value={
+            "institution_id": INSTITUTION_ID,
+            "status": "active",
+            "is_active": True,
+        },
+    ):
+        yield
     app.dependency_overrides.pop(get_current_user, None)
 
 

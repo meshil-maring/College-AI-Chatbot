@@ -40,16 +40,43 @@ describe('adminApi', () => {
     expect(result.is_admin).toBe(true)
   })
 
-  it('getDashboardSummary returns counts and recent audit', async () => {
+  it('getDashboardSummary returns the typed institution-scoped payload', async () => {
     const mockFetch = vi.mocked(fetch)
-    const body = { counts: { faqs: 5, students: 10 }, recent_audit: [] }
+    const body = {
+      institution: { name: 'Alpha University', code: 'ALPHA', status: 'active' },
+      students: { total: 10, pending_approvals: 1, approved: 9, active: 8 },
+      knowledge: {
+        sources_total: 4,
+        sources_active: 3,
+        documents_total: 5,
+        failed_processing_runs: null,
+      },
+      communication: { active_faqs: 5, active_notices: 2, recent_notices: [] },
+      academics: { attendance_records: 7, test_results: 3, results: 4 },
+      quick_actions: [],
+    }
     mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } }),
     )
     const result = await getDashboardSummary('token')
-    expect(result.counts.faqs).toBe(5)
-    expect(result.counts.students).toBe(10)
-    expect(result.recent_audit).toEqual([])
+    expect(result.institution.code).toBe('ALPHA')
+    expect(result.students.total).toBe(10)
+    expect(result.communication.active_faqs).toBe(5)
+    expect(result.knowledge.failed_processing_runs).toBeNull()
+  })
+
+  it('getDashboardSummary never sends a client-supplied institution_id', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+    await getDashboardSummary('token')
+    const url = String(mockFetch.mock.calls[0][0])
+    expect(url).not.toContain('institution_id')
+    expect(url.endsWith('/v1/admin/dashboard')).toBe(true)
   })
 
   it('listFaqs sends GET with auth header', async () => {

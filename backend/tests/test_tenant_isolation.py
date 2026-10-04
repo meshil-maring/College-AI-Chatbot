@@ -41,7 +41,18 @@ def _user(tenant: str | None = None, roles: tuple[str, ...] = ("student",)) -> d
         "auth_user_id": str(uuid4()),
         "email": "tenant-test@example.com",
         "roles": list(roles),
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution" if tenant else "platform",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in roles
+        ],
     }
 
 
@@ -99,7 +110,15 @@ def _chat_response(session_id: UUID) -> ChatResponse:
 def _tenant_auth_override():
     """Bind the authenticated user to tenant A for the endpoint tests below."""
     app.dependency_overrides[get_current_user] = lambda: _user(TENANT_A)
-    yield
+    with patch(
+        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        return_value={
+            "institution_id": TENANT_A,
+            "status": "active",
+            "is_active": True,
+        },
+    ):
+        yield
     app.dependency_overrides.pop(get_current_user, None)
 
 

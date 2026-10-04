@@ -35,6 +35,11 @@ import type {
   TestResultCreate,
   TestResultUpdate,
   CsvUploadResult,
+  MembershipDecisionResult,
+  MembershipLifecycleResult,
+  MembershipRequestList,
+  MembershipRole,
+  MembershipRoster,
 } from '../types/admin.ts'
 import { notifySessionExpired } from './sessionEvents.ts'
 
@@ -130,9 +135,16 @@ export async function getAdminIdentity(accessToken: string): Promise<AdminIdenti
   return requestJson<AdminIdentity>('GET', `${ADMIN_BASE}/me`, accessToken)
 }
 
-export async function getDashboardSummary(accessToken: string, institutionId?: string): Promise<DashboardSummary> {
-  const params = institutionId ? `?institution_id=${encodeURIComponent(institutionId)}` : ''
-  return requestJson<DashboardSummary>('GET', `${ADMIN_BASE}/dashboard${params}`, accessToken)
+/**
+ * Phase 7.21 — fetch the institution-scoped operational dashboard.
+ *
+ * SECURITY: this client deliberately sends NO `institution_id`. The backend
+ * removed that query parameter entirely and resolves the tenant from the
+ * server-side authorization context, so there is nothing for a caller to
+ * influence. The optional argument is not offered on purpose.
+ */
+export async function getDashboardSummary(accessToken: string): Promise<DashboardSummary> {
+  return requestJson<DashboardSummary>('GET', `${ADMIN_BASE}/dashboard`, accessToken)
 }
 
 // ============================================================================
@@ -357,4 +369,70 @@ export async function approvePendingStudent(accessToken: string, studentId: stri
 
 export async function rejectPendingStudent(accessToken: string, studentId: string): Promise<PendingStudent> {
   return requestJson<PendingStudent>('POST', `${ADMIN_BASE}/students/${encodeURIComponent(studentId)}/reject`, accessToken)
+}
+
+// ============================================================================
+// Staff / Faculty onboarding and roster (Phase 7.23)
+// ============================================================================
+
+export async function listMembershipRequests(
+  accessToken: string,
+  role?: MembershipRole,
+  status?: string,
+): Promise<MembershipRequestList> {
+  const params = new URLSearchParams()
+  if (role) params.set('role', role)
+  if (status) params.set('status', status)
+  const query = params.size ? `?${params.toString()}` : ''
+  return requestJson<MembershipRequestList>('GET', `${ADMIN_BASE}/memberships/requests${query}`, accessToken)
+}
+
+export async function decideMembershipRequest(
+  accessToken: string,
+  requestId: string,
+  decision: 'approve' | 'reject',
+): Promise<MembershipDecisionResult> {
+  return requestJson<MembershipDecisionResult>(
+    'POST',
+    `${ADMIN_BASE}/memberships/requests/${encodeURIComponent(requestId)}/${decision}`,
+    accessToken,
+    {},
+  )
+}
+
+export async function listMembershipRoster(
+  accessToken: string,
+  role?: MembershipRole,
+  status?: string,
+): Promise<MembershipRoster> {
+  const params = new URLSearchParams()
+  if (role) params.set('role', role)
+  if (status) params.set('status', status)
+  const query = params.size ? `?${params.toString()}` : ''
+  return requestJson<MembershipRoster>('GET', `${ADMIN_BASE}/memberships${query}`, accessToken)
+}
+
+export async function changeMembershipStatus(
+  accessToken: string,
+  userId: string,
+  action: 'deactivate' | 'reactivate',
+): Promise<MembershipLifecycleResult> {
+  return requestJson<MembershipLifecycleResult>(
+    'POST',
+    `${ADMIN_BASE}/memberships/${encodeURIComponent(userId)}/${action}`,
+    accessToken,
+    {},
+  )
+}
+
+export async function resendMembershipInvitation(
+  accessToken: string,
+  invitationId: string,
+): Promise<unknown> {
+  return requestJson<unknown>(
+    'POST',
+    `${ADMIN_BASE}/memberships/invitations/${encodeURIComponent(invitationId)}/resend`,
+    accessToken,
+    {},
+  )
 }

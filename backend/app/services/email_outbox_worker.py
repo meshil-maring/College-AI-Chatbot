@@ -104,13 +104,18 @@ class EmailOutboxWorker:
                 return OUTCOME_CANCELLED
 
             started = time.monotonic()
+            delivery_kwargs = {
+                "to_email": str(context["recipient"]),
+                "institution_name": str(context["institution_name"]),
+                "raw_token": raw_token,
+                "expires_at": context.get("expires_at"),
+                "idempotency_key": f"email-outbox:{job['id']}",
+            }
+            if context.get("role_name") is not None:
+                delivery_kwargs["role_name"] = str(context["role_name"])
             result = email_delivery.deliver_invitation_email(
                 provider,
-                to_email=str(context["recipient"]),
-                institution_name=str(context["institution_name"]),
-                raw_token=raw_token,
-                expires_at=context.get("expires_at"),
-                idempotency_key=f"email-outbox:{job['id']}",
+                **delivery_kwargs,
             )
             logger.info(
                 "event=email_outbox_provider_call provider=%s duration_ms=%d",

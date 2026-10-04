@@ -11,7 +11,7 @@ type Phase =
   | { readonly kind: 'unusable'; readonly message: string }
   | { readonly kind: 'ready'; readonly invitation: AdminInvitationPublicView }
   | { readonly kind: 'submitting'; readonly invitation: AdminInvitationPublicView }
-  | { readonly kind: 'accepted'; readonly institutionName: string; readonly message: string }
+  | { readonly kind: 'accepted'; readonly institutionName: string; readonly message: string; readonly role: 'admin' | 'staff' | 'faculty' }
 
 const inputClass =
   'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400'
@@ -96,6 +96,7 @@ export default function AdminInvitationPage({ token }: { token: string }) {
         kind: 'accepted',
         institutionName: result.institution_name,
         message: result.message,
+        role: result.role,
       })
     } catch (err) {
       // A terminal failure can never succeed on retry, so stop offering the form.
@@ -149,13 +150,13 @@ return (
               {phase.message}
             </p>
             <p className="mt-3 text-sm text-slate-400">
-              You were added as a University Admin of {phase.institutionName}.
+              You were added as {phase.role === 'admin' ? 'a University Admin' : phase.role} of {phase.institutionName}.
             </p>
             <a
-              href="/login/admin"
+              href={`/login/${phase.role}`}
               className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300"
             >
-              Continue to admin login
+              Continue to {phase.role === 'admin' ? 'admin' : phase.role} login
             </a>
           </>
         ) : null}
@@ -168,7 +169,7 @@ return (
             <p className="mt-2 text-sm leading-6 text-slate-400">
               This invitation is for{' '}
               <strong className="text-slate-200">{phase.invitation.email}</strong>. Create a
-              password to finish setting up your University Admin account.
+              password to finish setting up your {phase.invitation.role === 'admin' || phase.invitation.role === undefined ? 'University Admin' : phase.invitation.role} account.
             </p>
             {/* Phase 7.15: the email is INFORMATIONAL. It is rendered from the
                 server's answer, is not an input, and cannot be edited — the

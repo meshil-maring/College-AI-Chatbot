@@ -18,6 +18,7 @@ import * as adminApi from './services/adminApi.ts'
 import * as platformApi from './services/platformApi.ts'
 import * as platformInstitutionsApi from './services/platformInstitutionsApi.ts'
 import type { DashboardSummary } from './types/admin.ts'
+import { emptyDashboardSummary } from './test/adminDashboardFixtures.ts'
 
 vi.mock('./services/adminApi.ts')
 vi.mock('./services/platformApi.ts')
@@ -26,19 +27,7 @@ vi.mock('./services/devAuth.ts', () => ({
   fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
 }))
 
-const DASHBOARD_SUMMARY: DashboardSummary = {
-  counts: {
-    knowledge_sources: 0,
-    documents: 0,
-    faqs: 0,
-    notices: 0,
-    students: 0,
-    student_results: 0,
-    test_results: 0,
-    attendance_records: 0,
-  },
-  recent_audit: [],
-}
+const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
 
 /** Mutable auth context so each test can drive the canonical role. */
 const authState = vi.hoisted(() => ({

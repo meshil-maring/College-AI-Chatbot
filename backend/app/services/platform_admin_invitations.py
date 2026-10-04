@@ -48,6 +48,7 @@ from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import platform_admin_invitations as invite_repo
 from app.repositories import platform_institutions as platform_repo
+from app.repositories import tenancy as tenancy_repo
 from app.schemas.admin_invitations import (
     AdminInvitationAcceptRequest,
     AdminInvitationAcceptanceResponse,
@@ -184,6 +185,7 @@ def _to_invitation_view(row: dict[str, Any]) -> AdminInvitationView:
         invitation_id=UUID(str(row["invitation_id"])),
         institution_id=UUID(str(row["institution_id"])),
         email=str(row["email"]),
+        role_name=str(row.get("role_name") or invite_repo.INVITED_ROLE),
         status=str(row.get("status", invite_repo.STATUS_INVITED)),
         expires_at=row.get("expires_at"),
         created_at=row.get("created_at"),
@@ -508,13 +510,14 @@ def resend_invitation(
         # truth, exactly as the acceptance path does.
         if status == invite_repo.STATUS_INVITED:
             invite_repo.expire_invitation(client, invitation_id)
-            platform_repo.record_institution_audit(
-                client,
-                actor_user_id=invitation["created_by"],
-                action=platform_repo.AUDIT_ADMIN_INVITATION_EXPIRED,
-                institution_id=institution_id,
-                details={"email": invitation.get("email")},
-            )
+            if invitation.get("role_name", invite_repo.INVITED_ROLE) == "admin":
+                platform_repo.record_institution_audit(
+                    client,
+                    actor_user_id=invitation["created_by"],
+                    action=platform_repo.AUDIT_ADMIN_INVITATION_EXPIRED,
+                    institution_id=institution_id,
+                    details={"email": invitation.get("email")},
+                )
         raise AppError(
             "Only a pending invitation can be resent",
             status_code=409,
@@ -551,17 +554,18 @@ def resend_invitation(
         except Exception:  # noqa: BLE001 - legacy test-double path only
             logger.warning("event=admin_invitation_resend_count_failed")
 
-    platform_repo.record_institution_audit(
-        client,
-        actor_user_id=actor_user_id,
-        action=platform_repo.AUDIT_ADMIN_INVITATION_RESENT,
-        institution_id=institution_id,
-        details={
-            "invitation_id": str(invitation_id),
-            "email": invitation.get("email"),
-            "expires_at": expires_at.isoformat(),
-        },
-    )
+    if invitation.get("role_name", invite_repo.INVITED_ROLE) == "admin":
+        platform_repo.record_institution_audit(
+            client,
+            actor_user_id=actor_user_id,
+            action=platform_repo.AUDIT_ADMIN_INVITATION_RESENT,
+            institution_id=institution_id,
+            details={
+                "invitation_id": str(invitation_id),
+                "email": invitation.get("email"),
+                "expires_at": expires_at.isoformat(),
+            },
+        )
 
     source = _rotated_source(rotated, invitation)
     delivery = (
@@ -621,6 +625,7 @@ def inspect_invitation(
         institution_name=str(institution.get("name", "")),
         institution_code=str(institution.get("code", "")),
         email=str(invitation["email"]),
+        role=str(invitation.get("role_name") or invite_repo.INVITED_ROLE),
         expires_at=invitation.get("expires_at"),
         email_verified=bool(invitation.get("email_verified_at")),
     )
@@ -682,10 +687,19 @@ def accept_invitation(
     # stored invitation, never from the request body.
     email = str(invitation["email"])
 
-    # An account that already exists cannot be silently re-provisioned. The
-    # operator is pointed at the existing Phase 7.13 assignment capability,
-    # which is the supported path for granting a role to an existing account.
-    if platform_repo.get_user_by_email(client, email) is not None:
+    role_name = str(invitation.get("role_name") or invite_repo.INVITED_ROLE)
+    if role_name not in invite_repo.INSTITUTION_INVITED_ROLES:
+        raise AppError(
+            "This invitation link is not valid",
+            status_code=400,
+            code="INVITATION_INVALID",
+        )
+    existing_user = (
+        platform_repo.get_user_by_email(client, email)
+        if role_name == "admin"
+        else tenancy_repo.get_user_by_email(client, email)
+    )
+    if role_name == "admin" and existing_user is not None:
         raise AppError(
             "An account already exists for this email address. Ask your "
             "platform administrator to assign your existing account instead.",
@@ -693,16 +707,29 @@ def accept_invitation(
             code="ACCOUNT_ALREADY_EXISTS",
         )
 
-    auth_user_id = student_svc._create_auth_account(email, payload.password)
-    user_id: str | None = None
+    auth_user_id = (
+        str(existing_user["auth_user_id"])
+        if existing_user is not None
+        else student_svc._create_auth_account(email, payload.password)
+    )
+    user_id: str | None = str(existing_user["user_id"]) if existing_user else None
+    created_identity = existing_user is None
     try:
-        user_id = student_svc._create_public_user(
-            client,
-            auth_user_id,
-            email,
-            payload.first_name or "University",
-            payload.last_name or "Admin",
-        )
+        if created_identity:
+            user_id = student_svc._create_public_user(
+                client,
+                auth_user_id,
+                email,
+                payload.first_name or "University",
+                payload.last_name or "Admin",
+            )
+        else:
+            # Staff/faculty self-registration already created the canonical
+            # Auth identity. Acceptance links that identity and lets the token
+            # holder rotate its password; no second account is created.
+            client.auth.admin.update_user_by_id(
+                auth_user_id, {"password": payload.password}
+            )
         # The one-time gate. Losing this race consumes nothing and grants nothing.
         claimed = invite_repo.claim_invitation(
             client, invitation["invitation_id"], accepted_user_id=user_id
@@ -724,12 +751,21 @@ def accept_invitation(
                 code="PLATFORM_ORGANIZATION_NOT_CONFIGURED",
             )
 
-        platform_repo.assign_institution_admin(
-            client,
-            user_id=user_id,
-            institution_id=institution_id,
-            organization_id=organization_id,
-        )
+        if role_name == "admin":
+            platform_repo.assign_institution_admin(
+                client,
+                user_id=user_id,
+                institution_id=institution_id,
+                organization_id=organization_id,
+            )
+        else:
+            tenancy_repo.assign_membership_role(
+                client,
+                user_id=user_id,
+                role_name=role_name,
+                institution_id=institution_id,
+                organization_id=organization_id,
+            )
         # Phase 7.15: record that the invited email address was verified. This
         # runs only AFTER the account exists AND the claim succeeded, and the
         # address compared here is the one the server passed to Auth — the
@@ -743,22 +779,24 @@ def accept_invitation(
                 code="INVITATION_EMAIL_MISMATCH",
             )
         invite_repo.mark_email_verified(client, invitation["invitation_id"])
-        platform_repo.record_institution_audit(
-            client,
-            actor_user_id=user_id,
-            action=platform_repo.AUDIT_ADMIN_INVITATION_VERIFIED,
-            institution_id=institution_id,
-            target_user_id=user_id,
-            details={"email": email, "verified_by": "invitation_acceptance"},
-        )
+        if role_name == "admin":
+            platform_repo.record_institution_audit(
+                client,
+                actor_user_id=user_id,
+                action=platform_repo.AUDIT_ADMIN_INVITATION_VERIFIED,
+                institution_id=institution_id,
+                target_user_id=user_id,
+                details={"email": email, "verified_by": "invitation_acceptance"},
+            )
     except Exception as exc:  # noqa: BLE001 - compensated, then re-raised
         # Best-effort compensation, mirroring the established Phase 6.3 pattern.
         # The Auth account and the users row are removed so a failed acceptance
         # never leaves an orphaned identity behind. The invitation itself is NOT
         # resurrected (its terminal transition is permanent by design).
-        if user_id is not None:
+        if created_identity and user_id is not None:
             student_svc._try_delete_user_row(client, user_id)
-        student_svc._try_delete_auth_user(auth_user_id)
+        if created_identity:
+            student_svc._try_delete_auth_user(auth_user_id)
         if isinstance(exc, AppError):
             raise
         logger.warning("event=admin_invitation_acceptance_failed category=database")
@@ -769,20 +807,25 @@ def accept_invitation(
             code="INVITATION_ACCEPTANCE_FAILED",
         ) from exc
 
-    platform_repo.record_institution_audit(
-        client,
-        actor_user_id=user_id,
-        action=platform_repo.AUDIT_ADMIN_INVITATION_ACCEPTED,
-        institution_id=institution_id,
-        target_user_id=user_id,
-        details={"email": email, "role": invite_repo.INVITED_ROLE},
-    )
+    if role_name == "admin":
+        platform_repo.record_institution_audit(
+            client,
+            actor_user_id=user_id,
+            action=platform_repo.AUDIT_ADMIN_INVITATION_ACCEPTED,
+            institution_id=institution_id,
+            target_user_id=user_id,
+            details={"email": email, "role": role_name},
+        )
     return AdminInvitationAcceptanceResponse(
         institution_id=institution_id,
         institution_name=str(institution.get("name", "")),
         email=email,
-        role="admin",
-        message=ACCEPTANCE_MESSAGE,
+        role=role_name,
+        message=(
+            ACCEPTANCE_MESSAGE
+            if role_name == "admin"
+            else f"Your {role_name.capitalize()} account is ready. Sign in with your email and password."
+        ),
     )
 def cancel_invitation(
     actor: dict[str, Any], institution_id: UUID, invitation_id: UUID
@@ -931,19 +974,20 @@ def expire_pending_admin_invitations(
             # write). Nothing was changed and nothing is recorded.
             continue
         expired += 1
-        try:
-            platform_repo.record_institution_audit(
-                client,
-                actor_user_id=invitation["created_by"],
-                action=platform_repo.AUDIT_ADMIN_INVITATION_EXPIRED,
-                institution_id=invitation["institution_id"],
-                details={
-                    "email": invitation.get("email"),
-                    "expired_by": "expiry_sweep",
-                },
-            )
-        except Exception:  # noqa: BLE001 - one bad audit must not stop the sweep
-            logger.warning("event=admin_invitation_expiry_audit_failed")
+        if invitation.get("role_name", invite_repo.INVITED_ROLE) == "admin":
+            try:
+                platform_repo.record_institution_audit(
+                    client,
+                    actor_user_id=invitation["created_by"],
+                    action=platform_repo.AUDIT_ADMIN_INVITATION_EXPIRED,
+                    institution_id=invitation["institution_id"],
+                    details={
+                        "email": invitation.get("email"),
+                        "expired_by": "expiry_sweep",
+                    },
+                )
+            except Exception:  # noqa: BLE001 - one bad audit must not stop the sweep
+                logger.warning("event=admin_invitation_expiry_audit_failed")
 
     logger.info(
         "event=admin_invitation_expiry_sweep scanned=%d expired=%d",

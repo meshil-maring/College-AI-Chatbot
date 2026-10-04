@@ -525,9 +525,21 @@ def build_invitation_url(raw_token: str) -> str:
 
 
 def render_invitation_email(
-    *, institution_name: str, invitation_url: str, expires_at: datetime | str | None
+    *, institution_name: str, invitation_url: str, expires_at: datetime | str | None,
+    role_name: str = "admin",
 ) -> tuple[str, str]:
-    subject = f"You have been invited to administer {institution_name}"
+    role_label = {
+        "admin": "University Administrator",
+        "staff": "Staff",
+        "faculty": "Faculty",
+    }.get(role_name)
+    if role_label is None:
+        raise ValueError("unsupported invitation role")
+    subject = (
+        f"You have been invited to administer {institution_name}"
+        if role_name == "admin"
+        else f"You have been invited to join {institution_name} as {role_label}"
+    )
     expiry_text = (
         expires_at.isoformat()
         if isinstance(expires_at, datetime)
@@ -535,11 +547,11 @@ def render_invitation_email(
     )
     body = "\n".join(
         [
-            "You're invited to administer:",
+            "You're invited to administer:" if role_name == "admin" else "You're invited to join:",
             "",
             institution_name,
             "",
-            "You have been invited as a University Administrator.",
+            f"You have been invited as {role_label}.",
             "",
             "Accept the invitation:",
             invitation_url,
@@ -564,12 +576,14 @@ def build_invitation_email(
     raw_token: str,
     expires_at: datetime | str | None,
     idempotency_key: str = "",
+    role_name: str = "admin",
 ) -> InvitationEmail:
     invitation_url = build_invitation_url(raw_token)
     subject, body = render_invitation_email(
         institution_name=institution_name,
         invitation_url=invitation_url,
         expires_at=expires_at,
+        role_name=role_name,
     )
     return InvitationEmail(
         to_email=to_email,
@@ -599,6 +613,7 @@ def deliver_invitation_email(
     invitation_id: str | None = None,
     delivery_attempt: int | None = None,
     idempotency_key: str | None = None,
+    role_name: str = "admin",
 ) -> EmailDeliveryResult:
     """Deliver once at the service boundary and return only safe failures."""
     resolved = provider if provider is not None else get_email_provider()
@@ -616,6 +631,7 @@ def deliver_invitation_email(
                 raw_token=raw_token,
                 expires_at=expires_at,
                 idempotency_key=resolved_idempotency_key,
+                role_name=role_name,
             )
         )
     except EmailDeliveryError as exc:

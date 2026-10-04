@@ -46,6 +46,7 @@ const ADMIN_SHELL_ROLES: readonly string[] = ['admin']
 export type AdminView =
   | 'dashboard'
   | 'approvals'
+  | 'staff-faculty'
   | 'students'
   | 'attendance'
   | 'results'
@@ -68,6 +69,7 @@ export interface AdminNavItem {
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'approvals', label: 'Student Approvals' },
+  { key: 'staff-faculty', label: 'Staff & Faculty' },
   { key: 'students', label: 'Students' },
   { key: 'attendance', label: 'Attendance' },
   { key: 'results', label: 'Results' },
@@ -98,6 +100,7 @@ export function buildAdminNavigation(role: string | null): readonly AdminNavItem
 export const ADMIN_VIEW_HEADINGS: Readonly<Record<AdminView, string>> = {
   dashboard: 'Dashboard',
   approvals: 'Student Approvals',
+  'staff-faculty': 'Staff & Faculty',
   students: 'Students',
   attendance: 'Attendance',
   results: 'Results',

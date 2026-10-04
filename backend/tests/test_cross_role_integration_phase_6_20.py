@@ -15,8 +15,9 @@ derived from the backend as the source of truth:
 
     GET  /api/v1/auth/me                  -> all authenticated roles  (resolved role)
     GET  /api/v1/conversations            -> all authenticated roles  (user-scoped)
-    POST /api/v1/generation/chat          -> all authenticated roles  (get_current_user
-                                             + scope_tenant, so tenant-pinned)
+    POST /api/v1/generation/chat          -> active institution roles
+                                             (require_institution_roles +
+                                              scope_tenant, so tenant-pinned)
     GET  /api/v1/students/me/*            -> student-only identity chain
                                              (404 STUDENT_PROFILE_NOT_FOUND for
                                               non-student accounts)
@@ -41,6 +42,7 @@ from fastapi.testclient import TestClient
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
 from app.main import app
 from app.schemas.chat import ChatRequest, ChatResponse
+from tests.dashboard_contract import build_dashboard
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -386,7 +388,8 @@ def test_student_privileged_boundary_is_closed_server_side():
 def test_admin_only_matrix_is_open_for_admin():
     """The same surfaces remain reachable for the admin role (read paths)."""
     with _auth("admin"), patch(
-        "app.api.admin.admin_dashboard.get_dashboard_summary", return_value={}
+        "app.api.admin.admin_dashboard.get_dashboard_summary",
+        return_value=build_dashboard(),
     ), patch(
         "app.api.admin.admin_academics.list_students", return_value=[]
     ), patch(
@@ -683,9 +686,10 @@ def test_student_a_cannot_reach_student_bs_academic_data():
         _assert_tenant_mismatch("student", "GET", "/api/v1/students/me/profile")
 
 
-def test_faculty_a_cannot_use_faculty_bs_tenant_on_the_chat_contract():
+@pytest.mark.parametrize("role", ["staff", "faculty"])
+def test_institution_user_cannot_use_another_tenant_on_the_chat_contract(role: str):
     _assert_tenant_mismatch(
-        "faculty",
+        role,
         "POST",
         "/api/v1/generation/chat",
         json={"user_query": "hello", "institution_id": INSTITUTION_B},
@@ -713,11 +717,10 @@ def test_platform_level_admin_gains_no_global_authority():
 
 
 def test_tenantless_privileged_accounts_gain_no_operational_authority():
-    """Fail safe: no tenant means no admin surface and no approval authority.
+    """Fail safe: no tenant means no admin, approval, or AI authority.
 
-    The chat contract keeps its locked Phase 6.1 platform passthrough (a
-    documented, pre-existing limitation — see the phase document); every
-    administrative surface stays closed.
+    Phase 7.22 closes the legacy chat passthrough for institution roles while
+    preserving the existing administrative fail-closed behavior.
     """
     for role in ("tenantless_staff", "tenantless_faculty"):
         _assert_forbidden(role, "GET", "/api/v1/admin/me")
@@ -730,6 +733,32 @@ def test_tenantless_privileged_accounts_gain_no_operational_authority():
         )
         _assert_forbidden(role, "GET", "/api/v1/admin/students/pending")
         _assert_forbidden(role, "POST", f"/api/v1/admin/students/{STUDENT_A}/approve")
+        _assert_forbidden(
+            role,
+            "POST",
+            "/api/v1/generation/chat",
+            json={"user_query": "hello", "institution_id": INSTITUTION_A},
+        )
+
+
+@pytest.mark.parametrize("role", ["staff", "faculty"])
+def test_inactive_institution_cannot_use_authenticated_chat(role: str):
+    with _auth(role), patch(
+        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        return_value={
+            "institution_id": INSTITUTION_A,
+            "status": "suspended",
+            "is_active": False,
+        },
+    ), patch("app.main.process_chat_request") as process_chat:
+        response = client.post(
+            "/api/v1/generation/chat",
+            json={"user_query": "hello", "institution_id": INSTITUTION_A},
+            headers=AUTH_HEADERS,
+        )
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "TENANT_INACTIVE"
+    process_chat.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

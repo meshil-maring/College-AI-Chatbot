@@ -14,23 +14,15 @@ import userEvent from '@testing-library/user-event'
 import AdminShell from './AdminShell.tsx'
 import * as adminApi from '../../services/adminApi.ts'
 import type { DashboardSummary } from '../../types/admin.ts'
+import {
+  buildDashboardSummary,
+  emptyDashboardSummary,
+} from '../../test/adminDashboardFixtures.ts'
 
 vi.mock('../../services/adminApi.ts')
 vi.mock('../chat/ChatShell.tsx', () => ({ default: () => <div>AI Assistant chat</div> }))
 
-const DASHBOARD_SUMMARY: DashboardSummary = {
-  counts: {
-    knowledge_sources: 0,
-    documents: 0,
-    faqs: 0,
-    notices: 0,
-    students: 0,
-    student_results: 0,
-    test_results: 0,
-    attendance_records: 0,
-  },
-  recent_audit: [],
-}
+const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
 
 /** Mutable auth context so each test can drive the canonical role. */
 const authState = vi.hoisted(() => ({
@@ -117,6 +109,34 @@ describe('AdminShell', () => {
     expect(screen.queryByText('u1')).not.toBeInTheDocument()
     expect(screen.queryByText('a1')).not.toBeInTheDocument()
     expect(screen.queryByText('inst-1')).not.toBeInTheDocument()
+  })
+
+  it('lands on the Dashboard by default and routes quick actions to real views', async () => {
+    // Phase 7.21: Dashboard is the default landing view, and a quick action
+    // switches the shell to the EXISTING screen it names — no second dashboard.
+    vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(
+      buildDashboardSummary(),
+    )
+    vi.mocked(adminApi.listPendingStudents).mockReset()
+    vi.mocked(adminApi.listPendingStudents).mockResolvedValue([])
+    const user = userEvent.setup()
+    render(<AdminShell />)
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Key metrics' })).toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await user.click(screen.getByRole('button', { name: /Approve Student/ }))
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Student Approvals' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      )
+    })
+    // Exactly one Dashboard navigation entry still exists.
+    expect(screen.getAllByRole('button', { name: 'Dashboard' })).toHaveLength(1)
   })
 
   it('signs out via the shared logout', async () => {

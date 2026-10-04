@@ -141,6 +141,7 @@ class AdminInvitationView(BaseModel):
     invitation_id: UUID
     institution_id: UUID
     email: str
+    role_name: Literal["admin", "staff", "faculty"] = "admin"
     status: InvitationStatus
     expires_at: str | None
     created_at: str | None
@@ -208,7 +209,7 @@ class AdminInvitationAcceptanceResponse(BaseModel):
     institution_id: UUID
     institution_name: str
     email: str
-    role: Literal["admin"]
+    role: Literal["admin", "staff", "faculty"]
     scope: Literal["institution"] = "institution"
     message: str
 
@@ -244,6 +245,7 @@ class AdminInvitationPublicView(BaseModel):
     institution_name: str
     institution_code: str
     email: str
+    role: Literal["admin", "staff", "faculty"] = "admin"
     expires_at: str | None
     email_verified: bool = False
 

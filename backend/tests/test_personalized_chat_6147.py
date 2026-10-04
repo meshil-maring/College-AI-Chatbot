@@ -85,18 +85,36 @@ GENERAL_QUERY = "What is the attendance policy for exams?"
 
 @pytest.fixture(autouse=True)
 def _cleanup_dependency_overrides():
-    yield
+    with patch(
+        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        side_effect=lambda _db, institution_id: _institution_row(
+            institution_id=str(institution_id)
+        ),
+    ):
+        yield
     app.dependency_overrides.pop(get_current_user, None)
 
 
 def _user(user_id=STUDENT_USER_ID, roles=None, tenant=TENANT_A):
     """An authenticated ``get_current_user()`` dictionary (JWT-derived)."""
+    resolved_roles = roles if roles is not None else ["student"]
     return {
         "user_id": user_id,
         "auth_user_id": AUTH_USER_ID,
         "email": "student@college.edu",
-        "roles": roles if roles is not None else ["student"],
+        "roles": resolved_roles,
+        "status": "active",
         "institution_id": tenant,
+        "role_assignments": [
+            {
+                "role": role,
+                "scope_type": "institution",
+                "scope_id": tenant,
+                "scope_organization_id": None,
+                "is_active": True,
+            }
+            for role in resolved_roles
+        ],
     }
 
 
