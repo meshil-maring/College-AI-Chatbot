@@ -13,6 +13,7 @@ import InstitutionEntryPage from './features/landing/InstitutionEntryPage.tsx'
 import InstitutionGatewayPage from './features/landing/InstitutionGatewayPage.tsx'
 import SuperAdminShell from './features/superAdmin/SuperAdminShell.tsx'
 import AdminInvitationPage from './features/adminInvitation/AdminInvitationPage.tsx'
+import UniversityRegistrationPage from './features/auth/UniversityRegistrationPage.tsx'
 
 function decodeInstitutionCode(value: string | undefined): string | null {
   if (value === undefined) return null
@@ -35,6 +36,7 @@ export type AppRoute =
   | { readonly kind: 'login'; readonly audience: LoginAudience }
   | { readonly kind: 'super-admin' }
   | { readonly kind: 'admin-invitation'; readonly token: string }
+  | { readonly kind: 'university-registration' }
   | { readonly kind: 'institution-entry' }
   | { readonly kind: 'institution'; readonly institutionCode: string }
   | { readonly kind: 'institution-ai'; readonly institutionCode: string }
@@ -76,6 +78,7 @@ export function resolveAppRoute(pathname: string): AppRoute {
       : { kind: 'admin-invitation', token: invitationToken }
   }
   if (pathname === '/' || pathname === '') return { kind: 'home' }
+  if (/^\/register\/university\/?$/.test(pathname)) return { kind: 'university-registration' }
   if (/^\/u\/?$/.test(pathname)) return { kind: 'institution-entry' }
 
   const institutionMatch = pathname.match(/^\/u\/([^/]+)(?:\/(ai))?\/?$/)
@@ -318,6 +321,9 @@ function App() {
   if (route.kind === 'not-found') return <NotFoundPage />
   // Rendered outside <AuthProvider>: the invited person has no session yet.
   if (route.kind === 'admin-invitation') return <AdminInvitationPage token={route.token} />
+  // Public onboarding request. The backend creates only a pending institution;
+  // no usable admin access exists until the server-side approval workflow.
+  if (route.kind === 'university-registration') return <UniversityRegistrationPage />
   return (
     <AuthProvider>
       {route.kind === 'home' ? <RootGate /> : null}

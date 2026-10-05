@@ -414,6 +414,13 @@ def register_institution(
     except Exception as exc:
         if user_id is not None:
             _try_delete_user_row(db, user_id)
+        if institution is not None and institution.get("institution_id"):
+            try:
+                tenancy_repo.delete_institution(db, institution["institution_id"])
+            except Exception:
+                # Best-effort compensation mirrors the existing Auth/user
+                # cleanup. Preserve the original controlled registration error.
+                pass
         _try_delete_auth_user(auth_user_id)
         if isinstance(exc, AppError):
             raise

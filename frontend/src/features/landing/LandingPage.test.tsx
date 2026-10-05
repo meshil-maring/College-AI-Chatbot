@@ -62,6 +62,15 @@ describe('Phase 7.11 demo landing role gateway', () => {
     expect(resolveAppRoute('/super-admin')).toEqual({ kind: 'super-admin' })
     expect(resolveAppRoute('/u/git/ai')).toEqual({ kind: 'institution-ai', institutionCode: 'GIT' })
     expect(resolveAppRoute('/public-chat/GIT')).toEqual({ kind: 'public-chat', institutionCode: 'GIT' })
+    expect(resolveAppRoute('/register/university')).toEqual({ kind: 'university-registration' })
+  })
+
+  it('links university self-registration from the home page', () => {
+    render(<App />)
+    expect(screen.getByRole('link', { name: 'Register your university' })).toHaveAttribute(
+      'href',
+      '/register/university',
+    )
   })
 
   it('resolves the Phase 7.14 invitation route as a PUBLIC, session-free page', () => {

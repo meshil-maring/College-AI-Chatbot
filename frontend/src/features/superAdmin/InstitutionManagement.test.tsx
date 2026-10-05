@@ -154,6 +154,27 @@ describe('Super Admin institution management', () => {
     expect(screen.queryByRole('button', { name: /^suspend institution$/i })).toBeNull()
   })
 
+  it('shows an explicit approval action for a pending self-registration', async () => {
+    listSpy.mockResolvedValue([{ ...SUMMARY, status: 'pending', is_active: false }])
+    getSpy
+      .mockResolvedValueOnce({ ...DETAIL, status: 'pending', is_active: false })
+      .mockResolvedValueOnce({ ...DETAIL, status: 'active', is_active: true })
+    activateSpy.mockResolvedValue({
+      id: 'inst-1', code: 'UNICO', name: 'Unico University', status: 'active',
+      is_active: true, already_applied: false, message: 'Institution activated.',
+    })
+    render(<InstitutionManagement />, { wrapper: Wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: /manage/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /approve & activate/i }))
+    const dialog = await screen.findByRole('alertdialog', { name: /confirm institution approval/i })
+    expect(dialog.textContent).toMatch(/allows its assigned University Admins/i)
+    await userEvent.click(within(dialog).getByRole('button', { name: /approve & activate/i }))
+
+    await waitFor(() => expect(activateSpy).toHaveBeenCalledWith('session-token', 'inst-1'))
+    expect(screen.queryByRole('button', { name: /^suspend institution$/i })).not.toBeNull()
+  })
+
   it('assigns a university admin by email without asking for a password', async () => {
     listSpy.mockResolvedValue([SUMMARY])
     getSpy.mockResolvedValue(DETAIL)

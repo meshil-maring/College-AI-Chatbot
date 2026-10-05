@@ -95,6 +95,20 @@ export default function LandingPage() {
               <span aria-hidden="true">+</span>
               <span className="rounded-full border border-violet-500/40 bg-violet-500/10 px-4 py-2 text-violet-200">Platform administration</span>
             </div>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a
+                href="/register/university"
+                className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              >
+                Register your university
+              </a>
+              <a
+                href="/login/admin"
+                className="rounded-lg border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-400 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+              >
+                University Admin login
+              </a>
+            </div>
           </div>
         </section>
 

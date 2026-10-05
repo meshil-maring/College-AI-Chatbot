@@ -76,6 +76,7 @@ export default function InstitutionDetailPanel({
   const [primaryColor, setPrimaryColor] = useState(institution.primary_color ?? '')
   const [localError, setLocalError] = useState<string | null>(null)
   const [confirmSuspend, setConfirmSuspend] = useState(false)
+  const [confirmApproval, setConfirmApproval] = useState(false)
   const [showAssign, setShowAssign] = useState(false)
   const [adminEmail, setAdminEmail] = useState('')
 
@@ -125,7 +126,16 @@ export default function InstitutionDetailPanel({
         </div>
         <div className="flex flex-col items-end gap-3">
           <StatusPill status={institution.status} />
-          {institution.status === 'suspended' ? (
+          {institution.status === 'pending' ? (
+            <button
+              type="button"
+              onClick={() => { setConfirmApproval(true) }}
+              disabled={busy !== null}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+            >
+              {busy === 'activate' ? 'Approving...' : 'Approve & Activate'}
+            </button>
+          ) : institution.status === 'suspended' ? (
             <button
               type="button"
               onClick={onActivate}
@@ -151,6 +161,32 @@ export default function InstitutionDetailPanel({
         <p role="alert" className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
           {localError}
         </p>
+      ) : null}
+
+      {confirmApproval ? (
+        <div role="alertdialog" aria-label="Confirm institution approval" className="rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-6">
+          <h3 className="text-lg font-semibold text-emerald-200">Approve {institution.name}?</h3>
+          <p className="mt-2 text-sm leading-6 text-emerald-100/90">
+            This activates the university and allows its assigned University Admins to use the protected institution workspace.
+          </p>
+          <div className="mt-5 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => { setConfirmApproval(false) }}
+              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirmApproval(false); onActivate() }}
+              disabled={busy !== null}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+            >
+              {busy === 'activate' ? 'Approving...' : 'Approve & Activate'}
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {confirmSuspend ? (
@@ -232,7 +268,7 @@ export default function InstitutionDetailPanel({
           </div>
         </dl>
         <p className="mt-4 text-xs leading-5 text-slate-500">
-          Status changes only through the Suspend / Activate actions above, and each change is
+          Status changes only through the Approve / Suspend / Activate actions above, and each change is
           recorded in the platform audit ledger.
         </p>
       </Section>

@@ -296,6 +296,20 @@ def insert_institution(
     return rows[0]
 
 
+def delete_institution(client: Client, institution_id: UUID | str) -> None:
+    """Compensation-only delete for a registration that did not complete.
+
+    Callers must hold the server-resolved id of the institution created during
+    the same failed workflow. This is not exposed as a public lifecycle action.
+    """
+    (
+        client.table("institutions")
+        .delete()
+        .eq("institution_id", str(institution_id))
+        .execute()
+    )
+
+
 def update_institution_status(
     client: Client, institution_id: UUID | str, status: str
 ) -> dict | None:
@@ -336,7 +350,9 @@ def get_role_by_name(client: Client, name: str) -> dict | None:
     """Return the roles row for one role name (admin / staff / faculty / student)."""
     response = (
         client.table("roles")
-        .select("role_id, name, is_active")
+        # public.roles.id is authoritative; retain the application-facing
+        # role_id key used by the tenancy service and user_roles payload.
+        .select("role_id:id, name, is_active")
         .eq("name", name)
         .maybe_single()
         .execute()

@@ -143,16 +143,18 @@ async def suspend_platform_institution(
 @router.post(
     "/institutions/{institution_id}/activate",
     response_model=InstitutionLifecycleResponse,
-    summary="Reactivate a suspended institution (Super Admin)",
+    summary="Approve/activate a pending or suspended institution (Super Admin)",
 )
 async def activate_platform_institution(
     institution_id: UUID,
     current_user: dict = Depends(_SUPER_ADMIN),
 ) -> InstitutionLifecycleResponse:
-    """Restore normal functionality for a suspended institution.
+    """Approve a pending institution or restore a suspended institution.
 
-    Because suspension never removed data, restoring the active status fully
-    restores the tenant. Audited as ``institution_activated``.
+    Pending self-registrations become usable only through this explicit,
+    protected platform action. Because suspension never removed data,
+    restoring active status also fully restores a suspended tenant. Audited as
+    ``institution_activated``.
     """
     return service.activate_institution(current_user, institution_id)
 

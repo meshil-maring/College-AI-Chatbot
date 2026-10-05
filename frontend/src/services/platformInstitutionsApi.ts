@@ -162,7 +162,7 @@ export async function suspendInstitution(
   )
 }
 
-/** Reactivate a previously suspended institution. */
+/** Activate a pending institution or reactivate a suspended institution. */
 export async function activateInstitution(
   accessToken: string,
   institutionId: string,
