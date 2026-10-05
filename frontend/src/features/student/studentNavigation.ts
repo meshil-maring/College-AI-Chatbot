@@ -19,6 +19,8 @@
  * shown one by a role-resolution mistake either.
  */
 
+import { hasPermission } from '../auth/permissions.ts'
+
 /** Roles that receive the student experience shell. */
 const STUDENT_SHELL_ROLES: readonly string[] = ['student', 'staff', 'faculty']
 
@@ -59,10 +61,26 @@ export const STUDENT_NAV_ITEMS: readonly StudentNavItem[] = [
  * — the fail-safe behaviour, consistent with `AuthenticatedShell`, which never
  * renders this shell for those roles in the first place.
  */
-export function buildStudentNavigation(role: string | null): readonly StudentNavItem[] {
+const STUDENT_VIEW_PERMISSIONS: Readonly<Record<StudentView, string>> = {
+  dashboard: 'profile.own.read',
+  attendance: 'attendance.own.read',
+  results: 'results.own.read',
+  notices: 'notices.read',
+  resources: 'documents.read',
+  assistant: 'ai.chat',
+  profile: 'profile.own.read',
+}
+
+export function buildStudentNavigation(
+  role: string | null,
+  permissions?: readonly string[],
+): readonly StudentNavItem[] {
   if (role === null) return []
   if (!STUDENT_SHELL_ROLES.includes(role)) return []
-  return STUDENT_NAV_ITEMS
+  if (permissions === undefined) return STUDENT_NAV_ITEMS
+  return STUDENT_NAV_ITEMS.filter((item) =>
+    hasPermission(permissions, STUDENT_VIEW_PERMISSIONS[item.key]),
+  )
 }
 
 /** Human-readable heading for each view (used for the page `h1`). */

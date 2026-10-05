@@ -32,6 +32,8 @@
  * role-resolution mistake either.
  */
 
+import { hasPermission } from '../auth/permissions.ts'
+
 /** The only role that renders the faculty shell. */
 const FACULTY_SHELL_ROLES: readonly string[] = ['faculty']
 
@@ -62,10 +64,22 @@ export const FACULTY_NAV_ITEMS: readonly FacultyNavItem[] = [
  * behaviour, consistent with shell selection in `App.tsx`, which never
  * renders this shell for those roles in the first place.
  */
-export function buildFacultyNavigation(role: string | null): readonly FacultyNavItem[] {
+const FACULTY_VIEW_PERMISSIONS: Readonly<Record<FacultyView, string>> = {
+  dashboard: 'profile.own.read',
+  assistant: 'ai.chat',
+  profile: 'profile.own.read',
+}
+
+export function buildFacultyNavigation(
+  role: string | null,
+  permissions?: readonly string[],
+): readonly FacultyNavItem[] {
   if (role === null) return []
   if (!FACULTY_SHELL_ROLES.includes(role)) return []
-  return FACULTY_NAV_ITEMS
+  if (permissions === undefined) return FACULTY_NAV_ITEMS
+  return FACULTY_NAV_ITEMS.filter((item) =>
+    hasPermission(permissions, FACULTY_VIEW_PERMISSIONS[item.key]),
+  )
 }
 
 /** Human-readable heading for each view (used for the page `h1`). */

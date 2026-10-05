@@ -19,12 +19,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query
 
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_permission
 from app.schemas.student_notifications import Notification, NotificationListResponse
 from app.services import student_context as student_context_service
 from app.services import student_notifications as notifications_service
 
-router = APIRouter(prefix="/students", tags=["students"])
+router = APIRouter(
+    prefix="/students",
+    tags=["students"],
+    dependencies=[Depends(require_permission("profile.own.read"))],
+)
 
 # Default page size for notification listing.
 _DEFAULT_PAGE_SIZE = 20

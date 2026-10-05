@@ -117,7 +117,7 @@ def list_scoped_role_grants(
     response = (
         client.table("user_roles")
         .select(
-            "user_id, created_at, updated_at, roles!inner(name), "
+            "user_id, assigned_at, roles!inner(name), "
             "users!inner(id, email, first_name, last_name, status, created_at, updated_at)"
         )
         .eq("scope_type", "institution")

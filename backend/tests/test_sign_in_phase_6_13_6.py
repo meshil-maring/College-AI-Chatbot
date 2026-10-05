@@ -298,6 +298,7 @@ def test_03_student_university_roll_number_login_succeeds():
     )
     assert response.status_code == 200, response.text
     assert response.json()["access_token"] == "mock-access-token"
+    assert response.json()["access_token"] == "mock-access-token"
 
 
 def test_04_register_number_wrong_institution_code_denied():
@@ -567,9 +568,97 @@ def test_13_faculty_login_succeeds_with_existing_email_identity():
         db=institution_db(),
     )
     assert response.status_code == 200, response.text
-    assert response.json()["access_token"] == "mock-access-token"
 
 
+def test_pending_faculty_login_returns_actionable_message_after_credentials_verify():
+    """A real password plus a pending request explains the required next step."""
+    pending = {
+        "request_id": str(uuid4()),
+        "requested_role": "faculty",
+        "status": "pending",
+    }
+    with patch(
+        "app.api.auth.tenancy_repo.get_pending_membership_request_for_user",
+        return_value=pending,
+    ):
+        response = login_api(
+            account=sign_in_account(status="active"),
+            email=FACULTY_EMAIL,
+            db=institution_db(),
+        )
+
+    assert response.status_code == 403
+    assert response.json() == {
+        "error": {
+            "code": "REGISTRATION_PENDING",
+            "message": (
+                "Your faculty registration is pending. Contact your "
+                "institution administrator to continue."
+            ),
+        }
+    }
+
+
+def test_pending_staff_login_returns_actionable_message_after_credentials_verify():
+    """Pending staff receive the same safe state guidance after verification."""
+    pending = {
+        "request_id": str(uuid4()),
+        "requested_role": "staff",
+        "status": "pending",
+    }
+    with patch(
+        "app.api.auth.tenancy_repo.get_pending_membership_request_for_user",
+        return_value=pending,
+    ):
+        response = login_api(
+            account=sign_in_account(status="active"),
+            email="staff@example.com",
+            db=institution_db(),
+        )
+
+    assert response.status_code == 403
+    assert response.json()["error"] == {
+        "code": "REGISTRATION_PENDING",
+        "message": (
+            "Your staff registration is pending. Contact your institution "
+            "administrator to continue."
+        ),
+    }
+
+
+def test_unconfirmed_pending_faculty_gets_pending_message_not_invalid_credentials():
+    """GoTrue's verified-password email-confirmation block remains actionable."""
+    auth = MagicMock()
+    auth.auth.sign_in_with_password.side_effect = AuthApiError(
+        "Email not confirmed", 400, "email_not_confirmed"
+    )
+    pending = {
+        "request_id": str(uuid4()),
+        "requested_role": "faculty",
+        "status": "pending",
+    }
+    with patch(
+        "app.api.auth.tenancy_repo.get_user_by_email",
+        return_value={"user_id": str(uuid4()), "email": FACULTY_EMAIL},
+    ), patch(
+        "app.api.auth.tenancy_repo.get_pending_membership_request_for_user",
+        return_value=pending,
+    ):
+        response = login_api(
+            account=None,
+            auth=auth,
+            email=FACULTY_EMAIL,
+            db=institution_db(),
+        )
+
+    assert response.status_code == 403
+    assert response.json()["error"] == {
+        "code": "REGISTRATION_PENDING",
+        "message": (
+            "Your faculty registration is pending. Contact your institution "
+            "administrator to continue."
+        ),
+    }
 def test_13b_pending_faculty_has_no_role_so_protected_access_denied():
     """Pending faculty hold NO role yet (Phase 6.13.5) -> 403 FORBIDDEN."""
     user = {"user_id": uuid4(), "auth_user_id": FAKE_CLAIMS["sub"], "email": FACULTY_EMAIL}

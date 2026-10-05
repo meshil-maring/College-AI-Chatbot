@@ -37,7 +37,11 @@ def get_admin_client() -> Client:
         return _admin_client
 
 
-async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
+async def get_user_by_auth_id(
+    auth_user_id: str,
+    *,
+    include_permissions: bool = False,
+) -> dict | None:
     """Return the application identity and authoritative scoped role grants.
 
     ``user_roles.scope_*`` is the authority for non-student role scope.  The
@@ -46,12 +50,19 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
     faculty grant.
     """
     client = get_admin_client()
+    role_projection = (
+        "user_roles(scope_type, scope_id, scope_organization_id, "
+        "roles(name, is_active, "
+        "role_permissions(permissions(code, is_active))))"
+        if include_permissions
+        else "user_roles(scope_type, scope_id, scope_organization_id, "
+        "roles(name, is_active))"
+    )
     response = (
         client.table("users")
         .select(
             "user_id:id, auth_user_id, email, status, "
-            "user_roles(scope_type, scope_id, scope_organization_id, "
-            "roles(name, is_active)), "
+            f"{role_projection}, "
             "students(institution_id)"
         )
         .eq("auth_user_id", auth_user_id)
@@ -62,6 +73,7 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         return None
     row = response.data
     role_assignments = []
+    effective_permissions: set[str] = set()
     for grant in row.get("user_roles") or []:
         role = grant.get("roles")
         if not isinstance(role, dict) or not role.get("is_active", True):
@@ -69,6 +81,17 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         role_name = role.get("name")
         if not role_name:
             continue
+        if include_permissions:
+            for role_permission in role.get("role_permissions") or []:
+                if not isinstance(role_permission, dict):
+                    continue
+                permission = role_permission.get("permissions")
+                if (
+                    isinstance(permission, dict)
+                    and permission.get("is_active", True)
+                    and isinstance(permission.get("code"), str)
+                ):
+                    effective_permissions.add(permission["code"])
         role_assignments.append(
             {
                 "role": role_name,
@@ -88,7 +111,7 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         institution_id = student_links[0].get("institution_id")
     else:
         institution_id = None
-    return {
+    result = {
         "user_id": row["user_id"],
         "auth_user_id": row["auth_user_id"],
         "email": row["email"],
@@ -98,6 +121,10 @@ async def get_user_by_auth_id(auth_user_id: str) -> dict | None:
         "student_institution_id": institution_id,
         "role_assignments": role_assignments,
     }
+    if include_permissions:
+        result["effective_permissions"] = sorted(effective_permissions)
+        result["permissions_resolved"] = True
+    return result
 
 
 async def get_super_admin_authorization(auth_user_id: str) -> dict | None:

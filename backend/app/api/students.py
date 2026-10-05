@@ -19,7 +19,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from app.core.security import assert_tenant_object, get_current_user
+from app.core.security import (
+    assert_tenant_object,
+    authorize_permissions,
+    get_current_user,
+)
 from app.schemas.student_attendance import StudentOwnAttendance
 from app.schemas.student_notices import StudentNoticeList
 from app.schemas.student_profile import StudentAcademicProfile
@@ -44,10 +48,14 @@ def my_profile(current_user: dict = Depends(get_current_user)) -> dict:
     """Return the authenticated student's own profile."""
     student = student_data.get_own_profile(UUID(current_user["user_id"]))
     assert_tenant_object(current_user, student.get("institution_id"))
+    authorize_permissions(current_user, "profile.own.read")
     return student
 
 
-@router.get("/me/academic-profile", response_model=StudentAcademicProfile)
+@router.get(
+    "/me/academic-profile",
+    response_model=StudentAcademicProfile,
+)
 def my_academic_profile(
     current_user: dict = Depends(get_current_user),
 ) -> StudentAcademicProfile:
@@ -61,7 +69,9 @@ def my_academic_profile(
     never override the authenticated identity (extra query/body fields are
     rejected with 422).
     """
-    return academic_profile_service.get_academic_profile(current_user)
+    profile = academic_profile_service.get_academic_profile(current_user)
+    authorize_permissions(current_user, "profile.own.read")
+    return profile
 
 
 @router.get("/me/results")
@@ -71,14 +81,19 @@ def my_results(
     current_user: dict = Depends(get_current_user),
 ) -> list[dict]:
     """Return the authenticated student's own published result summaries."""
-    return student_data.get_own_results(
+    results = student_data.get_own_results(
         UUID(current_user["user_id"]),
         academic_year_id=academic_year_id,
         semester_id=semester_id,
     )
+    authorize_permissions(current_user, "results.own.read")
+    return results
 
 
-@router.get("/me/results/summary", response_model=StudentOwnResults)
+@router.get(
+    "/me/results/summary",
+    response_model=StudentOwnResults,
+)
 def my_results_summary(
     academic_year_id: UUID | None = None,
     semester_id: UUID | None = None,
@@ -92,15 +107,19 @@ def my_results_summary(
     existing schema (academic_year_id / semester_id) narrow the caller's
     own rows. The legacy raw ``GET /me/results`` contract is unchanged.
     """
-    return student_results_service.get_own_results(
+    results = student_results_service.get_own_results(
         current_user,
         academic_year_id=academic_year_id,
         semester_id=semester_id,
     )
+    authorize_permissions(current_user, "results.own.read")
+    return results
 
 
-@router.get("/me/results/{result_id}/detail",
-    response_model=StudentAcademicResultDetail)
+@router.get(
+    "/me/results/{result_id}/detail",
+    response_model=StudentAcademicResultDetail,
+)
 def my_result_detail(
     result_id: UUID,
     current_user: dict = Depends(get_current_user),
@@ -112,7 +131,9 @@ def my_result_detail(
     RESULT_NOT_FOUND. The legacy raw ``GET /me/results/{result_id}``
     contract is unchanged.
     """
-    return student_results_service.get_own_result(current_user, result_id)
+    result = student_results_service.get_own_result(current_user, result_id)
+    authorize_permissions(current_user, "results.own.read")
+    return result
 
 
 @router.get("/me/results/{result_id}")
@@ -129,10 +150,14 @@ def my_result(
     """
     result = student_data.get_own_result(UUID(current_user["user_id"]), result_id)
     assert_tenant_object(current_user, result.get("institution_id"))
+    authorize_permissions(current_user, "results.own.read")
     return result
 
 
-@router.get("/me/test-results/summary", response_model=StudentOwnTestResults)
+@router.get(
+    "/me/test-results/summary",
+    response_model=StudentOwnTestResults,
+)
 def my_test_results_summary(
     academic_year_id: UUID | None = None,
     semester_id: UUID | None = None,
@@ -146,11 +171,13 @@ def my_test_results_summary(
     existing schema (academic_year_id / semester_id) narrow the caller's
     own rows. The legacy raw ``GET /me/test-results`` contract is unchanged.
     """
-    return student_results_service.get_own_test_results(
+    results = student_results_service.get_own_test_results(
         current_user,
         academic_year_id=academic_year_id,
         semester_id=semester_id,
     )
+    authorize_permissions(current_user, "results.own.read")
+    return results
 
 
 @router.get("/me/test-results")
@@ -160,14 +187,19 @@ def my_test_results(
     current_user: dict = Depends(get_current_user),
 ) -> list[dict]:
     """Return the authenticated student's own published test scores."""
-    return student_data.get_own_test_results(
+    results = student_data.get_own_test_results(
         UUID(current_user["user_id"]),
         academic_year_id=academic_year_id,
         semester_id=semester_id,
     )
+    authorize_permissions(current_user, "results.own.read")
+    return results
 
 
-@router.get("/me/attendance/summary", response_model=StudentOwnAttendance)
+@router.get(
+    "/me/attendance/summary",
+    response_model=StudentOwnAttendance,
+)
 def my_attendance_summary(
     academic_year_id: UUID | None = None,
     semester_id: UUID | None = None,
@@ -188,13 +220,15 @@ def my_attendance_summary(
     (academic_year_id / semester_id / date_from / date_to) narrow the
     caller's own rows.
     """
-    return student_attendance_service.get_own_attendance(
+    attendance = student_attendance_service.get_own_attendance(
         current_user,
         academic_year_id=academic_year_id,
         semester_id=semester_id,
         date_from=date_from,
         date_to=date_to,
     )
+    authorize_permissions(current_user, "attendance.own.read")
+    return attendance
 
 
 @router.get("/me/attendance")
@@ -206,13 +240,15 @@ def my_attendance(
     current_user: dict = Depends(get_current_user),
 ) -> list[dict]:
     """Return the authenticated student's own attendance records."""
-    return student_data.get_own_attendance(
+    attendance = student_data.get_own_attendance(
         UUID(current_user["user_id"]),
         academic_year_id=academic_year_id,
         semester_id=semester_id,
         date_from=date_from,
         date_to=date_to,
     )
+    authorize_permissions(current_user, "attendance.own.read")
+    return attendance
 
 
 # ============================================================================
@@ -232,7 +268,10 @@ def my_attendance(
 # /delete route for notices or resources.
 
 
-@router.get("/me/notices", response_model=StudentNoticeList)
+@router.get(
+    "/me/notices",
+    response_model=StudentNoticeList,
+)
 def my_notices(
     limit: int = Query(
         student_notices_service.DEFAULT_NOTICE_LIMIT,
@@ -248,10 +287,15 @@ def my_notices(
     JWT chain), published + active + unexpired rows only, pinned first then
     newest. An institution with no published notices returns an empty list.
     """
-    return student_notices_service.get_own_notices(current_user, limit=limit)
+    notices = student_notices_service.get_own_notices(current_user, limit=limit)
+    authorize_permissions(current_user, "notices.read")
+    return notices
 
 
-@router.get("/me/resources", response_model=StudentResourceList)
+@router.get(
+    "/me/resources",
+    response_model=StudentResourceList,
+)
 def my_resources(
     limit: int = Query(
         student_resources_service.DEFAULT_RESOURCE_LIMIT,
@@ -269,4 +313,6 @@ def my_resources(
     projected. An institution with no published resources returns an empty
     list.
     """
-    return student_resources_service.get_own_resources(current_user, limit=limit)
+    resources = student_resources_service.get_own_resources(current_user, limit=limit)
+    authorize_permissions(current_user, "documents.read")
+    return resources

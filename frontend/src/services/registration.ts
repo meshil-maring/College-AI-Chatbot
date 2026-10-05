@@ -276,3 +276,29 @@ export async function registerStudent(
     timeoutMs,
   )
 }
+
+/** Submit a faculty registration request. The account remains pending. */
+export async function registerFaculty(
+  request: RegistrationRequest,
+  timeoutMs: number = 20_000,
+): Promise<RegistrationResponse> {
+  return requestJson<RegistrationResponse>(
+    'POST',
+    REGISTER_ENDPOINT,
+    request,
+    timeoutMs,
+  )
+}
+
+/** Submit a staff registration request. The account remains pending. */
+export async function registerStaff(
+  request: RegistrationRequest,
+  timeoutMs: number = 20_000,
+): Promise<RegistrationResponse> {
+  return requestJson<RegistrationResponse>(
+    'POST',
+    REGISTER_ENDPOINT,
+    request,
+    timeoutMs,
+  )
+}

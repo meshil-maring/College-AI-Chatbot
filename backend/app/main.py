@@ -11,6 +11,7 @@ from app.config import settings
 from app.core.errors import AppError, app_error_handler
 from app.core.security import (
     get_current_user,
+    require_permission,
     require_institution_roles,
     resolve_primary_role,
     scope_tenant,
@@ -163,7 +164,11 @@ generation_router = APIRouter(prefix="/generation", tags=["generation"])
 _INSTITUTION_CHAT = require_institution_roles("admin", "staff", "faculty", "student")
 
 
-@generation_router.post("/chat", response_model=ChatResponse)
+@generation_router.post(
+    "/chat",
+    response_model=ChatResponse,
+    dependencies=[Depends(require_permission("ai.chat"))],
+)
 def chat(
     request: ChatRequest,
     current_user: dict = Depends(_INSTITUTION_CHAT),
@@ -299,7 +304,10 @@ def public_chat(request: PublicChatRequest, http_request: Request) -> PublicChat
         raise
     except Exception:
         status = 500
-        logger.exception(
+        # This public boundary deliberately records only coarse metadata.
+        # Exception text can contain provider/database diagnostics and must not
+        # be copied into production logs for an unauthenticated request.
+        logger.error(
             "event=public_chat_failed institution=%s status=500 category=internal",
             request.institution_code,
         )
@@ -388,6 +396,7 @@ async def auth_me(current_user: dict = Depends(get_current_user)):
         "email": current_user["email"],
         "role": resolve_primary_role(current_user.get("roles")),
         "institution_id": current_user.get("institution_id"),
+        "effective_permissions": current_user.get("effective_permissions", []),
     }
 
 

@@ -41,6 +41,13 @@ describe('buildAdminNavigation', () => {
     expect(buildAdminNavigation('unknown-role')).toEqual([])
   })
 
+  it('filters admin navigation to the server-resolved permission set', () => {
+    expect(
+      buildAdminNavigation('admin', ['ai.chat', 'profile.own.read']).map((item) => item.key),
+    ).toEqual(['assistant', 'profile'])
+    expect(buildAdminNavigation('admin', [])).toEqual([])
+  })
+
   it('contains no invented or unauthorized entries', () => {
     const labels = ADMIN_NAV_ITEMS.map((item) => item.label)
     // No speculative administrative surfaces (no frontend manager exists).

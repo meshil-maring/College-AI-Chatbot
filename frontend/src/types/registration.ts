@@ -32,8 +32,8 @@ export interface InstitutionLookupResponse {
   name: string
 }
 
-/** Student-specific fields of the registration payload. */
-export type RegistrationType = 'student'
+/** Publicly requestable account types. Roles are granted only after approval. */
+export type RegistrationType = 'student' | 'faculty' | 'staff'
 
 /** Request body accepted by POST /api/v1/users/register (registration_type='student'). */
 export interface RegistrationRequest {
@@ -48,6 +48,9 @@ export interface RegistrationRequest {
   /** Optional; at least one of register_number / university_roll_number is required. */
   register_number?: string | null
   university_roll_number?: string | null
+  /** Optional faculty/staff profile details; omitted for student registrations. */
+  designation?: string | null
+  department?: string | null
 }
 
 /** Response returned by POST /api/v1/users/register (mirrors backend UserRegistrationResponse). */

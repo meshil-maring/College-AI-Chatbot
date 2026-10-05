@@ -226,7 +226,7 @@ def list_roster(
                 email=str(user.get("email") or ""),
                 role=role_name,
                 status=account_status,
-                created_at=user.get("created_at") or grant.get("created_at"),
+                created_at=user.get("created_at") or grant.get("assigned_at"),
                 updated_at=user.get("updated_at") or grant.get("updated_at"),
             )
         )

@@ -97,6 +97,26 @@ describe('login (existing POST /api/v1/auth/login contract)', () => {
     expect(err.kind).toBe<AuthErrorKind>('invalid_credentials')
     expect(err.status).toBe(400)
   })
+
+  it('shows a clear message for a verified faculty login that is still pending', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(403, {
+          error: { code: 'REGISTRATION_PENDING', message: 'Registration pending' },
+        }),
+      ),
+    )
+
+    const err = await login({ email: 'faculty@example.com', password: 'secret123' }).catch(
+      (e) => e,
+    )
+    expect(err).toBeInstanceOf(AuthError)
+    expect(err.kind).toBe<AuthErrorKind>('registration_pending')
+    expect(authErrorMessage(err)).toBe(
+      'Your registration is pending. Contact your institution administrator to continue signing in.',
+    )
+  })
 })
 
 describe('studentLogin (POST /api/v1/auth/student/login contract)', () => {

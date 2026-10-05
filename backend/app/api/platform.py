@@ -11,12 +11,18 @@ supply: an ``institution_id`` in the path is a *resource* identifier only, and
 the actor is always the server-resolved application user behind the verified JWT.
 """
 
+import logging
 from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
 
-from app.core.security import require_super_admin
+from app.core.errors import AppError
+from app.core.security import (
+    authorize_permissions,
+    get_current_user,
+    require_super_admin,
+)
 from app.schemas.admin_invitations import (
     AdminInvitationCancellationResponse,
     AdminInvitationCreateRequest,
@@ -39,7 +45,72 @@ from app.schemas.platform import (
 from app.services import platform_admin_invitations as invitations_service
 from app.services import platform_institutions as service
 
-router = APIRouter(prefix="/platform", tags=["platform"])
+logger = logging.getLogger(__name__)
+
+_PLATFORM_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
+    ("GET", "/platform/me"): ("platform.read",),
+    ("GET", "/platform/institutions"): ("platform.read",),
+    ("POST", "/platform/institutions"): ("platform.manage",),
+    ("GET", "/platform/institutions/{institution_id}"): ("platform.read",),
+    ("PATCH", "/platform/institutions/{institution_id}"): ("platform.manage",),
+    ("POST", "/platform/institutions/{institution_id}/suspend"): ("platform.manage",),
+    ("POST", "/platform/institutions/{institution_id}/activate"): ("platform.manage",),
+    ("POST", "/platform/institutions/{institution_id}/admins"): ("platform.manage",),
+    (
+        "POST",
+        "/platform/institutions/{institution_id}/admins/invitations",
+    ): ("platform.manage",),
+    (
+        "GET",
+        "/platform/institutions/{institution_id}/admins/roster",
+    ): ("platform.read",),
+    (
+        "POST",
+        "/platform/institutions/{institution_id}/admins/invitations/{invitation_id}/cancel",
+    ): ("platform.manage",),
+    (
+        "POST",
+        "/platform/institutions/{institution_id}/admins/invitations/{invitation_id}/resend",
+    ): ("platform.manage",),
+    ("POST", "/platform/admin-invitations/expire-sweep"): ("platform.manage",),
+    (
+        "POST",
+        "/platform/institutions/{institution_id}/admins/{user_id}/revoke",
+    ): ("platform.manage",),
+    ("GET", "/platform/audit"): ("platform.audit.read",),
+}
+
+
+async def _authorize_platform_endpoint(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+) -> None:
+    route = request.scope.get("route")
+    route_path = getattr(route, "path", "")
+    platform_path_index = route_path.rfind("/platform")
+    normalized_path = (
+        route_path[platform_path_index:] if platform_path_index >= 0 else ""
+    )
+    permissions = _PLATFORM_ROUTE_PERMISSIONS.get((request.method, normalized_path))
+    if permissions is None:
+        logger.error(
+            "event=authorization_policy_missing method=%s path=%s",
+            request.method,
+            normalized_path or "unknown",
+        )
+        raise AppError(
+            "You do not have permission to perform this action",
+            status_code=403,
+            code="FORBIDDEN",
+        )
+    authorize_permissions(current_user, *permissions)
+
+
+router = APIRouter(
+    prefix="/platform",
+    tags=["platform"],
+    dependencies=[Depends(_authorize_platform_endpoint)],
+)
 
 # One dependency bound once so it is impossible for a platform route to be
 # added without the same authorization guard.
@@ -363,4 +434,3 @@ async def read_platform_audit(
         limit=limit,
         offset=offset,
     )
-

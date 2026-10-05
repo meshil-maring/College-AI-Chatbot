@@ -198,6 +198,7 @@ def test_roster_merges_only_staff_faculty_and_the_tenants_invitations() -> None:
     grants = [
         {
             "user_id": str(USER_A),
+            "assigned_at": "2026-10-04T00:00:00Z",
             "roles": {"name": "staff"},
             "users": {
                 "id": str(USER_A),
@@ -231,6 +232,7 @@ def test_roster_merges_only_staff_faculty_and_the_tenants_invitations() -> None:
         result = service.list_roster(INST_A)
     assert result.total == 2
     assert {entry.role for entry in result.members} == {"staff", "faculty"}
+    assert result.members[1].created_at is not None
     assert all(entry.email != "admin@a.example" for entry in result.members)
 
 

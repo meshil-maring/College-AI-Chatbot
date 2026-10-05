@@ -50,6 +50,7 @@ type AuthOperation = 'login' | 'session'
 /** Distinguishes why an authentication operation failed. */
 export type AuthErrorKind =
   | 'invalid_credentials' // 400 INVALID_CREDENTIALS (/auth/login) or 401 INVALID_CREDENTIALS (/auth/student/login)
+  | 'registration_pending' // verified faculty/staff credentials awaiting admin approval
   | 'validation' // 422 FastAPI request validation failure
   | 'session_invalid' // 401/404 from /auth/me — token rejected or user gone
   | 'server' // 5xx upstream error
@@ -63,6 +64,8 @@ function messageFor(kind: AuthErrorKind): string {
       // Generic on purpose: must not reveal whether the email / register
       // number / roll number exists or which part was wrong.
       return 'Invalid login credentials. Please check your details and try again.'
+    case 'registration_pending':
+      return 'Your registration is pending. Contact your institution administrator to continue signing in.'
     case 'validation':
       return 'Please enter a valid email and a password of at least 6 characters.'
     case 'session_invalid':
@@ -165,6 +168,9 @@ async function buildAuthError(
   // credentials.
   if (code === 'INVALID_CREDENTIALS') {
     return new AuthError('invalid_credentials', status, code)
+  }
+  if (code === 'REGISTRATION_PENDING') {
+    return new AuthError('registration_pending', status, code)
   }
   // 422 — FastAPI/AppError request validation (e.g. missing
   // institution_code for an academic identifier login, password length).

@@ -39,6 +39,8 @@
  * but have NO frontend manager today, so no navigation entry is added).
  */
 
+import { hasPermission } from '../auth/permissions.ts'
+
 /** The only role that renders the admin shell (App.tsx gates on this too). */
 const ADMIN_SHELL_ROLES: readonly string[] = ['admin']
 
@@ -90,10 +92,36 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
  * consistent with shell selection in `App.tsx`, which never renders this
  * shell for those roles in the first place.
  */
-export function buildAdminNavigation(role: string | null): readonly AdminNavItem[] {
+const ADMIN_VIEW_PERMISSIONS: Readonly<Record<AdminView, readonly string[]>> = {
+  dashboard: [
+    'institution.read', 'users.read', 'students.read',
+    'faculty.read', 'staff.read', 'notices.read',
+  ],
+  approvals: ['students.read', 'students.approve', 'students.reject'],
+  'staff-faculty': ['users.read'],
+  students: ['students.read'],
+  attendance: ['attendance.read'],
+  results: ['results.read'],
+  'test-results': ['results.read'],
+  notices: ['notices.read'],
+  documents: ['documents.read'],
+  faqs: ['ai.knowledge.read'],
+  assistant: ['ai.chat'],
+  profile: ['profile.own.read'],
+}
+
+export function buildAdminNavigation(
+  role: string | null,
+  permissions?: readonly string[],
+): readonly AdminNavItem[] {
   if (role === null) return []
   if (!ADMIN_SHELL_ROLES.includes(role)) return []
-  return ADMIN_NAV_ITEMS
+  if (permissions === undefined) return ADMIN_NAV_ITEMS
+  return ADMIN_NAV_ITEMS.filter((item) =>
+    ADMIN_VIEW_PERMISSIONS[item.key].every((permission) =>
+      hasPermission(permissions, permission),
+    ),
+  )
 }
 
 /** Human-readable heading for each view (used for the page `h1`). */

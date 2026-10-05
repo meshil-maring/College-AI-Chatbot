@@ -44,10 +44,29 @@ from app.db.supabase import (
 )
 from app.services.sign_in import assert_sign_in_allowed
 from app.services.student_auth import SafeAuthFailure
+from app.repositories import tenancy as tenancy_repo
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _pending_registration_for_email(email: str) -> dict | None:
+    """Resolve a pending staff/faculty request from a trusted account email."""
+    db = get_admin_client()
+    user = tenancy_repo.get_user_by_email(db, email)
+    if user is None:
+        return None
+    return tenancy_repo.get_pending_membership_request_for_user(db, user["user_id"])
+
+
+def _raise_registration_pending(request: dict) -> None:
+    role = str(request.get("requested_role") or "faculty")
+    raise AppError(
+        f"Your {role} registration is pending. Contact your institution administrator to continue.",
+        status_code=403,
+        code="REGISTRATION_PENDING",
+    )
 
 
 class AuthRequest(BaseModel):
@@ -111,6 +130,16 @@ async def login(body: AuthRequest):
             {"email": body.email, "password": body.password}
         )
     except AuthApiError as e:
+        # GoTrue may block a newly self-registered account as unconfirmed
+        # before issuing a session. This response is only produced after the
+        # submitted password has matched, so translating it does not expose a
+        # pending account to callers with incorrect credentials.
+        auth_code = str(getattr(e, "code", "") or "").lower()
+        auth_message = str(getattr(e, "message", "") or "").lower()
+        if auth_code == "email_not_confirmed" or "email not confirmed" in auth_message:
+            pending = _pending_registration_for_email(str(body.email))
+            if pending is not None:
+                _raise_registration_pending(pending)
         status = e.status or 400
         code = "INVALID_CREDENTIALS" if status == 400 else "AUTH_ERROR"
         raise AppError(e.message, status_code=status, code=code)
@@ -119,6 +148,16 @@ async def login(body: AuthRequest):
     # account context is resolved from trusted server-side records only; the
     # client cannot influence user, organization, institution, role, or scope.
     account = await get_sign_in_context(response.user.id)
+    # Credentials have already been verified, so it is safe and useful to
+    # explain why a self-registered staff/faculty account cannot continue.
+    # Incorrect passwords still receive the generic INVALID_CREDENTIALS error
+    # above and cannot be used to discover registration state.
+    if account is not None:
+        pending_request = tenancy_repo.get_pending_membership_request_for_user(
+            get_admin_client(), account["user_id"]
+        )
+        if pending_request is not None:
+            _raise_registration_pending(pending_request)
     try:
         assert_sign_in_allowed(get_admin_client(), account)
     except SafeAuthFailure as exc:

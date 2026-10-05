@@ -37,4 +37,11 @@ describe('student navigation', () => {
     expect(buildStudentNavigation('unknown-role')).toEqual([])
     expect(buildStudentNavigation(null)).toEqual([])
   })
+
+  it('filters views to the server-resolved permission set', () => {
+    expect(
+      buildStudentNavigation('student', ['results.own.read', 'ai.chat']).map((item) => item.key),
+    ).toEqual(['results', 'assistant'])
+    expect(buildStudentNavigation('student', [])).toEqual([])
+  })
 })

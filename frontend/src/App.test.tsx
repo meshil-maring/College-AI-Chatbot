@@ -12,7 +12,7 @@
 
 /// <reference types="vitest/globals" />
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import App from './App.tsx'
 import * as adminApi from './services/adminApi.ts'
 import * as platformApi from './services/platformApi.ts'
@@ -85,12 +85,15 @@ describe('App shell selection from the canonical /auth/me role', () => {
       email: 'platform@test.com',
       role: 'super_admin',
       institution_id: null,
+      effective_permissions: ['platform.read', 'platform.manage', 'platform.audit.read'],
     }
     render(<App />)
     // Phase 7.13: the Institutions section is real; every other platform area
     // remains an explicit, non-functional placeholder.
     expect(await screen.findByRole('heading', { name: 'Institutions' })).toBeInTheDocument()
-    expect(platformInstitutionsApi.listInstitutions).toHaveBeenCalledWith('test-token')
+    await waitFor(() =>
+      expect(platformInstitutionsApi.listInstitutions).toHaveBeenCalledWith('test-token'),
+    )
     expect(screen.getByRole('button', { name: /create institution/i })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
@@ -104,6 +107,7 @@ describe('App shell selection from the canonical /auth/me role', () => {
       email: 'platform@test.com',
       role: 'super_admin',
       institution_id: null,
+      effective_permissions: ['platform.read', 'platform.manage', 'platform.audit.read'],
     }
     vi.mocked(platformApi.getPlatformIdentity).mockRejectedValueOnce(new Error('revoked'))
     render(<App />)

@@ -48,7 +48,11 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   const [password, setPassword] = useState('')
   const [fieldError, setFieldError] = useState<string | null>(null)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [showRegistration, setShowRegistration] = useState(false)
+  const [showRegistration, setShowRegistration] = useState(
+    () =>
+      (audience === 'faculty' || audience === 'staff') &&
+      new URLSearchParams(window.location.search).get('register') === '1',
+  )
   const [devTestModeEnabled, setDevTestModeEnabled] = useState(false)
 
   // An academic identifier (register number / university roll number) is
@@ -94,7 +98,14 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   }
 
   if (showRegistration) {
-    return <RegistrationForm onBackToLogin={() => setShowRegistration(false)} />
+    return (
+      <RegistrationForm
+        onBackToLogin={() => setShowRegistration(false)}
+        registrationType={
+          audience === 'faculty' ? 'faculty' : audience === 'staff' ? 'staff' : 'student'
+        }
+      />
+    )
   }
 
   if (showForgotPassword) {
@@ -227,7 +238,11 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
               onClick={() => setShowRegistration(true)}
               className="font-medium text-emerald-400 underline hover:text-emerald-300"
             >
-              Register as Student
+              {audience === 'faculty'
+                ? 'Register as Faculty'
+                : audience === 'staff'
+                  ? 'Register as Staff'
+                  : 'Register as Student'}
             </button>
           </p>
         </div>

@@ -30,12 +30,15 @@ import PasswordField from './PasswordField.tsx'
 import {
   RegistrationError,
   lookupInstitution,
+  registerFaculty,
+  registerStaff,
   registerStudent,
   registrationErrorMessage,
 } from '../../services/registration.ts'
 import type {
   InstitutionLookupResponse,
   RegistrationResponse,
+  RegistrationType,
 } from '../../types/registration.ts'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -55,13 +58,19 @@ type InstitutionStatus =
 export interface RegistrationFormProps {
   /** Navigate back to the login screen (existing conditional navigation). */
   onBackToLogin: () => void
+  registrationType?: RegistrationType
 }
 
-export default function RegistrationForm({ onBackToLogin }: RegistrationFormProps) {
+export default function RegistrationForm({
+  onBackToLogin,
+  registrationType = 'student',
+}: RegistrationFormProps) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [registerNumber, setRegisterNumber] = useState('')
   const [universityRollNumber, setUniversityRollNumber] = useState('')
+  const [designation, setDesignation] = useState('')
+  const [department, setDepartment] = useState('')
   const [institutionCode, setInstitutionCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -161,7 +170,11 @@ export default function RegistrationForm({ onBackToLogin }: RegistrationFormProp
     if (!EMAIL_PATTERN.test(email.trim())) {
       return 'Please enter a valid email address.'
     }
-    if (registerNumber.trim() === '' && universityRollNumber.trim() === '') {
+    if (
+      registrationType === 'student' &&
+      registerNumber.trim() === '' &&
+      universityRollNumber.trim() === ''
+    ) {
       return 'Enter at least one of register number or university roll number.'
     }
     if (institutionCode.trim().length < 2) {
@@ -211,16 +224,29 @@ export default function RegistrationForm({ onBackToLogin }: RegistrationFormProp
         return // the institution status region already explains the problem
       }
       const { first_name, last_name } = splitFullName(fullName)
-      const response = await registerStudent({
-        registration_type: 'student',
+      const request = {
+        registration_type: registrationType,
         institution_code: resolved.code,
         email: email.trim(),
         password,
         first_name,
         last_name,
-        register_number: registerNumber.trim() || null,
-        university_roll_number: universityRollNumber.trim() || null,
-      })
+        ...(registrationType === 'student'
+          ? {
+              register_number: registerNumber.trim() || null,
+              university_roll_number: universityRollNumber.trim() || null,
+            }
+          : {
+              designation: designation.trim() || null,
+              department: department.trim() || null,
+            }),
+      }
+      const response =
+        registrationType === 'faculty'
+          ? await registerFaculty(request)
+          : registrationType === 'staff'
+            ? await registerStaff(request)
+            : await registerStudent(request)
       // Pending-approval state ONLY: the response carries no token and the
       // auth state is untouched, so the student is never treated as logged in.
       setSuccess(response)
@@ -253,7 +279,9 @@ export default function RegistrationForm({ onBackToLogin }: RegistrationFormProp
               role="status"
               className="mt-5 rounded-lg border border-emerald-900/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400"
             >
-              Your student account has been created.
+              {registrationType === 'student'
+                ? 'Your student account has been created.'
+                : `Your ${registrationType} registration has been submitted.`}
             </div>
             <p className="mt-4 text-sm text-slate-300 leading-relaxed">
               Your account is currently waiting for approval from your college
@@ -283,7 +311,12 @@ export default function RegistrationForm({ onBackToLogin }: RegistrationFormProp
             College AI Chatbot
           </h1>
           <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-            Student Registration. Registration is handled entirely by the
+            {registrationType === 'student'
+              ? 'Student'
+              : registrationType === 'faculty'
+                ? 'Faculty'
+                : 'Staff'}{' '}
+            Registration. Registration is handled entirely by the
             backend; your account is reviewed by your college before you can
             sign in.
           </p>
@@ -333,8 +366,10 @@ export default function RegistrationForm({ onBackToLogin }: RegistrationFormProp
                 onChange={(event) => setEmail(event.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-300">
-              Register Number
+            {registrationType === 'student' ? (
+              <>
+              <label className="flex flex-col gap-1 text-sm text-slate-300">
+                Register Number
               <input
                 type="text"
                 name="registerNumber"
@@ -345,9 +380,9 @@ export default function RegistrationForm({ onBackToLogin }: RegistrationFormProp
                 value={registerNumber}
                 onChange={(event) => setRegisterNumber(event.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-sm text-slate-300">
-              University Roll Number
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-slate-300">
+                University Roll Number
               <input
                 type="text"
                 name="universityRollNumber"
@@ -358,7 +393,36 @@ export default function RegistrationForm({ onBackToLogin }: RegistrationFormProp
                 value={universityRollNumber}
                 onChange={(event) => setUniversityRollNumber(event.target.value)}
               />
-            </label>
+              </label>
+              </>
+            ) : (
+              <>
+                <label className="flex flex-col gap-1 text-sm text-slate-300">
+                  Designation <span className="text-xs text-slate-500">(optional)</span>
+                  <input
+                    type="text"
+                    name="designation"
+                    disabled={submitting}
+                    placeholder="e.g. Assistant Professor"
+                    className={INPUT_CLASS}
+                    value={designation}
+                    onChange={(event) => setDesignation(event.target.value)}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm text-slate-300">
+                  Department <span className="text-xs text-slate-500">(optional)</span>
+                  <input
+                    type="text"
+                    name="department"
+                    disabled={submitting}
+                    placeholder="e.g. Computer Science"
+                    className={INPUT_CLASS}
+                    value={department}
+                    onChange={(event) => setDepartment(event.target.value)}
+                  />
+                </label>
+              </>
+            )}
             <label className="flex flex-col gap-1 text-sm text-slate-300">
               Institution Code
               <input

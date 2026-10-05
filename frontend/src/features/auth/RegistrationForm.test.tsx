@@ -21,7 +21,13 @@ vi.mock('../../services/registration.ts', async () => {
   const actual = await vi.importActual<typeof import('../../services/registration.ts')>(
     '../../services/registration.ts',
   )
-  return { ...actual, lookupInstitution: vi.fn(), registerStudent: vi.fn() }
+  return {
+    ...actual,
+    lookupInstitution: vi.fn(),
+    registerStudent: vi.fn(),
+    registerFaculty: vi.fn(),
+    registerStaff: vi.fn(),
+  }
 })
 
 const INSTITUTION: InstitutionLookupResponse = {
@@ -69,6 +75,86 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(registration.lookupInstitution).mockResolvedValue(INSTITUTION)
   vi.mocked(registration.registerStudent).mockResolvedValue(REGISTRATION_RESPONSE)
+  vi.mocked(registration.registerFaculty).mockResolvedValue({
+    ...REGISTRATION_RESPONSE,
+    message: 'Faculty registration submitted. Your account is pending approval by the institution admin.',
+    registration_type: 'faculty',
+    student_id: null,
+    request_id: '72000000-0000-0000-0000-000000000001',
+  })
+  vi.mocked(registration.registerStaff).mockResolvedValue({
+    ...REGISTRATION_RESPONSE,
+    message: 'Staff registration submitted. Your account is pending approval by the institution admin.',
+    registration_type: 'staff',
+    student_id: null,
+    request_id: '72000000-0000-0000-0000-000000000002',
+  })
+})
+
+describe('RegistrationForm — faculty registration', () => {
+  it('shows faculty fields and submits a pending faculty membership request', async () => {
+    const user = userEvent.setup()
+    render(<RegistrationForm registrationType="faculty" onBackToLogin={vi.fn()} />)
+
+    expect(screen.queryByLabelText('Register Number')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('University Roll Number')).not.toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('Full Name'), 'Ada Lovelace')
+    await user.type(screen.getByLabelText('Email'), 'ada@example.com')
+    await user.type(screen.getByLabelText(/Designation/), 'Professor')
+    await user.type(screen.getByLabelText(/Department/), 'Computer Science')
+    await user.type(screen.getByLabelText('Institution Code'), 'IMPHAL')
+    await user.type(screen.getByLabelText('Password'), 'secret123')
+    await user.type(screen.getByLabelText('Confirm Password'), 'secret123')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    await waitFor(() => expect(registration.registerFaculty).toHaveBeenCalledTimes(1))
+    expect(registration.registerFaculty).toHaveBeenCalledWith({
+      registration_type: 'faculty',
+      institution_code: 'IMPHAL',
+      email: 'ada@example.com',
+      password: 'secret123',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      designation: 'Professor',
+      department: 'Computer Science',
+    })
+    expect(await screen.findByText('Your faculty registration has been submitted.')).toBeInTheDocument()
+  })
+})
+
+describe('RegistrationForm — staff registration', () => {
+  it('shows staff fields and submits a pending staff membership request', async () => {
+    const user = userEvent.setup()
+    render(<RegistrationForm registrationType="staff" onBackToLogin={vi.fn()} />)
+
+    expect(screen.queryByLabelText('Register Number')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('University Roll Number')).not.toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('Full Name'), 'Grace Hopper')
+    await user.type(screen.getByLabelText('Email'), 'grace@example.com')
+    await user.type(screen.getByLabelText(/Designation/), 'Registrar')
+    await user.type(screen.getByLabelText(/Department/), 'Admissions')
+    await user.type(screen.getByLabelText('Institution Code'), 'IMPHAL')
+    await user.type(screen.getByLabelText('Password'), 'secret123')
+    await user.type(screen.getByLabelText('Confirm Password'), 'secret123')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    await waitFor(() => expect(registration.registerStaff).toHaveBeenCalledTimes(1))
+    expect(registration.registerStaff).toHaveBeenCalledWith({
+      registration_type: 'staff',
+      institution_code: 'IMPHAL',
+      email: 'grace@example.com',
+      password: 'secret123',
+      first_name: 'Grace',
+      last_name: 'Hopper',
+      designation: 'Registrar',
+      department: 'Admissions',
+    })
+    expect(
+      await screen.findByText('Your staff registration has been submitted.'),
+    ).toBeInTheDocument()
+  })
 })
 
 describe('RegistrationForm — rendering', () => {

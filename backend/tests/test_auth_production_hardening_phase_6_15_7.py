@@ -229,6 +229,7 @@ def test_auth_me_exposes_only_the_documented_fields():
         "email",
         "role",
         "institution_id",
+        "effective_permissions",
     }
     # No role list, no scope machinery, no provider metadata beyond the
     # authenticated user's own identity (the JWT `sub` the caller already holds).

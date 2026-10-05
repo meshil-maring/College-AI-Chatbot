@@ -108,6 +108,18 @@ export default function LandingPage() {
               >
                 University Admin login
               </a>
+              <a
+                href="/login/faculty?register=1"
+                className="rounded-lg border border-sky-500/60 bg-sky-500/10 px-5 py-3 text-sm font-semibold text-sky-200 hover:border-sky-400 hover:bg-sky-500/20 focus:outline-none focus:ring-2 focus:ring-sky-300"
+              >
+                Register as faculty
+              </a>
+              <a
+                href="/login/staff?register=1"
+                className="rounded-lg border border-amber-500/60 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-200 hover:border-amber-400 hover:bg-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              >
+                Register as staff
+              </a>
             </div>
           </div>
         </section>

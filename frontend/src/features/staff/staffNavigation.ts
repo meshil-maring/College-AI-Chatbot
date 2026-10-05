@@ -42,6 +42,8 @@
  * Management links do not exist in this list).
  */
 
+import { hasPermission } from '../auth/permissions.ts'
+
 /** The only role that renders the staff shell. */
 const STAFF_SHELL_ROLES: readonly string[] = ['staff']
 
@@ -73,10 +75,23 @@ export const STAFF_NAV_ITEMS: readonly StaffNavItem[] = [
  * behaviour, consistent with shell selection in `App.tsx`, which never
  * renders this shell for those roles in the first place.
  */
-export function buildStaffNavigation(role: string | null): readonly StaffNavItem[] {
+const STAFF_VIEW_PERMISSIONS: Readonly<Record<StaffView, string>> = {
+  dashboard: 'profile.own.read',
+  approvals: 'students.approve',
+  assistant: 'ai.chat',
+  profile: 'profile.own.read',
+}
+
+export function buildStaffNavigation(
+  role: string | null,
+  permissions?: readonly string[],
+): readonly StaffNavItem[] {
   if (role === null) return []
   if (!STAFF_SHELL_ROLES.includes(role)) return []
-  return STAFF_NAV_ITEMS
+  if (permissions === undefined) return STAFF_NAV_ITEMS
+  return STAFF_NAV_ITEMS.filter((item) =>
+    hasPermission(permissions, STAFF_VIEW_PERMISSIONS[item.key]),
+  )
 }
 
 /** Human-readable heading for each view (used for the page `h1`). */
@@ -167,4 +182,3 @@ export const STAFF_WORKSPACE_SURFACES: readonly StaffWorkspaceSurface[] = [
     description: 'User management is reserved for administrators.',
   },
 ]
-

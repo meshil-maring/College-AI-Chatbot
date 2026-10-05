@@ -39,7 +39,7 @@ from supabase_auth.errors import AuthApiError
 
 from app.config import settings
 from app.core.errors import AppError
-from app.core.security import require_roles
+from app.core.security import require_permission, require_roles
 from app.db.supabase import create_supabase_client, get_admin_client
 
 
@@ -260,7 +260,10 @@ def dev_change_password(body: DevChangePasswordRequest) -> dict:
         raise AppError(e.message, status_code=e.status or 400, code="AUTH_ERROR")
 
 
-@router.post("/admin/reset-student-password")
+@router.post(
+    "/admin/reset-student-password",
+    dependencies=[Depends(require_permission("users.update"))],
+)
 def dev_admin_reset_student_password(
     body: DevAdminResetRequest,
     current_user: dict = Depends(require_roles("admin")),

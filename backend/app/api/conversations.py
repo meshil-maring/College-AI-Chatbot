@@ -4,14 +4,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_permission
 from app.schemas.conversation import ConversationSummary, MessageSummary
 from app.services.conversation_history import (
     get_conversation_messages,
     get_user_conversations,
 )
 
-router = APIRouter(prefix="/conversations", tags=["conversations"])
+router = APIRouter(
+    prefix="/conversations",
+    tags=["conversations"],
+    dependencies=[Depends(require_permission("ai.chat"))],
+)
 
 
 @router.get("", response_model=list[ConversationSummary])

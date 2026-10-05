@@ -35,7 +35,7 @@ import StaffProfile from './StaffProfile.tsx'
 export default function StaffShell() {
   const { user, role, accessToken, logout } = useAuth()
   const [view, setView] = useState<StaffView>('dashboard')
-  const navigation = buildStaffNavigation(role)
+  const navigation = buildStaffNavigation(role, user?.effective_permissions)
 
   const displayName = user?.email?.trim() || 'Staff'
 
@@ -97,6 +97,13 @@ export default function StaffShell() {
             >
               Sign out
             </button>
+          </section>
+        ) : !navigation.some((item) => item.key === view) ? (
+          <section role="status" className="rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+            <h1 className="text-2xl font-bold text-white">No available views</h1>
+            <p className="mt-3 text-sm text-slate-300">
+              Your account has no permissions for the selected staff view.
+            </p>
           </section>
         ) : (
           <>

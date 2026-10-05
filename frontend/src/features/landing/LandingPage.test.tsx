@@ -73,6 +73,22 @@ describe('Phase 7.11 demo landing role gateway', () => {
     )
   })
 
+  it('links directly to faculty registration from the home page', () => {
+    render(<App />)
+    expect(screen.getByRole('link', { name: 'Register as faculty' })).toHaveAttribute(
+      'href',
+      '/login/faculty?register=1',
+    )
+  })
+
+  it('links directly to staff registration from the home page', () => {
+    render(<App />)
+    expect(screen.getByRole('link', { name: 'Register as staff' })).toHaveAttribute(
+      'href',
+      '/login/staff?register=1',
+    )
+  })
+
   it('resolves the Phase 7.14 invitation route as a PUBLIC, session-free page', () => {
     const token = 'a'.repeat(64)
     expect(resolveAppRoute(`/admin-invite/${token}`)).toEqual({
@@ -124,6 +140,24 @@ describe('Phase 7.11 demo landing role gateway', () => {
     render(<App />)
     expect(screen.getByText('Teacher / faculty access')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+  })
+
+  it('opens the faculty registration form from the home-page registration link', () => {
+    window.history.replaceState({}, '', '/login/faculty?register=1')
+    render(<App />)
+    expect(screen.getByText(/Faculty Registration/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Designation/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Department/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Register Number')).not.toBeInTheDocument()
+  })
+
+  it('opens the staff registration form from the home-page registration link', () => {
+    window.history.replaceState({}, '', '/login/staff?register=1')
+    render(<App />)
+    expect(screen.getByText(/Staff Registration/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Designation/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Department/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Register Number')).not.toBeInTheDocument()
   })
 })
 

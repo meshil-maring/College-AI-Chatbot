@@ -756,6 +756,8 @@ def test_get_current_user_projects_the_authoritative_contract() -> None:
                             "is_active": True,
                         }
                     ],
+                    "effective_permissions": [],
+                    "permissions_resolved": False,
                 }
             ),
         ),
@@ -778,6 +780,8 @@ def test_get_current_user_projects_the_authoritative_contract() -> None:
                 "is_active": True,
             }
         ],
+        "effective_permissions": [],
+        "permissions_resolved": False,
     }
 
 

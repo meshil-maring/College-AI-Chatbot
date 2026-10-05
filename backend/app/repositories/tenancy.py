@@ -585,6 +585,27 @@ def get_membership_request(client: Client, request_id: UUID | str) -> dict | Non
     return response.data if response and response.data else None
 
 
+def get_pending_membership_request_for_user(
+    client: Client, user_id: UUID | str
+) -> dict | None:
+    """Return a user's pending staff/faculty request, if one exists."""
+    response = (
+        client.table("institution_membership_requests")
+        .select("request_id, requested_role, status")
+        .eq("user_id", str(user_id))
+        .eq("status", "pending")
+        .limit(1)
+        .maybe_single()
+        .execute()
+    )
+    data = response.data if response is not None else None
+    if not isinstance(data, dict):
+        return None
+    if data.get("requested_role") not in {"staff", "faculty"}:
+        return None
+    return data
+
+
 def list_membership_requests(
     client: Client,
     institution_id: UUID | str,

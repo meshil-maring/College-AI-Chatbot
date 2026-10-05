@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Form, UploadFile
 
 from app.core.errors import AppError
-from app.core.security import assert_tenant_object, require_institution_roles
+from app.core.security import (
+    assert_tenant_object,
+    require_institution_roles,
+    require_permission,
+    require_permission,
+)
 from app.db.supabase import get_admin_client
 from app.repositories import admin_knowledge as knowledge_repo
 from app.repositories.ingestion import (
@@ -67,6 +72,7 @@ async def ingest(
     file: UploadFile,
     knowledge_source_id: str = Form(...),
     current_user: dict = Depends(_INGEST_ALLOWED),
+    _permission_user: dict = Depends(require_permission("ai.knowledge.create")),
 ) -> IngestResponse:
     # Tenant isolation: the target knowledge source must belong to the
     # caller's institution (no-op for platform-level accounts).
@@ -84,6 +90,7 @@ async def ingest(
 def extract(
     processing_run_id: UUID,
     current_user: dict = Depends(_INGEST_ALLOWED),
+    _permission_user: dict = Depends(require_permission("ai.knowledge.create")),
 ) -> ExtractionResponse:
     db = get_admin_client()
     run = get_processing_run_with_version(db, str(processing_run_id))
@@ -144,6 +151,7 @@ def extract(
 def chunk(
     processing_run_id: UUID,
     current_user: dict = Depends(_INGEST_ALLOWED),
+    _permission_user: dict = Depends(require_permission("ai.knowledge.create")),
 ) -> ChunkingResponse:
     db = get_admin_client()
     run_id_str = str(processing_run_id)
@@ -201,6 +209,7 @@ def chunk(
 def embed(
     processing_run_id: UUID,
     current_user: dict = Depends(_INGEST_ALLOWED),
+    _permission_user: dict = Depends(require_permission("ai.knowledge.create")),
 ) -> EmbeddingResponse:
     run_id_str = str(processing_run_id)
     db = get_admin_client()

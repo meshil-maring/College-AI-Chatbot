@@ -1,3 +1,5 @@
+import logging
+
 import jwt
 from jwt import PyJWKClient, ExpiredSignatureError, InvalidTokenError, PyJWKError
 from fastapi import Depends, Header
@@ -6,8 +8,13 @@ from uuid import UUID
 
 from app.config import settings
 from app.core.errors import AppError
+from app.core.permissions import (
+    fallback_permissions_for_roles,
+    permission_matches,
+)
 
 _jwks_client: PyJWKClient | None = None
+logger = logging.getLogger(__name__)
 PUBLIC_USER_ID: UUID = UUID("00000000-0000-0000-0000-000000000001")
 """Shared constant identity for public (unauthenticated) conversations.
 
@@ -79,7 +86,7 @@ async def get_current_user(
     # Imported here to avoid circular imports
     from app.db.supabase import get_user_by_auth_id
 
-    user = await get_user_by_auth_id(auth_user_id)
+    user = await get_user_by_auth_id(auth_user_id, include_permissions=True)
     if user is None:
         raise AppError(
             "No application user found for this account",
@@ -115,6 +122,8 @@ async def get_current_user(
         "institution_id": institution_id,
         # Internal server-owned grants. They are never returned by /auth/me.
         "role_assignments": role_assignments,
+        "effective_permissions": user.get("effective_permissions", []),
+        "permissions_resolved": user.get("permissions_resolved", False),
     }
 
 
@@ -206,6 +215,80 @@ def require_roles(*allowed: str) -> Callable:
                 status_code=403,
                 code="FORBIDDEN",
             )
+        return current_user
+
+    return _dependency
+
+
+def has_permission(current_user: dict, permission: str) -> bool:
+    """Check a permission against the resolved server-side grant set.
+
+    The role-matrix fallback exists only for internal/test dependency overrides
+    that construct ``current_user`` directly. Real requests always carry
+    ``permissions_resolved=True`` from the database projection, so absent or
+    revoked database grants never fall back to role defaults.
+    """
+    if current_user.get("permissions_resolved") is True:
+        granted = current_user.get("effective_permissions") or ()
+    else:
+        granted = fallback_permissions_for_roles(current_user.get("roles") or ())
+    return permission_matches(granted, permission)
+
+
+def _deny_permission(current_user: dict, permission: str) -> AppError:
+    logger.warning(
+        "event=authorization_denied user_id=%s permission=%s",
+        str(current_user.get("user_id") or "unknown"),
+        permission,
+    )
+    return AppError(
+        "You do not have permission to perform this action",
+        status_code=403,
+        code="FORBIDDEN",
+    )
+
+
+def authorize_permissions(current_user: dict, *permissions: str) -> None:
+    """Enforce every permission and audit denied authorization attempts."""
+    if not permissions:
+        raise ValueError("At least one permission is required")
+    for permission in permissions:
+        if not has_permission(current_user, permission):
+            raise _deny_permission(current_user, permission)
+
+
+def require_permission(permission: str) -> Callable:
+    """Return a dependency that enforces one resolved permission."""
+
+    async def _dependency(current_user: dict = Depends(get_current_user)) -> dict:
+        if not has_permission(current_user, permission):
+            raise _deny_permission(current_user, permission)
+        return current_user
+
+    return _dependency
+
+
+def require_permissions(*permissions: str) -> Callable:
+    """Require every listed permission, useful for aggregate read surfaces."""
+    if not permissions:
+        raise ValueError("At least one permission is required")
+
+    async def _dependency(current_user: dict = Depends(get_current_user)) -> dict:
+        authorize_permissions(current_user, *permissions)
+        return current_user
+
+    return _dependency
+
+
+def require_institution_permission(permission: str, *allowed_roles: str) -> Callable:
+    """Require an institution-scoped role and one permission for that scope."""
+    institution_dependency = require_institution_roles(*allowed_roles)
+
+    async def _dependency(
+        current_user: dict = Depends(institution_dependency),
+    ) -> dict:
+        if not has_permission(current_user, permission):
+            raise _deny_permission(current_user, permission)
         return current_user
 
     return _dependency
@@ -327,4 +410,3 @@ def resolve_primary_role(roles: list[str] | tuple[str, ...] | None) -> str | Non
     if not supported:
         return None
     return SUPPORTED_ROLES[min(supported)]
-

@@ -153,7 +153,8 @@ def test_auth_me_shape_is_stable_and_minimal():
     assert r.status_code == 200
     body = r.json()
     assert set(body.keys()) == {"authenticated", "user_id", "auth_user_id",
-                                "email", "role", "institution_id"}
+                                "email", "role", "institution_id",
+                                "effective_permissions"}
     assert body["role"] == "admin"
     assert "access_token" not in body
 
@@ -646,5 +647,4 @@ def test_unhandled_exception_is_generic_500():
     assert r.status_code == 500
     assert _envelope(r)["code"] == "INTERNAL_ERROR"
     _assert_no_leak(r.text)
-
 

@@ -99,4 +99,6 @@ export interface CurrentUser {
    * tenant key are not exposed.
    */
   institution_id: string | null
+  /** Effective active grants resolved from the user's assigned database roles. */
+  effective_permissions?: readonly string[]
 }

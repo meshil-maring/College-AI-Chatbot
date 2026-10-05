@@ -318,6 +318,7 @@ def test_auth_me_resolves_each_role_with_its_own_tenant():
             "email",
             "role",
             "institution_id",
+            "effective_permissions",
         }
 
 
@@ -973,4 +974,3 @@ def test_cross_tenant_knowledge_source_and_document_writes_create_nothing():
     assert response.json()["error"]["code"] == "TENANT_MISMATCH"
     upload_mock.assert_not_called()
     audit_mock.assert_not_called()
-

@@ -158,9 +158,13 @@ def test_chat_allows_own_tenant_and_propagates_it():
 
 @pytest.fixture()
 def tenant_admin_override():
-    app.dependency_overrides[_ADMIN] = lambda: _user(TENANT_A, roles=("admin",))
+    tenant_admin = _user(TENANT_A, roles=("admin",))
+    previous_current_user = app.dependency_overrides[get_current_user]
+    app.dependency_overrides[get_current_user] = lambda: tenant_admin
+    app.dependency_overrides[_ADMIN] = lambda: tenant_admin
     yield
     app.dependency_overrides.pop(_ADMIN, None)
+    app.dependency_overrides[get_current_user] = previous_current_user
 
 
 def test_admin_list_students_rejects_foreign_institution(tenant_admin_override):

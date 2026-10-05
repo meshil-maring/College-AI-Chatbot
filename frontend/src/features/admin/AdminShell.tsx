@@ -48,7 +48,7 @@ import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adm
 export default function AdminShell() {
   const { user, role, accessToken, logout } = useAuth()
   const [currentView, setCurrentView] = useState<AdminView>('dashboard')
-  const navigation = buildAdminNavigation(role)
+  const navigation = buildAdminNavigation(role, user?.effective_permissions)
 
   // Phase 6.15.4 — identity comes from the canonical /auth/me bootstrap
   // (AuthProvider state). App.tsx only renders this shell once /auth/me has
@@ -115,6 +115,16 @@ export default function AdminShell() {
             >
               Sign out
             </button>
+          </section>
+        ) : !navigation.some((item) => item.key === currentView) ? (
+          <section
+            role="status"
+            className="rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center"
+          >
+            <h1 className="text-2xl font-bold text-white">No available admin views</h1>
+            <p className="mt-3 text-sm text-slate-300">
+              Your account has no permissions for the selected administrative view.
+            </p>
           </section>
         ) : (
           <>

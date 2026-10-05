@@ -28,7 +28,7 @@ import { AttendancePage, NoticesPage, ProfilePage, ResourcesPage, ResultsPage } 
 export default function StudentShell() {
   const { user, role, logout } = useAuth()
   const [view, setView] = useState<StudentView>('dashboard')
-  const navigation = buildStudentNavigation(role)
+  const navigation = buildStudentNavigation(role, user?.effective_permissions)
 
   const displayName =
     user?.email?.trim() ||
@@ -76,20 +76,31 @@ export default function StudentShell() {
       </header>
 
       <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6">
-        {view !== 'assistant' ? (
-          <h1 className="mb-4 break-words text-2xl font-bold text-white">{STUDENT_VIEW_HEADINGS[view]}</h1>
-        ) : null}
-        {view === 'dashboard' ? <StudentDashboard onNavigate={setView} /> : null}
-        {view === 'attendance' ? <AttendancePage /> : null}
-        {view === 'results' ? <ResultsPage /> : null}
-        {view === 'notices' ? <NoticesPage /> : null}
-        {view === 'resources' ? <ResourcesPage /> : null}
-        {view === 'profile' ? <ProfilePage /> : null}
-        {view === 'assistant' ? (
-          <section aria-label="AI Assistant">
-            <ChatShell />
+        {navigation.some((item) => item.key === view) ? (
+          <>
+            {view !== 'assistant' ? (
+              <h1 className="mb-4 break-words text-2xl font-bold text-white">{STUDENT_VIEW_HEADINGS[view]}</h1>
+            ) : null}
+            {view === 'dashboard' ? <StudentDashboard onNavigate={setView} /> : null}
+            {view === 'attendance' ? <AttendancePage /> : null}
+            {view === 'results' ? <ResultsPage /> : null}
+            {view === 'notices' ? <NoticesPage /> : null}
+            {view === 'resources' ? <ResourcesPage /> : null}
+            {view === 'profile' ? <ProfilePage /> : null}
+            {view === 'assistant' ? (
+              <section aria-label="AI Assistant">
+                <ChatShell />
+              </section>
+            ) : null}
+          </>
+        ) : (
+          <section role="status" className="rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
+            <h1 className="text-2xl font-bold text-white">No available views</h1>
+            <p className="mt-3 text-sm text-slate-300">
+              Your account has no permissions for the selected student view.
+            </p>
           </section>
-        ) : null}
+        )}
       </main>
     </div>
   )

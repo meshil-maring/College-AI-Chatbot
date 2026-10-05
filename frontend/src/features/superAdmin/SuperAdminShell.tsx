@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getPlatformIdentity } from '../../services/platformApi.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
+import { hasPermission } from '../auth/permissions.ts'
 import InstitutionManagement from './InstitutionManagement.tsx'
 import PlatformAuditView from './PlatformAuditView.tsx'
 
@@ -28,8 +29,12 @@ type PlatformSection = 'institutions' | 'audit'
  */
 export default function SuperAdminShell() {
   const { user, accessToken, logout } = useAuth()
+  const canReadPlatform = hasPermission(user?.effective_permissions, 'platform.read')
+  const canReadAudit = hasPermission(user?.effective_permissions, 'platform.audit.read')
   const [authorization, setAuthorization] = useState<'checking' | 'allowed' | 'denied'>('checking')
-  const [section, setSection] = useState<PlatformSection>('institutions')
+  const [section, setSection] = useState<PlatformSection>(() =>
+    canReadPlatform ? 'institutions' : 'audit',
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -81,26 +86,30 @@ export default function SuperAdminShell() {
       <div className="mx-auto flex max-w-7xl gap-10 px-8 py-12">
         <nav aria-label="Platform sections" className="w-56 shrink-0">
           <ul className="space-y-1">
-            <li>
-              <button
-                type="button"
-                onClick={() => { setSection('institutions') }}
-                aria-current={section === 'institutions' ? 'page' : undefined}
-                className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
-              >
-                Institutions
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => { setSection('audit') }}
-                aria-current={section === 'audit' ? 'page' : undefined}
-                className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
-              >
-                Platform Audit
-              </button>
-            </li>
+            {canReadPlatform ? (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => { setSection('institutions') }}
+                  aria-current={section === 'institutions' ? 'page' : undefined}
+                  className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
+                >
+                  Institutions
+                </button>
+              </li>
+            ) : null}
+            {canReadAudit ? (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => { setSection('audit') }}
+                  aria-current={section === 'audit' ? 'page' : undefined}
+                  className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
+                >
+                  Platform Audit
+                </button>
+              </li>
+            ) : null}
             {PLATFORM_AREAS.map((area) => (
               <li key={area}>
                 <span className="flex items-center justify-between gap-2 rounded-lg px-4 py-2 text-sm text-slate-500">
@@ -115,10 +124,15 @@ export default function SuperAdminShell() {
         </nav>
 
         <main className="min-w-0 flex-1">
-          {section === 'institutions' ? <InstitutionManagement /> : <PlatformAuditView />}
+          {section === 'institutions' && canReadPlatform ? <InstitutionManagement /> : null}
+          {section === 'audit' && canReadAudit ? <PlatformAuditView /> : null}
+          {!canReadPlatform && !canReadAudit ? (
+            <p role="status" className="text-sm text-slate-400">
+              Your account has no platform sections available.
+            </p>
+          ) : null}
         </main>
       </div>
     </div>
   )
 }
-
