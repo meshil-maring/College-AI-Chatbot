@@ -33,7 +33,7 @@ Failure normalization:
     accounts.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app.core.errors import AppError
 from app.schemas.student_auth import (
@@ -43,6 +43,10 @@ from app.schemas.student_auth import (
     _validate_login_request,
 )
 from app.services.student_auth import authenticate_student
+from app.services.auth_security import (
+    enforce_auth_rate_limit,
+    record_auth_security_event,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -68,7 +72,7 @@ compares passwords. Academic identifiers are institution-scoped per Phase 6.2,
 so institution_code is required to disambiguate.
 """,
 )
-def student_login(body: StudentLoginRequest) -> StudentLoginResponse:
+def student_login(body: StudentLoginRequest, request: Request) -> StudentLoginResponse:
     """Authenticate a student and return a Supabase Auth session.
 
     The identifier may be an email address or an academic identifier
@@ -79,6 +83,7 @@ def student_login(body: StudentLoginRequest) -> StudentLoginResponse:
     approval + lifecycle state, and delegates credential verification to
     Supabase Auth.
     """
+    enforce_auth_rate_limit("login", request)
     # Validate request: academic identifier login requires institution_code
     _validate_login_request(body)
 
@@ -89,6 +94,11 @@ def student_login(body: StudentLoginRequest) -> StudentLoginResponse:
             body.institution_code,
         )
     except StudentAuthServiceError as exc:
+        record_auth_security_event(
+            event="login",
+            status="failure",
+            request=request,
+        )
         # Normalise all service-layer auth failures to safe 401 responses.
         raise AppError(
             exc.message or "Invalid identifier or password",
@@ -96,8 +106,16 @@ def student_login(body: StudentLoginRequest) -> StudentLoginResponse:
             code=exc.code or "INVALID_CREDENTIALS",
         ) from exc
 
+    record_auth_security_event(
+        event="login",
+        status="success",
+        request=request,
+        auth_user_id=str(result["user"]["id"]),
+    )
     return StudentLoginResponse(
         access_token=result["access_token"],
+        refresh_token=result["refresh_token"],
+        expires_in=result["expires_in"],
         message="Login successful.",
         user=result["user"],
     )

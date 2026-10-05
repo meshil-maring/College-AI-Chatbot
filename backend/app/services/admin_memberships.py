@@ -28,11 +28,18 @@ ROSTER_STATUSES = frozenset(
 )
 
 
-def _audit(actor: dict[str, Any], action: str, record_id: str, data: dict[str, Any]) -> None:
+def _audit(
+    actor: dict[str, Any],
+    institution_id: UUID,
+    action: str,
+    record_id: str,
+    data: dict[str, Any],
+) -> None:
     record_admin_action(
         get_admin_client(),
         AdminAuditLogCreate(
             actor_user_id=UUID(str(actor["user_id"])),
+            institution_id=institution_id,
             action=action,
             table_name="institution_membership_requests",
             record_id=record_id,
@@ -175,6 +182,7 @@ def decide_request(
         action = "membership_request_rejected"
     _audit(
         actor,
+        institution_id,
         action if approve else "membership_request_rejected",
         str(request_id),
         {"role": role, "status": desired},
@@ -182,6 +190,7 @@ def decide_request(
     if approve:
         _audit(
             actor,
+            institution_id,
             "membership_request_approved",
             str(request_id),
             {"role": role, "status": desired},
@@ -295,6 +304,7 @@ def set_active(
     role_label = "faculty" if "faculty" in scoped_roles else "staff"
     _audit(
         actor,
+        institution_id,
         f"{role_label}_{'reactivated' if active else 'deactivated'}",
         str(user_id),
         {"role": role_label, "status": desired},
@@ -322,6 +332,7 @@ def resend(
     )
     _audit(
         actor,
+        institution_id,
         "membership_invitation_resent",
         str(invitation_id),
         {"role": invitation["role_name"], "email": invitation["email"]},

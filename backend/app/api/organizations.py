@@ -23,7 +23,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.core.security import get_current_user
+from app.core.security import authorize_permissions, get_current_user
 from app.schemas.tenancy import (
     ApprovalDecisionRequest,
     DecisionResponse,
@@ -37,6 +37,10 @@ from app.services.tenancy import (
 )
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
+
+ORGANIZATION_PERMISSION_POLICIES = {
+    ("POST", "/organizations/{organization_id}/decision"): ("platform.manage",),
+}
 
 
 @router.post(
@@ -97,6 +101,12 @@ def decide_organization_endpoint(
     decision logic run unchanged.
     """
     authorization_context = get_authorization_context_for_user(current_user)
+    authorize_permissions(
+        current_user,
+        *ORGANIZATION_PERMISSION_POLICIES[(
+            "POST", "/organizations/{organization_id}/decision"
+        )],
+    )
     return decide_organization(
         current_user,
         authorization_context,

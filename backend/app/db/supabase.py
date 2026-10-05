@@ -53,7 +53,9 @@ async def get_user_by_auth_id(
     role_projection = (
         "user_roles(scope_type, scope_id, scope_organization_id, "
         "roles(name, is_active, "
-        "role_permissions(permissions(code, is_active))))"
+        "role_permissions(permissions(code, is_active, scope)))), "
+        "user_permission_grants(institution_id, revoked_at, "
+        "permissions(code, is_active))"
         if include_permissions
         else "user_roles(scope_type, scope_id, scope_organization_id, "
         "roles(name, is_active))"
@@ -74,6 +76,7 @@ async def get_user_by_auth_id(
     row = response.data
     role_assignments = []
     effective_permissions: set[str] = set()
+    direct_permission_grants: list[dict] = []
     for grant in row.get("user_roles") or []:
         role = grant.get("roles")
         if not isinstance(role, dict) or not role.get("is_active", True):
@@ -86,10 +89,22 @@ async def get_user_by_auth_id(
                 if not isinstance(role_permission, dict):
                     continue
                 permission = role_permission.get("permissions")
+                permission_scope = (
+                    permission.get("scope") if isinstance(permission, dict) else None
+                )
+                role_scope = grant.get("scope_type")
+                permission_scope_matches = (
+                    permission_scope in {None, "global", "user", role_scope}
+                    or (
+                        role_scope == "platform"
+                        and permission_scope in {"institution", "organization"}
+                    )
+                )
                 if (
                     isinstance(permission, dict)
                     and permission.get("is_active", True)
                     and isinstance(permission.get("code"), str)
+                    and permission_scope_matches
                 ):
                     effective_permissions.add(permission["code"])
         role_assignments.append(
@@ -123,6 +138,19 @@ async def get_user_by_auth_id(
     }
     if include_permissions:
         result["effective_permissions"] = sorted(effective_permissions)
+        for grant in row.get("user_permission_grants") or []:
+            permission = grant.get("permissions")
+            if (
+                grant.get("revoked_at") is None
+                and isinstance(permission, dict)
+                and permission.get("is_active", True)
+                and isinstance(permission.get("code"), str)
+            ):
+                direct_permission_grants.append({
+                    "institution_id": grant.get("institution_id"),
+                    "permission": permission["code"],
+                })
+        result["direct_permission_grants"] = direct_permission_grants
         result["permissions_resolved"] = True
     return result
 

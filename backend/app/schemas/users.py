@@ -30,8 +30,10 @@ def _not_blank(value: str) -> str:
 
 
 def _password_min_length(value: str) -> str:
-    if len(value) < 6:
-        raise ValueError("Password must be at least 6 characters")
+    if len(value) < 8:
+        raise ValueError("Password must be at least 8 characters")
+    if len(value) > 128:
+        raise ValueError("Password must not exceed 128 characters")
     return value
 
 
@@ -65,7 +67,8 @@ class UserRegistrationRequest(BaseModel):
     )
     email: EmailStr
     password: str = Field(
-        ..., description="Password (goes ONLY to Supabase Auth, never stored)"
+        ..., min_length=8, max_length=128,
+        description="Password (goes ONLY to Supabase Auth, never stored)"
     )
     first_name: str
     last_name: str

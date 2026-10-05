@@ -11,8 +11,8 @@
  *   multi-tab  -> storage events synchronize sign-out AND sign-in as another
  *                 role (never leaving a tab authenticated on its own)
  *
- * It also pins the browser-storage contract: the access token is the ONLY
- * persisted value, for every role, and no token/role data is ever rendered.
+ * It also pins the browser-storage contract: provider session state may be
+ * persisted, but role and authorization decisions are never persisted.
  *
  * Only the HTTP clients are mocked (auth/admin/student/dev auth). No
  * role-specific session system is introduced anywhere.
@@ -23,7 +23,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App.tsx'
-import { ACCESS_TOKEN_STORAGE_KEY } from './features/auth/AuthProvider.tsx'
+import {
+  ACCESS_TOKEN_STORAGE_KEY,
+  REFRESH_TOKEN_STORAGE_KEY,
+} from './features/auth/AuthProvider.tsx'
 import { mockAllLoaded } from './features/student/studentTestFixtures.ts'
 import * as authService from './services/auth.ts'
 import * as adminApi from './services/adminApi.ts'
@@ -154,6 +157,11 @@ beforeEach(() => {
 
 function restoreAs(role: string): void {
   window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, SAVED_TOKEN)
+  window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, 'saved-refresh-token')
+  window.localStorage.setItem(
+    'college-ai-chatbot.session-expires-at',
+    String(Date.now() + 3_600_000),
+  )
   vi.mocked(authService.fetchCurrentUser).mockResolvedValue(ME_BY_ROLE[role])
 }
 
@@ -231,12 +239,15 @@ describe('logout across roles', () => {
   it('signing out from the admin shell removes the session and the saved token', async () => {
     const user = userEvent.setup()
     restoreAs('admin')
+    vi.spyOn(authService, 'revokeSession').mockResolvedValue(undefined)
     render(<App />)
     expect(await screen.findByText('Admin Panel')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
 
     expect(await screen.findByRole('heading', { name: 'College AI Platform' })).toBeInTheDocument()
+    expect(authService.revokeSession).toHaveBeenCalledWith(SAVED_TOKEN)
+    await waitFor(() => expect(window.localStorage.length).toBe(0))
     expect(window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBeNull()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
     // A deliberate sign-out shows no expiry message.
@@ -273,7 +284,7 @@ describe('multi-tab session synchronization', () => {
 
 
 describe('browser storage audit across roles', () => {
-  it('persists the access token only — one key, no sessionStorage, no secrets', async () => {
+  it('persists provider session state, but no role data or credentials', async () => {
     for (const role of ['admin', 'staff', 'faculty', 'student'] as const) {
       window.localStorage.clear()
       window.sessionStorage.clear()
@@ -285,9 +296,8 @@ describe('browser storage audit across roles', () => {
         await screen.findByRole('navigation', { name: SHELL_MARKERS[role] }),
       ).toBeInTheDocument()
 
-      // Exactly the one documented authentication key.
-      expect(window.localStorage.length).toBe(1)
-      expect(window.localStorage.key(0)).toBe(ACCESS_TOKEN_STORAGE_KEY)
+      expect(window.localStorage.length).toBe(3)
+      expect(window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)).toBe('saved-refresh-token')
       expect(window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBe(SAVED_TOKEN)
       // Nothing else is persisted anywhere: no role decision, no dataset.
       expect(window.sessionStorage.length).toBe(0)
@@ -296,9 +306,6 @@ describe('browser storage audit across roles', () => {
       for (let index = 0; index < window.localStorage.length; index += 1) {
         const key = window.localStorage.key(index) ?? ''
         const value = window.localStorage.getItem(key) ?? ''
-        // The only stored value is the opaque token — never a password or
-        // any authorization decision.
-        expect(value).toBe(SAVED_TOKEN)
         expect(value.toLowerCase()).not.toContain('password')
       }
 
@@ -309,6 +316,7 @@ describe('browser storage audit across roles', () => {
   it('removes every trace of the session when the role signs out', async () => {
     const user = userEvent.setup()
     restoreAs('staff')
+    vi.spyOn(authService, 'revokeSession').mockResolvedValue(undefined)
     render(<App />)
     expect(await screen.findByRole('navigation', { name: 'Staff navigation' })).toBeInTheDocument()
 
@@ -322,4 +330,3 @@ describe('browser storage audit across roles', () => {
     expect(window.sessionStorage.length).toBe(0)
   })
 })
-

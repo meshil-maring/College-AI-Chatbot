@@ -7,12 +7,11 @@
  *
  * UX ONLY — NEVER AUTHORIZATION:
  * This module decides which links to RENDER. It is not a security boundary.
- * The only faculty-facing backend capabilities that exist today are the
- * authenticated chat surface (conversations + generation chat, which use the
- * plain `get_current_user` dependency) and the document ingestion pipeline
- * (`require_roles("admin", "staff", "faculty")`, no faculty-facing listing
- * contract). Every other academic surface (students, attendance, results,
- * notices, learning resources) is verified server-side as faculty-DENIED:
+ * Faculty can view server-owned active section assignments and use the
+ * authenticated chat surface. The document ingestion pipeline is also
+ * available to faculty, but has no faculty-facing listing contract. Other
+ * academic surfaces (students, attendance, results, notices, learning
+ * resources) remain unavailable:
  *
  *   - /students/me/*   -> 404 STUDENT_PROFILE_NOT_FOUND (student-only
  *                        identity chain; a faculty account has no students
@@ -20,15 +19,15 @@
  *   - /admin/*         -> 403 FORBIDDEN (require_roles("admin"); faculty is
  *                        NOT part of the admin/staff approval boundary)
  *
- * Because no faculty -> student scope (assignment/subject/department link)
- * exists in the backend, NO student list, attendance, results, notices or
- * resources navigation entry is rendered. Removing or editing this file
+ * Faculty-section assignments do not yet provide a student roster or
+ * attendance/results write scope, so NO student list, attendance, results,
+ * notices or resources navigation entry is rendered. Removing or editing this file
  * cannot grant access to anything: a faculty user who manually requests a
  * student or admin URL still receives 403/404 from the backend.
  *
- * The faculty navigation contains NO administrative surface. Admin, user
- * management, role management, and institution management links do not exist
- * in this list, so a faculty member can never be shown one by a
+ * The faculty navigation contains NO administrative surface. Admin,
+ * permission management, user management, and institution management links
+ * do not exist in this list, so a faculty member can never be shown one by a
  * role-resolution mistake either.
  */
 
@@ -38,7 +37,7 @@ import { hasPermission } from '../auth/permissions.ts'
 const FACULTY_SHELL_ROLES: readonly string[] = ['faculty']
 
 /** Every view the faculty shell can render (no router library is installed). */
-export type FacultyView = 'dashboard' | 'assistant' | 'profile'
+export type FacultyView = 'dashboard' | 'assistant' | 'profile' | 'assignments'
 
 export interface FacultyNavItem {
   readonly key: FacultyView
@@ -54,6 +53,7 @@ export const FACULTY_NAV_ITEMS: readonly FacultyNavItem[] = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'assistant', label: 'AI Assistant' },
   { key: 'profile', label: 'Profile' },
+  { key: 'assignments', label: 'My Sections' },
 ]
 
 /**
@@ -68,6 +68,7 @@ const FACULTY_VIEW_PERMISSIONS: Readonly<Record<FacultyView, string>> = {
   dashboard: 'profile.own.read',
   assistant: 'ai.chat',
   profile: 'profile.own.read',
+  assignments: 'faculty.assignments.read',
 }
 
 export function buildFacultyNavigation(
@@ -87,6 +88,7 @@ export const FACULTY_VIEW_HEADINGS: Readonly<Record<FacultyView, string>> = {
   dashboard: 'Dashboard',
   assistant: 'AI Assistant',
   profile: 'Profile',
+  assignments: 'My Sections',
 }
 
 /**
@@ -108,6 +110,12 @@ export interface FacultyWorkspaceSurface {
 }
 
 export const FACULTY_WORKSPACE_SURFACES: readonly FacultyWorkspaceSurface[] = [
+  {
+    key: 'assignments',
+    title: 'My Sections',
+    status: 'available',
+    description: 'View active section assignments assigned to your account.',
+  },
   {
     key: 'assistant',
     title: 'AI Assistant',

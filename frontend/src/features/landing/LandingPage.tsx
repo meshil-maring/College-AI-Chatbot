@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { FUTURE_CAPABILITIES, GATEWAY_ENTRIES, type GatewayEntry } from './landingConfig.ts'
 
 function GatewayIcon({ role }: { role: GatewayEntry['role'] }) {
@@ -45,7 +45,7 @@ function GatewayCard({ entry }: { entry: GatewayEntry }) {
       <h3 className="mt-5 text-lg font-semibold text-white">{entry.label}</h3>
       <p className="mt-2 flex-1 text-sm leading-6 text-slate-400">{entry.description}</p>
       <span className={`mt-4 text-sm font-semibold ${platform ? 'text-violet-300' : 'text-emerald-300'}`}>
-        Continue <span aria-hidden="true">→</span>
+        Continue <span aria-hidden="true">â†’</span>
       </span>
     </a>
   )
@@ -95,34 +95,36 @@ export default function LandingPage() {
               <span aria-hidden="true">+</span>
               <span className="rounded-full border border-violet-500/40 bg-violet-500/10 px-4 py-2 text-violet-200">Platform administration</span>
             </div>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="/register/university"
-                className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-              >
-                Register your university
-              </a>
-              <a
-                href="/login/admin"
-                className="rounded-lg border border-slate-600 bg-slate-900/70 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-slate-400 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
-              >
-                University Admin login
-              </a>
-              <a
-                href="/login/faculty?register=1"
-                className="rounded-lg border border-sky-500/60 bg-sky-500/10 px-5 py-3 text-sm font-semibold text-sky-200 hover:border-sky-400 hover:bg-sky-500/20 focus:outline-none focus:ring-2 focus:ring-sky-300"
-              >
-                Register as faculty
-              </a>
-              <a
-                href="/login/staff?register=1"
-                className="rounded-lg border border-amber-500/60 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-200 hover:border-amber-400 hover:bg-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-300"
-              >
-                Register as staff
-              </a>
+            <div className="mt-8" role="group" aria-labelledby="register-heading">
+              <h2 id="register-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Register</h2>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <a
+                  href="/register/university"
+                  className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                >
+                  Register your university
+                </a>
+                <a
+                  href="/login/faculty?register=1"
+                  className="rounded-lg border border-sky-500/60 bg-sky-500/10 px-5 py-3 text-sm font-semibold text-sky-200 hover:border-sky-400 hover:bg-sky-500/20 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                >
+                  Register as faculty
+                </a>
+                <a
+                  href="/login/staff?register=1"
+                  className="rounded-lg border border-amber-500/60 bg-amber-500/10 px-5 py-3 text-sm font-semibold text-amber-200 hover:border-amber-400 hover:bg-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                >
+                  Register as staff
+                </a>
+                <a
+                  href="/register/super-admin"
+                  className="rounded-lg border border-violet-500/60 bg-violet-500/10 px-5 py-3 text-sm font-semibold text-violet-200 hover:border-violet-400 hover:bg-violet-500/20 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                >
+                  Register as Super Admin
+                </a>
+              </div>
             </div>
-          </div>
-        </section>
+          </div>        </section>
 
         <div className="mx-auto grid max-w-7xl gap-10 px-8 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <section aria-labelledby="public-access-heading">
@@ -160,7 +162,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t border-slate-800 px-8 py-6 text-center text-xs text-slate-500">
-        Demo gateway · Access is enforced by the platform backend, not this page.
+        Demo gateway Â· Access is enforced by the platform backend, not this page.
       </footer>
 
       {moreOpen ? (

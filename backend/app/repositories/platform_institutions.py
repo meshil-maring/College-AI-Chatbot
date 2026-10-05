@@ -334,29 +334,27 @@ def has_institution_admin_grant(
 def assign_institution_admin(
     client: Client,
     *,
+    actor_user_id: UUID | str,
     user_id: UUID | str,
     institution_id: UUID | str,
-    organization_id: UUID | str,
+    organization_id: UUID | str | None = None,
 ) -> dict[str, Any]:
     """Grant the institution-scoped ``admin`` role to an existing account.
 
-    Reuses the existing ``assign_user_role_scope`` primitive so the Phase 6.13
-    ``user_roles`` scope constraints remain authoritative: the grant is
-    structurally institution-scoped and can never become a platform grant.
+    The database operation is atomic with its institution-scoped audit event.
+    The function derives the organization from the institution and independently
+    validates platform authority or invitation acceptance.
     """
-    from app.repositories.tenancy import assign_user_role_scope
-
-    role = _admin_role(client)
-    if role is None:
-        raise RuntimeError("Role 'admin' is not configured")
-    return assign_user_role_scope(
-        client,
-        user_id=str(user_id),
-        role_id=role["id"],
-        scope_type="institution",
-        scope_id=str(institution_id),
-        scope_organization_id=str(organization_id),
-    )
+    response = client.rpc(
+        "phase81_assign_institution_role_audited",
+        {
+            "p_actor_user_id": str(actor_user_id),
+            "p_target_user_id": str(user_id),
+            "p_institution_id": str(institution_id),
+            "p_role_name": 'admin',
+        },
+    ).execute()
+    return {"changed": bool(response.data)}
 
 
 def record_institution_audit(

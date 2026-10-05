@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider.tsx'
 import LoginForm, { type LoginAudience } from './features/auth/LoginForm.tsx'
 import ChangePasswordForm from './features/auth/ChangePasswordForm.tsx'
+import ResetPasswordForm from './features/auth/ResetPasswordForm.tsx'
 import AdminShell from './features/admin/AdminShell.tsx'
 import StudentShell from './features/student/StudentShell.tsx'
 import FacultyShell from './features/faculty/FacultyShell.tsx'
 import StaffShell from './features/staff/StaffShell.tsx'
-import { fetchDevAuthStatus } from './services/devAuth.ts'
 import PublicChatPage, { PublicChatRouteError } from './features/publicChat/PublicChatPage.tsx'
 import LandingPage from './features/landing/LandingPage.tsx'
 import InstitutionEntryPage from './features/landing/InstitutionEntryPage.tsx'
 import InstitutionGatewayPage from './features/landing/InstitutionGatewayPage.tsx'
 import SuperAdminShell from './features/superAdmin/SuperAdminShell.tsx'
+import SuperAdminRegisterEntryPage from './features/superAdmin/SuperAdminRegisterEntryPage.tsx'
+import SuperAdminRegistrationPage from './features/superAdmin/SuperAdminRegistrationPage.tsx'
 import AdminInvitationPage from './features/adminInvitation/AdminInvitationPage.tsx'
 import UniversityRegistrationPage from './features/auth/UniversityRegistrationPage.tsx'
 
@@ -34,8 +36,11 @@ export function resolvePublicInstitutionCode(pathname: string): string | null | 
 export type AppRoute =
   | { readonly kind: 'home' }
   | { readonly kind: 'login'; readonly audience: LoginAudience }
+  | { readonly kind: 'reset-password' }
   | { readonly kind: 'super-admin' }
   | { readonly kind: 'admin-invitation'; readonly token: string }
+  | { readonly kind: 'super-admin-invitation'; readonly token: string }
+  | { readonly kind: 'super-admin-register' }
   | { readonly kind: 'university-registration' }
   | { readonly kind: 'institution-entry' }
   | { readonly kind: 'institution'; readonly institutionCode: string }
@@ -77,7 +82,21 @@ export function resolveAppRoute(pathname: string): AppRoute {
       ? { kind: 'not-found' }
       : { kind: 'admin-invitation', token: invitationToken }
   }
+  const superAdminMatch = pathname.match(/^\/super-admin-invite\/([^/]+)\/?$/)
+  if (superAdminMatch !== null) {
+    let token: string | null = null
+    try {
+      token = decodeURIComponent(superAdminMatch[1])
+    } catch {
+      token = null
+    }
+    return token !== null && /^[A-Za-z0-9_-]{32,256}$/.test(token)
+      ? { kind: 'super-admin-invitation', token }
+      : { kind: 'not-found' }
+  }
+  if (/^\/register\/super-admin\/?$/.test(pathname)) return { kind: 'super-admin-register' }
   if (pathname === '/' || pathname === '') return { kind: 'home' }
+  if (/^\/reset-password\/?$/.test(pathname)) return { kind: 'reset-password' }
   if (/^\/register\/university\/?$/.test(pathname)) return { kind: 'university-registration' }
   if (/^\/u\/?$/.test(pathname)) return { kind: 'institution-entry' }
 
@@ -98,27 +117,21 @@ export function resolveAppRoute(pathname: string): AppRoute {
   return { kind: 'not-found' }
 }
 
-/** DEVELOPMENT / TESTING ONLY — collapsible "Change Password" panel. */
-function DevChangePasswordPanel() {
-  const [devTestModeEnabled, setDevTestModeEnabled] = useState(false)
+function AccountSecurityPanel() {
   const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    void fetchDevAuthStatus().then((result) => {
-      if (!cancelled) setDevTestModeEnabled(result.dev_test_mode)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  if (!devTestModeEnabled) return null
+  const { logoutAll } = useAuth()
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {open ? (
-        <div id="dev-change-password-panel" className="flex flex-col items-end gap-2">
+        <div id="account-security-panel" className="flex flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={() => void logoutAll()}
+            className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700"
+          >
+            Sign out all sessions
+          </button>
           <ChangePasswordForm />
           <button
             type="button"
@@ -133,13 +146,22 @@ function DevChangePasswordPanel() {
           type="button"
           onClick={() => setOpen(true)}
           aria-expanded={open}
-          aria-controls="dev-change-password-panel"
-          className="rounded-lg border border-amber-600/60 bg-slate-800 px-3 py-2 text-xs font-semibold text-amber-400 shadow-lg hover:bg-slate-700"
+          aria-controls="account-security-panel"
+          className="rounded-lg border border-emerald-600/60 bg-slate-800 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg hover:bg-slate-700"
         >
-          Change Password (Dev/Test only)
+          Account security
         </button>
       )}
     </div>
+  )
+}
+
+function AuthenticatedExperience() {
+  return (
+    <>
+      <AuthenticatedShell />
+      <AccountSecurityPanel />
+    </>
   )
 }
 
@@ -256,8 +278,7 @@ function AuthGate({ audience = 'general' }: { audience?: LoginAudience }) {
   if (status === 'authenticated') {
     return (
       <>
-        <AuthenticatedShell />
-        <DevChangePasswordPanel />
+        <AuthenticatedExperience />
       </>
     )
   }
@@ -270,8 +291,7 @@ function RootGate() {
   if (status === 'authenticated') {
     return (
       <>
-        <AuthenticatedShell />
-        <DevChangePasswordPanel />
+        <AuthenticatedExperience />
       </>
     )
   }
@@ -286,7 +306,14 @@ function SuperAdminGate() {
   const { status, role, logout } = useAuth()
   if (status === 'restoring') return <RestoringShell />
   if (status !== 'authenticated') return <LoginForm audience="super_admin" />
-  if (role === 'super_admin') return <SuperAdminShell />
+  if (role === 'super_admin') {
+    return (
+      <>
+        <SuperAdminShell />
+        <AccountSecurityPanel />
+      </>
+    )
+  }
   return <UnsupportedRoleShell onSignOut={logout} />
 }
 
@@ -321,9 +348,16 @@ function App() {
   if (route.kind === 'not-found') return <NotFoundPage />
   // Rendered outside <AuthProvider>: the invited person has no session yet.
   if (route.kind === 'admin-invitation') return <AdminInvitationPage token={route.token} />
+  if (route.kind === 'super-admin-register') return <SuperAdminRegisterEntryPage />
+  if (route.kind === 'super-admin-invitation') {
+    return <SuperAdminRegistrationPage token={route.token} />
+  }
   // Public onboarding request. The backend creates only a pending institution;
   // no usable admin access exists until the server-side approval workflow.
   if (route.kind === 'university-registration') return <UniversityRegistrationPage />
+  if (route.kind === 'reset-password') {
+    return <ResetPasswordForm onBackToLogin={() => window.location.assign('/login')} />
+  }
   return (
     <AuthProvider>
       {route.kind === 'home' ? <RootGate /> : null}

@@ -30,7 +30,14 @@ describe('buildAdminNavigation', () => {
       'faqs',
       'assistant',
       'profile',
+      'permissions',
+      'faculty-assignments',
     ])
+  })
+
+  it('shows the new administration views only with their server permissions', () => {
+    expect(buildAdminNavigation('admin', ['permissions.read']).map((item) => item.key)).toEqual(['permissions'])
+    expect(buildAdminNavigation('admin', ['faculty.assignments.manage']).map((item) => item.key)).toEqual(['faculty-assignments'])
   })
 
   it('returns an empty navigation for every other role (fail closed)', () => {
@@ -50,9 +57,8 @@ describe('buildAdminNavigation', () => {
 
   it('contains no invented or unauthorized entries', () => {
     const labels = ADMIN_NAV_ITEMS.map((item) => item.label)
-    // No speculative administrative surfaces (no frontend manager exists).
-    expect(labels).not.toContain('User Management')
-    expect(labels).not.toContain('Role Management')
+    expect(labels).toContain('Staff Permissions')
+    expect(labels).toContain('Faculty Assignments')
     expect(labels).not.toContain('Institution Administration')
     expect(labels).not.toContain('Audit Logs')
     expect(labels).not.toContain('Learning Resources')

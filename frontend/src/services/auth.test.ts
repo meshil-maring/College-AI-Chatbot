@@ -18,9 +18,14 @@ import {
   AuthError,
   authenticate,
   authErrorMessage,
+  changePassword,
+  completePasswordReset,
   fetchCurrentUser,
   isEmailAddress,
   login,
+  refreshSession,
+  requestPasswordRecovery,
+  revokeSession,
   studentLogin,
 } from './auth.ts'
 import type { AuthErrorKind } from './auth.ts'
@@ -28,6 +33,8 @@ import { SESSION_EXPIRED_MESSAGE } from './sessionEvents.ts'
 
 const LOGIN_RESPONSE = {
   access_token: 'test-access-token',
+  refresh_token: 'test-refresh-token',
+  expires_in: 3600,
   message: 'Login successful.',
   user: { id: '71000000-0000-0000-0000-000000000001', email: 'meshil@example.com' },
 }
@@ -246,6 +253,7 @@ describe('authenticate (unified identifier routing)', () => {
       email: 'meshil@example.com',
       password: 'secret123',
     })
+
   })
 
   it('never sends institution data on the email login path', async () => {
@@ -300,6 +308,69 @@ describe('authenticate (unified identifier routing)', () => {
       email: 'meshil@example.com',
       password: 'secret123',
     })
+  })
+})
+
+describe('password and session lifecycle endpoints', () => {
+  it('requests provider-managed recovery without sending a new password', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { message: 'ok' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await requestPasswordRecovery('person@college.edu')
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/v1/auth/forgot-password')
+    expect(JSON.parse(String(init.body))).toEqual({ email: 'person@college.edu' })
+  })
+
+  it('sends recovery credentials through the bearer header', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { message: 'ok' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await completePasswordReset('recovery-token', 'new-password-123', 'new-password-123')
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/v1/auth/reset-password')
+    expect((init.headers as Record<string, string>).Authorization).toContain('Bearer')
+    expect(JSON.parse(String(init.body))).toEqual({
+      new_password: 'new-password-123',
+      confirm_password: 'new-password-123',
+    })
+  })
+
+  it('sends current and new passwords only to the authenticated change endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { message: 'ok' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await changePassword('access-token', 'old-password', 'new-password', 'new-password')
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/v1/auth/change-password')
+    expect((init.headers as Record<string, string>).Authorization).toContain('Bearer')
+    expect(JSON.parse(String(init.body))).toEqual({
+      current_password: 'old-password',
+      new_password: 'new-password',
+      confirm_password: 'new-password',
+    })
+  })
+
+  it('renews with the provider refresh token and supports scoped logout', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(200, LOGIN_RESPONSE))
+      .mockResolvedValueOnce(jsonResponse(200, { message: 'revoked' }))
+      .mockResolvedValueOnce(jsonResponse(200, { message: 'revoked' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await refreshSession('provider-refresh-token')
+    await revokeSession('access-token')
+    await revokeSession('access-token', true)
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/v1/auth/refresh')
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+      refresh_token: 'provider-refresh-token',
+    })
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/auth/logout')
+    expect(fetchMock.mock.calls[2]?.[0]).toBe('/api/v1/auth/logout-all')
   })
 })
 

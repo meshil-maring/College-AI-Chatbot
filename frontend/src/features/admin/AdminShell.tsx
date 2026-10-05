@@ -43,6 +43,8 @@ import ResultsManager from './ResultsManager.tsx'
 import TestResultsManager from './TestResultsManager.tsx'
 import AttendanceManager from './AttendanceManager.tsx'
 import StaffFacultyManager from './StaffFacultyManager.tsx'
+import StaffPermissionManager from './StaffPermissionManager.tsx'
+import FacultyAssignmentManager from './FacultyAssignmentManager.tsx'
 import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adminNavigation.ts'
 
 export default function AdminShell() {
@@ -162,6 +164,12 @@ export default function AdminShell() {
                   <p className="text-sm text-slate-300">Your session could not be verified. Please sign in again.</p>
                 </section>
               )
+            ) : null}
+            {currentView === 'permissions' && accessToken !== null ? (
+              <StaffPermissionManager accessToken={accessToken} />
+            ) : null}
+            {currentView === 'faculty-assignments' && accessToken !== null ? (
+              <FacultyAssignmentManager accessToken={accessToken} />
             ) : null}
             {currentView === 'students' ? <StudentManager /> : null}
             {currentView === 'attendance' ? <AttendanceManager /> : null}

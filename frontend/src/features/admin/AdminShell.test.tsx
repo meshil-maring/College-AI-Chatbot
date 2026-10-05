@@ -80,6 +80,8 @@ describe('AdminShell', () => {
       'FAQs',
       'AI Assistant',
       'Profile',
+      'Staff Permissions',
+      'Faculty Assignments',
     ]) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
     }

@@ -18,6 +18,7 @@ mcp_servers/
 *.log
 coverage/
 htmlcov/
+.test_login
 
 # Personal tool settings (local-only agent overrides)
 .claude/settings.local.json

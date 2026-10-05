@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+﻿import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App, { resolveAppRoute } from '../../App.tsx'
@@ -38,8 +38,9 @@ describe('Phase 7.11 demo landing role gateway', () => {
     expect(screen.getByText('DEMO')).toBeInTheDocument()
 
     for (const entry of GATEWAY_ENTRIES) {
-      expect(screen.getByRole('link', { name: new RegExp(entry.label) })).toHaveAttribute('href', entry.href)
+      expect(screen.getAllByRole('link', { name: new RegExp(entry.label) }).map((link) => link.getAttribute('href'))).toContain(entry.href)
     }
+    expect(screen.getByRole('link', { name: 'Register as Super Admin' })).toHaveAttribute('href', '/register/super-admin')
   })
 
   it('maps each presentation label to the intended role semantic', () => {

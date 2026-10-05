@@ -215,6 +215,7 @@ class AdminAuditLogCreate(BaseModel):
     """Payload for recording one privileged admin action."""
 
     actor_user_id: UUID
+    institution_id: UUID | None = None
     action: str
     table_name: str | None = None
     record_id: str | None = None
@@ -229,6 +230,7 @@ class AdminAuditLogResponse(BaseModel):
 
     audit_id: UUID
     actor_user_id: UUID
+    institution_id: UUID | None = None
     action: str
     table_name: str | None
     record_id: str | None

@@ -63,6 +63,7 @@ describe('FacultyShell', () => {
     expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'AI Assistant' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Profile' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'My Sections' })).toBeInTheDocument()
   })
 
   it('never renders admin navigation', () => {

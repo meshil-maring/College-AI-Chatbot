@@ -29,8 +29,10 @@ def _not_blank(value: str) -> str:
 
 
 def _password_min_length(value: str) -> str:
-    if len(value) < 6:
-        raise ValueError("Password must be at least 6 characters")
+    if len(value) < 8:
+        raise ValueError("Password must be at least 8 characters")
+    if len(value) > 128:
+        raise ValueError("Password must not exceed 128 characters")
     return value
 
 
@@ -48,7 +50,7 @@ class OrganizationRegistrationRequest(BaseModel):
     official_email: EmailStr
     contact_information: str
     admin_email: EmailStr
-    admin_password: str
+    admin_password: str = Field(min_length=8, max_length=128)
     admin_first_name: str
     admin_last_name: str
 
@@ -97,7 +99,7 @@ class InstitutionRegistrationRequest(BaseModel):
     official_email: EmailStr
     location: str | None = None
     admin_email: EmailStr
-    admin_password: str
+    admin_password: str = Field(min_length=8, max_length=128)
     admin_first_name: str
     admin_last_name: str
 
@@ -164,7 +166,7 @@ class StaffFacultyRegistrationRequest(BaseModel):
 
     institution_code: str = Field(min_length=2, max_length=64)
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8, max_length=128)
     first_name: str
     last_name: str
     requested_role: Literal["staff", "faculty"]

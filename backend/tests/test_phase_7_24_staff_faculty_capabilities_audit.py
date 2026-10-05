@@ -815,14 +815,22 @@ def test_academic_tables_exist_but_carry_no_faculty_owner_relationship() -> None
         assert academic_table in created, academic_table
 
     sql = _migration_sql()
-    for pattern in (
-        r'course_offerings[^;]*?REFERENCES "public"\."users"',
-        r'sections[^;]*?REFERENCES "public"\."users"',
-        r'courses[^;]*?REFERENCES "public"\."users"',
-        r'courses[^;]*?"(?:instructor|faculty|teacher|owner)_user_id"',
-        r'sections[^;]*?"(?:instructor|faculty|teacher)_user_id"',
-    ):
-        assert not re.search(pattern, sql, re.S | re.I), pattern
+    for academic_table in ("course_offerings", "sections", "courses"):
+        definitions = re.findall(
+            rf'CREATE TABLE(?: IF NOT EXISTS)? "public"\."{academic_table}"\s*\((.*?);',
+            sql,
+            re.S | re.I,
+        )
+        assert definitions, academic_table
+        assert not any(
+            re.search(r'REFERENCES "public"\."users"', definition, re.I)
+            or re.search(
+                r'"(?:instructor|faculty|teacher|owner)_user_id"',
+                definition,
+                re.I,
+            )
+            for definition in definitions
+        ), academic_table
 
 
 def test_no_staff_or_faculty_router_exists() -> None:

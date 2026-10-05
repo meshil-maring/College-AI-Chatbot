@@ -20,13 +20,12 @@
  * - a single alert region (`fieldError ?? authError`) and `aria-busy`.
  */
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from './AuthProvider.tsx'
 import ForgotPasswordForm from './ForgotPasswordForm.tsx'
 import RegistrationForm from './RegistrationForm.tsx'
 import PasswordField from './PasswordField.tsx'
 import { isEmailAddress } from '../../services/auth.ts'
-import { fetchDevAuthStatus } from '../../services/devAuth.ts'
 
 export type LoginAudience = 'general' | 'student' | 'admin' | 'staff' | 'faculty' | 'super_admin'
 
@@ -53,7 +52,6 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
       (audience === 'faculty' || audience === 'staff') &&
       new URLSearchParams(window.location.search).get('register') === '1',
   )
-  const [devTestModeEnabled, setDevTestModeEnabled] = useState(false)
 
   // An academic identifier (register number / university roll number) is
   // institution-scoped by the backend contract, so the institution code is
@@ -61,18 +59,6 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   // it, so email users see no extra field).
   const requiresInstitutionCode =
     identifier.trim() !== '' && !isEmailAddress(identifier.trim())
-
-  useEffect(() => {
-    // DEVELOPMENT / TESTING ONLY — "Forgot Password?" only appears when the
-    // backend explicitly reports dev/test mode is enabled.
-    let cancelled = false
-    void fetchDevAuthStatus().then((result) => {
-      if (!cancelled) setDevTestModeEnabled(result.dev_test_mode)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   const busy = status === 'authenticating'
 
@@ -207,6 +193,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
               }}
               required
               minLength={6}
+              maxLength={128}
               autoComplete="current-password"
               disabled={busy}
               placeholder="••••••••"
@@ -218,16 +205,14 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
             >
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
-            {devTestModeEnabled && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setShowForgotPassword(true)}
-                className="text-sm text-slate-400 hover:text-slate-200 underline"
-              >
-                Forgot password? (Dev/Test only)
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-slate-400 hover:text-slate-200 underline"
+            >
+              Forgot password?
+            </button>
           </form>
 
           <p className="mt-6 text-sm text-slate-400">

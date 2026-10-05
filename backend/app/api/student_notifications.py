@@ -19,7 +19,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, Query
 
-from app.core.security import get_current_user, require_permission
+from app.core.security import authorize_permissions, get_current_user
 from app.schemas.student_notifications import Notification, NotificationListResponse
 from app.services import student_context as student_context_service
 from app.services import student_notifications as notifications_service
@@ -27,7 +27,6 @@ from app.services import student_notifications as notifications_service
 router = APIRouter(
     prefix="/students",
     tags=["students"],
-    dependencies=[Depends(require_permission("profile.own.read"))],
 )
 
 # Default page size for notification listing.
@@ -54,6 +53,7 @@ def list_my_notifications(
     Each notification is scoped to the authenticated student only.
     """
     student_ctx = student_context_service.get_student_context(current_user)
+    authorize_permissions(current_user, "notifications.own.read")
     return notifications_service.get_own_notifications(
         student_ctx["student_id"],
         page=page,
@@ -67,6 +67,7 @@ def unread_notification_count(
 ) -> dict:
     """Return the unread notification count for the authenticated student."""
     student_ctx = student_context_service.get_student_context(current_user)
+    authorize_permissions(current_user, "notifications.own.read")
     count = notifications_service.get_unread_count(student_ctx["student_id"])
     return {"unread_count": count}
 
@@ -90,6 +91,7 @@ def get_my_notification(
     student (same error to prevent enumeration).
     """
     student_ctx = student_context_service.get_student_context(current_user)
+    authorize_permissions(current_user, "notifications.own.read")
     return notifications_service.get_own_notification(
         student_ctx["student_id"],
         notification_id,
@@ -119,6 +121,7 @@ def mark_my_notification_read(
     No other fields (title, message, type, ownership) can be modified.
     """
     student_ctx = student_context_service.get_student_context(current_user)
+    authorize_permissions(current_user, "notifications.own.update")
     return notifications_service.mark_own_notification_read(
         student_ctx["student_id"],
         notification_id,

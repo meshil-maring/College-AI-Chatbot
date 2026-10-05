@@ -34,6 +34,7 @@ from supabase_auth.errors import AuthApiError
 from app.config import DEV_TEST_ENVIRONMENTS, Settings, settings
 from app.core.security import get_current_user
 from app.main import app
+from app.services.auth_security import reset_auth_abuse_state
 from app.schemas.tenancy import InstitutionLookupResponse
 from app.schemas.users import UserRegistrationResponse
 
@@ -63,7 +64,10 @@ def _dev_flag_off_and_no_overrides():
     original = settings.dev_test_mode
     settings.dev_test_mode = False
     app.dependency_overrides.pop(get_current_user, None)
-    yield
+    reset_auth_abuse_state()
+    with patch("app.api.auth.record_auth_security_event"):
+        yield
+    reset_auth_abuse_state()
     settings.dev_test_mode = original
     app.dependency_overrides.pop(get_current_user, None)
 
@@ -252,7 +256,11 @@ def test_auth_me_exposes_only_the_documented_fields():
 
 def test_login_response_is_minimal_and_never_echoes_the_password():
     """The locked login contract carries no role, scope, or credential echo."""
-    session = SimpleNamespace(access_token="mock-access-token")
+    session = SimpleNamespace(
+        access_token="mock-access-token",
+        refresh_token="mock-refresh-token",
+        expires_in=3600,
+    )
     user = SimpleNamespace(id="auth-user-1", email="admin@college.edu")
     auth_client = MagicMock()
     auth_client.auth.sign_in_with_password.return_value = SimpleNamespace(
@@ -275,7 +283,15 @@ def test_login_response_is_minimal_and_never_echoes_the_password():
 
     assert response.status_code == 200, response.text
     body = response.json()
-    assert set(body.keys()) == {"access_token", "message", "user"}
+    assert set(body.keys()) == {
+        "access_token",
+        "refresh_token",
+        "expires_in",
+        "message",
+        "user",
+    }
+    assert body["refresh_token"] == "mock-refresh-token"
+    assert body["expires_in"] == 3600
     assert set(body["user"].keys()) == {"id", "email"}
     for forbidden in ("role", "roles", "is_admin", "password", "institution_id", "scope"):
         assert forbidden not in body

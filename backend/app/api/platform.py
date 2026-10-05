@@ -42,7 +42,14 @@ from app.schemas.platform import (
     InstitutionListResponse,
     InstitutionUpdateRequest,
 )
+from app.schemas.super_admin_registration import (
+    SuperAdminInvitationListResponse,
+    SuperAdminInvitationView,
+    SuperAdminInviteCreatedResponse,
+    SuperAdminInviteRequest,
+)
 from app.services import platform_admin_invitations as invitations_service
+from app.services import super_admin_registration as super_admin_service
 from app.services import platform_institutions as service
 
 logger = logging.getLogger(__name__)
@@ -78,6 +85,12 @@ _PLATFORM_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
         "/platform/institutions/{institution_id}/admins/{user_id}/revoke",
     ): ("platform.manage",),
     ("GET", "/platform/audit"): ("platform.audit.read",),
+    ("POST", "/platform/super-admins/invitations"): ("platform.manage",),
+    ("GET", "/platform/super-admins/invitations"): ("platform.read",),
+    (
+        "POST",
+        "/platform/super-admins/invitations/{invitation_id}/cancel",
+    ): ("platform.manage",),
 }
 
 
@@ -434,3 +447,40 @@ async def read_platform_audit(
         limit=limit,
         offset=offset,
     )
+
+
+@router.post(
+    "/super-admins/invitations",
+    response_model=SuperAdminInviteCreatedResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Invite another Super Admin (Super Admin)",
+)
+async def create_super_admin_invitation(
+    body: SuperAdminInviteRequest,
+    current_user: dict = Depends(_SUPER_ADMIN),
+) -> SuperAdminInviteCreatedResponse:
+    """Issue a single-use, expiring Super Admin registration link."""
+    return super_admin_service.create_invitation(current_user, body.email)
+
+
+@router.get(
+    "/super-admins/invitations",
+    response_model=SuperAdminInvitationListResponse,
+    summary="List Super Admin invitations (Super Admin)",
+)
+async def list_super_admin_invitations(
+    current_user: dict = Depends(_SUPER_ADMIN),
+) -> SuperAdminInvitationListResponse:
+    return super_admin_service.list_invitations()
+
+
+@router.post(
+    "/super-admins/invitations/{invitation_id}/cancel",
+    response_model=SuperAdminInvitationView,
+    summary="Cancel a pending Super Admin invitation (Super Admin)",
+)
+async def cancel_super_admin_invitation(
+    invitation_id: UUID,
+    current_user: dict = Depends(_SUPER_ADMIN),
+) -> SuperAdminInvitationView:
+    return super_admin_service.cancel_invitation(current_user, str(invitation_id))

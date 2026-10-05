@@ -782,6 +782,9 @@ def test_get_current_user_projects_the_authoritative_contract() -> None:
         ],
         "effective_permissions": [],
         "permissions_resolved": False,
+        "auth_methods": [],
+        "auth_session_id": None,
+        "token_issued_at": None,
     }
 
 

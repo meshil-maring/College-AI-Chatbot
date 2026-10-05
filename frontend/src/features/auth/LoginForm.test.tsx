@@ -42,32 +42,21 @@ beforeEach(() => {
   authState.error = null
   authState.login.mockReset()
   authState.login.mockResolvedValue(undefined)
-  vi.mocked(devAuth.fetchDevAuthStatus).mockReset()
 })
 
-describe('LoginForm — dev/test "Forgot Password?" gating', () => {
-  it('hides the Forgot Password link when dev/test mode is disabled', async () => {
-    vi.mocked(devAuth.fetchDevAuthStatus).mockResolvedValue({ dev_test_mode: false })
+describe('LoginForm — password recovery', () => {
+  it('always offers the production recovery flow', async () => {
     render(<LoginForm />)
 
-    await waitFor(() => {
-      expect(devAuth.fetchDevAuthStatus).toHaveBeenCalled()
-    })
-    expect(screen.queryByText(/forgot password/i)).not.toBeInTheDocument()
-  })
-
-  it('shows the Forgot Password link when dev/test mode is enabled', async () => {
-    vi.mocked(devAuth.fetchDevAuthStatus).mockResolvedValue({ dev_test_mode: true })
-    render(<LoginForm />)
-
-    expect(await screen.findByText(/forgot password/i)).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole('button', { name: /forgot password/i }))
+    expect(screen.getByLabelText('Email')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /send recovery instructions/i })).toBeInTheDocument()
   })
 })
 
 describe('LoginForm — registration navigation', () => {
   it('shows the registration form when "Register as Student" is clicked', async () => {
     const user = userEvent.setup()
-    vi.mocked(devAuth.fetchDevAuthStatus).mockResolvedValue({ dev_test_mode: false })
     render(<LoginForm />)
 
     await user.click(
@@ -362,4 +351,3 @@ describe('LoginForm — session expiry (Phase 6.15.6)', () => {
     expect(alert).not.toHaveTextContent(/invalid login credentials/i)
   })
 })
-

@@ -754,6 +754,7 @@ def accept_invitation(
         if role_name == "admin":
             platform_repo.assign_institution_admin(
                 client,
+                actor_user_id=user_id,
                 user_id=user_id,
                 institution_id=institution_id,
                 organization_id=organization_id,
@@ -761,6 +762,7 @@ def accept_invitation(
         else:
             tenancy_repo.assign_membership_role(
                 client,
+                actor_user_id=user_id,
                 user_id=user_id,
                 role_name=role_name,
                 institution_id=institution_id,

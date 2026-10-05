@@ -45,6 +45,7 @@ from app.db.supabase import get_sign_in_context, get_user_by_auth_id
 from app.main import app
 from app.services.sign_in import _has_student_profile, assert_sign_in_allowed
 from app.services.student_auth import SafeAuthFailure
+from app.services.auth_security import reset_auth_abuse_state
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -142,6 +143,8 @@ def auth_client(
         return auth
     session = MagicMock()
     session.access_token = "mock-access-token"
+    session.refresh_token = "mock-refresh-token"
+    session.expires_in = 3600
     user = MagicMock()
     user.id = str((student or {}).get("user_id", uuid4()))
     user.email = (student or {}).get("email") or user_email or APPROVED_EMAIL
@@ -533,8 +536,14 @@ def _active_institution_authorization():
             "is_active": True,
         }
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    reset_auth_abuse_state()
+    with (
+        patch("app.services.authorization.get_admin_client", return_value=db),
+        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.student_auth.record_auth_security_event"),
+    ):
         yield
+    reset_auth_abuse_state()
 
 
 def _as_authenticated(fake_user: dict):
@@ -805,7 +814,9 @@ def test_16d_login_response_never_echoes_role_or_scope():
     response = login_api(account=student_account())
     assert response.status_code == 200, response.text
     body = response.json()
-    assert set(body.keys()) == {"access_token", "message", "user"}
+    assert set(body.keys()) == {
+        "access_token", "refresh_token", "expires_in", "message", "user"
+    }
     assert set(body["user"].keys()) == {"id", "email"}
 
 
@@ -1022,7 +1033,9 @@ def test_20b_tenant_resolution_after_academic_identifier_login():
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert set(body.keys()) == {"access_token", "message", "user"}
+    assert set(body.keys()) == {
+        "access_token", "refresh_token", "expires_in", "message", "user"
+    }
     assert body["user"]["email"] == APPROVED_EMAIL
     assert str(INSTITUTION_A) not in response.text
     assert str(student["student_id"]) not in response.text
@@ -1344,7 +1357,9 @@ def test_23e_login_schemas_carry_no_password_storage_field():
         "password",
         "institution_code",
     }
-    assert set(StudentLoginResponse.model_fields) == {"access_token", "message", "user"}
+    assert set(StudentLoginResponse.model_fields) == {
+        "access_token", "refresh_token", "expires_in", "message", "user"
+    }
     assert "password" not in set(UserRegistrationResponse.model_fields)
 
 # ===========================================================================
@@ -1356,7 +1371,9 @@ def test_24a_phase_6_email_login_response_shape_unchanged():
     response = login_api(account=student_account())
     assert response.status_code == 200, response.text
     body = response.json()
-    assert set(body) == {"access_token", "message", "user"}
+    assert set(body) == {
+        "access_token", "refresh_token", "expires_in", "message", "user"
+    }
     assert body["message"] == "Login successful."
     assert set(body["user"]) == {"id", "email"}
 
@@ -1390,7 +1407,9 @@ def test_24d_phase_6_5_student_login_success_contract_unchanged():
         )
         assert response.status_code == 200, f"{identifier}: {response.text}"
         body = response.json()
-        assert set(body) == {"access_token", "message", "user"}
+        assert set(body) == {
+            "access_token", "refresh_token", "expires_in", "message", "user"
+        }
         assert body["access_token"] == "mock-access-token"
         assert set(body["user"]) == {"id", "email"}
 

@@ -29,9 +29,10 @@ import {
 } from './facultyNavigation.ts'
 import FacultyDashboard from './FacultyDashboard.tsx'
 import FacultyProfile from './FacultyProfile.tsx'
+import FacultyAssignments from './FacultyAssignments.tsx'
 
 export default function FacultyShell() {
-  const { user, role, logout } = useAuth()
+  const { user, role, accessToken, logout } = useAuth()
   const [view, setView] = useState<FacultyView>('dashboard')
   const navigation = buildFacultyNavigation(role, user?.effective_permissions)
 
@@ -112,6 +113,9 @@ export default function FacultyShell() {
             ) : null}
             {view === 'dashboard' ? <FacultyDashboard user={user} onNavigate={setView} /> : null}
             {view === 'profile' ? <FacultyProfile user={user} /> : null}
+            {view === 'assignments' && accessToken !== null ? (
+              <FacultyAssignments accessToken={accessToken} />
+            ) : null}
             {view === 'assistant' ? (
               <section aria-label="AI Assistant">
                 <ChatShell />

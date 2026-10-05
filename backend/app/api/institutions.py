@@ -39,7 +39,7 @@ Security invariants (inherited from the existing schemas and services):
 from fastapi import APIRouter, Depends, Query
 from uuid import UUID
 
-from app.core.security import get_current_user
+from app.core.security import authorize_permissions, get_current_user
 from app.schemas.tenancy import (
     ApprovalDecisionRequest,
     DecisionResponse,
@@ -55,6 +55,12 @@ from app.services.tenancy import (
 )
 
 router = APIRouter(prefix="/institutions", tags=["institutions"])
+
+INSTITUTION_PERMISSION_POLICIES = {
+    ("POST", "/institutions/join-requests/{join_request_id}/decision"): (
+        "organizations.manage",
+    ),
+}
 
 
 @router.get(
@@ -154,6 +160,12 @@ def decide_join_request_endpoint(
     run unchanged. Tenant isolation is enforced entirely server-side.
     """
     authorization_context = get_authorization_context_for_user(current_user)
+    authorize_permissions(
+        current_user,
+        *INSTITUTION_PERMISSION_POLICIES[(
+            "POST", "/institutions/join-requests/{join_request_id}/decision"
+        )],
+    )
     return decide_join_request(
         current_user,
         authorization_context,

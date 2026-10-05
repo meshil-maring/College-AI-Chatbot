@@ -2,6 +2,12 @@
 
 Date: 2026-10-05
 
+Historical snapshot: the remaining implementation gaps described below were
+addressed by Phase 8.1 on 2026-10-06. See
+[`GRANULAR_RBAC_PERMISSIONS_PHASE_8_1_REPORT.md`](./GRANULAR_RBAC_PERMISSIONS_PHASE_8_1_REPORT.md)
+for the current implementation status and verification evidence. Migration
+replay remains blocked there pending Docker/Supabase runtime availability.
+
 ## PHASE STATUS
 
 **INCOMPLETE**

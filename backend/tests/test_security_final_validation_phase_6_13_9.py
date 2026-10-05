@@ -1527,6 +1527,7 @@ def _login(account, auth=None, email="user@example.com", db=None):
             new=AsyncMock(return_value=account),
         ),
         patch("app.api.auth.get_admin_client", return_value=db),
+        patch("app.api.auth.record_auth_security_event"),
     ):
         return client.post(LOGIN_URL, json={"email": email, "password": "secret123"})
 
@@ -1612,11 +1613,17 @@ class TestAuthenticationSecurity:
         assert resp.status_code == 200, resp.text
 
     def _student_login(self, payload, result=None, error=None):
-        with patch(
-            "app.api.student_auth.authenticate_student",
-            side_effect=error if error else None,
-            return_value=None if error else result,
-        ) as svc:
+        if result is not None:
+            result.setdefault("refresh_token", "student-refresh-token")
+            result.setdefault("expires_in", 3600)
+        with (
+            patch(
+                "app.api.student_auth.authenticate_student",
+                side_effect=error if error else None,
+                return_value=None if error else result,
+            ) as svc,
+            patch("app.api.student_auth.record_auth_security_event"),
+        ):
             resp = client.post(STUDENT_LOGIN_URL, json=payload)
         return resp, svc
 

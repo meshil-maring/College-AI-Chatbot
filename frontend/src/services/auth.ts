@@ -35,6 +35,12 @@ const API_BASE_URL: string = (
 const LOGIN_ENDPOINT: string = `${API_BASE_URL}/v1/auth/login`
 const STUDENT_LOGIN_ENDPOINT: string = `${API_BASE_URL}/v1/auth/student/login`
 const ME_ENDPOINT: string = `${API_BASE_URL}/v1/auth/me`
+const FORGOT_PASSWORD_ENDPOINT: string = `${API_BASE_URL}/v1/auth/forgot-password`
+const RESET_PASSWORD_ENDPOINT: string = `${API_BASE_URL}/v1/auth/reset-password`
+const CHANGE_PASSWORD_ENDPOINT: string = `${API_BASE_URL}/v1/auth/change-password`
+const REFRESH_ENDPOINT: string = `${API_BASE_URL}/v1/auth/refresh`
+const LOGOUT_ENDPOINT: string = `${API_BASE_URL}/v1/auth/logout`
+const LOGOUT_ALL_ENDPOINT: string = `${API_BASE_URL}/v1/auth/logout-all`
 
 /**
  * Distinguishes which authentication operation a response belongs to, so the
@@ -45,7 +51,7 @@ const ME_ENDPOINT: string = `${API_BASE_URL}/v1/auth/me`
  *   - `session` — GET /auth/me with a saved token. A 401/404 here means the
  *                 token is no longer accepted (session invalid/expired).
  */
-type AuthOperation = 'login' | 'session'
+type AuthOperation = 'login' | 'session' | 'mutation'
 
 /** Distinguishes why an authentication operation failed. */
 export type AuthErrorKind =
@@ -55,6 +61,8 @@ export type AuthErrorKind =
   | 'session_invalid' // 401/404 from /auth/me — token rejected or user gone
   | 'server' // 5xx upstream error
   | 'network' // request never produced an HTTP response
+  | 'rate_limited'
+  | 'password_verification'
   | 'unknown'
 
 /** User-safe message for each failure kind (never contains secrets). */
@@ -78,6 +86,10 @@ function messageFor(kind: AuthErrorKind): string {
       return 'The authentication server reported an error. Please try again later.'
     case 'network':
       return 'Could not reach the backend. Please make sure the server is running, then try again.'
+    case 'rate_limited':
+      return 'Too many authentication requests. Please wait a moment and try again.'
+    case 'password_verification':
+      return 'Current credentials could not be verified.'
     default:
       return 'Something went wrong during authentication. Please try again.'
   }
@@ -171,6 +183,12 @@ async function buildAuthError(
   }
   if (code === 'REGISTRATION_PENDING') {
     return new AuthError('registration_pending', status, code)
+  }
+  if (code === 'PASSWORD_VERIFICATION_FAILED') {
+    return new AuthError('password_verification', status, code)
+  }
+  if (status === 429 || code === 'AUTH_RATE_LIMITED') {
+    return new AuthError('rate_limited', status, code)
   }
   // 422 — FastAPI/AppError request validation (e.g. missing
   // institution_code for an academic identifier login, password length).
@@ -337,4 +355,74 @@ export async function authenticate(
  */
 export async function fetchCurrentUser(accessToken: string): Promise<CurrentUser> {
   return requestAuthJson<CurrentUser>('GET', ME_ENDPOINT, undefined, accessToken, 'session')
+}
+
+export interface AuthMessageResponse {
+  message: string
+}
+
+export async function requestPasswordRecovery(email: string): Promise<AuthMessageResponse> {
+  return requestAuthJson<AuthMessageResponse>(
+    'POST',
+    FORGOT_PASSWORD_ENDPOINT,
+    { email },
+    null,
+    'mutation',
+  )
+}
+
+export async function completePasswordReset(
+  accessToken: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<AuthMessageResponse> {
+  return requestAuthJson<AuthMessageResponse>(
+    'POST',
+    RESET_PASSWORD_ENDPOINT,
+    { new_password: newPassword, confirm_password: confirmPassword },
+    accessToken,
+    'mutation',
+  )
+}
+
+export async function changePassword(
+  accessToken: string,
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<AuthMessageResponse> {
+  return requestAuthJson<AuthMessageResponse>(
+    'POST',
+    CHANGE_PASSWORD_ENDPOINT,
+    {
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    },
+    accessToken,
+    'mutation',
+  )
+}
+
+export async function refreshSession(refreshToken: string): Promise<LoginResponse> {
+  return requestAuthJson<LoginResponse>(
+    'POST',
+    REFRESH_ENDPOINT,
+    { refresh_token: refreshToken },
+    null,
+    'session',
+  )
+}
+
+export async function revokeSession(
+  accessToken: string,
+  revokeAll = false,
+): Promise<AuthMessageResponse> {
+  return requestAuthJson<AuthMessageResponse>(
+    'POST',
+    revokeAll ? LOGOUT_ALL_ENDPOINT : LOGOUT_ENDPOINT,
+    undefined,
+    accessToken,
+    'session',
+  )
 }

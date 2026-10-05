@@ -112,17 +112,37 @@ async def get_current_user(
         institution_id = user.get("student_institution_id", user.get("institution_id"))
     else:
         institution_id = None
+    effective_permissions = set(user.get("effective_permissions") or ())
+    active_staff_scopes = {
+        str(grant.get("scope_id"))
+        for grant in role_assignments
+        if grant.get("role") == "staff"
+        and grant.get("is_active", True)
+        and grant.get("scope_type") == "institution"
+        and grant.get("scope_id") is not None
+    }
+    for grant in user.get("direct_permission_grants") or ():
+        if (
+            institution_id is not None
+            and str(institution_id) in active_staff_scopes
+            and str(grant.get("institution_id")) == str(institution_id)
+            and isinstance(grant.get("permission"), str)
+        ):
+            effective_permissions.add(grant["permission"])
 
     return {
         "user_id": user["user_id"],
         "auth_user_id": auth_user_id,
         "email": claims.get("email"),
+        "auth_methods": claims.get("amr", []),
+        "auth_session_id": claims.get("session_id"),
+        "token_issued_at": claims.get("iat"),
         "roles": user.get("roles", []),
         "status": user.get("status"),
         "institution_id": institution_id,
         # Internal server-owned grants. They are never returned by /auth/me.
         "role_assignments": role_assignments,
-        "effective_permissions": user.get("effective_permissions", []),
+        "effective_permissions": sorted(effective_permissions),
         "permissions_resolved": user.get("permissions_resolved", False),
     }
 

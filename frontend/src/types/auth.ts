@@ -61,6 +61,8 @@ export interface AuthUser {
  *  (the student endpoint reuses this exact locked contract). */
 export interface LoginResponse {
   access_token: string
+  refresh_token: string
+  expires_in: number
   message: string
   user: AuthUser
 }

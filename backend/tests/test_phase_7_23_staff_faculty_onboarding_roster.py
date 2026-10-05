@@ -339,6 +339,7 @@ def test_staff_invitation_acceptance_links_existing_identity_and_grants_stored_s
     client.auth.admin.update_user_by_id.assert_called_once()
     assign.assert_called_once_with(
         client,
+        actor_user_id=str(USER_A),
         user_id=str(USER_A),
         role_name="staff",
         institution_id=INST_A,

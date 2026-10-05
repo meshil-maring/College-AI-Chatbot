@@ -875,7 +875,10 @@ def test_create_attendance_reports_duplicate_as_conflict() -> None:
 
 def test_list_audit_logs_endpoint() -> None:
     entry = {"audit_id": str(uuid4()), "action": "faq.create", "table_name": "faqs"}
-    with patch("app.api.admin.list_audit_entries", return_value=[entry]) as audit:
+    with (
+        patch("app.api.admin.get_admin_client", return_value=MagicMock()),
+        patch("app.api.admin.list_audit_entries", return_value=[entry]) as audit,
+    ):
         response = client.get("/api/v1/admin/audit-logs?action=faq.create")
 
     assert response.status_code == 200
@@ -892,7 +895,6 @@ def test_get_audit_log_404_when_missing() -> None:
         response = client.get(f"/api/v1/admin/audit-logs/{uuid4()}")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "AUDIT_NOT_FOUND"
-
 
 
 

@@ -19,7 +19,7 @@ Security: ``extra="forbid"`` so clients cannot inject ``role``,
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.errors import AppError
 
@@ -41,7 +41,7 @@ class StudentLoginRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     identifier: str
-    password: str
+    password: str = Field(min_length=1, max_length=128)
     institution_code: str | None = None
 
     @field_validator("identifier")
@@ -96,6 +96,8 @@ class StudentLoginResponse(BaseModel):
     """
 
     access_token: str
+    refresh_token: str
+    expires_in: int
     message: str
     user: dict
 

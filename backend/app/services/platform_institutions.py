@@ -283,9 +283,9 @@ def assign_university_admin(
     if not already_assigned:
         platform_repo.assign_institution_admin(
             client,
+            actor_user_id=actor_user_id,
             user_id=user["id"],
             institution_id=institution_id,
-            organization_id=organization_id,
         )
     platform_repo.record_institution_audit(
         client,

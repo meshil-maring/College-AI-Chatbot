@@ -660,6 +660,7 @@ def decide_membership_request(
     if decision.decision == "approve":
         tenancy_repo.assign_membership_role(
             db,
+            actor_user_id=current_user["user_id"],
             user_id=req["user_id"],
             role_name=req["requested_role"],
             institution_id=req["institution_id"],
@@ -685,5 +686,4 @@ def get_authorization_context_for_user(
 ) -> dict[str, Any]:
     """Public-facing convenience: resolve the phase 6.13 identity context."""
     return resolve_authorization_context(current_user)
-
 

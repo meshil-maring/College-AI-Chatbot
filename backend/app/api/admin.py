@@ -55,6 +55,11 @@ from app.schemas.admin_memberships import (
     MembershipRequestList,
     MembershipRoster,
 )
+from app.schemas.phase81 import (
+    FacultyAssignmentCreate,
+    FacultyAssignmentRevoke,
+    StaffPermissionGrantChange,
+)
 from app.services import (
     admin_academics,
     admin_dashboard,
@@ -63,6 +68,7 @@ from app.services import (
     admin_notices,
     attendance,
     admin_memberships,
+    phase81_rbac,
 )
 from app.services.admin_academics import (
     AttendanceCreate,
@@ -134,6 +140,13 @@ _ADMIN_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("DELETE", "/admin/attendance/{attendance_id}"): ("attendance.manage",),
     ("GET", "/admin/audit-logs"): ("audit.read",),
     ("GET", "/admin/audit-logs/{audit_id}"): ("audit.read",),
+    ("GET", "/admin/permissions/delegable-staff"): ("permissions.read",),
+    ("GET", "/admin/staff/{user_id}/permissions"): ("permissions.read",),
+    ("POST", "/admin/staff/{user_id}/permissions"): ("permissions.manage",),
+    ("DELETE", "/admin/staff/{user_id}/permissions"): ("permissions.manage",),
+    ("GET", "/admin/faculty-assignments"): ("faculty.assignments.manage",),
+    ("POST", "/admin/faculty-assignments"): ("faculty.assignments.manage",),
+    ("DELETE", "/admin/faculty-assignments/{assignment_id}"): ("faculty.assignments.manage",),
 }
 
 
@@ -226,6 +239,7 @@ def _record_audit(
         get_admin_client(),
         AdminAuditLogCreate(
             actor_user_id=UUID(current_user["user_id"]),
+            institution_id=user_tenant_id(current_user),
             action=action,
             table_name=table_name,
             record_id=str(record_id) if record_id is not None else None,
@@ -1226,9 +1240,12 @@ def list_audit_logs(
     status: str | None = None,
     current_user: dict = Depends(_ADMIN),
 ) -> list[dict]:
-    if actor_user_id is not None and str(actor_user_id) != str(current_user["user_id"]):
+    if (
+        actor_user_id is not None
+        and str(actor_user_id) != str(current_user["user_id"])
+    ):
         raise AppError(
-            "You do not have permission to view another actor's audit records",
+            "You do not have permission to view another user's audit records",
             status_code=403,
             code="FORBIDDEN",
         )
@@ -1236,9 +1253,8 @@ def list_audit_logs(
     return list_audit_entries(
         db,
         limit=limit,
-        # The legacy audit table has no immutable institution_id. Until it does,
-        # own-actor filtering is the conservative tenant-safe read contract.
         actor_user_id=current_user["user_id"],
+        institution_id=user_tenant_id(current_user),
         table_name=table_name,
         action=action,
         status=status,
@@ -1251,6 +1267,13 @@ def get_audit_log(audit_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
     entry = get_audit_entry(db, audit_id)
     if entry is None:
         raise AppError("Audit entry not found", status_code=404, code="AUDIT_NOT_FOUND")
+    institution_id = user_tenant_id(current_user)
+    if institution_id is not None and str(entry.get("institution_id")) != str(institution_id):
+        raise AppError(
+            "You do not have permission to view this audit record",
+            status_code=403,
+            code="FORBIDDEN",
+        )
     if str(entry.get("actor_user_id")) != str(current_user["user_id"]):
         raise AppError(
             "You do not have permission to view this audit record",
@@ -1260,5 +1283,91 @@ def get_audit_log(audit_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
     return entry
 
 
+# ============================================================================
+# Phase 8.1 — scoped Staff permissions and Faculty section assignments
+# ============================================================================
 
 
+@router.get("/permissions/delegable-staff")
+def get_delegable_staff_permissions(
+    _current_user: dict = Depends(_ADMIN),
+) -> dict:
+    return {"permissions": phase81_rbac.list_delegable_permissions()}
+
+
+@router.get("/staff/{user_id}/permissions")
+def get_staff_permissions(
+    user_id: UUID,
+    current_user: dict = Depends(_ADMIN),
+) -> dict:
+    return phase81_rbac.list_staff_permissions(
+        user_id, UUID(str(user_tenant_id(current_user)))
+    )
+
+
+@router.post("/staff/{user_id}/permissions")
+def grant_staff_permissions(
+    user_id: UUID,
+    body: StaffPermissionGrantChange,
+    current_user: dict = Depends(_ADMIN),
+) -> dict:
+    return phase81_rbac.change_staff_permissions(
+        current_user,
+        UUID(str(user_tenant_id(current_user))),
+        user_id,
+        body.permission_codes,
+        grant=True,
+    )
+
+
+@router.delete("/staff/{user_id}/permissions")
+def revoke_staff_permissions(
+    user_id: UUID,
+    body: StaffPermissionGrantChange,
+    current_user: dict = Depends(_ADMIN),
+) -> dict:
+    return phase81_rbac.change_staff_permissions(
+        current_user,
+        UUID(str(user_tenant_id(current_user))),
+        user_id,
+        body.permission_codes,
+        grant=False,
+    )
+
+
+@router.get("/faculty-assignments")
+def get_faculty_assignments(
+    current_user: dict = Depends(_ADMIN),
+) -> dict:
+    return phase81_rbac.list_institution_assignments(
+        UUID(str(user_tenant_id(current_user)))
+    )
+
+
+@router.post("/faculty-assignments", status_code=201)
+def create_faculty_assignment(
+    body: FacultyAssignmentCreate,
+    current_user: dict = Depends(_ADMIN),
+) -> dict:
+    return phase81_rbac.manage_faculty_assignment(
+        current_user,
+        UUID(str(user_tenant_id(current_user))),
+        body.faculty_user_id,
+        body.section_id,
+        revoke=False,
+    )
+
+
+@router.delete(
+    "/faculty-assignments/{assignment_id}",
+    response_model=FacultyAssignmentRevoke,
+)
+def revoke_faculty_assignment(
+    assignment_id: UUID,
+    current_user: dict = Depends(_ADMIN),
+) -> dict:
+    return phase81_rbac.revoke_faculty_assignment(
+        current_user,
+        UUID(str(user_tenant_id(current_user))),
+        assignment_id,
+    )

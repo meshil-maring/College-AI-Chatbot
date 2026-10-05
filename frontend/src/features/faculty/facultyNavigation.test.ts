@@ -22,6 +22,7 @@ describe('buildFacultyNavigation', () => {
       { key: 'dashboard', label: 'Dashboard' },
       { key: 'assistant', label: 'AI Assistant' },
       { key: 'profile', label: 'Profile' },
+      { key: 'assignments', label: 'My Sections' },
     ])
   })
 
@@ -41,6 +42,13 @@ describe('buildFacultyNavigation', () => {
     expect(buildFacultyNavigation(null)).toEqual([])
     expect(buildFacultyNavigation('unknown-role')).toEqual([])
   })
+
+  it('requires the server-resolved assignment permission to show My Sections', () => {
+    const navigation = buildFacultyNavigation('faculty', ['ai.chat'])
+    expect(navigation.map((item) => item.key)).not.toContain('assignments')
+    expect(buildFacultyNavigation('faculty', ['ai.chat', 'faculty.assignments.read'])
+      .map((item) => item.key)).toContain('assignments')
+  })
 })
 
 describe('FACULTY_VIEW_HEADINGS', () => {
@@ -52,11 +60,11 @@ describe('FACULTY_VIEW_HEADINGS', () => {
 })
 
 describe('FACULTY_WORKSPACE_SURFACES (verified capability map)', () => {
-  it('marks only the AI Assistant as available', () => {
+  it('marks the AI Assistant and active assignment list as available', () => {
     const available = FACULTY_WORKSPACE_SURFACES.filter(
       (surface) => surface.status === 'available',
     )
-    expect(available.map((surface) => surface.key)).toEqual(['assistant'])
+    expect(available.map((surface) => surface.key)).toEqual(['assignments', 'assistant'])
   })
 
   it('marks student academic surfaces as not available (server-denied)', () => {

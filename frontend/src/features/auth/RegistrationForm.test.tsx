@@ -222,7 +222,7 @@ describe('RegistrationForm — client-side validation', () => {
     )
   })
 
-  it('rejects a password shorter than the backend minimum (6 characters)', async () => {
+  it('rejects a password shorter than the backend minimum (8 characters)', async () => {
     const user = userEvent.setup()
     render(<RegistrationForm onBackToLogin={vi.fn()} />)
 
@@ -234,7 +234,7 @@ describe('RegistrationForm — client-side validation', () => {
     await user.type(screen.getByLabelText('Confirm Password'), 'abc')
     await user.click(screen.getByRole('button', { name: /create account/i }))
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Password must be at least 6 characters.',
+      'Password must be at least 8 characters.',
     )
   })
 

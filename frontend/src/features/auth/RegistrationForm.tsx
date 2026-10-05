@@ -160,7 +160,7 @@ export default function RegistrationForm({
 
   /**
    * Client-side validation mirroring the backend contract exactly — never
-   * stricter (password >= 6; names non-blank; at least one academic
+   * stricter (password >= 8; names non-blank; at least one academic
    * identifier required).
    */
   function validate(): string | null {
@@ -180,8 +180,8 @@ export default function RegistrationForm({
     if (institutionCode.trim().length < 2) {
       return 'Enter your institution code (e.g. ABC001).'
     }
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters.'
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters.'
     }
     if (confirmPassword !== password) {
       return 'Passwords do not match.'
@@ -472,7 +472,8 @@ export default function RegistrationForm({
               value={password}
               onChange={setPassword}
               required
-              minLength={6}
+              minLength={8}
+              maxLength={128}
               autoComplete="new-password"
               disabled={submitting}
               placeholder="••••••••"
@@ -483,7 +484,8 @@ export default function RegistrationForm({
               value={confirmPassword}
               onChange={setConfirmPassword}
               required
-              minLength={6}
+              minLength={8}
+              maxLength={128}
               autoComplete="new-password"
               disabled={submitting}
               placeholder="••••••••"

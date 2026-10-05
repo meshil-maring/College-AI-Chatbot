@@ -32,6 +32,7 @@ vi.mock('../../services/auth.ts', async () => {
     ...actual,
     authenticate: vi.fn(),
     fetchCurrentUser: vi.fn(),
+    revokeSession: vi.fn(),
   }
 })
 
@@ -73,6 +74,8 @@ beforeEach(() => {
   window.localStorage.clear()
   vi.mocked(authService.authenticate).mockReset()
   vi.mocked(authService.fetchCurrentUser).mockReset()
+  vi.mocked(authService.revokeSession).mockReset()
+  vi.mocked(authService.revokeSession).mockResolvedValue({ message: 'revoked' })
   resetSessionExpiredListeners()
 })
 
@@ -136,6 +139,8 @@ describe('login bootstrap', () => {
   it('stores the token and loads the canonical identity + role after login', async () => {
     vi.mocked(authService.authenticate).mockResolvedValue({
       access_token: 'fresh-token',
+      refresh_token: 'fresh-refresh-token',
+      expires_in: 3600,
       message: 'Login successful.',
       user: { id: 'a-student', email: null },
     })
@@ -260,6 +265,8 @@ describe('Phase 6.15.7 — race guards', () => {
   it('a stale 401 naming a replaced token is ignored after re-login', async () => {
     vi.mocked(authService.authenticate).mockResolvedValue({
       access_token: 'fresh-token',
+      refresh_token: 'fresh-refresh-token',
+      expires_in: 3600,
       message: 'Login successful.',
       user: { id: 'a-student', email: null },
     })
@@ -288,6 +295,8 @@ describe('Phase 6.15.7 — race guards', () => {
   it('a 401 naming the CURRENT token still expires the session', async () => {
     vi.mocked(authService.authenticate).mockResolvedValue({
       access_token: 'current-token',
+      refresh_token: 'current-refresh-token',
+      expires_in: 3600,
       message: 'Login successful.',
       user: { id: 'a-student', email: null },
     })
@@ -315,6 +324,8 @@ describe('Phase 6.15.7 — race guards', () => {
   it('a login that settles after logout cannot restore the session', async () => {
     let resolveAuth!: (value: {
       access_token: string
+      refresh_token: string
+      expires_in: number
       message: string
       user: { id: string; email: string | null }
     }) => void
@@ -347,7 +358,7 @@ describe('Phase 6.15.7 — race guards', () => {
     // fetchCurrentUser resolves normally (microtask); only `authenticate` is
     // manually released here.
     await act(async () => {
-      resolveAuth({ access_token: 'late-token', message: 'Login successful.', user: { id: 'a-student', email: null } })
+      resolveAuth({ access_token: 'late-token', refresh_token: 'late-refresh', expires_in: 3600, message: 'Login successful.', user: { id: 'a-student', email: null } })
       await loginPromise
     })
 
@@ -409,4 +420,3 @@ describe('Phase 6.15.7 — race guards', () => {
     expect(authService.fetchCurrentUser).toHaveBeenCalledWith('other-tab-token')
   })
 })
-

@@ -34,6 +34,7 @@ export interface PasswordFieldProps {
   disabled?: boolean
   required?: boolean
   minLength?: number
+  maxLength?: number
   autoComplete?: 'current-password' | 'new-password'
   placeholder?: string
   accent?: PasswordFieldAccent
@@ -62,6 +63,7 @@ export default function PasswordField({
   disabled = false,
   required = false,
   minLength,
+  maxLength,
   autoComplete,
   placeholder,
   accent = 'emerald',
@@ -85,6 +87,7 @@ export default function PasswordField({
           name={name}
           required={required}
           minLength={minLength}
+          maxLength={maxLength}
           autoComplete={autoComplete}
           spellCheck={false}
           disabled={disabled}

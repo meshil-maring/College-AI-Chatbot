@@ -803,29 +803,45 @@ def update_membership_request_status(
 def assign_membership_role(
     client: Client,
     *,
+    actor_user_id: UUID | str,
     user_id: UUID | str,
     role_name: str,
     institution_id: UUID | str,
     organization_id: UUID | str,
 ) -> dict:
-    """Server-side role grant for an approved staff/faculty onboarding.
-
-    The write is performed through the existing ``assign_user_role_scope``
-    repository so that Phase 6.13 span/integrity policies (the
-    ``user_roles`` trigger) remain authoritative. This function is intentionally
-    a thin delegation to that repo.
-    """
-    db_role = get_role_by_name(client, role_name)
-    if db_role is None:
-        raise RuntimeError(f"Role '{role_name}' is not configured")
-    return assign_user_role_scope(
+    """Atomically grant an approved membership role and append its audit event."""
+    return assign_membership_role_audited(
         client,
-        user_id=str(user_id),
-        role_id=db_role["role_id"],
-        scope_type="institution",
-        scope_id=str(institution_id),
-        scope_organization_id=str(organization_id),
+        actor_user_id=actor_user_id,
+        user_id=user_id,
+        role_name=role_name,
+        institution_id=institution_id,
+        organization_id=organization_id,
     )
+
+
+def assign_membership_role_audited(
+    client: Client,
+    *,
+    actor_user_id: UUID | str,
+    user_id: UUID | str,
+    role_name: str,
+    institution_id: UUID | str,
+    organization_id: UUID | str | None = None,
+) -> dict:
+    """Atomically apply an invitation role and its tenant audit event."""
+    if role_name not in {"staff", "faculty"}:
+        raise ValueError("audited membership assignment only accepts staff/faculty")
+    response = client.rpc(
+        "phase81_assign_institution_role_audited",
+        {
+            "p_actor_user_id": str(actor_user_id),
+            "p_target_user_id": str(user_id),
+            "p_institution_id": str(institution_id),
+            "p_role_name": role_name,
+        },
+    ).execute()
+    return {"changed": bool(response.data)}
 
 
 def remove_membership_on_reject(
@@ -854,5 +870,3 @@ def remove_membership_on_reject(
         .execute()
     )
     return None
-
-

@@ -46,6 +46,7 @@ import { notifySessionExpired } from './sessionEvents.ts'
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 const ADMIN_BASE = `${API_BASE_URL}/v1/admin`
 const STUDENT_BASE = `${API_BASE_URL}/v1/students`
+const FACULTY_BASE = `${API_BASE_URL}/v1/faculty`
 
 export class AdminApiError extends Error {
   readonly status: number
@@ -321,6 +322,95 @@ export async function deleteAttendance(accessToken: string, id: string): Promise
 
 export async function listAuditLogs(accessToken: string, limit = 50): Promise<AuditLogEntry[]> {
   return requestJson<AuditLogEntry[]>('GET', `${ADMIN_BASE}/audit-logs?limit=${limit}`, accessToken)
+}
+
+export interface StaffPermissionEntry {
+  code: string
+  inherited: boolean
+  direct_grant_id: string | null
+}
+
+export interface StaffPermissionState {
+  user_id: string
+  institution_id: string
+  permissions: StaffPermissionEntry[]
+  delegable_permissions: string[]
+}
+
+export interface FacultyAssignmentPayload {
+  faculty_user_id: string
+  section_id: string
+}
+
+export async function getDelegableStaffPermissions(accessToken: string): Promise<string[]> {
+  const response = await requestJson<{ permissions: string[] }>(
+    'GET',
+    `${ADMIN_BASE}/permissions/delegable-staff`,
+    accessToken,
+  )
+  return response.permissions
+}
+
+export function getStaffPermissions(accessToken: string, userId: string): Promise<StaffPermissionState> {
+  return requestJson(
+    'GET',
+    `${ADMIN_BASE}/staff/${encodeURIComponent(userId)}/permissions`,
+    accessToken,
+  )
+}
+
+export function changeStaffPermissions(
+  accessToken: string,
+  userId: string,
+  permissionCodes: string[],
+  action: 'grant' | 'revoke',
+): Promise<{ changed: number; permissions: StaffPermissionState }> {
+  return requestJson(
+    action === 'grant' ? 'POST' : 'DELETE',
+    `${ADMIN_BASE}/staff/${encodeURIComponent(userId)}/permissions`,
+    accessToken,
+    { permission_codes: permissionCodes },
+  )
+}
+
+export function getFacultyAssignments(accessToken: string): Promise<{
+  sections: Array<{ section_id: string; name: string; code: string; course: { name: string; code: string } }>
+  faculty: Array<{ id: string; email: string; first_name: string; last_name: string }>
+  assignments: Array<{
+    assignment_id: string
+    faculty_user_id: string
+    section_id: string
+    faculty: { email: string; first_name: string; last_name: string }
+    section: { name: string; code: string; course: { name: string; code: string } }
+  }>
+}> {
+  return requestJson('GET', `${ADMIN_BASE}/faculty-assignments`, accessToken)
+}
+
+export function createFacultyAssignment(
+  accessToken: string,
+  payload: FacultyAssignmentPayload,
+): Promise<{ assignment_id: string }> {
+  return requestJson('POST', `${ADMIN_BASE}/faculty-assignments`, accessToken, payload)
+}
+
+export function revokeFacultyAssignment(
+  accessToken: string,
+  assignmentId: string,
+): Promise<{ assignment_id: string }> {
+  return requestJson(
+    'DELETE',
+    `${ADMIN_BASE}/faculty-assignments/${encodeURIComponent(assignmentId)}`,
+    accessToken,
+  )
+}
+
+export function getMyFacultyAssignments(accessToken: string): Promise<Array<{
+  assignment_id: string
+  assigned_at: string
+  section: { section_id: string; name: string; code: string; course: { name: string; code: string } }
+}>> {
+  return requestJson('GET', `${FACULTY_BASE}/assignments`, accessToken)
 }
 
 // ============================================================================

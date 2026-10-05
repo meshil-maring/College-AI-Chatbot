@@ -1049,7 +1049,8 @@ def test_03b_institution_admin_membership_decision_lifecycle():
 
     # ACTIVE institution: membership approval succeeds and grants the role.
     state = _base_state(inst_status="active", inst_active=True)
-    with patch.object(tenancy_svc, "get_admin_client", return_value=_db(state)):
+    db = _db(state)
+    with patch.object(tenancy_svc, "get_admin_client", return_value=db):
         response = tenancy_svc.decide_membership_request(
             current_user,
             ctx,
@@ -1058,7 +1059,15 @@ def test_03b_institution_admin_membership_decision_lifecycle():
         )
     assert response.status == "approve"
     assert state["institution_membership_requests"][MR_A]["status"] == "approve"
-    assert len(state["user_roles"]) == 1  # role granted server-side
+    db.rpc.assert_called_once_with(
+        "phase81_assign_institution_role_audited",
+        {
+            "p_actor_user_id": INST_ADMIN,
+            "p_target_user_id": state["institution_membership_requests"][MR_A]["user_id"],
+            "p_institution_id": INST_A,
+            "p_role_name": "staff",
+        },
+    )
 
     # PENDING institution: fail closed BEFORE any write.
     state_pending = _base_state(inst_status="pending")

@@ -1,4 +1,4 @@
-"""Phase 6.22 — Complete Product Demo & End-to-End System Validation (backend).
+﻿"""Phase 6.22 â€” Complete Product Demo & End-to-End System Validation (backend).
 
 Validates the COMPLETE product journey as one connected workflow rather than as
 isolated phases, using the real application contracts (routers + schemas +
@@ -16,14 +16,14 @@ This suite additionally PINS the three blocking defects that the Phase 6.22
 live walkthrough found and this phase fixed, so none of them can silently
 return:
 
-    1. ``document_versions.knowledge_source_id`` does not exist — the
+    1. ``document_versions.knowledge_source_id`` does not exist â€” the
        processing-run query now resolves the tenant through the existing
        ``documents(knowledge_source_id)`` embed.
-    2. ``STUDENT_COLUMNS`` carries no ``approval_status`` — the student
+    2. ``STUDENT_COLUMNS`` carries no ``approval_status`` â€” the student
        eligibility guard now reads the approval projection, so approved
        students are no longer rejected with 403 STUDENT_NOT_APPROVED.
     3. ``personalization`` label reads called ``response.data`` on a
-       ``maybe_single()`` result of ``None`` — every such read is now guarded.
+       ``maybe_single()`` result of ``None`` â€” every such read is now guarded.
 """
 
 from contextlib import ExitStack, contextmanager
@@ -123,7 +123,7 @@ def test_institution_lookup_is_public_and_returns_the_safe_projection():
         response = client.get("/api/v1/institutions/lookup", params={"code": "GIT"})
     assert response.status_code == 200
     body = response.json()
-    # Phase 6.15.2 — exactly {institution_id, code, name}; nothing else leaks.
+    # Phase 6.15.2 â€” exactly {institution_id, code, name}; nothing else leaks.
     assert set(body) == {"institution_id", "code", "name"}
     assert body["institution_id"] == INSTITUTION_A
 
@@ -341,12 +341,16 @@ def test_unauthenticated_approval_is_rejected():
 _LOGIN_URL = "/api/v1/auth/student/login"
 _SESSION = {
     "access_token": "student.session.token",
+    "refresh_token": "student-refresh-token",
+    "expires_in": 3600,
     "user": {"id": CLAIMS["sub"], "email": "student@college.edu"},
 }
 
 
 def test_email_login_needs_no_institution_context():
-    with patch("app.api.student_auth.authenticate_student", return_value=_SESSION) as auth:
+    with patch("app.api.student_auth.authenticate_student", return_value=_SESSION) as auth, patch(
+        "app.api.student_auth.record_auth_security_event"
+    ):
         response = client.post(
             _LOGIN_URL,
             json={"identifier": "student@college.edu", "password": "secret123"},
@@ -368,7 +372,9 @@ def test_academic_identifier_login_requires_institution_code():
 
 @pytest.mark.parametrize("identifier", ["622001", "R622001"])
 def test_academic_identifier_login_forwards_the_institution_code(identifier):
-    with patch("app.api.student_auth.authenticate_student", return_value=_SESSION) as auth:
+    with patch("app.api.student_auth.authenticate_student", return_value=_SESSION) as auth, patch(
+        "app.api.student_auth.record_auth_security_event"
+    ):
         response = client.post(
             _LOGIN_URL,
             json={
@@ -471,12 +477,12 @@ def test_unauthenticated_student_surface_is_rejected():
 
 
 # ============================================================================
-# Defect pins — Phase 6.22 blocking defects found by the live walkthrough
+# Defect pins â€” Phase 6.22 blocking defects found by the live walkthrough
 # ============================================================================
 
 
 def test_processing_run_query_documents_the_corrected_tenant_resolution():
-    """Defect 1 — the fix rationale is pinned in the repository docstring."""
+    """Defect 1 â€” the fix rationale is pinned in the repository docstring."""
     from app.repositories import ingestion as ingestion_repo
 
     documented = ingestion_repo.get_processing_run_with_version.__doc__ or ""
@@ -485,7 +491,7 @@ def test_processing_run_query_documents_the_corrected_tenant_resolution():
 
 
 def test_processing_run_tenant_is_hoisted_from_the_document_row():
-    """Defect 1 — the tenant must come from ``documents``, not ``document_versions``."""
+    """Defect 1 â€” the tenant must come from ``documents``, not ``document_versions``."""
     run_row = {
         "processing_run_id": PROCESSING_RUN_ID,
         "status": "queued",
@@ -518,7 +524,7 @@ def test_processing_run_tenant_is_hoisted_from_the_document_row():
 
 
 def test_approval_projection_supplies_the_column_the_eligibility_guard_needs():
-    """Defect 2 — STUDENT_COLUMNS lacks approval_status; the guard must not 403."""
+    """Defect 2 â€” STUDENT_COLUMNS lacks approval_status; the guard must not 403."""
     from app.repositories.admin_academics import (
         STUDENT_APPROVAL_COLUMNS,
         STUDENT_COLUMNS,
@@ -572,12 +578,12 @@ def test_student_context_still_rejects_a_pending_student():
 
 
 def test_personalization_label_reads_tolerate_a_missing_row():
-    """Defect 3 — a zero-row ``maybe_single()`` now yields None, not a 500."""
+    """Defect 3 â€” a zero-row ``maybe_single()`` now yields None, not a 500."""
     from app.repositories import personalization
 
     def client_returning_no_row():
         # postgrest >= 2.x zero-row shape: maybe_single() still returns the
-        # builder — it is .execute() that yields None (not an APIResponse
+        # builder â€” it is .execute() that yields None (not an APIResponse
         # with data=None). _single_row() is the guard that must absorb it.
         chain = MagicMock()
         chain.select.return_value = chain
@@ -596,7 +602,7 @@ def test_personalization_label_reads_tolerate_a_missing_row():
 
 
 # ============================================================================
-# RAG — retrieval scoping, tenant isolation, generation authorization
+# RAG â€” retrieval scoping, tenant isolation, generation authorization
 # ============================================================================
 
 
@@ -664,6 +670,9 @@ def test_retrieval_rejects_an_invalid_query_embedding():
     with pytest.raises(AppError) as excinfo:
         retrieval_service.retrieve_chunks([0.0] * 10, institution_id=INSTITUTION_A)
     assert excinfo.value.code == "INVALID_QUERY_EMBEDDING"
+
+
+
 
 
 

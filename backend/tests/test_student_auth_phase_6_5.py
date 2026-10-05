@@ -31,6 +31,7 @@ from app.services.student_auth import (
     _resolve_identity,
     authenticate_student,
 )
+from app.services.auth_security import reset_auth_abuse_state
 
 client = TestClient(app, raise_server_exceptions=False)
 logger = logging.getLogger(__name__)
@@ -77,6 +78,8 @@ def make_mocks(student, auth_success=True, institution_active=True):
     if auth_success:
         session = MagicMock()
         session.access_token = "mock-access-token"
+        session.refresh_token = "mock-refresh-token"
+        session.expires_in = 3600
         mock_user = MagicMock()
         mock_user.id = str(student["user_id"])
         mock_user.email = student["email"]
@@ -84,6 +87,14 @@ def make_mocks(student, auth_success=True, institution_active=True):
     else:
         auth_client.auth.sign_in_with_password.side_effect = AuthApiError("Invalid", 400, "invalid_grant")
     return mocks
+
+
+@pytest.fixture(autouse=True)
+def _disable_external_auth_audit():
+    reset_auth_abuse_state()
+    with patch("app.api.student_auth.record_auth_security_event"):
+        yield
+    reset_auth_abuse_state()
 
 
 class TestIsEmail:

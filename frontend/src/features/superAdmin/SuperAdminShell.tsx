@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider.tsx'
 import { hasPermission } from '../auth/permissions.ts'
 import InstitutionManagement from './InstitutionManagement.tsx'
 import PlatformAuditView from './PlatformAuditView.tsx'
+import SuperAdminInvitations from './SuperAdminInvitations.tsx'
 
 const PLATFORM_AREAS = [
   'University Admins',
@@ -14,7 +15,7 @@ const PLATFORM_AREAS = [
   'Platform Settings',
 ] as const
 
-type PlatformSection = 'institutions' | 'audit'
+type PlatformSection = 'institutions' | 'audit' | 'super-admins'
 
 /**
  * Phase 7.14 platform shell.
@@ -98,6 +99,18 @@ export default function SuperAdminShell() {
                 </button>
               </li>
             ) : null}
+            {canReadPlatform ? (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => { setSection('super-admins') }}
+                  aria-current={section === 'super-admins' ? 'page' : undefined}
+                  className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
+                >
+                  Super Admins
+                </button>
+              </li>
+            ) : null}
             {canReadAudit ? (
               <li>
                 <button
@@ -126,6 +139,7 @@ export default function SuperAdminShell() {
         <main className="min-w-0 flex-1">
           {section === 'institutions' && canReadPlatform ? <InstitutionManagement /> : null}
           {section === 'audit' && canReadAudit ? <PlatformAuditView /> : null}
+          {section === 'super-admins' && canReadPlatform ? <SuperAdminInvitations /> : null}
           {!canReadPlatform && !canReadAudit ? (
             <p role="status" className="text-sm text-slate-400">
               Your account has no platform sections available.

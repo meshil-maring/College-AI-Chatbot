@@ -162,6 +162,15 @@ class Settings(BaseSettings):
     invitation_resend_ip_limit_requests: int = Field(default=5, gt=0)
     invitation_retry_after_cap_seconds: int = Field(default=60, gt=0, le=600)
 
+    # Authentication endpoints are high-value, low-volume operations. These
+    # process-local limits complement (but do not replace) edge-level limits.
+    auth_rate_limit_enabled: bool = True
+    auth_rate_limit_window_seconds: int = Field(default=300, gt=0, le=3600)
+    auth_login_ip_limit_requests: int = Field(default=30, gt=0)
+    auth_recovery_ip_limit_requests: int = Field(default=5, gt=0)
+    auth_password_ip_limit_requests: int = Field(default=10, gt=0)
+    auth_recovery_redirect_url: str = ""
+
     rewrite_history_exchanges: int = 2
     rewrite_max_history_chars: int = 1000
 
@@ -256,6 +265,15 @@ class Settings(BaseSettings):
         if self.api_docs_enabled is not None:
             return self.api_docs_enabled
         return self.is_local_environment
+
+    @property
+    def effective_auth_recovery_redirect_url(self) -> str:
+        configured = self.auth_recovery_redirect_url.strip()
+        if configured:
+            return configured
+        if self.is_local_environment:
+            return f"{self.email_base_url.rstrip('/')}/reset-password"
+        raise ValueError("AUTH_RECOVERY_REDIRECT_URL must be configured outside local environments")
 
 
 settings = Settings()

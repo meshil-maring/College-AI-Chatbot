@@ -54,7 +54,7 @@ import logging
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from supabase_auth.errors import AuthApiError
 
 from app.core.errors import AppError
@@ -145,7 +145,7 @@ class StudentRegistrationRequest(BaseModel):
 
     institution_id: UUID
     email: EmailStr
-    password: str  # goes ONLY to Supabase Auth (never stored in this DB)
+    password: str = Field(min_length=8, max_length=128)  # provider-owned credential only
     first_name: str
     last_name: str
     register_number: str | None = None
@@ -155,8 +155,8 @@ class StudentRegistrationRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def _password_minimum_length(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
         return v
 
     @field_validator("first_name", "last_name")

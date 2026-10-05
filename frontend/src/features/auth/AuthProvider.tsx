@@ -34,12 +34,14 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { AuthError, authErrorMessage, authenticate as authenticateRequest, fetchCurrentUser } from '../../services/auth.ts'
+import { AuthError, authErrorMessage, authenticate as authenticateRequest, fetchCurrentUser, refreshSession, revokeSession } from '../../services/auth.ts'
 import { SESSION_EXPIRED_MESSAGE, onSessionExpired } from '../../services/sessionEvents.ts'
 import type { CurrentUser } from '../../types/auth.ts'
 
 /** localStorage key for the saved access token (opaque, never a password). */
 export const ACCESS_TOKEN_STORAGE_KEY: string = 'college-ai-chatbot.access-token'
+export const REFRESH_TOKEN_STORAGE_KEY: string = 'college-ai-chatbot.refresh-token'
+const SESSION_EXPIRY_STORAGE_KEY = 'college-ai-chatbot.session-expires-at'
 
 export type AuthStatus = 'restoring' | 'unauthenticated' | 'authenticating' | 'authenticated'
 
@@ -66,7 +68,8 @@ export interface AuthContextValue {
     password: string,
     institutionCode?: string,
   ) => Promise<void>
-  readonly logout: () => void
+  readonly logout: () => Promise<void>
+  readonly logoutAll: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -74,6 +77,24 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 function readStoredToken(): string | null {
   try {
     return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function readStoredRefreshToken(): string | null {
+  try {
+    return window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function readStoredExpiry(): number | null {
+  try {
+    const raw = window.localStorage.getItem(SESSION_EXPIRY_STORAGE_KEY)
+    const expiry = raw === null ? NaN : Number(raw)
+    return Number.isFinite(expiry) ? expiry : null
   } catch {
     return null
   }
@@ -88,6 +109,33 @@ function storeToken(token: string | null): void {
     }
   } catch {
     // Storage unavailable (e.g. private browsing): the session stays in memory.
+  }
+}
+
+function storeProviderSession(
+  accessToken: string,
+  refreshToken: string,
+  expiresIn: number,
+): void {
+  storeToken(accessToken)
+  try {
+    window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken)
+    window.localStorage.setItem(
+      SESSION_EXPIRY_STORAGE_KEY,
+      String(Date.now() + Math.max(0, expiresIn) * 1000),
+    )
+  } catch {
+    // The in-memory session remains usable when browser storage is unavailable.
+  }
+}
+
+function clearStoredProviderSession(): void {
+  try {
+    window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+    window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+    window.localStorage.removeItem(SESSION_EXPIRY_STORAGE_KEY)
+  } catch {
+    // The in-memory session is still cleared when storage is unavailable.
   }
 }
 
@@ -127,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = useCallback((message: string | null): void => {
     sessionGenerationRef.current += 1
     sessionTokenRef.current = null
-    storeToken(null)
+    clearStoredProviderSession()
     setUser(null)
     setAccessToken(null)
     setError(message)
@@ -179,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const restore = useCallback(async (): Promise<void> => {
     const token = readStoredToken()
     if (token === null) {
+      clearStoredProviderSession()
       setStatus('unauthenticated')
       setUser(null)
       setSessionToken(null)
@@ -186,18 +235,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     const generationAtStart = sessionGenerationRef.current
+    const savedRefreshToken = readStoredRefreshToken()
     setStatus('restoring')
     try {
-      const me = await fetchCurrentUser(token)
+      let restoredToken = token
+      let me: CurrentUser
+      try {
+        me = await fetchCurrentUser(token)
+      } catch (restoreError) {
+        if (
+          !(restoreError instanceof AuthError) ||
+          restoreError.kind !== 'session_invalid' ||
+          savedRefreshToken === null
+        ) {
+          throw restoreError
+        }
+        const renewed = await refreshSession(savedRefreshToken)
+        restoredToken = renewed.access_token
+        me = await fetchCurrentUser(restoredToken)
+        storeProviderSession(
+          renewed.access_token,
+          renewed.refresh_token,
+          renewed.expires_in,
+        )
+      }
       // A logout/expiry/newer-login that settled while the request was
       // in-flight invalidates this result — never resurrect a superseded
       // session.
       if (sessionGenerationRef.current !== generationAtStart) return
       // Another tab may have replaced the saved token meanwhile; only adopt
       // this result when the saved token still matches what was validated.
-      if (readStoredToken() !== token) return
+      if (readStoredToken() !== token && readStoredToken() !== restoredToken) return
       setUser(me)
-      setSessionToken(token)
+      setSessionToken(restoredToken)
       setError(null)
       setStatus('authenticated')
     } catch (err) {
@@ -213,7 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null)
         const keep = err instanceof AuthError && err.kind === 'network'
         setSessionToken(keep ? token : null)
-        storeToken(keep ? token : null)
+        if (!keep) clearStoredProviderSession()
         setError(err instanceof AuthError ? authErrorMessage(err) : 'Something went wrong during authentication. Please try again.')
         setStatus('unauthenticated')
       }
@@ -243,7 +313,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // A logout/expiry/newer-login that settled while the login was
         // in-flight invalidates this result — never restore over it.
         if (sessionGenerationRef.current !== generationAtStart) return
-        storeToken(response.access_token)
+        storeProviderSession(
+          response.access_token,
+          response.refresh_token,
+          response.expires_in,
+        )
         setUser(me)
         setSessionToken(response.access_token)
         setError(null)
@@ -261,10 +335,113 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [setSessionToken],
   )
 
-  const logout = useCallback((): void => {
+  const logout = useCallback(async (): Promise<void> => {
+    const token = sessionTokenRef.current
     clearSession(null)
+    const generationAtLogout = sessionGenerationRef.current
     setStatus('unauthenticated')
+    if (token === null) return
+    try {
+      await revokeSession(token)
+    } catch {
+      if (
+        sessionGenerationRef.current === generationAtLogout &&
+        sessionTokenRef.current === null
+      ) {
+        setError(
+          'You have been signed out on this device, but the authentication provider could not revoke the session.',
+        )
+      }
+    }
   }, [clearSession])
+
+  const logoutAll = useCallback(async (): Promise<void> => {
+    const token = sessionTokenRef.current
+    const generationAtStart = sessionGenerationRef.current
+    if (token === null) {
+      clearSession(null)
+      setStatus('unauthenticated')
+      return
+    }
+    try {
+      await revokeSession(token, true)
+      if (
+        sessionGenerationRef.current !== generationAtStart ||
+        sessionTokenRef.current !== token
+      ) {
+        return
+      }
+      clearSession(null)
+      setStatus('unauthenticated')
+    } catch {
+      if (
+        sessionGenerationRef.current !== generationAtStart ||
+        sessionTokenRef.current !== token
+      ) {
+        return
+      }
+      clearSession(
+        'You have been signed out on this device, but the authentication provider could not revoke all sessions.',
+      )
+      setStatus('unauthenticated')
+    }
+  }, [clearSession])
+
+  useEffect(() => {
+    if (status !== 'authenticated' || accessToken === null) return
+    const refreshToken = readStoredRefreshToken()
+    const expiresAt = readStoredExpiry()
+    if (refreshToken === null || expiresAt === null) return
+
+    const tokenAtStart = accessToken
+    const generationAtStart = sessionGenerationRef.current
+    let retryTimer: number | undefined
+    const renew = async (): Promise<void> => {
+      try {
+        const refreshed = await refreshSession(refreshToken)
+        const me = await fetchCurrentUser(refreshed.access_token)
+        if (
+          sessionGenerationRef.current !== generationAtStart ||
+          sessionTokenRef.current !== tokenAtStart ||
+          readStoredToken() !== tokenAtStart
+        ) {
+          return
+        }
+        storeProviderSession(
+          refreshed.access_token,
+          refreshed.refresh_token,
+          refreshed.expires_in,
+        )
+        setSessionToken(refreshed.access_token)
+        setUser(me)
+        setError(null)
+      } catch (refreshError) {
+        if (sessionGenerationRef.current !== generationAtStart) return
+        if (
+          refreshError instanceof AuthError &&
+          refreshError.kind === 'network' &&
+          Date.now() < expiresAt
+        ) {
+          retryTimer = window.setTimeout(
+            () => void renew(),
+            Math.min(10_000, Math.max(1, expiresAt - Date.now())),
+          )
+          return
+        }
+        clearSession(SESSION_EXPIRED_MESSAGE)
+        setStatus('unauthenticated')
+      }
+    }
+
+    const timer = window.setTimeout(
+      () => void renew(),
+      Math.max(0, expiresAt - Date.now() - 60_000),
+    )
+    return () => {
+      window.clearTimeout(timer)
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer)
+    }
+  }, [accessToken, status, clearSession, setSessionToken])
 
   /**
    * Phase 6.15.7 — cross-tab consistency.
@@ -333,8 +510,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       login,
       logout,
+      logoutAll,
     }),
-    [status, user, accessToken, error, login, logout],
+    [status, user, accessToken, error, login, logout, logoutAll],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>
