@@ -53,14 +53,17 @@ describe('FacultyDashboard identity', () => {
 })
 
 describe('FacultyDashboard workspace', () => {
-  it('renders the verified workspace surfaces', () => {
+  it('renders the verified workspace surfaces, labelling missing sections Coming Soon', () => {
     renderDashboard()
     expect(screen.getByRole('heading', { name: 'Academic workspace' })).toBeInTheDocument()
     expect(screen.getByText('AI Assistant')).toBeInTheDocument()
     expect(screen.getByText('Students')).toBeInTheDocument()
     expect(screen.getByText('Attendance')).toBeInTheDocument()
     expect(screen.getByText('Results')).toBeInTheDocument()
-    expect(screen.getAllByText('Not available yet').length).toBeGreaterThan(0)
+    // Every surface without a backend contract carries the Coming Soon badge.
+    expect(screen.getAllByText('Coming Soon').length).toBeGreaterThanOrEqual(5)
+    // Verified capabilities are still marked Available, not Coming Soon.
+    expect(screen.getAllByText('Available').length).toBe(2)
   })
 
   it('renders the AI assistant entry point that navigates to the assistant', async () => {

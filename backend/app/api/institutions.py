@@ -5,7 +5,7 @@ request to join an EXISTING organization, and the submitting user becomes the
 initial INSTITUTION ADMIN — server-side, with the existing Supabase Auth
 mechanism and the Phase 6.13 scope model.
 
-Flow implemented (reuses the Phase 6.13.1 tenancy service unchanged):
+Flow implemented:
 
     POST /api/v1/institutions/register
       -> validate (InstitutionRegistrationRequest, extra="forbid")
@@ -15,9 +15,11 @@ Flow implemented (reuses the Phase 6.13.1 tenancy service unchanged):
       -> uniqueness pre-checks (institution code, admin email)
       -> Supabase Auth account (existing GoTrue signup — password ONLY to GoTrue)
       -> public.users link row
-      -> institutions row (status='pending', is_active=False trigger-derived)
+      -> institutions row (active for reserved platform onboarding; pending
+         for other organizations)
       -> user_roles row (role 'admin', scope institution/inst_id/org_id)
-      -> institution_join_requests row (status='pending')
+      -> no join request for direct reserved-platform onboarding; otherwise a
+         pending institution_join_requests ledger row
       -> 201 InstitutionRegistrationResponse (no password, no token)
 
 Security invariants (inherited from the existing schemas and services):
@@ -27,10 +29,11 @@ Security invariants (inherited from the existing schemas and services):
   field. The role and scope are assigned ONLY by the service, and the scope is
   bound to the SERVER-RESOLVED organization (the client cannot override the
   organization id).
-* The institution stays ``pending`` and the join request stays ``pending``:
-  no institution-scoped access is usable before an organization admin approves
-  the join request (Phase 6.13.4). Every authorization guard checks the
-  institution status, which is 'pending' — access fails closed.
+* Registrations under the reserved ``COLLEGE-AI-PLATFORM`` organization are
+  activated immediately without manufacturing an approval record, so the
+  initial University Admin can sign in without a Platform Manager decision.
+  Other organizations retain the pending approval workflow. Role and scope
+  remain server-assigned in both cases.
 * The password goes ONLY to Supabase Auth (GoTrue); it is never stored,
   hashed, or echoed by the application.
 * Approval / activation workflow is explicitly Phase 6.13.4 — not here.
@@ -105,9 +108,9 @@ def lookup_institution_endpoint(
     ``join_code`` when one exists — the client cannot override the resolved
     organization id. The submitting user becomes the initial institution
     administrator with ``role=admin`` and ``scope=institution``. The
-    institution starts in ``pending`` status with a pending join request and
-    gains access only when an organization administrator approves the join
-    request.
+    institution is activated immediately when it joins the reserved platform
+    onboarding organization. Registrations under other organizations start in
+    ``pending`` status and gain access only after organization approval.
 
     Public / self-service — no authentication required.
     """,
@@ -121,7 +124,8 @@ def register_institution_endpoint(
     Public endpoint. The request schema is ``extra="forbid"`` so clients
     cannot inject role / scope / status fields. The service resolves the
     organization from the public code, assigns the ``admin`` role with
-    ``institution`` scope server-side, and records the pending join request.
+    ``institution`` scope server-side, and records a join request only when the
+    selected organization uses the approval workflow.
     """
     enforce_auth_rate_limit("registration", request)
     return register_institution(body)

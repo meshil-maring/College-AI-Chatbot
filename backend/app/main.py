@@ -210,22 +210,26 @@ def chat(
     session_context = resolve_session_context(
         SessionContextRequest(session_id=request.session_id)
     )
-    return process_chat_request(
+    response = process_chat_request(
         internal_request,
         session_context,
         OpenRouterGenerationProvider(),
         user_id=current_user["user_id"],
         current_user=current_user,
     )
+    # Provider/model identifiers and internal diagnostics are not a normal
+    # chat capability; this route has no separately authorized debug projection.
+    return response.model_copy(update={"model_used": None, "metadata": {}})
 
 app.include_router(generation_router, prefix="/api/v1")
 
 # ============================================================================
-# Phase 6.13.8 — Public (unauthenticated) AI
+# Public, unauthenticated college chat
 # ============================================================================
-# Public AI answers ONLY from the public knowledge of the institution selected
-# in the request (validated server-side by the public tenant resolver).
-# No authentication dependency is attached by design.
+# General and casual messages can use direct generation. College-specific
+# questions use only policy-authorized public knowledge. Personal-data requests
+# still require authentication, and no authentication dependency is attached
+# to this anonymous endpoint by design.
 
 public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -233,11 +237,13 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
 @public_chat_router.post(
     "/public",
     response_model=PublicChatResponse,
-    summary="Ask a public institution-knowledge question",
+    summary="Ask the public college chatbot",
     description=(
         "Authentication: Not required. Resolves the public institution code "
-        "server-side, retrieves only policy-authorized public knowledge, and "
-        "returns a stateless response without internal identifiers or diagnostics."
+        "server-side. Casual and general questions are answered directly; "
+        "college-specific questions use only policy-authorized public knowledge. "
+        "Personal-data requests require authentication. Responses are stateless "
+        "and omit internal identifiers and diagnostics."
     ),
     responses={
         400: {
@@ -291,12 +297,13 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
     },
 )
 def public_chat(request: PublicChatRequest, http_request: Request) -> PublicChatResponse:
-    """Process one PUBLIC (unauthenticated) chat request.
+    """Process one public, stateless AI chat request.
 
     Phase 7.3:
       * no authentication dependency — public AI requires no login;
       * the public institution code is resolved and validated server-side;
       * the strict request model exposes no retrieval identifiers or controls;
+      * intent determines whether direct generation or public RAG is needed;
       * retrieval and final provenance verification require explicit public
         visibility plus valid source/version/processing lifecycle state;
       * the response projection exposes no internal IDs, model data, usage,

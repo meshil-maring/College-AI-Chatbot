@@ -240,7 +240,7 @@ class TestPublicChatIsolation:
   assert [c.text for c in out]==["public handbook"]
 class TestRoleIsolation:
  @pytest.mark.parametrize("role",["admin","staff","faculty"])
- def test_16_non_student_roles_use_legacy_path(self,monkeypatch,role):
+ def test_16_non_student_roles_cannot_access_personal_student_data(self,monkeypatch,role):
   called={"personalized":False}
   def fake_personalized(*a,**k):
    called["personalized"]=True;return _pctx()
@@ -250,7 +250,8 @@ class TestRoleIsolation:
   rr=RetrievalResult(chunk_id=UUID(CHUNK_A),document_id=UUID(DOC_A),document_version_id=None,text="General handbook.",similarity_score=0.9,metadata={})
   resp,provider=_run_chat(monkeypatch,PERSONAL_Q,_user(roles=(role,)),retrieved=[rr])
   assert called["personalized"] is False
-  assert provider.contexts[0].student_context is None
+  assert provider.contexts == []
+  assert "personal record through this chat" in resp.answer
  def test_17_student_personal_path_receives_own_context(self,monkeypatch):
   monkeypatch.setattr(chat_svc,"get_personalized_context",lambda cu,q,**k:_pctx(academic=STUDENT_A_CTX))
   resp,provider=_run_chat(monkeypatch,PERSONAL_Q,_user())
@@ -292,6 +293,11 @@ class TestPromptInjection:
   # Deterministic Phase 6.10 gate: keep the general path hermetic.
   monkeypatch.setattr(chat_svc,"build_personalization_context",lambda *a,**k:None)
   resp,provider=_run_chat(monkeypatch,payload,_user(),retrieved=[_rr()])
+  if not provider.contexts:
+   assert resp.status == "success"
+   assert "REG-B-002" not in resp.answer and B_TEST not in resp.answer
+   assert STUDENT_B_ID not in resp.answer and USER_B not in resp.answer
+   return
   blob=_ctx_text(provider.contexts[0])
   assert "REG-B-002" not in blob and B_TEST not in blob
   assert STUDENT_B_ID not in blob and USER_B not in blob

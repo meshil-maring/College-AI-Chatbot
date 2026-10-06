@@ -517,18 +517,15 @@ export interface MembershipDecisionResult {
   request_id: string
   status: 'approved' | 'rejected'
   already_applied: boolean
-  invitation_status: 'invited' | null
   message: string
 }
 
 export interface MembershipRosterEntry {
-  user_id: string | null
-  invitation_id: string | null
+  user_id: string
   name: string
   email: string
   role: MembershipRole
   status: string
-  invitation_status: string | null
   created_at: string | null
   updated_at: string | null
 }

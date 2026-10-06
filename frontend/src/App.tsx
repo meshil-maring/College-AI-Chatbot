@@ -352,8 +352,8 @@ function App() {
   if (route.kind === 'super-admin-invitation') {
     return <SuperAdminRegistrationPage token={route.token} />
   }
-  // Public onboarding request. The backend creates only a pending institution;
-  // no usable admin access exists until the server-side approval workflow.
+  // Public university onboarding. The reserved platform organization activates
+  // the institution and its server-scoped University Admin immediately.
   if (route.kind === 'university-registration') return <UniversityRegistrationPage />
   if (route.kind === 'reset-password') {
     return <ResetPasswordForm onBackToLogin={() => window.location.assign('/login')} />

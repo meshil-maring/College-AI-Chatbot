@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app.config import settings
 from app.schemas.chat import ChatRequest
 from app.schemas.conversation import MessageSummary
@@ -256,3 +258,46 @@ def test_standalone_question_diagnostics_rewritten_query_is_none():
     diagnostics = response.metadata["diagnostics"]
     assert diagnostics["original_query"] == query
     assert diagnostics["rewritten_query"] is None
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "Hello",
+        "How are you?",
+        "Tell me a joke",
+        "What is Python?",
+        "Explain recursion.",
+    ],
+)
+def test_casual_and_general_questions_skip_college_retrieval(query):
+    provider = MagicMock()
+    provider.generate.return_value = GenerationResult(
+        answer="A direct response.",
+        source_references=[],
+        status="success",
+    )
+
+    with patch("app.services.chat.retrieve") as retrieve:
+        response, _ = _run(_chat_request(user_query=query), [], provider)
+
+    retrieve.assert_not_called()
+    provider.generate.assert_called_once()
+    context: AIContext = provider.generate.call_args.args[0]
+    assert context.retrieved_knowledge == []
+    assert response.answer == "A direct response."
+
+
+def test_identity_and_ambiguous_questions_skip_retrieval_and_generation():
+    for query, expected in (
+        ("Which LLM are you using?", "college chatbot"),
+        ("What about attendance?", "Are you asking"),
+    ):
+        provider = MagicMock()
+        with patch("app.services.chat.retrieve") as retrieve:
+            response, _ = _run(_chat_request(user_query=query), [], provider)
+
+        retrieve.assert_not_called()
+        provider.generate.assert_not_called()
+        assert response.status == "success"
+        assert expected.casefold() in response.answer.casefold()

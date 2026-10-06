@@ -1,14 +1,16 @@
 /**
- * Phase 6.17 — Faculty navigation model tests.
+ * Faculty navigation model tests.
  *
  * The navigation model is UX-only, but it must NEVER drift into privilege:
  * these tests pin that the faculty navigation exposes exactly the
- * server-verified faculty surfaces and never an administrative or
- * student-academic entry.
+ * server-verified faculty surfaces plus the inert "Coming Soon"
+ * placeholders — and never an administrative entry. The placeholders are
+ * additionally pinned as inert (no capability key, no data contract).
  */
 
 /// <reference types="vitest/globals" />
 import {
+  FACULTY_COMING_SOON_VIEWS,
   FACULTY_NAV_ITEMS,
   FACULTY_VIEW_HEADINGS,
   FACULTY_WORKSPACE_SURFACES,
@@ -20,9 +22,14 @@ describe('buildFacultyNavigation', () => {
     const navigation = buildFacultyNavigation('faculty')
     expect(navigation).toEqual([
       { key: 'dashboard', label: 'Dashboard' },
+      { key: 'assignments', label: 'My Sections' },
+      { key: 'students', label: 'Students' },
+      { key: 'attendance', label: 'Attendance' },
+      { key: 'results', label: 'Results' },
+      { key: 'notices', label: 'Notices' },
+      { key: 'resources', label: 'Learning Resources' },
       { key: 'assistant', label: 'AI Assistant' },
       { key: 'profile', label: 'Profile' },
-      { key: 'assignments', label: 'My Sections' },
     ])
   })
 
@@ -32,7 +39,6 @@ describe('buildFacultyNavigation', () => {
     expect(labels).not.toContain('User Management')
     expect(labels).not.toContain('Role Management')
     expect(labels).not.toContain('Institution Administration')
-    expect(labels).not.toContain('Students')
   })
 
   it('returns an empty navigation for every other role (fail safe)', () => {
@@ -49,6 +55,14 @@ describe('buildFacultyNavigation', () => {
     expect(buildFacultyNavigation('faculty', ['ai.chat', 'faculty.assignments.read'])
       .map((item) => item.key)).toContain('assignments')
   })
+
+  it('keeps the inert Coming Soon placeholders even with no capability grants', () => {
+    // Placeholders expose no backend capability, so there is nothing to
+    // permission-check; they are roadmap labels for any faculty identity.
+    const navigation = buildFacultyNavigation('faculty', [])
+    const keys = navigation.map((item) => item.key)
+    expect(keys).toEqual(['students', 'attendance', 'results', 'notices', 'resources'])
+  })
 })
 
 describe('FACULTY_VIEW_HEADINGS', () => {
@@ -56,6 +70,33 @@ describe('FACULTY_VIEW_HEADINGS', () => {
     for (const item of FACULTY_NAV_ITEMS) {
       expect(FACULTY_VIEW_HEADINGS[item.key]).toBeTruthy()
     }
+  })
+})
+
+describe('FACULTY_COMING_SOON_VIEWS (inert placeholders)', () => {
+  it('covers exactly the sections with no backend contract', () => {
+    expect([...FACULTY_COMING_SOON_VIEWS].sort()).toEqual([
+      'attendance',
+      'notices',
+      'resources',
+      'results',
+      'students',
+    ])
+  })
+
+  it('every Coming Soon view has a navigation entry and a heading', () => {
+    const navKeys = FACULTY_NAV_ITEMS.map((item) => item.key)
+    for (const view of FACULTY_COMING_SOON_VIEWS) {
+      expect(navKeys).toContain(view)
+      expect(FACULTY_VIEW_HEADINGS[view]).toBeTruthy()
+    }
+  })
+
+  it('never overlaps a verified capability view', () => {
+    expect(FACULTY_COMING_SOON_VIEWS).not.toContain('dashboard')
+    expect(FACULTY_COMING_SOON_VIEWS).not.toContain('assignments')
+    expect(FACULTY_COMING_SOON_VIEWS).not.toContain('assistant')
+    expect(FACULTY_COMING_SOON_VIEWS).not.toContain('profile')
   })
 })
 

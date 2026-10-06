@@ -128,7 +128,7 @@ class InstitutionRegistrationRequest(BaseModel):
 
 
 class InstitutionRegistrationResponse(BaseModel):
-    """Response after institution registration — pending organization approval."""
+    """Response after institution registration, including lifecycle status."""
 
     message: str
     institution_id: UUID

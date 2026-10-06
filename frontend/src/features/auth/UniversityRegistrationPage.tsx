@@ -47,8 +47,8 @@ export default function UniversityRegistrationPage() {
       const result = await registerUniversity({
         name: form.name.trim(),
         institution_code: form.institutionCode.trim().toUpperCase(),
-        // Public SaaS registrations always join the platform-owned onboarding
-        // organization. Users cannot guess or select another tenant here.
+        // Public SaaS registrations join the reserved platform-owned
+        // onboarding organization and are activated server-side immediately.
         organization_code: PLATFORM_ORGANIZATION_CODE,
         official_email: form.officialEmail.trim().toLowerCase(),
         ...(form.location.trim() ? { location: form.location.trim() } : {}),
@@ -70,11 +70,11 @@ export default function UniversityRegistrationPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
         <section className="w-full max-w-xl rounded-2xl border border-emerald-500/30 bg-slate-900 p-8 shadow-xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Registration submitted</p>
-          <h1 className="mt-2 text-3xl font-bold text-white">Your university is pending approval</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Registration complete</p>
+          <h1 className="mt-2 text-3xl font-bold text-white">Your university is ready</h1>
           <p role="status" className="mt-4 leading-7 text-slate-300">{success.message}</p>
           <p className="mt-3 text-sm text-slate-400">University code: <strong className="text-slate-200">{success.institution_code}</strong></p>
-          <p className="mt-2 text-sm text-slate-400">You can sign in after the organization approves and activates the university.</p>
+          <p className="mt-2 text-sm text-slate-400">Your University Admin account is active. You can sign in now.</p>
           <div className="mt-7 flex gap-3">
             <a href="/login/admin" className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white">Admin login</a>
             <a href="/" className="rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-200">Home</a>
@@ -90,7 +90,7 @@ export default function UniversityRegistrationPage() {
         <a href="/" className="text-sm text-slate-400 underline hover:text-white">Back to home</a>
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">University onboarding</p>
         <h1 className="mt-2 text-3xl font-bold text-white">Register your university</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Create the initial University Admin account and submit your university for approval. Access remains disabled until the owning organization approves the request.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Create your university and its initial University Admin account. No Platform Manager approval is required.</p>
 
         {error ? <div role="alert" className="mt-5 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div> : null}
 
@@ -103,7 +103,7 @@ export default function UniversityRegistrationPage() {
             <div className="rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 sm:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Registration network</p>
               <p className="mt-1 text-sm font-medium text-slate-200">College AI Platform</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">Your university will be submitted to the platform approval queue automatically.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Your university will be activated immediately after registration.</p>
             </div>
             <label className={`${labelClass} sm:col-span-2`}>Location (optional)<input className={inputClass} value={form.location} onChange={(e) => update('location', e.target.value)} /></label>
           </fieldset>
@@ -118,7 +118,7 @@ export default function UniversityRegistrationPage() {
           </fieldset>
 
           <p className="rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 text-xs leading-5 text-slate-400">The password is sent only to the authentication service. Role, scope, institution status, and approval state are assigned by the backend and cannot be selected in this form.</p>
-          <button type="submit" disabled={submitting} className="w-full rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">{submitting ? 'Submitting registration…' : 'Submit university registration'}</button>
+          <button type="submit" disabled={submitting} className="w-full rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">{submitting ? 'Registering university…' : 'Register university'}</button>
         </form>
       </section>
     </main>

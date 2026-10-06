@@ -80,27 +80,21 @@ def decide_pending_request(
     return rows[0] if rows else None
 
 
-def approve_with_invitation(
+def approve_and_grant_role(
     client: Client,
     *,
     request_id: UUID | str,
     institution_id: UUID | str,
     decided_by_user_id: UUID | str,
     reason: str | None,
-    token_hash: str,
-    expires_at: datetime,
-    protected_token: str,
 ) -> dict[str, Any]:
     response = client.rpc(
-        "phase723_approve_membership_with_invitation",
+        "phase723_approve_membership_and_grant_role",
         {
             "p_request_id": str(request_id),
             "p_institution_id": str(institution_id),
             "p_decided_by": str(decided_by_user_id),
             "p_reason": reason,
-            "p_token_hash": token_hash,
-            "p_expires_at": expires_at.isoformat(),
-            "p_protected_token": protected_token,
         },
     ).execute()
     data = response.data if response is not None else None
@@ -141,7 +135,10 @@ def list_user_grants(client: Client, user_id: UUID | str) -> list[dict[str, Any]
 def get_user(client: Client, user_id: UUID | str) -> dict[str, Any] | None:
     response = (
         client.table("users")
-        .select("id, email, first_name, last_name, status, created_at, updated_at")
+        .select(
+            "id, auth_user_id, email, first_name, last_name, status, "
+            "created_at, updated_at"
+        )
         .eq("id", str(user_id))
         .maybe_single()
         .execute()
@@ -160,4 +157,3 @@ def set_user_status(
         .execute()
     )
     return bool(_rows(response))
-

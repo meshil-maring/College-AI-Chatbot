@@ -70,6 +70,14 @@ from app.services.context import assemble_context
 from app.services.conversation_history import get_conversation_messages
 from app.services.generation import AIGenerationService
 from app.services.generation_provider import GenerationProvider
+from app.services.conversation_intent import (
+    ConversationIntent,
+    build_direct_context,
+    classify_conversation_intent,
+    direct_identity_response,
+    direct_route_response,
+    is_personal_data_request,
+)
 from app.services.personalization import classify_personalization_question
 from app.services.public_knowledge_policy import PublicKnowledgePolicy
 from app.services.query_rewriting import rewrite_query
@@ -206,7 +214,11 @@ def _reject_personal_query_if_needed(request: ChatRequest) -> None:
             and has_access_request
         )
     )
-    if intent is None and not explicit_private_record_request:
+    if (
+        intent is None
+        and not explicit_private_record_request
+        and not is_personal_data_request(question)
+    ):
         return
     raise AppError(
         "Personalized academic data requires authentication",
@@ -987,6 +999,40 @@ def process_public_request(
         institution_id=institution_id,
     )
     _reject_personal_query_if_needed(internal_request)
+
+    intent = classify_conversation_intent(
+        request.message,
+        authenticated=False,
+    )
+    deterministic_answer = (
+        direct_identity_response(request.message)
+        if intent == ConversationIntent.AI_IDENTITY
+        else direct_route_response(intent)
+    )
+    if deterministic_answer is not None:
+        return PublicChatResponse(
+            answer=_sanitize_public_answer(deterministic_answer),
+            status="success",
+            sources=[],
+        )
+
+    if intent in {ConversationIntent.CASUAL, ConversationIntent.GENERAL_KNOWLEDGE}:
+        assembled_context = build_direct_context(
+            request.message,
+            public=True,
+            institution_id=institution_id,
+            max_output_tokens=settings.public_generation_max_tokens,
+        )
+        generation_result = AIGenerationService(provider).generate(
+            assembled_context,
+            allow_empty_context=True,
+        )
+        _validate_public_answer(generation_result.answer, assembled_context)
+        return PublicChatResponse(
+            answer=_sanitize_public_answer(generation_result.answer),
+            status=generation_result.status,
+            sources=[],
+        )
 
     allowed_source_ids = _build_allowed_public_knowledge_source_ids(
         client, institution_id, None

@@ -64,7 +64,9 @@ export default function FacultyDashboard({
                 {surface.status === 'available' ? (
                   <span className="text-emerald-300">Available</span>
                 ) : (
-                  <span className="text-slate-400">Not available yet</span>
+                  <span className="rounded-full bg-slate-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    Coming Soon
+                  </span>
                 )}
               </p>
             </li>

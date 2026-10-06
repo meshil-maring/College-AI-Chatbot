@@ -271,19 +271,21 @@ def insert_institution(
     code: str,
     email: str | None,
     address: str | None,
+    status: str = "pending",
 ) -> dict:
-    """Insert one institution row in PENDING state; returns the row.
+    """Insert one institution row with a server-selected lifecycle state.
 
     The Phase 6.13 trigger ``trg_phase613_institutions_status`` derives
-    ``is_active`` from ``status`` on every write, so the pending institution is
-    structurally unavailable (no registrations, no logins) until approval.
+    ``is_active`` from ``status`` on every write. Callers must select the
+    status from trusted server-side policy; it is never accepted from a public
+    registration payload.
     """
     payload: dict = {
         "organization_id": str(organization_id),
         "name": name.strip(),
         "code": code.strip().upper(),
-        "status": "pending",
-        "is_active": False,
+        "status": status,
+        "is_active": status == "active",
     }
     if email is not None:
         payload["email"] = email.strip().lower()

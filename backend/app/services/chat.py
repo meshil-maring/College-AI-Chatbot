@@ -43,8 +43,16 @@ from app.schemas.session import SessionContext
 from app.services.context import assemble_context
 from app.services.conversation_history import get_conversation_messages
 from app.services.generation import AIGenerationService
-from app.services.generation_provider import GenerationProvider
+from app.services.generation_provider import GenerationProvider, GenerationResult
 from app.services.ai_context_builder import build_personalized_ai_context
+from app.services.conversation_intent import (
+    ConversationIntent,
+    build_direct_context,
+    classify_conversation_intent,
+    contextual_personalization_query,
+    direct_route_response,
+    direct_identity_response,
+)
 from app.services.personalized_retrieval import get_personalized_context
 from app.services.personalization import (
     build_personalization_context,
@@ -568,6 +576,21 @@ def process_chat_request(
         max_messages=settings.conversation_history_max_messages,
     )
 
+    intent = classify_conversation_intent(
+        request.user_query,
+        conversation_history,
+        authenticated=True,
+    )
+    # Non-HTTP legacy callers do not provide the authenticated principal needed
+    # for the personal-data boundary. Keep them on institution RAG only; never
+    # load student-specific context without the server-resolved user object.
+    if intent == ConversationIntent.PERSONAL_DATA and current_user is None:
+        intent = ConversationIntent.AUTHENTICATED_COLLEGE_KNOWLEDGE
+    personalization_query = (
+        contextual_personalization_query(request.user_query, conversation_history)
+        or request.user_query
+    )
+
     # Step 1.6 (Phase 6.14.7): Resolve the personalized AI context for
     # authenticated STUDENTS using the 6.14.5 retrieval boundary + 6.14.6
     # AI context builder. Non-student authenticated users (admin/staff/faculty),
@@ -582,20 +605,22 @@ def process_chat_request(
     # This runs before the user message is persisted so an ineligible request
     # does not leave partial chat state.
     personalization_start = time.perf_counter()
-    personalized_request = _uses_personalized_pipeline(
-        current_user, request.user_query
+    personalized_request = (
+        intent == ConversationIntent.PERSONAL_DATA
+        and _uses_personalized_pipeline(current_user, personalization_query)
     )
     personalization_text = None
     if personalized_request:
         personalized_context = get_personalized_context(
             current_user,
-            request.user_query,
+            personalization_query,
             client=client,
         )
         ai_context = build_personalized_ai_context(
             personalized_context,
             current_user=current_user,
         )
+        ai_context.user_question = request.user_query
         # Attach bounded conversation history to the personalized AIContext
         # (the builder emits an empty list by default; the existing
         # conversation-history semantics are preserved).
@@ -644,7 +669,18 @@ def process_chat_request(
     # elliptical follow-up signals. Short or reference-laden messages still go
     # through the rewriter, preserving follow-up behavior exactly.
     rewrite_start = time.perf_counter()
-    if _is_self_contained_question(request.user_query, conversation_history):
+    if intent in {
+        ConversationIntent.CASUAL,
+        ConversationIntent.GENERAL_KNOWLEDGE,
+        ConversationIntent.AI_IDENTITY,
+        ConversationIntent.AMBIGUOUS,
+        ConversationIntent.RESTRICTED_ACTION,
+    } or (
+        intent == ConversationIntent.PERSONAL_DATA and not personalized_request
+    ):
+        retrieval_query = request.user_query
+        timings["query_rewrite_skipped"] = True
+    elif _is_self_contained_question(request.user_query, conversation_history):
         retrieval_query = request.user_query
         timings["query_rewrite_skipped"] = True
     else:
@@ -670,6 +706,17 @@ def process_chat_request(
         # AIContext built in Step 1.6. Re-export them for downstream use
         # (source-reference extraction, background persistence, diagnostics).
         retrieved_chunks = list(personalized_context.knowledge.chunks)
+        timings["embedding_latency_ms"] = 0
+        timings["retrieval_latency_ms"] = 0
+    elif intent in {
+        ConversationIntent.CASUAL,
+        ConversationIntent.GENERAL_KNOWLEDGE,
+        ConversationIntent.AI_IDENTITY,
+        ConversationIntent.AMBIGUOUS,
+        ConversationIntent.RESTRICTED_ACTION,
+        ConversationIntent.PERSONAL_DATA,
+    }:
+        retrieved_chunks = []
         timings["embedding_latency_ms"] = 0
         timings["retrieval_latency_ms"] = 0
     else:
@@ -700,7 +747,22 @@ def process_chat_request(
 
     # Step 4: Execute generation
     context_start = time.perf_counter()
-    if not personalized_request:
+    if not personalized_request and intent in {
+        ConversationIntent.CASUAL,
+        ConversationIntent.GENERAL_KNOWLEDGE,
+    }:
+        assembled_context = build_direct_context(
+            request.user_query,
+            conversation_history,
+        )
+    elif not personalized_request and intent in {
+        ConversationIntent.AI_IDENTITY,
+        ConversationIntent.AMBIGUOUS,
+        ConversationIntent.RESTRICTED_ACTION,
+        ConversationIntent.PERSONAL_DATA,
+    }:
+        assembled_context = None
+    elif not personalized_request:
         ai_request = AIRequest(
             user_query=request.user_query,
             retrieval_query=(retrieval_query if retrieval_query != request.user_query else None),
@@ -730,6 +792,8 @@ def process_chat_request(
     prompt_start = time.perf_counter()
     prompt_text = ""
     try:
+        if assembled_context is None:
+            raise ValueError("deterministic response does not build a prompt")
         from app.services.generation_provider import _build_user_content
 
         prompt_text = _build_user_content(assembled_context)
@@ -738,9 +802,26 @@ def process_chat_request(
     timings["prompt_build_latency_ms"] = int((time.perf_counter() - prompt_start) * 1000)
 
     stage_start = time.perf_counter()
-    generation_result = AIGenerationService(provider).generate(
-        assembled_context
-    )
+    deterministic_answer = None
+    if intent == ConversationIntent.AI_IDENTITY:
+        deterministic_answer = direct_identity_response(request.user_query)
+    elif not personalized_request:
+        deterministic_answer = direct_route_response(intent)
+    if deterministic_answer is not None:
+        generation_result = GenerationResult(
+            answer=deterministic_answer,
+            source_references=[],
+            status="success",
+        )
+    else:
+        generation_result = AIGenerationService(provider).generate(
+            assembled_context,
+            allow_empty_context=intent
+            in {
+                ConversationIntent.CASUAL,
+                ConversationIntent.GENERAL_KNOWLEDGE,
+            },
+        )
     latency_ms = int((time.perf_counter() - stage_start) * 1000)
     timings["llm_request_latency_ms"] = latency_ms
     # Non-streaming provider: time-to-first-token equals total generation time.

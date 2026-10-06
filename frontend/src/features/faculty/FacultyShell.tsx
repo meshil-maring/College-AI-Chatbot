@@ -7,9 +7,13 @@
  * request: selection happens in `App.tsx` from the server-authoritative
  * /auth/me role.
  *
- * Navigation (Dashboard / AI Assistant / Profile) is derived from
- * `facultyNavigation.ts`, which contains ONLY server-verified faculty
- * capabilities. Every faculty member sees the same shell regardless of how
+ * Navigation (Dashboard / My Sections / Students / Attendance / Results /
+ * Notices / Learning Resources / AI Assistant / Profile) is derived from
+ * `facultyNavigation.ts`, which contains server-verified faculty
+ * capabilities plus the inert "Coming Soon" placeholders (rendered by
+ * `FacultyComingSoon` with zero requests and zero invented data — the
+ * backend still denies those surfaces server-side). Every faculty member
+ * sees the same shell regardless of how
  * they reached it; the backend remains the authorization boundary (faculty
  * requests against student/admin surfaces fail closed server-side).
  *
@@ -23,6 +27,7 @@ import { useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import ChatShell from '../chat/ChatShell.tsx'
 import {
+  FACULTY_COMING_SOON_VIEWS,
   FACULTY_VIEW_HEADINGS,
   buildFacultyNavigation,
   type FacultyView,
@@ -30,6 +35,7 @@ import {
 import FacultyDashboard from './FacultyDashboard.tsx'
 import FacultyProfile from './FacultyProfile.tsx'
 import FacultyAssignments from './FacultyAssignments.tsx'
+import FacultyComingSoon from './FacultyComingSoon.tsx'
 
 export default function FacultyShell() {
   const { user, role, accessToken, logout } = useAuth()
@@ -115,6 +121,9 @@ export default function FacultyShell() {
             {view === 'profile' ? <FacultyProfile user={user} /> : null}
             {view === 'assignments' && accessToken !== null ? (
               <FacultyAssignments accessToken={accessToken} />
+            ) : null}
+            {FACULTY_COMING_SOON_VIEWS.includes(view) ? (
+              <FacultyComingSoon view={view} />
             ) : null}
             {view === 'assistant' ? (
               <section aria-label="AI Assistant">

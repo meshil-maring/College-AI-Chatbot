@@ -13,10 +13,12 @@ Registration flows (all server-side; no client-controlled privileges):
     2. register_institution
        payload -> resolve organization by PUBLIC code (+ join code when issued)
                -> Supabase Auth account + public.users row
-               -> institutions row (status 'pending'; is_active derived false)
+               -> institutions row (active for reserved platform onboarding;
+                  pending for other organizations)
                -> user_roles: role 'admin', scope (institution, inst_id)
-               -> institution_join_requests row (status 'pending')
-       The organization admin approves the join request to activate it.
+               -> institution_join_requests row for approval-based onboarding
+       Platform onboarding is immediate and needs no join request; other
+       organizations approve a pending request before it becomes active.
 
     3. register_staff_or_faculty
        payload -> resolve institution by code (must be ACTIVE)
@@ -79,6 +81,11 @@ from app.services.student_registration import (
 PENDING = "pending"
 ACTIVE = "active"
 REJECTED = "rejected"
+
+# Public university onboarding is attached to this reserved platform-owned
+# organization. Unlike third-party organization join requests, these
+# registrations do not require a Platform Manager decision.
+PLATFORM_ONBOARDING_ORGANIZATION_CODE = "COLLEGE-AI-PLATFORM"
 
 # Length of the organization-issued institution join code (crypto-random,
 # Length of the organization-issued institution join code (crypto-random,
@@ -333,11 +340,13 @@ def register_organization(payload: OrganizationRegistrationRequest) -> Organizat
 def register_institution(
     payload: InstitutionRegistrationRequest,
 ) -> InstitutionRegistrationResponse:
-    """Register an institution + initial admin + join request (pending).
+    """Register an institution + initial admin + join-request ledger entry.
 
     The organization relationship is verified with the PUBLIC organization
     code plus the organization-issued join code (constant-time compare) —
-    never by "typing an organization name".
+    never by "typing an organization name". Registrations under the reserved
+    platform onboarding organization are activated immediately; other
+    organizations retain their organization-admin approval workflow.
     """
     code = _normalize_code(payload.institution_code)
     org_code = _normalize_code(payload.organization_code)
@@ -360,6 +369,11 @@ def register_institution(
         )
     _verify_join_code(organization, payload.join_code)
 
+    auto_activate = (
+        _normalize_code(str(organization.get("organization_code") or ""))
+        == PLATFORM_ONBOARDING_ORGANIZATION_CODE
+    )
+
     if tenancy_repo.institution_code_exists(db, code):
         raise AppError(
             "This institution code is already taken",
@@ -373,7 +387,15 @@ def register_institution(
             code="EMAIL_ALREADY_REGISTERED",
         )
 
-    auth_user_id = _create_auth_account(email, payload.admin_password)
+    auth_user_id = (
+        _create_auth_account(
+            email,
+            payload.admin_password,
+            email_confirm=True,
+        )
+        if auto_activate
+        else _create_auth_account(email, payload.admin_password)
+    )
 
     user_id: str | None = None
     institution: dict | None = None
@@ -392,10 +414,11 @@ def register_institution(
             code=code,
             email=str(payload.official_email).strip().lower(),
             address=payload.location,
+            status=ACTIVE if auto_activate else PENDING,
         )
         # Initial INSTITUTION ADMIN identity: role 'admin' scoped to THIS
-        # (still pending) institution. Access stays fail-closed because every
-        # guard checks the institution status, which is 'pending'.
+        # institution. Non-platform registrations stay fail-closed while
+        # pending; platform onboarding is already active at this point.
         _grant_role(
             db,
             user_id=user_id,
@@ -404,13 +427,20 @@ def register_institution(
             scope_id=institution["institution_id"],
             scope_organization_id=organization["organization_id"],
         )
-        tenancy_repo.insert_join_request(
-            db,
-            organization_id=organization["organization_id"],
-            institution_id=institution["institution_id"],
-            requested_institution_code=code,
-            requested_by_user_id=user_id,
-        )
+        # The reserved platform organization is direct onboarding, not an
+        # approval decision, so it intentionally has no join-request row.
+        # Creating an already-approved request would violate the database's
+        # decision-audit constraint (approved rows require a real deciding
+        # actor and timestamp). Other organizations retain the pending ledger.
+        if not auto_activate:
+            tenancy_repo.insert_join_request(
+                db,
+                organization_id=organization["organization_id"],
+                institution_id=institution["institution_id"],
+                requested_institution_code=code,
+                requested_by_user_id=user_id,
+                status=PENDING,
+            )
     except Exception as exc:
         if user_id is not None:
             _try_delete_user_row(db, user_id)
@@ -432,13 +462,15 @@ def register_institution(
 
     return InstitutionRegistrationResponse(
         message=(
-            "Institution registered. The join request is pending approval by "
+            "University registered and activated. The University Admin can sign in now."
+            if auto_activate
+            else "Institution registered. The join request is pending approval by "
             "the organization admin."
         ),
         institution_id=UUID(str(institution["institution_id"])),
         institution_code=str(institution["code"]),
         organization_id=UUID(str(organization["organization_id"])),
-        status=str(institution["status"]),
+        status=ACTIVE if auto_activate else str(institution["status"]),
         admin_user_id=UUID(user_id),
         email=email,  # type: ignore[arg-type]
     )

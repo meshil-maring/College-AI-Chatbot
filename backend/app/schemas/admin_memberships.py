@@ -33,18 +33,15 @@ class MembershipDecisionResult(BaseModel):
     request_id: UUID
     status: Literal["approved", "rejected"]
     already_applied: bool = False
-    invitation_status: Literal["invited"] | None = None
     message: str
 
 
 class MembershipRosterEntry(BaseModel):
-    user_id: UUID | None = None
-    invitation_id: UUID | None = None
+    user_id: UUID
     name: str
     email: str
     role: MembershipRole
     status: str
-    invitation_status: str | None = None
     created_at: datetime | str | None = None
     updated_at: datetime | str | None = None
 
@@ -59,4 +56,3 @@ class MembershipLifecycleResult(BaseModel):
     status: Literal["active", "deactivated"]
     already_applied: bool
     message: str
-

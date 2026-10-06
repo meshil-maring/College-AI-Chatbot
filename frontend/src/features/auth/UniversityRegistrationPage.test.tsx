@@ -12,11 +12,11 @@ vi.mock('../../services/universityRegistration.ts', async (importOriginal) => {
 describe('UniversityRegistrationPage', () => {
   beforeEach(() => vi.mocked(registerUniversity).mockReset())
 
-  it('submits the backend institution-registration contract and shows pending state', async () => {
+  it('registers an active university admin without a Platform Manager approval step', async () => {
     vi.mocked(registerUniversity).mockResolvedValue({
-      message: 'University registration submitted for approval.',
+      message: 'University registered and activated. The University Admin can sign in now.',
       institution_code: 'ABCU',
-      status: 'pending',
+      status: 'active',
       email: 'admin@abcu.edu',
     })
     const user = userEvent.setup()
@@ -30,7 +30,7 @@ describe('UniversityRegistrationPage', () => {
     await user.type(screen.getByLabelText('Admin email'), 'admin@abcu.edu')
     await user.type(screen.getByLabelText('Password'), 'strongpass')
     await user.type(screen.getByLabelText('Confirm password'), 'strongpass')
-    await user.click(screen.getByRole('button', { name: 'Submit university registration' }))
+    await user.click(screen.getByRole('button', { name: 'Register university' }))
 
     expect(registerUniversity).toHaveBeenCalledWith(expect.objectContaining({
       name: 'ABC University',
@@ -39,7 +39,8 @@ describe('UniversityRegistrationPage', () => {
       admin_email: 'admin@abcu.edu',
       admin_password: 'strongpass',
     }))
-    expect(await screen.findByRole('heading', { name: 'Your university is pending approval' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Your university is ready' })).toBeInTheDocument()
+    expect(screen.getByText('Your University Admin account is active. You can sign in now.')).toBeInTheDocument()
   })
 
   it('does not submit when password confirmation differs', async () => {
@@ -53,7 +54,7 @@ describe('UniversityRegistrationPage', () => {
     await user.type(screen.getByLabelText('Admin email'), 'admin@abcu.edu')
     await user.type(screen.getByLabelText('Password'), 'strongpass')
     await user.type(screen.getByLabelText('Confirm password'), 'different')
-    await user.click(screen.getByRole('button', { name: 'Submit university registration' }))
+    await user.click(screen.getByRole('button', { name: 'Register university' }))
 
     expect(screen.getByRole('alert')).toHaveTextContent('The two passwords do not match.')
     expect(registerUniversity).not.toHaveBeenCalled()

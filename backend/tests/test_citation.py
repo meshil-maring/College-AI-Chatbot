@@ -339,12 +339,18 @@ def test_citations_belong_to_correct_assistant_message():
 # TEST 8 — INSUFFICIENT CONTEXT
 # ---------------------------------------------------------------------------
 
-def test_insufficient_context_creates_no_citations():
-    """When answer is None, no assistant message, ai_response, or citations are created."""
+def test_general_knowledge_skips_retrieval_and_creates_no_citations():
     mock_provider = MagicMock(spec=GenerationProvider)
+    mock_provider.generate.return_value = GenerationResult(
+        answer="Quantum computing uses quantum-mechanical properties.",
+        source_references=[],
+        status="success",
+        model_used="internal-model",
+    )
 
     mc = _mock_client([
         MagicMock(data=[{"conversation_id": str(uuid4())}]),
+        MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
     ])
 
@@ -355,17 +361,18 @@ def test_insufficient_context_creates_no_citations():
     with (
         patch("app.services.chat.get_admin_client", return_value=mc),
         patch("app.services.conversation_history.get_admin_client", return_value=mc),
-        patch("app.services.chat.retrieve", return_value=retrieval),
+        patch("app.services.chat.retrieve", return_value=retrieval) as retrieve,
+        patch("app.services.chat._start_background_persistence"),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
-    assert response.status == "insufficient_context"
-    assert response.answer is None
-    assert response.message_id is None
+    retrieve.assert_not_called()
+    mock_provider.generate.assert_called_once()
+    assert response.status == "success"
+    assert response.answer == "Quantum computing uses quantum-mechanical properties."
+    assert response.message_id is not None
     assert response.source_references == []
-
-    # Only 2 inserts: conversation + user message (NO assistant, NO ai_response, NO citations)
-    assert mc.table().insert().execute.call_count == 2
+    assert response.sources == []
 
 
 # ---------------------------------------------------------------------------

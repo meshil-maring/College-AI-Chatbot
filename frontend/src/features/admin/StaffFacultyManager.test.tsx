@@ -8,7 +8,6 @@ vi.mock('../../services/adminApi.ts', () => ({
   listMembershipRoster: vi.fn(),
   decideMembershipRequest: vi.fn(),
   changeMembershipStatus: vi.fn(),
-  resendMembershipInvitation: vi.fn(),
 }))
 
 const request = {
@@ -40,13 +39,32 @@ describe('StaffFacultyManager', () => {
       request_id: request.request_id,
       status: 'approved',
       already_applied: false,
-      invitation_status: 'invited',
-      message: 'Membership request approved and invitation queued.',
+      message: 'Membership request approved. The faculty account can now sign in.',
     })
     render(<StaffFacultyManager accessToken="jwt" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
     await waitFor(() => expect(api.decideMembershipRequest).toHaveBeenCalledWith('jwt', request.request_id, 'approve'))
-    expect(await screen.findByText('Membership request approved and invitation queued.')).toBeDefined()
+    expect(await screen.findByText('Membership request approved. The faculty account can now sign in.')).toBeDefined()
     expect(vi.mocked(api.listMembershipRequests).mock.calls.length).toBeGreaterThan(1)
+  })
+
+  it('does not show pending invitations in the roster', async () => {
+    vi.mocked(api.listMembershipRoster).mockResolvedValue({
+      members: [{
+        user_id: '20000000-0000-0000-0000-000000000001',
+        name: '',
+        email: 'xy faculty@example.test',
+        role: 'faculty',
+        status: 'active',
+        created_at: null,
+        updated_at: null,
+      }],
+      total: 1,
+    })
+    render(<StaffFacultyManager accessToken="jwt" />)
+    expect(await screen.findByText('xy faculty@example.test')).toBeDefined()
+    expect(screen.queryByText('Invitation')).toBeNull()
+    expect(screen.queryByRole('cell', { name: 'Pending' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /resend invitation/i })).toBeNull()
   })
 })

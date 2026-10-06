@@ -395,12 +395,18 @@ def test_missing_usage_returns_none():
 # ---------------------------------------------------------------------------
 
 
-def test_insufficient_context_structured_response():
-    """Insufficient context produces null/empty structured fields."""
+def test_general_knowledge_uses_direct_generation_without_college_retrieval():
     mock_provider = MagicMock(spec=GenerationProvider)
+    mock_provider.generate.return_value = GenerationResult(
+        answer="Quantum computing uses quantum-mechanical properties.",
+        source_references=[],
+        status="success",
+        model_used="internal-model",
+    )
 
     mc = _mock_client([
         MagicMock(data=[{"conversation_id": str(uuid4())}]),
+        MagicMock(data=[{"message_id": str(uuid4())}]),
         MagicMock(data=[{"message_id": str(uuid4())}]),
     ])
 
@@ -411,17 +417,19 @@ def test_insufficient_context_structured_response():
     with (
         patch("app.services.chat.get_admin_client", return_value=mc),
         patch("app.services.conversation_history.get_admin_client", return_value=mc),
-        patch("app.services.chat.retrieve", return_value=retrieval),
+        patch("app.services.chat.retrieve", return_value=retrieval) as retrieve,
+        patch("app.services.chat._start_background_persistence"),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
-    assert response.status == "insufficient_context"
-    assert response.answer is None
-    assert response.message_id is None
+    retrieve.assert_not_called()
+    mock_provider.generate.assert_called_once()
+    assert response.status == "success"
+    assert response.answer == "Quantum computing uses quantum-mechanical properties."
+    assert response.message_id is not None
     assert response.source_references == []
     assert response.sources == []
     assert response.usage is None
-    assert response.model_used is None
 
 
 # ---------------------------------------------------------------------------

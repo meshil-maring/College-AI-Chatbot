@@ -9,11 +9,13 @@ class AIGenerationService:
     def __init__(self, provider: GenerationProvider) -> None:
         self._provider = provider
 
-    def generate(self, context: AIContext) -> AIResponse:
+    def generate(
+        self, context: AIContext, *, allow_empty_context: bool = False
+    ) -> AIResponse:
         if not isinstance(context, AIContext):
             raise TypeError("context must be a validated AIContext")
 
-        if not context.retrieved_knowledge:
+        if not context.retrieved_knowledge and not allow_empty_context:
             return AIResponse(
                 status="insufficient_context",
                 model_used=context.model_name,

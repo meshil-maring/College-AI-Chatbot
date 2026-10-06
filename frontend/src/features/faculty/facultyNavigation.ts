@@ -1,5 +1,6 @@
 /**
- * Phase 6.17 — Faculty navigation model.
+ * Faculty navigation model (Phase 6.17 foundation, extended for the portal
+ * "Coming Soon" sections).
  *
  * The faculty experience has ONE navigation definition, derived exclusively
  * from the server-authoritative role held in AuthProvider state
@@ -7,23 +8,27 @@
  *
  * UX ONLY — NEVER AUTHORIZATION:
  * This module decides which links to RENDER. It is not a security boundary.
- * Faculty can view server-owned active section assignments and use the
- * authenticated chat surface. The document ingestion pipeline is also
- * available to faculty, but has no faculty-facing listing contract. Other
- * academic surfaces (students, attendance, results, notices, learning
- * resources) remain unavailable:
+ * The navigation mixes two kinds of entries:
  *
- *   - /students/me/*   -> 404 STUDENT_PROFILE_NOT_FOUND (student-only
- *                        identity chain; a faculty account has no students
- *                        row, so the endpoints fail closed)
- *   - /admin/*         -> 403 FORBIDDEN (require_roles("admin"); faculty is
- *                        NOT part of the admin/staff approval boundary)
+ *   1. VERIFIED capabilities backed by an existing backend contract:
+ *        - Dashboard / Profile -> own identity from GET /auth/me
+ *        - My Sections         -> GET /faculty/assignments
+ *                                 (requires faculty.assignments.read)
+ *        - AI Assistant        -> existing ChatShell (requires ai.chat)
  *
- * Faculty-section assignments do not yet provide a student roster or
- * attendance/results write scope, so NO student list, attendance, results,
- * notices or resources navigation entry is rendered. Removing or editing this file
- * cannot grant access to anything: a faculty user who manually requests a
- * student or admin URL still receives 403/404 from the backend.
+ *   2. INERT "Coming Soon" placeholders (Students, Attendance, Results,
+ *      Notices, Learning Resources): the Phase 7.24 audit verified that NO
+ *      faculty-facing backend contract exists for these surfaces today, so
+ *      the matching views fetch NOTHING, render NO data and expose NO
+ *      actions. They are an honest roadmap label, never a simulated feature,
+ *      and they carry no permission key because they expose no capability.
+ *
+ * The backend remains the authorization boundary: a faculty account that
+ * manually requests these surfaces still fails closed server-side
+ * (`/students/me/*` -> 404 STUDENT_PROFILE_NOT_FOUND on the student-only
+ * identity chain; `/admin/*` -> 403 FORBIDDEN because faculty is NOT part of
+ * the admin/staff approval boundary). Removing or editing this file cannot
+ * grant access to anything.
  *
  * The faculty navigation contains NO administrative surface. Admin,
  * permission management, user management, and institution management links
@@ -37,7 +42,28 @@ import { hasPermission } from '../auth/permissions.ts'
 const FACULTY_SHELL_ROLES: readonly string[] = ['faculty']
 
 /** Every view the faculty shell can render (no router library is installed). */
-export type FacultyView = 'dashboard' | 'assistant' | 'profile' | 'assignments'
+export type FacultyView =
+  | 'dashboard'
+  | 'assignments'
+  | 'students'
+  | 'attendance'
+  | 'results'
+  | 'notices'
+  | 'resources'
+  | 'assistant'
+  | 'profile'
+
+/**
+ * Views with NO backend contract today: each renders the inert
+ * `FacultyComingSoon` placeholder — no requests, no data, no actions.
+ */
+export const FACULTY_COMING_SOON_VIEWS: readonly FacultyView[] = [
+  'students',
+  'attendance',
+  'results',
+  'notices',
+  'resources',
+]
 
 export interface FacultyNavItem {
   readonly key: FacultyView
@@ -45,16 +71,34 @@ export interface FacultyNavItem {
 }
 
 /**
- * The faculty navigation, in display order. Deliberately contains ONLY
- * server-verified faculty capabilities — no student academic surfaces and no
- * administrative entries.
+ * The faculty navigation, in display order. Contains the server-verified
+ * faculty capabilities plus the inert "Coming Soon" placeholders — never an
+ * administrative entry.
  */
 export const FACULTY_NAV_ITEMS: readonly FacultyNavItem[] = [
   { key: 'dashboard', label: 'Dashboard' },
+  { key: 'assignments', label: 'My Sections' },
+  { key: 'students', label: 'Students' },
+  { key: 'attendance', label: 'Attendance' },
+  { key: 'results', label: 'Results' },
+  { key: 'notices', label: 'Notices' },
+  { key: 'resources', label: 'Learning Resources' },
   { key: 'assistant', label: 'AI Assistant' },
   { key: 'profile', label: 'Profile' },
-  { key: 'assignments', label: 'My Sections' },
 ]
+
+/**
+ * Permission required to render each VERIFIED view. The "Coming Soon"
+ * placeholders are deliberately absent: they expose no backend capability,
+ * so they are keyed off the resolved faculty role only (the shell renders
+ * them for any authenticated faculty identity).
+ */
+const FACULTY_VIEW_PERMISSIONS: Readonly<Partial<Record<FacultyView, string>>> = {
+  dashboard: 'profile.own.read',
+  assistant: 'ai.chat',
+  profile: 'profile.own.read',
+  assignments: 'faculty.assignments.read',
+}
 
 /**
  * Return the navigation for a server-resolved role.
@@ -63,14 +107,11 @@ export const FACULTY_NAV_ITEMS: readonly FacultyNavItem[] = [
  * `null`/unknown values) receives an EMPTY navigation — the fail-safe
  * behaviour, consistent with shell selection in `App.tsx`, which never
  * renders this shell for those roles in the first place.
+ *
+ * When `permissions` is provided, VERIFIED views are filtered by their
+ * required capability; the inert "Coming Soon" placeholders are always kept
+ * (no capability exists to check) — presentation only, never authorization.
  */
-const FACULTY_VIEW_PERMISSIONS: Readonly<Record<FacultyView, string>> = {
-  dashboard: 'profile.own.read',
-  assistant: 'ai.chat',
-  profile: 'profile.own.read',
-  assignments: 'faculty.assignments.read',
-}
-
 export function buildFacultyNavigation(
   role: string | null,
   permissions?: readonly string[],
@@ -78,17 +119,24 @@ export function buildFacultyNavigation(
   if (role === null) return []
   if (!FACULTY_SHELL_ROLES.includes(role)) return []
   if (permissions === undefined) return FACULTY_NAV_ITEMS
-  return FACULTY_NAV_ITEMS.filter((item) =>
-    hasPermission(permissions, FACULTY_VIEW_PERMISSIONS[item.key]),
-  )
+  return FACULTY_NAV_ITEMS.filter((item) => {
+    const required = FACULTY_VIEW_PERMISSIONS[item.key]
+    if (required === undefined) return true // inert placeholder — no capability to check
+    return hasPermission(permissions, required)
+  })
 }
 
 /** Human-readable heading for each view (used for the page `h1`). */
 export const FACULTY_VIEW_HEADINGS: Readonly<Record<FacultyView, string>> = {
   dashboard: 'Dashboard',
+  assignments: 'My Sections',
+  students: 'Students',
+  attendance: 'Attendance',
+  results: 'Results',
+  notices: 'Notices',
+  resources: 'Learning Resources',
   assistant: 'AI Assistant',
   profile: 'Profile',
-  assignments: 'My Sections',
 }
 
 /**

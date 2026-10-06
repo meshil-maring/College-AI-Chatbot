@@ -17,9 +17,14 @@ export default function FacultyProfile({ user }: { user: CurrentUser }) {
         aria-labelledby="faculty-profile-context-heading"
         className="rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-lg"
       >
-        <h2 id="faculty-profile-context-heading" className="text-lg font-semibold text-white">
-          Academic context
-        </h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 id="faculty-profile-context-heading" className="text-lg font-semibold text-white">
+            Academic context
+          </h2>
+          <span className="rounded-full bg-slate-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Coming Soon
+          </span>
+        </div>
         <p className="mt-2 text-sm text-slate-300">
           Your institution has not linked academic context (department,
           program, or assigned subjects) to faculty accounts yet. When your

@@ -1,8 +1,10 @@
 """Phase 7.23 institution-scoped Staff/Faculty lifecycle orchestration."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
+
+from supabase_auth.errors import AuthApiError
 
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
@@ -19,12 +21,11 @@ from app.schemas.admin_memberships import (
     MembershipRosterEntry,
 )
 from app.services import platform_admin_invitations as invitations
-from app.services import email_outbox_crypto
 
 ALLOWED_ROLES = frozenset({"staff", "faculty"})
 REQUEST_STATUSES = frozenset({"pending", "approved", "rejected"})
 ROSTER_STATUSES = frozenset(
-    {"active", "inactive", "deactivated", "invited", "pending"}
+    {"active", "inactive", "deactivated"}
 )
 
 
@@ -54,6 +55,39 @@ def _role(value: str | None) -> str | None:
     if value not in ALLOWED_ROLES:
         raise AppError("Unsupported membership role", 422, "INVALID_MEMBERSHIP_ROLE")
     return value
+
+
+def _approved_applicant(client, row: dict[str, Any]) -> dict[str, Any]:
+    applicant = repo.get_user(client, row.get("user_id"))
+    if (
+        applicant is None
+        or str(applicant.get("id")) != str(row.get("user_id"))
+        or str(applicant.get("email") or "").strip().lower()
+        != str(row.get("official_email") or "").strip().lower()
+        or applicant.get("status") != "active"
+        or not applicant.get("auth_user_id")
+    ):
+        raise AppError(
+            "The applicant account is not in a valid state",
+            409,
+            "APPLICANT_STATE_INVALID",
+        )
+    return applicant
+
+
+def _confirm_approved_applicant_email(client, applicant: dict[str, Any]) -> None:
+    """Admin approval verifies the institution email used for registration."""
+    try:
+        client.auth.admin.update_user_by_id(
+            str(applicant["auth_user_id"]),
+            {"email_confirm": True},
+        )
+    except AuthApiError as exc:
+        raise AppError(
+            "The account could not be enabled for sign-in. Please try again.",
+            502,
+            "MEMBERSHIP_EMAIL_CONFIRMATION_FAILED",
+        ) from exc
 
 
 def list_requests(
@@ -96,6 +130,9 @@ def decide_request(
     desired = "approved" if approve else "rejected"
     current = str(row.get("status"))
     if current == desired:
+        if approve:
+            applicant = _approved_applicant(client, row)
+            _confirm_approved_applicant_email(client, applicant)
         return MembershipDecisionResult(
             request_id=request_id,
             status=desired,
@@ -109,31 +146,14 @@ def decide_request(
             "MEMBERSHIP_REQUEST_ALREADY_DECIDED",
         )
     if approve:
-        applicant = repo.get_user(client, row.get("user_id"))
-        if (
-            applicant is None
-            or str(applicant.get("id")) != str(row.get("user_id"))
-            or str(applicant.get("email") or "").strip().lower()
-            != str(row.get("official_email") or "").strip().lower()
-            or applicant.get("status") != "active"
-        ):
-            raise AppError(
-                "The applicant account is not in a valid state",
-                409,
-                "APPLICANT_STATE_INVALID",
-            )
-    if approve:
-        raw_token = invitation_repo.generate_invitation_token()
-        decided = repo.approve_with_invitation(
+        applicant = _approved_applicant(client, row)
+        _confirm_approved_applicant_email(client, applicant)
+        decided = repo.approve_and_grant_role(
             client,
             request_id=request_id,
             institution_id=institution_id,
             decided_by_user_id=actor["user_id"],
             reason=reason,
-            token_hash=invitation_repo.hash_invitation_token(raw_token),
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(hours=invitations.INVITATION_TTL_HOURS),
-            protected_token=email_outbox_crypto.protect_invitation_token(raw_token),
         )
         if decided.get("already_applied"):
             return MembershipDecisionResult(
@@ -146,10 +166,22 @@ def decide_request(
             raise AppError("Membership request not found", 404, "MEMBERSHIP_REQUEST_NOT_FOUND")
         if decided.get("invalid_role"):
             raise AppError("Unsupported membership role", 422, "INVALID_MEMBERSHIP_ROLE")
+        if decided.get("role_not_configured"):
+            raise AppError(
+                "The requested role is not configured",
+                500,
+                "ROLE_NOT_CONFIGURED",
+            )
         if decided.get("invalid_state"):
             raise AppError("The applicant account is not in a valid state", 409, "APPLICANT_STATE_INVALID")
         if decided.get("conflict"):
             raise AppError("Membership request was decided concurrently", 409, "MEMBERSHIP_REQUEST_CONFLICT")
+        if not decided.get("role_granted"):
+            raise AppError(
+                "Unable to grant the requested membership role",
+                500,
+                "MEMBERSHIP_ROLE_GRANT_FAILED",
+            )
     else:
         decided = repo.decide_pending_request(
             client,
@@ -174,33 +206,22 @@ def decide_request(
             "MEMBERSHIP_REQUEST_CONFLICT",
         )
 
-    invitation_status = None
     if approve:
-        invitation_status = "invited"
-        action = f"{role}_invitation_created"
+        action = "membership_request_approved"
     else:
         action = "membership_request_rejected"
     _audit(
         actor,
         institution_id,
-        action if approve else "membership_request_rejected",
+        action,
         str(request_id),
-        {"role": role, "status": desired},
+        {"role": role, "status": desired, "access_granted": approve},
     )
-    if approve:
-        _audit(
-            actor,
-            institution_id,
-            "membership_request_approved",
-            str(request_id),
-            {"role": role, "status": desired},
-        )
     return MembershipDecisionResult(
         request_id=request_id,
         status=desired,
-        invitation_status=invitation_status,
         message=(
-            "Membership request approved and invitation queued."
+            f"Membership request approved. The {role} account can now sign in."
             if approve
             else "Membership request rejected. No role was assigned."
         ),
@@ -213,8 +234,6 @@ def list_roster(
     role = _role(role)
     if status is not None and status not in ROSTER_STATUSES:
         raise AppError("Unsupported roster status", 422, "INVALID_MEMBERSHIP_STATUS")
-    if status == "pending":
-        status = "invited"
     client = get_admin_client()
     entries: list[MembershipRosterEntry] = []
     for grant in repo.list_scoped_role_grants(client, institution_id):
@@ -239,25 +258,6 @@ def list_roster(
                 updated_at=user.get("updated_at") or grant.get("updated_at"),
             )
         )
-    if status is None or status == "invited":
-        for invitation in invitation_repo.list_invitations(client, institution_id):
-            role_name = invitation.get("role_name")
-            if role_name not in ALLOWED_ROLES or (role is not None and role_name != role):
-                continue
-            if invitation.get("status") != invitation_repo.STATUS_INVITED:
-                continue
-            entries.append(
-                MembershipRosterEntry(
-                    invitation_id=invitation["invitation_id"],
-                    name="",
-                    email=str(invitation.get("email") or ""),
-                    role=role_name,
-                    status="invited",
-                    invitation_status=str(invitation.get("email_delivery_status") or "pending"),
-                    created_at=invitation.get("created_at"),
-                    updated_at=invitation.get("updated_at"),
-                )
-            )
     entries.sort(key=lambda item: (item.role, item.email.lower()))
     return MembershipRoster(members=entries, total=len(entries))
 

@@ -331,6 +331,9 @@ def _run(payload, state, auth_client=None):
       assert the auth account was deleted)
     """
     fake_admin = MagicMock()
+    confirmed = MagicMock()
+    confirmed.user = MagicMock(id=AUTH_ID, email="admin@imphal.example.com")
+    fake_admin.auth.admin.create_user.return_value = confirmed
     state["_fake_admin_client"] = fake_admin
     auth = auth_client or _auth_ok()
     state["_auth_client"] = auth
@@ -415,6 +418,40 @@ def test_pending_join_request_created():
     assert jrs[0]["institution_id"] == INST_ID
     assert jrs[0]["requested_institution_code"] == "IMPHAL"
     assert jrs[0]["requested_by_user_id"] == USER_ID
+
+
+def test_platform_onboarding_registration_is_active_without_approval():
+    """The public university flow bypasses only the Platform Manager gate."""
+    state = _base_state()
+    state["organization"] = _org_row(
+        organization_code="COLLEGE-AI-PLATFORM",
+        join_code=None,
+    )
+
+    resp = _run(
+        _payload(
+            organization_code="COLLEGE-AI-PLATFORM",
+            join_code=None,
+        ),
+        state,
+    )
+
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["status"] == "active"
+    assert "can sign in now" in resp.json()["message"]
+    assert state["inserted_institutions"][0]["status"] == "active"
+    assert state["inserted_institutions"][0]["is_active"] is True
+    assert state.get("inserted_join_requests") is None
+    assert state["assigned_roles"][0]["scope_type"] == "institution"
+    assert state["assigned_roles"][0]["scope_id"] == INST_ID
+    state["_fake_admin_client"].auth.admin.create_user.assert_called_once_with(
+        {
+            "email": "admin@imphal.example.com",
+            "password": "secret123",
+            "email_confirm": True,
+        }
+    )
+    assert state["_auth_client"].auth.sign_up.called is False
 
 
 # ============================================================================

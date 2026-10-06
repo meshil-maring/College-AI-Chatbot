@@ -281,16 +281,39 @@ def _assert_no_duplicate_identities(
             status_code=409,
             code="ROLL_NUMBER_ALREADY_REGISTERED",
         )
-def _create_auth_account(email: str, password: str) -> str:
+
+
+def _create_auth_account(
+    email: str,
+    password: str,
+    *,
+    email_confirm: bool = False,
+) -> str:
     """Create the Supabase Auth account via the existing signup mechanism.
 
     The password is handed to GoTrue and is never stored, hashed, or logged
     by this application. Duplicate auth emails surface as AuthApiError and
     are translated to the project's AppError convention.
+
+    ``email_confirm=True`` is reserved for server-approved onboarding flows
+    that must be usable immediately. It uses the service-role Admin API so the
+    result does not depend on the Supabase project's public email-confirmation
+    setting. Ordinary self-service registrations retain public sign-up and its
+    configured confirmation policy.
     """
-    client = create_supabase_client()
     try:
-        response = client.auth.sign_up({"email": email, "password": password})
+        if email_confirm:
+            response = get_admin_client().auth.admin.create_user(
+                {
+                    "email": email,
+                    "password": password,
+                    "email_confirm": True,
+                }
+            )
+        else:
+            response = create_supabase_client().auth.sign_up(
+                {"email": email, "password": password}
+            )
     except AuthApiError as exc:
         # Supabase reports an already-registered auth email with 4xx
         # (typically 422 email_exists / 400 user_already_exists). That is a
@@ -310,7 +333,13 @@ def _create_auth_account(email: str, password: str) -> str:
             status_code=status,
             code="AUTH_ERROR",
         ) from exc
-    return response.user.id
+    if response.user is None or not response.user.id:
+        raise AppError(
+            "Authentication account creation did not return a user",
+            status_code=502,
+            code="AUTH_ACCOUNT_UNAVAILABLE",
+        )
+    return str(response.user.id)
 
 
 def _create_public_user(

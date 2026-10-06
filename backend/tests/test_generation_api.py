@@ -91,6 +91,8 @@ def test_new_chat_generates_and_returns_uuid4() -> None:
     assert response.status_code == 200
     session_id = UUID(response.json()["session_id"])
     assert session_id.version == 4
+    assert response.json()["model_used"] is None
+    assert response.json()["metadata"] == {}
 
 
 def test_existing_session_id_is_preserved_and_propagated() -> None:

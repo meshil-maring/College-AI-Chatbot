@@ -4,7 +4,6 @@ import {
   decideMembershipRequest,
   listMembershipRequests,
   listMembershipRoster,
-  resendMembershipInvitation,
 } from '../../services/adminApi.ts'
 import type {
   MembershipRequest,
@@ -78,22 +77,6 @@ export default function StaffFacultyManager({ accessToken }: { accessToken: stri
     }
   }
 
-  async function resend(member: MembershipRosterEntry) {
-    if (!member.invitation_id) return
-    setActionKey(`resend:${member.invitation_id}`)
-    setError(null)
-    setSuccess(null)
-    try {
-      await resendMembershipInvitation(accessToken, member.invitation_id)
-      setSuccess('A new invitation was queued. The previous link is no longer valid.')
-      await load()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not resend this invitation.')
-    } finally {
-      setActionKey(null)
-    }
-  }
-
   const buttonClass = 'rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50'
 
   return (
@@ -133,18 +116,16 @@ export default function StaffFacultyManager({ accessToken }: { accessToken: stri
         <h2 id="membership-roster-heading" className="text-lg font-semibold text-white">Roster</h2>
         {loading ? <p role="status" className="mt-4 text-sm text-slate-300">Loading roster…</p> : members.length === 0 ? <p className="mt-4 text-sm text-slate-400">No staff or faculty are on the roster yet.</p> : (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="text-xs uppercase text-slate-400"><tr><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">Role</th><th className="p-2">Status</th><th className="p-2">Invitation</th><th className="p-2">Actions</th></tr></thead>
+            <table className="w-full min-w-[600px] text-left text-sm">
+              <thead className="text-xs uppercase text-slate-400"><tr><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">Role</th><th className="p-2">Status</th><th className="p-2">Actions</th></tr></thead>
               <tbody>
                 {members.map((member) => (
-                  <tr key={member.user_id ?? member.invitation_id ?? member.email} className="border-t border-slate-700">
+                  <tr key={member.user_id} className="border-t border-slate-700">
                     <td className="p-2 text-white">{member.name || 'Pending setup'}</td>
                     <td className="p-2 text-slate-300">{member.email}</td>
                     <td className="p-2 capitalize text-slate-300">{member.role}</td>
                     <td className="p-2 capitalize text-slate-300">{member.status}</td>
-                    <td className="p-2 capitalize text-slate-300">{member.invitation_status ?? '—'}</td>
                     <td className="p-2">
-                      {member.status === 'invited' && member.invitation_id ? <button type="button" disabled={actionKey !== null} onClick={() => void resend(member)} className={buttonClass}>{actionKey === `resend:${member.invitation_id}` ? 'Resending…' : 'Resend invitation'}</button> : null}
                       {member.user_id && member.status === 'active' ? <button type="button" disabled={actionKey !== null} onClick={() => void lifecycle(member, 'deactivate')} className={buttonClass}>{actionKey === `deactivate:${member.user_id}` ? 'Deactivating…' : 'Deactivate'}</button> : null}
                       {member.user_id && (member.status === 'inactive' || member.status === 'deactivated') ? <button type="button" disabled={actionKey !== null} onClick={() => void lifecycle(member, 'reactivate')} className={buttonClass}>{actionKey === `reactivate:${member.user_id}` ? 'Reactivating…' : 'Reactivate'}</button> : null}
                     </td>

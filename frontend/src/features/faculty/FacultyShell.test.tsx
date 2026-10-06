@@ -7,7 +7,7 @@
  */
 
 /// <reference types="vitest/globals" />
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import FacultyShell from './FacultyShell.tsx'
@@ -55,15 +55,53 @@ beforeEach(() => {
   chatShellSpy.mockClear()
 })
 
+afterEach(() => {
+  // The fetch-absence test stubs the global; never leak it to other tests.
+  vi.unstubAllGlobals()
+})
+
 describe('FacultyShell', () => {
-  it('renders the faculty navigation with only authorized surfaces', () => {
+  it('renders the faculty navigation with verified capabilities and Coming Soon sections', () => {
     render(<FacultyShell />)
     const nav = screen.getByRole('navigation', { name: 'Faculty navigation' })
     expect(nav).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'My Sections' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Students' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Attendance' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Results' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Notices' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Learning Resources' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'AI Assistant' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Profile' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'My Sections' })).toBeInTheDocument()
+  })
+
+  it('renders an inert Coming Soon placeholder for each section without a backend contract', async () => {
+    const user = userEvent.setup()
+    render(<FacultyShell />)
+    for (const label of ['Students', 'Attendance', 'Results', 'Notices', 'Learning Resources']) {
+      await user.click(screen.getByRole('button', { name: label }))
+      expect(screen.getByRole('heading', { name: label, level: 1 })).toBeInTheDocument()
+      expect(screen.getByText('Coming Soon')).toBeInTheDocument()
+      expect(
+        screen.getByText('No information is available for this section yet.'),
+      ).toBeInTheDocument()
+      // Inert placeholder: no data rows, no actions, no assistant.
+      expect(screen.queryByRole('button', { name: /open|save|delete|submit/i })).not.toBeInTheDocument()
+      expect(chatShellSpy).not.toHaveBeenCalled()
+    }
+  })
+
+  it('never performs a request when browsing Coming Soon sections', async () => {
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    const user = userEvent.setup()
+    render(<FacultyShell />)
+    for (const label of ['Students', 'Attendance', 'Results', 'Notices', 'Learning Resources']) {
+      await user.click(screen.getByRole('button', { name: label }))
+    }
+    expect(fetchSpy).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
   })
 
   it('never renders admin navigation', () => {
