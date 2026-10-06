@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.config import settings
@@ -34,6 +35,7 @@ from app.api.student_notifications import router as student_notifications_router
 from app.api.dev_auth import router as dev_auth_router
 from app.api.faculty import router as faculty_router
 from app.schemas.chat import (
+    AuthenticatedChatRequest,
     ChatRequest,
     ChatResponse,
     PublicAPIErrorResponse,
@@ -47,6 +49,8 @@ from app.services.generation_provider import OpenRouterGenerationProvider
 from app.services.session import resolve_session_context
 from app.core.startup_validation import run_startup_configuration_validation
 from app.middleware.public_body_limit import PublicChatBodyLimitMiddleware
+from app.middleware.request_limits import RequestSizeLimitMiddleware
+from app.middleware.api_rate_limit import ApiRateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.db.supabase import get_admin_client
 from app.services.public_abuse_controls import (
@@ -67,15 +71,27 @@ app = FastAPI(
     redoc_url="/redoc" if settings.effective_api_docs_enabled else None,
     openapi_url="/openapi.json" if settings.effective_api_docs_enabled else None,
 )
-app.add_middleware(PublicChatBodyLimitMiddleware)
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=settings.effective_allowed_hosts,
-)
 app.add_middleware(
     SecurityHeadersMiddleware,
     enable_hsts=not settings.is_local_environment,
 )
+if settings.effective_cors_allowed_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.effective_cors_allowed_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Accept"],
+        expose_headers=["Retry-After"],
+        max_age=600,
+    )
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.effective_allowed_hosts,
+)
+app.add_middleware(ApiRateLimitMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
+app.add_middleware(PublicChatBodyLimitMiddleware)
 
 app.add_exception_handler(AppError, app_error_handler)
 
@@ -174,7 +190,7 @@ _INSTITUTION_CHAT = require_institution_roles("admin", "staff", "faculty", "stud
     dependencies=[Depends(require_permission("ai.chat"))],
 )
 def chat(
-    request: ChatRequest,
+    request: AuthenticatedChatRequest,
     current_user: dict = Depends(_INSTITUTION_CHAT),
 ) -> ChatResponse:
     """Process one chat request with persistent conversation and message records.
@@ -185,12 +201,17 @@ def chat(
     missing/inactive scope fails closed and a mismatch returns 403.
     """
     tenant_id = scope_tenant(current_user, request.institution_id)
-    request = request.model_copy(update={"institution_id": tenant_id})
+    internal_request = ChatRequest(
+        user_query=request.user_query,
+        session_id=request.session_id,
+        conversation_id=request.conversation_id,
+        institution_id=tenant_id,
+    )
     session_context = resolve_session_context(
         SessionContextRequest(session_id=request.session_id)
     )
     return process_chat_request(
-        request,
+        internal_request,
         session_context,
         OpenRouterGenerationProvider(),
         user_id=current_user["user_id"],

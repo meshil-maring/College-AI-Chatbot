@@ -48,7 +48,14 @@ from app.schemas.admin import DocumentVersionCreate
 from app.services.chunking import chunk_text
 from app.services.embeddings import embed_processing_run
 from app.services.extraction import extract_text
-from app.services.ingestion import _extension, _safe_filename, _validate, ingest_document
+from app.services.ingestion import (
+    _extension,
+    _safe_filename,
+    _validate,
+    ingest_document,
+    read_upload_limited,
+    validate_file_content,
+)
 from app.services.storage import (
     delete_file,
     download_file,
@@ -102,12 +109,13 @@ def process_run_to_retrieval(
         data = download_file(r2, dv["storage_bucket"], dv["storage_object_key"])
         text = extract_text(data, dv["file_type"])
     except Exception as exc:
+        logger.exception("Document extraction failed (processing_run_id=%s)", run_id)
         update_run_status(
             db,
             run_id,
             status="failed",
             completed_at=_utc_now(),
-            error_message=str(exc)[:1000],
+            error_message="Document extraction failed; see server logs",
         )
         raise AppError(
             "Document processing failed during extraction",
@@ -138,13 +146,14 @@ def process_run_to_retrieval(
         if chunks:
             insert_chunks(db, run_id, chunks)
     except Exception as exc:
+        logger.exception("Document chunking failed (processing_run_id=%s)", run_id)
         delete_chunks_for_run(db, run_id)
         update_run_status(
             db,
             run_id,
             status="failed",
             completed_at=_utc_now(),
-            error_message=str(exc)[:1000],
+            error_message="Document chunking failed; see server logs",
         )
         raise AppError(
             "Document processing failed during chunking",
@@ -156,12 +165,13 @@ def process_run_to_retrieval(
     try:
         embeddings_created = embed_processing_run(run_id)
     except Exception as exc:
+        logger.exception("Document embedding failed (processing_run_id=%s)", run_id)
         update_run_status(
             db,
             run_id,
             status="failed",
             completed_at=_utc_now(),
-            error_message=str(exc)[:1000],
+            error_message="Document embedding failed; see server logs",
         )
         raise
 
@@ -272,8 +282,9 @@ async def update_document(
     latest version is superseded and marked as such). The superseded versions'
     chunks/embeddings are purged so stale retrieval content is removed.
     """
-    data = await file.read()
+    data = await read_upload_limited(file)
     _validate(file.filename or "", file.content_type or "", len(data))
+    validate_file_content(file.filename or "", data)
 
     db = get_admin_client()
     doc = get_document_with_versions(db, str(document_id))

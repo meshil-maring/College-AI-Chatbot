@@ -33,14 +33,26 @@ class SecurityHeadersMiddleware:
                 add(b"x-content-type-options", b"nosniff")
                 add(b"referrer-policy", b"no-referrer")
                 add(b"x-frame-options", b"DENY")
+                add(b"x-permitted-cross-domain-policies", b"none")
                 add(
                     b"permissions-policy",
                     b"camera=(), microphone=(), geolocation=()",
                 )
+                path = str(scope.get("path") or "")
+                if path.startswith("/api/"):
+                    add(b"cache-control", b"no-store")
                 if self.enable_hsts:
                     add(
                         b"strict-transport-security",
                         b"max-age=31536000; includeSubDomains",
+                    )
+                    # The deployed backend is an API, not an HTML application.
+                    # Swagger/ReDoc are disabled in this environment, so a
+                    # deny-all document policy is safe and prevents accidental
+                    # active content execution if an error is served as HTML.
+                    add(
+                        b"content-security-policy",
+                        b"default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
                     )
                 message["headers"] = headers
             await send(message)

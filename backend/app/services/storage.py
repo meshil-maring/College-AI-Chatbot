@@ -2,6 +2,7 @@ import boto3
 from botocore.client import BaseClient
 
 from app.config import settings
+from app.core.errors import AppError
 
 
 def _r2_endpoint() -> str:
@@ -44,4 +45,19 @@ def delete_file(r2: BaseClient, bucket: str, object_key: str) -> None:
 def download_file(r2: BaseClient, bucket: str, object_key: str) -> bytes:
     """Download an R2 object and return its raw bytes."""
     response = r2.get_object(Bucket=bucket, Key=object_key)
-    return response["Body"].read()
+    maximum = settings.max_upload_size_mb * 1024 * 1024
+    declared = response.get("ContentLength")
+    if isinstance(declared, int) and declared > maximum:
+        raise AppError(
+            "Stored document exceeds the configured size limit",
+            status_code=422,
+            code="STORAGE_OBJECT_TOO_LARGE",
+        )
+    data = response["Body"].read(maximum + 1)
+    if len(data) > maximum:
+        raise AppError(
+            "Stored document exceeds the configured size limit",
+            status_code=422,
+            code="STORAGE_OBJECT_TOO_LARGE",
+        )
+    return data

@@ -36,7 +36,7 @@ Security invariants (inherited from the existing schemas and services):
 * Approval / activation workflow is explicitly Phase 6.13.4 — not here.
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from uuid import UUID
 
 from app.core.security import authorize_permissions, get_current_user
@@ -53,6 +53,7 @@ from app.services.tenancy import (
     lookup_institution_by_code,
     register_institution,
 )
+from app.services.auth_security import enforce_auth_rate_limit
 
 router = APIRouter(prefix="/institutions", tags=["institutions"])
 
@@ -113,6 +114,7 @@ def lookup_institution_endpoint(
 )
 def register_institution_endpoint(
     body: InstitutionRegistrationRequest,
+    request: Request,
 ) -> InstitutionRegistrationResponse:
     """Register an institution + create its initial institution admin.
 
@@ -121,6 +123,7 @@ def register_institution_endpoint(
     organization from the public code, assigns the ``admin`` role with
     ``institution`` scope server-side, and records the pending join request.
     """
+    enforce_auth_rate_limit("registration", request)
     return register_institution(body)
 
 

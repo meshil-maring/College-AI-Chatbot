@@ -12,8 +12,9 @@ Security: the request schema is ``extra="forbid"``, so client-supplied
 Phase 6.4 and is never reachable from this endpoint.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
+from app.services.auth_security import enforce_auth_rate_limit
 from app.services.student_registration import (
     RegistrationResponse,
     StudentRegistrationRequest,
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/registration", tags=["registration"])
 @router.post("", status_code=201, response_model=RegistrationResponse)
 def register_student_endpoint(
     body: StudentRegistrationRequest,
+    request: Request,
 ) -> RegistrationResponse:
     """Submit a student registration request for a specific institution.
 
@@ -34,4 +36,5 @@ def register_student_endpoint(
     institution creation keys, ...) is rejected with 422. The created student
     always has ``approval_status='pending'``.
     """
+    enforce_auth_rate_limit("registration", request)
     return register_student(body)

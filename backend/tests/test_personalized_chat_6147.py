@@ -1019,7 +1019,7 @@ class TestResponseAndGenerationCompatibility:
 
 
 class TestIdentityCannotBeOverridden:
-    def test_19_request_body_identity_fields_are_dropped(self):
+    def test_19_request_body_identity_fields_are_rejected(self):
         app.dependency_overrides[get_current_user] = lambda: _user()
         captured: dict = {}
 
@@ -1053,21 +1053,8 @@ class TestIdentityCannotBeOverridden:
         with patch.object(main_module, "process_chat_request", side_effect=_capture):
             response = http_client.post("/api/v1/generation/chat", json=payload)
 
-        assert response.status_code == 200
-        assert captured["user_id"] == STUDENT_USER_ID
-        assert captured["current_user"]["user_id"] == STUDENT_USER_ID
-        assert captured["current_user"]["institution_id"] == TENANT_A
-        request = captured["request"]
-        for field in (
-            "student_id",
-            "user_id",
-            "auth_user_id",
-            "email",
-            "register_number",
-            "university_roll_number",
-            "organization_id",
-        ):
-            assert not hasattr(request, field)
+        assert response.status_code == 422
+        assert captured == {}
 
     def test_19b_query_text_identity_claims_never_select_data(self):
         hostile = (
@@ -1142,12 +1129,12 @@ class TestExistingChatRegression:
         assert second.academic_spy.call_args[0][0]["user_id"] == OTHER_USER_ID
 
     def test_20d_conversation_ownership_remains_enforced(self):
-        """A foreign conversation is still rejected with 403 FORBIDDEN."""
+        """A foreign conversation is hidden behind the same 404 as a missing one."""
         with pytest.raises(AppError) as exc:
             _run_chat(
                 PERSONAL_QUERY,
                 conversation_user_id=OTHER_USER_ID,
                 academic=_academic_context(),
             )
-        assert exc.value.status_code == 403
-        assert exc.value.code == "FORBIDDEN"
+        assert exc.value.status_code == 404
+        assert exc.value.code == "CONVERSATION_NOT_FOUND"

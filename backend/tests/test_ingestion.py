@@ -6,6 +6,7 @@ Unit tests mock all external I/O (Supabase DB + Cloudflare R2).
 
 import hashlib
 import io
+import zipfile
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -168,9 +169,13 @@ def test_ingest_pdf_success():
 
 
 def test_ingest_docx_success():
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("[Content_Types].xml", "<Types />")
+        archive.writestr("word/document.xml", "<w:document />")
     response = _post_ingest(
         "handbook.docx",
-        b"PK fake docx bytes",
+        buffer.getvalue(),
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
     assert response.status_code == 201

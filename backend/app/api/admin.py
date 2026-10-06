@@ -25,6 +25,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, Request, UploadFile
 
+from app.config import settings
 from app.core.errors import AppError
 from app.core.security import (
     authorize_permissions,
@@ -80,6 +81,7 @@ from app.services.admin_academics import (
     TestResultCreate,
     TestResultUpdate,
 )
+from app.services.ingestion import read_upload_limited
 
 logger = logging.getLogger(__name__)
 
@@ -1052,7 +1054,7 @@ async def upload_results_csv(
 ) -> admin_academics.CsvUploadResult:
     """Validate and import result rows; bad rows are reported, valid rows kept."""
     institution_id = _scope_institution(current_user, institution_id)
-    content = await file.read()
+    content = await read_upload_limited(file, settings.max_csv_upload_bytes)
     summary = admin_academics.upload_results_csv(content, institution_id)
     _record_audit(
         current_user,

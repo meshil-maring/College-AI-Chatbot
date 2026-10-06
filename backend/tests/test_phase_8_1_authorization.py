@@ -158,12 +158,17 @@ def test_database_permission_projection_enforces_permission_scope(
                 ],
             },
         }],
-        "user_permission_grants": [],
+        "user_permission_grants": [{
+            "institution_id": TENANT_A,
+            "revoked_at": None,
+            "permissions": {"code": "attendance.manage", "is_active": True},
+        }],
         "students": [],
     }
 
     class Query:
-        def select(self, *_args):
+        def select(self, projection):
+            self.projection = projection
             return self
 
         def eq(self, *_args):
@@ -175,13 +180,21 @@ def test_database_permission_projection_enforces_permission_scope(
         def execute(self):
             return SimpleNamespace(data=row)
 
-    db = SimpleNamespace(table=lambda _name: Query())
+    query = Query()
+    db = SimpleNamespace(table=lambda _name: query)
     with patch("app.db.supabase.get_admin_client", return_value=db):
         resolved = asyncio.run(
             supabase.get_user_by_auth_id("auth-actor", include_permissions=True)
         )
     assert resolved is not None
     assert resolved["effective_permissions"] == expected_permissions
+    assert resolved["direct_permission_grants"] == [
+        {"institution_id": TENANT_A, "permission": "attendance.manage"}
+    ]
+    assert (
+        "user_permission_grants!user_permission_grants_user_id_fkey("
+        in query.projection
+    )
 
 
 def test_staff_permission_api_rejects_non_delegable_permission_before_rpc() -> None:

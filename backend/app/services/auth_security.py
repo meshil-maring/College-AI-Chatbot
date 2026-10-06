@@ -28,8 +28,14 @@ def enforce_auth_rate_limit(
         return
 
     peer = request.client.host if request.client is not None else "unknown"
+    registration_limit = settings.auth_registration_ip_limit_requests
+    if settings.is_local_environment:
+        # Development/test clients commonly share one loopback peer. Keep the
+        # production default strict without coupling unrelated local tests.
+        registration_limit = max(registration_limit, 10_000)
     limits = {
         "login": settings.auth_login_ip_limit_requests,
+        "registration": registration_limit,
         "recovery": settings.auth_recovery_ip_limit_requests,
         "password": settings.auth_password_ip_limit_requests,
     }

@@ -146,10 +146,10 @@ class StudentRegistrationRequest(BaseModel):
     institution_id: UUID
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)  # provider-owned credential only
-    first_name: str
-    last_name: str
-    register_number: str | None = None
-    university_roll_number: str | None = None
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    register_number: str | None = Field(default=None, max_length=128)
+    university_roll_number: str | None = Field(default=None, max_length=128)
     enrollment_date: date | None = None
 
     @field_validator("password")

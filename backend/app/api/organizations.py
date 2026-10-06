@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.core.security import authorize_permissions, get_current_user
 from app.schemas.tenancy import (
@@ -35,6 +35,7 @@ from app.services.tenancy import (
     get_authorization_context_for_user,
     register_organization,
 )
+from app.services.auth_security import enforce_auth_rate_limit
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 
@@ -57,13 +58,17 @@ ORGANIZATION_PERMISSION_POLICIES = {
     Public / self-service — no authentication required.
     """,
 )
-def register_organization_endpoint(body: OrganizationRegistrationRequest) -> OrganizationResponse:
+def register_organization_endpoint(
+    body: OrganizationRegistrationRequest,
+    request: Request,
+) -> OrganizationResponse:
     """Register an organization + create its initial organization admin.
 
     Public endpoint. The request schema is ``extra="forbid"`` so clients
     cannot inject role / scope / status fields. The service assigns the
     ``admin`` role with ``organization`` scope server-side.
     """
+    enforce_auth_rate_limit("registration", request)
     return register_organization(body)
 
 

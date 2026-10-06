@@ -539,9 +539,9 @@ def process_chat_request(
         if str(conversation["user_id"]) != str(user_id):
             from app.core.errors import AppError
             raise AppError(
-                "Conversation does not belong to the authenticated user",
-                status_code=403,
-                code="FORBIDDEN",
+                "Conversation not found",
+                status_code=404,
+                code="CONVERSATION_NOT_FOUND",
             )
         # NOTE (latency): the blocking ``update_conversation_timestamp`` write
         # that used to live here is intentionally NOT on the request path. The

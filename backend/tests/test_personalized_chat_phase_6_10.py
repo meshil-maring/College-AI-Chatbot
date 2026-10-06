@@ -1164,7 +1164,7 @@ class TestChatPipelinePersonalization:
         assert "do not recompute" in context.grounding_instructions
 
     def test_conversation_ownership_remains_enforced(self):
-        """Scenario 25: another user's conversation is still rejected (403)
+        """Scenario 25: another user's conversation is hidden with a 404
         even for personalized questions."""
         with pytest.raises(AppError) as exc:
             _run_chat(
@@ -1173,8 +1173,8 @@ class TestChatPipelinePersonalization:
                 conversation_user_id=OTHER_USER_ID,
                 conversation_exists=True,
             )
-        assert exc.value.status_code == 403
-        assert exc.value.code == "FORBIDDEN"
+        assert exc.value.status_code == 404
+        assert exc.value.code == "CONVERSATION_NOT_FOUND"
 
     def test_structured_response_contract_remains_intact(self):
         """Scenario 27: the Phase 4.4 structured response schema is unchanged."""
@@ -1268,7 +1268,7 @@ class TestHttpBoundary:
     def test_http_identity_fields_cannot_change_context(self):
         """Scenarios 5/6/7/8/9/10 at the HTTP layer: spoofed identity fields in
         the request body are dropped by the schema and the authenticated JWT
-        identity is what reaches the pipeline."""
+        identity is rejected before the pipeline."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
 
         captured: dict = {}
@@ -1282,19 +1282,8 @@ class TestHttpBoundary:
         with patch("app.main.process_chat_request", side_effect=process):
             response = client.post("/api/v1/generation/chat", json=_spoofed_payload())
 
-        assert response.status_code == 200
-        assert captured["user_id"] == STUDENT_USER_ID
-        assert captured["current_user"]["user_id"] == STUDENT_USER_ID
-        assert captured["current_user"]["institution_id"] == TENANT_A
-        # The request contract carries no client-choosable identity fields.
-        assert not hasattr(captured["request"], "student_id")
-        assert not hasattr(captured["request"], "user_id")
-        assert not hasattr(captured["request"], "auth_user_id")
-        assert not hasattr(captured["request"], "register_number")
-        assert not hasattr(captured["request"], "university_roll_number")
-        # The tenant was re-derived server-side (scope_tenant), not taken from
-        # any client-supplied value.
-        assert str(captured["request"].institution_id) == TENANT_A
+        assert response.status_code == 422
+        assert captured == {}
 
     def test_ineligible_student_chat_returns_phase69_error_through_api(self):
         """Scenarios 13/14: an admin (no student profile) asking a personal
@@ -1319,7 +1308,7 @@ class TestHttpBoundary:
         ):
             response = client.post(
                 "/api/v1/generation/chat",
-                json=_spoofed_payload(user_query="What is my attendance?"),
+                json={"user_query": "What is my attendance?", "institution_id": TENANT_A},
             )
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "STUDENT_PROFILE_NOT_FOUND"
@@ -1345,7 +1334,7 @@ class TestHttpBoundary:
         ):
             response = client.post(
                 "/api/v1/generation/chat",
-                json=_spoofed_payload(user_query="What is machine learning?"),
+                json={"user_query": "What is machine learning?", "institution_id": TENANT_A},
             )
         assert response.status_code == 200
         m_ctx.assert_not_called()

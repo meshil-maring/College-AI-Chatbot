@@ -210,7 +210,8 @@ def _session_payload(session, user) -> dict:
 
 
 @router.post("/signup", status_code=201)
-def signup(body: AuthRequest):
+def signup(body: AuthRequest, request: Request):
+    enforce_auth_rate_limit("registration", request)
     if len(body.password) < PASSWORD_MIN_LENGTH:
         raise AppError(
             f"Password must be at least {PASSWORD_MIN_LENGTH} characters.",
@@ -231,8 +232,13 @@ def signup(body: AuthRequest):
             "message": "Signup successful.",
             "user": {"id": response.user.id, "email": response.user.email},
         }
-    except AuthApiError as e:
-        raise AppError(e.message, status_code=e.status, code="AUTH_ERROR")
+    except AuthApiError as exc:
+        logger.warning("event=auth_signup_failed category=%s", type(exc).__name__)
+        raise AppError(
+            "Signup could not be completed. Check the submitted details and try again.",
+            status_code=400,
+            code="AUTH_SIGNUP_FAILED",
+        ) from exc
 
 
 @router.post("/login")

@@ -54,7 +54,8 @@ async def get_user_by_auth_id(
         "user_roles(scope_type, scope_id, scope_organization_id, "
         "roles(name, is_active, "
         "role_permissions(permissions(code, is_active, scope)))), "
-        "user_permission_grants(institution_id, revoked_at, "
+        "user_permission_grants!user_permission_grants_user_id_fkey("
+        "institution_id, revoked_at, "
         "permissions(code, is_active))"
         if include_permissions
         else "user_roles(scope_type, scope_id, scope_organization_id, "

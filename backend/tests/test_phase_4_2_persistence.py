@@ -156,7 +156,7 @@ def test_existing_conversation_reuses_conversation_id() -> None:
 
 
 def test_conversation_ownership_verification_rejects_unauthorized() -> None:
-    """Phase 4.2: Attempting to access another user's conversation raises 403."""
+    """Another user's conversation is indistinguishable from a missing one."""
     conversation_id = uuid4()
     other_user_id = uuid4()
 
@@ -186,10 +186,10 @@ def test_conversation_ownership_verification_rejects_unauthorized() -> None:
     ):
         try:
             process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
-            assert False, "Expected AppError with 403"
+            assert False, "Expected AppError with 404"
         except Exception as e:
-            assert "does not belong to the authenticated user" in str(e)
-            assert hasattr(e, "status_code") and e.status_code == 403
+            assert str(e) == "Conversation not found"
+            assert hasattr(e, "status_code") and e.status_code == 404
 
 
 def test_user_message_persisted_with_correct_sequence() -> None:

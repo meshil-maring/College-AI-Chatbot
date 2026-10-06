@@ -25,6 +25,30 @@ class ChatRequest(BaseModel):
     model_name: str | None = None
 
 
+class AuthenticatedChatRequest(BaseModel):
+    """Narrow HTTP contract for authenticated chat.
+
+    Retrieval candidates, filters, provider/model choice, and output budgets
+    are deliberately absent. They are internal controls and are reconstructed
+    by the server after authentication and tenant resolution.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_query: str = Field(min_length=1, max_length=4000)
+    session_id: UUID | None = None
+    conversation_id: UUID | None = None
+    institution_id: UUID
+
+    @field_validator("user_query")
+    @classmethod
+    def normalize_user_query(cls, value: str) -> str:
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("user_query must not be empty")
+        return normalized
+
+
 class ChatResponse(AIResponse):
     """Generation response carrying the request-scoped session identity."""
 

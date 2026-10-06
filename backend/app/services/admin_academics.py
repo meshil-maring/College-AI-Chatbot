@@ -18,6 +18,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.config import settings
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import admin_academics as academics_repo
@@ -808,6 +809,12 @@ def upload_results_csv(
 
     for line_no, raw in enumerate(reader, start=2):
         total_rows += 1
+        if total_rows > settings.max_csv_rows:
+            raise AppError(
+                f"CSV exceeds the maximum of {settings.max_csv_rows} data rows",
+                status_code=413,
+                code="CSV_TOO_MANY_ROWS",
+            )
         row = {
             (key or "").strip(): (value.strip() if isinstance(value, str) else value)
             for key, value in raw.items()

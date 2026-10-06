@@ -1,7 +1,9 @@
 import hashlib
+import io
 import logging
 import re
 import uuid
+import zipfile
 
 from fastapi import UploadFile
 
@@ -22,6 +24,11 @@ ALLOWED_MIME_TYPES = {
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/plain",
+}
+MIME_TYPE_BY_EXTENSION = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "txt": "text/plain",
 }
 
 logger = logging.getLogger(__name__)
@@ -54,9 +61,10 @@ def _validate(filename: str, content_type: str, size: int) -> None:
             status_code=422,
             code="INVALID_FILE_TYPE",
         )
-    if content_type not in ALLOWED_MIME_TYPES:
+    extension = _extension(filename)
+    if content_type not in ALLOWED_MIME_TYPES or MIME_TYPE_BY_EXTENSION.get(extension) != content_type:
         raise AppError(
-            f"Unsupported MIME type: {content_type}",
+            "The declared file type does not match the filename",
             status_code=422,
             code="INVALID_MIME_TYPE",
         )
@@ -69,14 +77,130 @@ def _validate(filename: str, content_type: str, size: int) -> None:
         )
 
 
+async def read_upload_limited(file: UploadFile, max_bytes: int | None = None) -> bytes:
+    """Read an upload with a hard cap even if request metadata is dishonest."""
+    limit = max_bytes or settings.max_upload_size_mb * 1024 * 1024
+    chunks: list[bytes] = []
+    consumed = 0
+    while True:
+        try:
+            chunk = await file.read(min(1024 * 1024, limit + 1 - consumed))
+        except TypeError:
+            # A few internal test doubles implement the older no-argument
+            # protocol. Real Starlette UploadFile objects always use the
+            # bounded branch above.
+            chunk = await file.read()
+            if len(chunk) > limit:
+                raise AppError(
+                    "File exceeds the configured maximum size",
+                    status_code=413,
+                    code="FILE_TOO_LARGE",
+                )
+            return chunk
+        if not chunk:
+            break
+        consumed += len(chunk)
+        if consumed > limit:
+            raise AppError(
+                "File exceeds the configured maximum size",
+                status_code=413,
+                code="FILE_TOO_LARGE",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def validate_file_content(filename: str, data: bytes) -> None:
+    """Reject spoofed formats and resource-exhaustion DOCX archives."""
+    extension = _extension(filename)
+    if extension == "pdf":
+        if not data.startswith(b"%PDF"):
+            raise AppError(
+                "The uploaded file is not a valid PDF",
+                status_code=422,
+                code="INVALID_FILE_CONTENT",
+            )
+        return
+    if extension == "txt":
+        if b"\x00" in data:
+            raise AppError(
+                "The uploaded text file contains binary data",
+                status_code=422,
+                code="INVALID_FILE_CONTENT",
+            )
+        try:
+            data.decode("utf-8-sig", errors="strict")
+        except UnicodeDecodeError as exc:
+            raise AppError(
+                "Text uploads must use UTF-8 encoding",
+                status_code=422,
+                code="INVALID_FILE_CONTENT",
+            ) from exc
+        return
+    if extension != "docx":
+        return
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            entries = archive.infolist()
+            if len(entries) > settings.max_docx_archive_entries:
+                raise AppError(
+                    "The DOCX archive contains too many entries",
+                    status_code=422,
+                    code="UNSAFE_ARCHIVE",
+                )
+            names = {entry.filename for entry in entries}
+            if not {"[Content_Types].xml", "word/document.xml"}.issubset(names):
+                raise AppError(
+                    "The uploaded file is not a valid DOCX document",
+                    status_code=422,
+                    code="INVALID_FILE_CONTENT",
+                )
+            uncompressed = 0
+            for entry in entries:
+                normalized = entry.filename.replace("\\", "/")
+                if normalized.startswith("/") or ".." in normalized.split("/"):
+                    raise AppError(
+                        "The DOCX archive contains an unsafe path",
+                        status_code=422,
+                        code="UNSAFE_ARCHIVE",
+                    )
+                uncompressed += entry.file_size
+                if uncompressed > settings.max_docx_uncompressed_bytes:
+                    raise AppError(
+                        "The DOCX archive expands beyond the safe limit",
+                        status_code=422,
+                        code="UNSAFE_ARCHIVE",
+                    )
+                if (
+                    entry.file_size > 0
+                    and entry.compress_size == 0
+                    or entry.compress_size > 0
+                    and entry.file_size / entry.compress_size
+                    > settings.max_docx_compression_ratio
+                ):
+                    raise AppError(
+                        "The DOCX archive compression ratio is unsafe",
+                        status_code=422,
+                        code="UNSAFE_ARCHIVE",
+                    )
+    except (zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+        raise AppError(
+            "The uploaded file is not a valid DOCX document",
+            status_code=422,
+            code="INVALID_FILE_CONTENT",
+        ) from exc
+
+
 async def ingest_document(
     file: UploadFile,
     knowledge_source_id: str,
     user_id: str,
 ) -> IngestResponse:
-    data = await file.read()
+    data = await read_upload_limited(file)
 
     _validate(file.filename or "", file.content_type or "", len(data))
+    validate_file_content(file.filename or "", data)
 
     checksum = f"sha256:{hashlib.sha256(data).hexdigest()}"
     ext = _extension(file.filename or "")

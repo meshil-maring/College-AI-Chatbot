@@ -2,6 +2,7 @@ import logging
 
 import jwt
 from jwt import PyJWKClient, ExpiredSignatureError, InvalidTokenError, PyJWKError
+from jwt.exceptions import PyJWKClientConnectionError, PyJWKClientError
 from fastapi import Depends, Header
 from typing import Callable
 from uuid import UUID
@@ -36,7 +37,11 @@ _JWT_LEEWAY_SECONDS: int = 10
 def _get_jwks_client() -> PyJWKClient:
     global _jwks_client
     if _jwks_client is None:
-        _jwks_client = PyJWKClient(settings.supabase_jwks_url, cache_keys=True)
+        _jwks_client = PyJWKClient(
+            settings.supabase_jwks_url,
+            cache_keys=True,
+            timeout=settings.jwt_jwks_timeout_seconds,
+        )
     return _jwks_client
 
 
@@ -49,14 +54,22 @@ def verify_jwt(token: str) -> dict:
             token,
             signing_key.key,
             algorithms=["ES256"],
-            options={"require": ["sub", "exp", "aud"]},
+            options={"require": ["sub", "exp", "aud", "iss", "iat"]},
             audience="authenticated",
+            issuer=settings.effective_supabase_jwt_issuer,
             leeway=_JWT_LEEWAY_SECONDS,
         )
         return claims
     except ExpiredSignatureError:
         raise AppError("Token has expired", status_code=401, code="TOKEN_EXPIRED")
-    except (InvalidTokenError, PyJWKError):
+    except PyJWKClientConnectionError as exc:
+        logger.warning("event=jwks_unavailable")
+        raise AppError(
+            "Authentication verification is temporarily unavailable",
+            status_code=503,
+            code="AUTH_VERIFICATION_UNAVAILABLE",
+        ) from exc
+    except (InvalidTokenError, PyJWKError, PyJWKClientError):
         # Phase 6.15.7 — never echo library internals (exception text can name
         # algorithms, claims, key material sources). Fixed user-safe message.
         raise AppError("Invalid token", status_code=401, code="INVALID_TOKEN")
@@ -69,16 +82,19 @@ async def get_current_user(
     if not authorization:
         raise AppError("Authentication required", status_code=401, code="AUTH_REQUIRED")
 
-    if not authorization.startswith("Bearer "):
+    scheme, separator, token = authorization.partition(" ")
+    if not separator or scheme.lower() != "bearer":
         raise AppError(
             "Invalid authentication scheme",
             status_code=401,
             code="INVALID_SCHEME",
         )
 
-    token = authorization.removeprefix("Bearer ").strip()
+    token = token.strip()
     if not token:
         raise AppError("Token missing", status_code=401, code="TOKEN_MISSING")
+    if len(token) > settings.max_bearer_token_chars:
+        raise AppError("Invalid token", status_code=401, code="INVALID_TOKEN")
 
     claims = verify_jwt(token)
     auth_user_id: str = claims["sub"]
@@ -92,6 +108,16 @@ async def get_current_user(
             "No application user found for this account",
             status_code=404,
             code="USER_NOT_FOUND",
+        )
+    # The real database projection always includes ``status``. Keeping the
+    # key-presence distinction permits deliberately minimal internal test
+    # doubles while still failing closed if the production query ever returns
+    # a null or non-active lifecycle value.
+    if "status" in user and user.get("status") != "active":
+        raise AppError(
+            "This account is not active",
+            status_code=403,
+            code="ACCOUNT_INACTIVE",
         )
 
     role_assignments = user.get("role_assignments") or []

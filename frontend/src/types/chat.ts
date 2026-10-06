@@ -19,19 +19,14 @@ export type ChatStatus = 'success' | 'insufficient_context'
  * Public request accepted by POST /api/v1/generation/chat.
  *
  * Mirrors backend `ChatRequest` (backend/app/schemas/chat.py).
- * `retrieved_chunks` is an internal/backend concern and is intentionally
- * not exposed by the frontend.
+ * Retrieval filters, chunks, and model selection are internal/backend
+ * concerns and are intentionally not exposed by the frontend.
  */
 export interface ChatRequest {
   user_query: string
   session_id?: string | null
   conversation_id?: string | null
   institution_id: string
-  knowledge_source_id?: string | null
-  document_id?: string | null
-  document_version_id?: string | null
-  processing_run_id?: string | null
-  model_name?: string | null
 }
 
 /**

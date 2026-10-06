@@ -146,7 +146,7 @@ WITH "role_grants"("role_name", "permission_codes") AS (
     ]::text[])
 )
 INSERT INTO "public"."role_permissions" ("role_id", "permission_id")
-SELECT "role"."id", "permission"."id"
+SELECT "role"."id", "permission"."permission_id"
   FROM "role_grants"
  CROSS JOIN LATERAL "unnest"("role_grants"."permission_codes") AS "granted"("code")
   JOIN "public"."roles" AS "role"

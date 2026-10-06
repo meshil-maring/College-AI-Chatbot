@@ -17,7 +17,7 @@ SET "name" = EXCLUDED."name",
     "updated_at" = "now"();
 
 INSERT INTO "public"."role_permissions" ("role_id", "permission_id")
-SELECT "role"."id", "permission"."id"
+SELECT "role"."id", "permission"."permission_id"
   FROM (VALUES
     ('super_admin', 'organizations.manage'),
     ('student', 'notifications.own.read'),
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS "public"."user_permission_grants" (
     "grant_id" uuid DEFAULT "gen_random_uuid"() PRIMARY KEY,
     "user_id" uuid NOT NULL REFERENCES "public"."users" ("id") ON DELETE RESTRICT,
     "institution_id" uuid NOT NULL REFERENCES "public"."institutions" ("institution_id") ON DELETE RESTRICT,
-    "permission_id" uuid NOT NULL REFERENCES "public"."permissions" ("id") ON DELETE RESTRICT,
+    "permission_id" uuid NOT NULL REFERENCES "public"."permissions" ("permission_id") ON DELETE RESTRICT,
     "granted_by" uuid NOT NULL REFERENCES "public"."users" ("id") ON DELETE RESTRICT,
     "granted_at" timestamptz NOT NULL DEFAULT "now"(),
     "revoked_by" uuid REFERENCES "public"."users" ("id") ON DELETE RESTRICT,
@@ -242,7 +242,7 @@ BEGIN
             INSERT INTO "public"."user_permission_grants"
                 ("user_id", "institution_id", "permission_id", "granted_by")
             VALUES
-                ("p_target_user_id", "p_institution_id", "permission_row"."id", "p_actor_user_id")
+                ("p_target_user_id", "p_institution_id", "permission_row"."permission_id", "p_actor_user_id")
             ON CONFLICT ("user_id", "institution_id", "permission_id")
                 WHERE "revoked_at" IS NULL DO NOTHING
             RETURNING "user_permission_grants"."grant_id" INTO "grant_id";
@@ -264,7 +264,7 @@ BEGIN
                SET "revoked_by" = "p_actor_user_id", "revoked_at" = "now"()
              WHERE "user_id" = "p_target_user_id"
                AND "institution_id" = "p_institution_id"
-               AND "permission_id" = "permission_row"."id"
+               AND "permission_id" = "permission_row"."permission_id"
                AND "revoked_at" IS NULL
             RETURNING "grant_id" INTO "grant_id";
             IF "grant_id" IS NOT NULL THEN

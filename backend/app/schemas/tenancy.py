@@ -45,14 +45,14 @@ class OrganizationRegistrationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str
+    name: str = Field(min_length=1, max_length=200)
     organization_code: str = Field(min_length=2, max_length=64)
     official_email: EmailStr
-    contact_information: str
+    contact_information: str = Field(min_length=1, max_length=1000)
     admin_email: EmailStr
     admin_password: str = Field(min_length=8, max_length=128)
-    admin_first_name: str
-    admin_last_name: str
+    admin_first_name: str = Field(min_length=1, max_length=100)
+    admin_last_name: str = Field(min_length=1, max_length=100)
 
     @field_validator("name", "contact_information", "admin_first_name", "admin_last_name")
     @classmethod
@@ -92,16 +92,16 @@ class InstitutionRegistrationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str
+    name: str = Field(min_length=1, max_length=200)
     institution_code: str = Field(min_length=2, max_length=64)
     organization_code: str = Field(min_length=2, max_length=64)
-    join_code: str | None = None
+    join_code: str | None = Field(default=None, max_length=128)
     official_email: EmailStr
-    location: str | None = None
+    location: str | None = Field(default=None, max_length=500)
     admin_email: EmailStr
     admin_password: str = Field(min_length=8, max_length=128)
-    admin_first_name: str
-    admin_last_name: str
+    admin_first_name: str = Field(min_length=1, max_length=100)
+    admin_last_name: str = Field(min_length=1, max_length=100)
 
     @field_validator("name", "admin_first_name", "admin_last_name")
     @classmethod
@@ -167,11 +167,11 @@ class StaffFacultyRegistrationRequest(BaseModel):
     institution_code: str = Field(min_length=2, max_length=64)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
-    first_name: str
-    last_name: str
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
     requested_role: Literal["staff", "faculty"]
-    designation: str | None = None
-    department: str | None = None
+    designation: str | None = Field(default=None, max_length=200)
+    department: str | None = Field(default=None, max_length=200)
 
     @field_validator("first_name", "last_name")
     @classmethod

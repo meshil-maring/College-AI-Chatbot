@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # Comma-separated host names accepted by TrustedHostMiddleware. An empty
     # value uses loopback/test defaults locally and is rejected in production.
     allowed_hosts: str = ""
+    # Comma-separated browser origins. Empty intentionally means same-origin
+    # only (no CORS middleware). Wildcards are never accepted in deployments.
+    cors_allowed_origins: str = ""
     # None means enabled locally and disabled in deployed environments.
     api_docs_enabled: bool | None = None
 
@@ -30,8 +33,28 @@ class Settings(BaseSettings):
     supabase_publishable_key: str = ""
     supabase_secret_key: str = ""
     supabase_jwks_url: str = ""
+    # Optional explicit issuer. Supabase's canonical issuer is derived from
+    # SUPABASE_URL when this is empty.
+    supabase_jwt_issuer: str = ""
+    jwt_jwks_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
+    max_bearer_token_chars: int = Field(default=8192, ge=1024, le=32768)
 
     max_upload_size_mb: int = 50
+    max_request_body_bytes: int = Field(default=1_048_576, ge=4096, le=16_777_216)
+    webhook_max_body_bytes: int = Field(default=262_144, ge=4096, le=1_048_576)
+    upload_request_overhead_bytes: int = Field(
+        default=1_048_576, ge=65_536, le=8_388_608
+    )
+    request_body_read_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    max_csv_upload_bytes: int = Field(default=5_242_880, ge=1024, le=16_777_216)
+    max_csv_rows: int = Field(default=5000, gt=0, le=50_000)
+    max_document_pages: int = Field(default=500, gt=0, le=5000)
+    max_extracted_text_chars: int = Field(default=2_000_000, gt=1000, le=20_000_000)
+    max_docx_archive_entries: int = Field(default=2000, gt=0, le=10_000)
+    max_docx_uncompressed_bytes: int = Field(
+        default=100_000_000, gt=1_000_000, le=500_000_000
+    )
+    max_docx_compression_ratio: int = Field(default=100, ge=2, le=1000)
 
     r2_endpoint_url: str = ""
     r2_access_key_id: str = ""
@@ -95,6 +118,13 @@ class Settings(BaseSettings):
     public_concurrency_limit: int = Field(default=8, gt=0, le=1000)
     public_institution_concurrency_limit: int = Field(default=4, gt=0, le=1000)
     public_overload_retry_after_seconds: int = Field(default=2, gt=0, le=60)
+    # Coarse API-wide defense in depth. These counters are process-local; the
+    # production edge must enforce shared limits across workers/instances.
+    api_rate_limit_enabled: bool = True
+    api_rate_limit_window_seconds: int = Field(default=60, gt=0, le=3600)
+    api_client_rate_limit_requests: int = Field(default=2000, gt=0)
+    api_global_rate_limit_requests: int = Field(default=10_000, gt=0)
+    authenticated_ai_rate_limit_requests: int = Field(default=120, gt=0)
     # ------------------------------------------------------------------
     # Phase 7.15 -- invitation email delivery boundary.
     #
@@ -167,6 +197,7 @@ class Settings(BaseSettings):
     auth_rate_limit_enabled: bool = True
     auth_rate_limit_window_seconds: int = Field(default=300, gt=0, le=3600)
     auth_login_ip_limit_requests: int = Field(default=30, gt=0)
+    auth_registration_ip_limit_requests: int = Field(default=10, gt=0)
     auth_recovery_ip_limit_requests: int = Field(default=5, gt=0)
     auth_password_ip_limit_requests: int = Field(default=10, gt=0)
     auth_recovery_redirect_url: str = ""
@@ -259,6 +290,25 @@ class Settings(BaseSettings):
         if self.is_local_environment:
             return ["localhost", "127.0.0.1", "testserver"]
         return []
+
+    @property
+    def effective_cors_allowed_origins(self) -> list[str]:
+        return [
+            origin.strip().rstrip("/")
+            for origin in (self.cors_allowed_origins or "").split(",")
+            if origin.strip()
+        ]
+
+    @property
+    def effective_supabase_jwt_issuer(self) -> str:
+        configured = (self.supabase_jwt_issuer or "").strip().rstrip("/")
+        if configured:
+            return configured
+        return f"{self.supabase_url.strip().rstrip('/')}/auth/v1"
+
+    @property
+    def max_upload_request_body_bytes(self) -> int:
+        return self.max_upload_size_mb * 1024 * 1024 + self.upload_request_overhead_bytes
 
     @property
     def effective_api_docs_enabled(self) -> bool:
