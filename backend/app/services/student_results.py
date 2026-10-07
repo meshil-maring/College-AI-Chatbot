@@ -51,7 +51,9 @@ def get_own_test_results(
         client=db, limit=limit)
     own_rows = [r for r in (rows or [])
         if str(r.get("student_id")) == str(student["student_id"])
-        and r.get("status") == "published"]
+        and r.get("status") == "published"
+        and (r.get('institution_id') is None or str(r['institution_id']) == str(student['institution_id']))
+        and (not r.get('faculty_tests') or r['faculty_tests'].get('status') in ('PUBLISHED', 'LOCKED'))]
     labels = _course_labels(db, own_rows)
     records = [_to_test_record(r, labels) for r in own_rows]
     summary = StudentOwnTestResultsSummary(
@@ -174,7 +176,11 @@ def _to_test_record(row: dict[str, Any],
         scored_marks=_as_float(row.get("scored_marks")),
         percentage=_as_float(row.get("percentage")),
         letter_grade=_as_str(row.get("letter_grade")),
-        conducted_at=_as_str(row.get("conducted_at")))
+        conducted_at=_as_str(row.get("conducted_at")),
+        mark_status=_as_str(row.get('mark_status')),
+        outcome=(('pass' if row['scored_marks'] >= row['faculty_tests']['passing_marks'] else 'fail')
+                 if row.get('mark_status') == 'present' and row.get('scored_marks') is not None
+                 and (row.get('faculty_tests') or {}).get('passing_marks') is not None else None))
 
 
 def _to_academic_record(row: dict[str, Any]) -> StudentAcademicResultRecord:

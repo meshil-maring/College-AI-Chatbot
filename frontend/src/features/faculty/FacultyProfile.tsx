@@ -8,8 +8,10 @@
 
 import type { CurrentUser } from '../../types/auth.ts'
 import FacultyIdentityCard from './FacultyIdentityCard.tsx'
+import type { FacultyContext } from '../../types/faculty.ts'
+import { validityLabel, visibleResponsibilities } from './responsibilities.ts'
 
-export default function FacultyProfile({ user }: { user: CurrentUser }) {
+export default function FacultyProfile({ user, context = user.faculty_context }: { user: CurrentUser; context?: FacultyContext | null }) {
   return (
     <div className="flex flex-col gap-6">
       <FacultyIdentityCard user={user} />
@@ -21,15 +23,15 @@ export default function FacultyProfile({ user }: { user: CurrentUser }) {
           <h2 id="faculty-profile-context-heading" className="text-lg font-semibold text-white">
             Academic context
           </h2>
-          <span className="rounded-full bg-slate-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-            Coming Soon
-          </span>
         </div>
-        <p className="mt-2 text-sm text-slate-300">
-          Your institution has not linked academic context (department,
-          program, or assigned subjects) to faculty accounts yet. When your
-          institution provides it, it will appear here.
-        </p>
+        {context ? <>
+          <h3 className="mt-4 font-semibold">Responsibilities</h3>
+          <ul className="mt-2 space-y-3">{visibleResponsibilities(context).map((row) => <li key={row.responsibility_id}><p>{row.name} — {row.scope_label}</p><p className="text-sm text-slate-400">{validityLabel(row)}</p></li>)}</ul>
+          {visibleResponsibilities(context).length === 0 ? <p className="mt-2 text-sm text-slate-400">No active responsibilities.</p> : null}
+          <h3 className="mt-5 font-semibold">Teaching Assignments</h3>
+          <ul className="mt-2 space-y-3">{context.teaching_assignments.filter((row) => row.is_active && Date.parse(row.start_at) <= Date.now() && (!row.end_at || Date.now() < Date.parse(row.end_at))).map((row) => <li key={row.assignment_id}><p>{row.section.course.name} — {row.section.program?.name} · {row.section.semester?.name} · Section {row.section.code}</p>{row.section.department ? <p className="text-sm text-slate-300">Department: {row.section.department.name}</p> : null}<p className="text-sm text-slate-400">{validityLabel(row)}</p></li>)}</ul>
+          {context.teaching_assignments.length === 0 ? <p className="mt-2 text-sm text-slate-400">No active teaching assignments.</p> : null}
+        </> : <p className="mt-2 text-sm text-slate-300">Academic assignments could not be loaded. Refresh your session to retry.</p>}
       </section>
     </div>
   )

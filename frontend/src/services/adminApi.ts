@@ -42,6 +42,7 @@ import type {
   MembershipRoster,
 } from '../types/admin.ts'
 import { notifySessionExpired } from './sessionEvents.ts'
+import type { AssignmentValidity, FacultyContext, ResponsibilityManagement, ResponsibilityPayload, ResponsibilityReport } from '../types/faculty.ts'
 
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 const ADMIN_BASE = `${API_BASE_URL}/v1/admin`
@@ -340,6 +341,9 @@ export interface StaffPermissionState {
 export interface FacultyAssignmentPayload {
   faculty_user_id: string
   section_id: string
+  start_at?: string
+  end_at?: string | null
+  is_active?: boolean
 }
 
 export async function getDelegableStaffPermissions(accessToken: string): Promise<string[]> {
@@ -380,6 +384,9 @@ export function getFacultyAssignments(accessToken: string): Promise<{
     assignment_id: string
     faculty_user_id: string
     section_id: string
+    start_at?: string
+    end_at?: string | null
+    is_active?: boolean
     faculty: { email: string; first_name: string; last_name: string }
     section: { name: string; code: string; course: { name: string; code: string } }
   }>
@@ -412,6 +419,19 @@ export function getMyFacultyAssignments(accessToken: string): Promise<Array<{
 }>> {
   return requestJson('GET', `${FACULTY_BASE}/assignments`, accessToken)
 }
+
+export const getFacultyContext = (token: string) => requestJson<FacultyContext>('GET', `${FACULTY_BASE}/context`, token)
+export const getFacultyResponsibilityManagement = (token: string) => requestJson<ResponsibilityManagement>('GET', `${ADMIN_BASE}/faculty-responsibilities`, token)
+export const createFacultyResponsibility = (token: string, payload: ResponsibilityPayload & { faculty_user_id: string; responsibility_code: string }) =>
+  requestJson<{ responsibility_id: string }>('POST', `${ADMIN_BASE}/faculty-responsibilities`, token, payload)
+export const updateFacultyResponsibility = (token: string, id: string, payload: ResponsibilityPayload) =>
+  requestJson<{ responsibility_id: string }>('PATCH', `${ADMIN_BASE}/faculty-responsibilities/${encodeURIComponent(id)}`, token, payload)
+export const revokeFacultyResponsibility = (token: string, id: string) =>
+  requestJson<{ responsibility_id: string }>('DELETE', `${ADMIN_BASE}/faculty-responsibilities/${encodeURIComponent(id)}`, token)
+export const updateFacultyTeachingValidity = (token: string, id: string, payload: AssignmentValidity) =>
+  requestJson<{ assignment_id: string }>('PATCH', `${ADMIN_BASE}/faculty-assignments/${encodeURIComponent(id)}`, token, payload)
+export const getFacultyResponsibilityReport = (token: string, id: string) =>
+  requestJson<ResponsibilityReport>('GET', `${FACULTY_BASE}/responsibilities/${encodeURIComponent(id)}/report`, token)
 
 // ============================================================================
 // Student self-service ("me" endpoints)

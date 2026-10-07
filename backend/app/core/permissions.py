@@ -35,6 +35,8 @@ PERMISSIONS: tuple[str, ...] = (
     "institutions.read", "institutions.create", "institutions.update", "institutions.delete",
     "platform.read", "platform.manage", "platform.settings.manage", "platform.audit.read",
     "audit.read",
+    "academic.class.read", "academic.department.read", "academic.reports.read",
+    "attendance.overview.read",
 )
 
 _UNIVERSITY_ADMIN = frozenset({
@@ -65,6 +67,7 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
         "users.read", "users.create", "users.update", "users.delete",
         "roles.read", "roles.manage", "permissions.read", "permissions.manage",
         "audit.read",
+        "faculty.assignments.manage",
     }),
     "university_admin": _UNIVERSITY_ADMIN,
     "admin": _UNIVERSITY_ADMIN | {"platform.manage"},  # legacy platform scope is still scope-checked

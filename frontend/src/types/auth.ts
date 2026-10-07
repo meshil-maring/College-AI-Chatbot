@@ -25,6 +25,8 @@
  */
 
 /** Request body accepted by POST /api/v1/auth/login (mirrors backend AuthRequest). */
+import type { FacultyContext } from './faculty.ts'
+
 export interface LoginRequest {
   email: string
   password: string
@@ -103,4 +105,5 @@ export interface CurrentUser {
   institution_id: string | null
   /** Effective active grants resolved from the user's assigned database roles. */
   effective_permissions?: readonly string[]
+  faculty_context?: FacultyContext
 }

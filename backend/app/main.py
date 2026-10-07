@@ -1,10 +1,12 @@
 import logging
 import time
+from typing import cast
 
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.types import ExceptionHandler
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -93,7 +95,7 @@ app.add_middleware(ApiRateLimitMiddleware)
 app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(PublicChatBodyLimitMiddleware)
 
-app.add_exception_handler(AppError, app_error_handler)
+app.add_exception_handler(AppError, cast(ExceptionHandler, app_error_handler))
 
 
 logger = logging.getLogger(__name__)
@@ -201,6 +203,8 @@ def chat(
     missing/inactive scope fails closed and a mismatch returns 403.
     """
     tenant_id = scope_tenant(current_user, request.institution_id)
+    if tenant_id is None:
+        raise AppError("Institution scope required", 403, "SCOPE_MISSING")
     internal_request = ChatRequest(
         user_query=request.user_query,
         session_id=request.session_id,
@@ -421,7 +425,7 @@ async def auth_me(current_user: dict = Depends(get_current_user)):
     An account whose active roles contain no supported role resolves to
     ``role: None`` — the frontend treats that as "no privileged UI".
     """
-    return {
+    payload = {
         "authenticated": True,
         "user_id": current_user["user_id"],
         "auth_user_id": current_user["auth_user_id"],
@@ -430,6 +434,24 @@ async def auth_me(current_user: dict = Depends(get_current_user)):
         "institution_id": current_user.get("institution_id"),
         "effective_permissions": current_user.get("effective_permissions", []),
     }
+    if payload["role"] == "faculty" and current_user.get("permissions_resolved") is True:
+        from app.services.faculty_responsibilities import faculty_context
+        from app.services.authorization import resolve_institution_authorization_context
+        context = resolve_institution_authorization_context(current_user, allowed_roles=("faculty",))
+        try:
+            payload["faculty_context"] = faculty_context({**current_user, "institution_id": str(context.institution_id)})
+        except AppError as error:
+            if error.status_code != 503 or error.code != "FACULTY_SCHEMA_UNAVAILABLE":
+                raise
+            # Identity and the institution grant have already been verified.
+            # Missing optional faculty schema must not prevent sign-in or
+            # manufacture any assignment or scoped responsibility permission.
+            payload["faculty_context"] = {
+                "responsibilities": [],
+                "teaching_assignments": [],
+                "responsibility_permissions": [],
+            }
+    return payload
 
 
 @app.get("/api/v1/dev/auth/status")

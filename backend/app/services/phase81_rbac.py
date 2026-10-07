@@ -7,71 +7,87 @@ from app.core.errors import AppError
 from app.core.permissions import DELEGABLE_STAFF_PERMISSIONS
 from app.db.supabase import get_admin_client
 from app.services import admin_memberships
+from app.services.authorization import assignment_is_active
+from app.repositories.query_pages import read_all, read_one, read_rows
 
 
 def _active_sections(institution_id: UUID) -> list[dict]:
     client = get_admin_client()
-    departments = (
+    departments = read_all(
         client.table("departments")
-        .select("department_id")
+        .select("department_id, name, code")
         .eq("institution_id", str(institution_id))
         .eq("is_active", True)
-        .execute()
-        .data
+        .order("department_id")
     )
     department_ids = [row["department_id"] for row in departments]
     if not department_ids:
         return []
-    courses = (
+    courses = read_all(
         client.table("courses")
         .select("course_id, name, code, department_id")
         .in_("department_id", department_ids)
         .eq("is_active", True)
-        .execute()
-        .data
+        .order("course_id")
     )
     course_ids = [row["course_id"] for row in courses]
     if not course_ids:
         return []
-    offerings = (
+    offerings = read_all(
         client.table("course_offerings")
-        .select("course_offering_id, course_id, academic_year_id, semester_id")
+        .select("course_offering_id, course_id, academic_year_id, semester_id, program_id")
         .in_("course_id", course_ids)
         .eq("is_active", True)
-        .execute()
-        .data
+        .order("course_offering_id")
     )
     offering_ids = [row["course_offering_id"] for row in offerings]
     if not offering_ids:
         return []
-    sections = (
+    sections = read_all(
         client.table("sections")
         .select("section_id, course_offering_id, name, code, capacity")
         .in_("course_offering_id", offering_ids)
         .eq("is_active", True)
-        .order("code")
-        .execute()
-        .data
+        .order("section_id")
     )
     courses_by_id = {str(row["course_id"]): row for row in courses}
+    departments_by_id = {str(row["department_id"]): row for row in departments}
     offerings_by_id = {str(row["course_offering_id"]): row for row in offerings}
+    programs = {str(row["program_id"]): row for row in read_all(client.table("programs").select("program_id, name, code, department_id").in_("department_id", department_ids).eq("is_active", True).order("program_id"))}
+    semesters = {str(row["semester_id"]): row for row in read_all(client.table("semesters").select("semester_id, name, academic_year_id, semester_number").eq("is_active", True).order("semester_id"))}
+    years = {str(row["academic_year_id"]): row for row in read_all(client.table("academic_years").select("academic_year_id, name").eq("institution_id", str(institution_id)).eq("is_active", True).order("academic_year_id"))}
     rows = []
     for section in sections:
         offering = offerings_by_id.get(str(section["course_offering_id"]))
         course = courses_by_id.get(str(offering["course_id"])) if offering else None
         if offering is None or course is None:
             continue
+        program = programs.get(str(offering.get("program_id")))
+        semester = semesters.get(str(offering.get("semester_id")))
+        year = years.get(str(offering.get("academic_year_id")))
+        if (program is None or semester is None or year is None
+                or str(semester["academic_year_id"]) != str(offering["academic_year_id"])):
+            continue
         rows.append({
             **section,
             "course": {"course_id": course["course_id"], "name": course["name"], "code": course["code"]},
             "academic_year_id": offering["academic_year_id"],
             "semester_id": offering["semester_id"],
+            "program_id": offering["program_id"],
+            "department_id": course["department_id"],
+            "department": departments_by_id[str(course["department_id"])],
+            "institution_id": str(institution_id),
+            "course_id": course["course_id"],
+            "section_code": section["code"],
+            "program": program,
+            "semester": semester,
+            "academic_year": year,
         })
     return rows
 
 
 def _staff_member(user_id: UUID, institution_id: UUID) -> dict:
-    result = (
+    result = read_one(
         get_admin_client()
         .table("users")
         .select(
@@ -85,8 +101,6 @@ def _staff_member(user_id: UUID, institution_id: UUID) -> dict:
         .eq("user_roles.roles.name", "staff")
         .eq("user_roles.roles.is_active", True)
         .maybe_single()
-        .execute()
-        .data
     )
     if result is None:
         raise AppError("Active Staff member not found", 404, "STAFF_MEMBER_NOT_FOUND")
@@ -95,14 +109,12 @@ def _staff_member(user_id: UUID, institution_id: UUID) -> dict:
 
 def list_delegable_permissions() -> list[str]:
     client = get_admin_client()
-    rows = (
+    rows = read_rows(
         client.table("permissions")
         .select("code")
         .in_("code", sorted(DELEGABLE_STAFF_PERMISSIONS))
         .eq("is_active", True)
         .order("code")
-        .execute()
-        .data
     )
     active_codes = {row["code"] for row in rows}
     return sorted(active_codes & DELEGABLE_STAFF_PERMISSIONS)
@@ -111,7 +123,7 @@ def list_delegable_permissions() -> list[str]:
 def list_staff_permissions(user_id: UUID, institution_id: UUID) -> dict:
     _staff_member(user_id, institution_id)
     client = get_admin_client()
-    grants = (
+    grants = read_rows(
         client.table("user_roles")
         .select(
             "scope_type, scope_id, roles(name, is_active, "
@@ -120,8 +132,6 @@ def list_staff_permissions(user_id: UUID, institution_id: UUID) -> dict:
         .eq("user_id", str(user_id))
         .eq("scope_type", "institution")
         .eq("scope_id", str(institution_id))
-        .execute()
-        .data
     )
     inherited: set[str] = set()
     for grant in grants:
@@ -135,15 +145,13 @@ def list_staff_permissions(user_id: UUID, institution_id: UUID) -> dict:
                 if isinstance(code, str):
                     inherited.add(code)
 
-    direct_rows = (
+    direct_rows = read_rows(
         client.table("user_permission_grants")
         .select("grant_id, granted_at, permissions(code, is_active)")
         .eq("user_id", str(user_id))
         .eq("institution_id", str(institution_id))
         .is_("revoked_at", "null")
         .order("granted_at")
-        .execute()
-        .data
     )
     direct = {
         permission["code"]: str(row["grant_id"])
@@ -200,7 +208,9 @@ def change_staff_permissions(
         )
         .execute()
     )
-    changed = int(response.data or 0)
+    changed = response.data
+    if not isinstance(changed, int):
+        raise AppError("Invalid permission mutation result", 500, "DATABASE_PROJECTION_INVALID")
     return {
         "changed": changed,
         "permissions": list_staff_permissions(target_user_id, institution_id),
@@ -222,14 +232,12 @@ def list_institution_assignments(institution_id: UUID) -> dict:
         for member in faculty_roster.members
         if member.user_id is not None
     ]
-    assignments = (
+    assignments = read_all(
         client.table("faculty_section_assignments")
-        .select("assignment_id, faculty_user_id, section_id, assigned_at")
+        .select("assignment_id, faculty_user_id, section_id, assigned_at, start_at, end_at, is_active, revoked_at")
         .eq("institution_id", str(institution_id))
         .is_("revoked_at", "null")
         .order("assigned_at", desc=True)
-        .execute()
-        .data
     )
     sections = _active_sections(institution_id)
     active_section_ids = {str(section["section_id"]) for section in sections}
@@ -238,25 +246,27 @@ def list_institution_assignments(institution_id: UUID) -> dict:
     ]
     faculty_ids = sorted({row["faculty_user_id"] for row in assignments})
     faculty_rows = (
-        client.table("users")
-        .select("id, email, first_name, last_name, status")
-        .in_("id", faculty_ids)
-        .eq("status", "active")
-        .execute()
-        .data
+        read_all(
+            client.table("users")
+            .select("id, email, first_name, last_name, status")
+            .in_("id", faculty_ids)
+            .eq("status", "active")
+            .order("id")
+        )
         if faculty_ids
         else []
     )
     active_roles = (
-        client.table("user_roles")
-        .select("user_id, roles!inner(name, is_active)")
-        .in_("user_id", faculty_ids)
-        .eq("scope_type", "institution")
-        .eq("scope_id", str(institution_id))
-        .eq("roles.name", "faculty")
-        .eq("roles.is_active", True)
-        .execute()
-        .data
+        read_all(
+            client.table("user_roles")
+            .select("user_id, roles!inner(name, is_active)")
+            .in_("user_id", faculty_ids)
+            .eq("scope_type", "institution")
+            .eq("scope_id", str(institution_id))
+            .eq("roles.name", "faculty")
+            .eq("roles.is_active", True)
+            .order("user_id")
+        )
         if faculty_ids
         else []
     )
@@ -283,27 +293,20 @@ def list_institution_assignments(institution_id: UUID) -> dict:
 
 def list_own_faculty_assignments(current_user: dict) -> list[dict]:
     institution_id = UUID(str(current_user["institution_id"]))
-    section_ids = {
-        str(row["section_id"]) for row in _active_sections(institution_id)
-    }
-    rows = (
+    sections = {str(row["section_id"]): row for row in _active_sections(institution_id)}
+    rows = read_all(
         get_admin_client()
         .table("faculty_section_assignments")
-        .select("assignment_id, section_id, assigned_at")
+        .select("assignment_id, faculty_user_id, institution_id, section_id, assigned_at, start_at, end_at, is_active, revoked_at")
         .eq("institution_id", str(institution_id))
         .eq("faculty_user_id", str(current_user["user_id"]))
         .is_("revoked_at", "null")
         .order("assigned_at", desc=True)
-        .execute()
-        .data
     )
-    sections = {
-        str(row["section_id"]): row for row in _active_sections(institution_id)
-    }
     return [
         {**row, "section": sections[str(row["section_id"])]}
         for row in rows
-        if str(row["section_id"]) in section_ids
+        if str(row["section_id"]) in sections and assignment_is_active(row)
     ]
 
 
@@ -315,21 +318,19 @@ def manage_faculty_assignment(
     *,
     revoke: bool,
 ) -> dict:
-    result = (
-        get_admin_client()
-        .rpc(
-            "phase81_manage_faculty_section_assignment",
-            {
-                "p_actor_user_id": str(actor["user_id"]),
-                "p_institution_id": str(institution_id),
-                "p_faculty_user_id": str(faculty_user_id),
-                "p_section_id": str(section_id),
-                "p_revoke": revoke,
-            },
-        )
-        .execute()
-        .data
+    from app.services.faculty_responsibilities import _rpc
+    response = _rpc(
+        "phase81_manage_faculty_section_assignment",
+        {
+            "p_actor_user_id": str(actor["user_id"]),
+            "p_institution_id": str(institution_id),
+            "p_faculty_user_id": str(faculty_user_id),
+            "p_section_id": str(section_id),
+            "p_revoke": revoke,
+        },
+        client=get_admin_client(),
     )
+    result = response["assignment_id"]
     if revoke and result is None:
         raise AppError("Faculty assignment not found", 404, "FACULTY_ASSIGNMENT_NOT_FOUND")
     return {"assignment_id": str(result) if result is not None else None}
@@ -338,7 +339,7 @@ def manage_faculty_assignment(
 def revoke_faculty_assignment(
     actor: dict, institution_id: UUID, assignment_id: UUID
 ) -> dict:
-    assignment = (
+    assignment = read_one(
         get_admin_client()
         .table("faculty_section_assignments")
         .select("faculty_user_id, section_id")
@@ -346,8 +347,6 @@ def revoke_faculty_assignment(
         .eq("institution_id", str(institution_id))
         .is_("revoked_at", "null")
         .maybe_single()
-        .execute()
-        .data
     )
     if assignment is None:
         raise AppError("Faculty assignment not found", 404, "FACULTY_ASSIGNMENT_NOT_FOUND")

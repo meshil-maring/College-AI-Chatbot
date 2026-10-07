@@ -26,10 +26,15 @@ import {
 import FacultyDashboard from './FacultyDashboard.tsx'
 import FacultyProfile from './FacultyProfile.tsx'
 import FacultyAssignments from './FacultyAssignments.tsx'
+import FacultyTests from './FacultyTests.tsx'
 import FacultyComingSoon from './FacultyComingSoon.tsx'
 import FacultyAttendance from './FacultyAttendance.tsx'
+import FacultyResponsibilityWorkspace from './FacultyResponsibilityWorkspace.tsx'
+import { responsibilityPermissions } from './responsibilities.ts'
+import { useFacultyContext } from './useFacultyContext.ts'
 
 type IconName = 'dashboard' | 'course' | 'sections' | 'students' | 'attendance' | 'tests' | 'results' | 'resources' | 'assistant' | 'notices' | 'settings' | 'logout'
+type AttendanceAction = 'overview' | 'students' | 'mark' | 'upload' | 'history'
 
 const PORTAL_ICONS: Record<IconName, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -52,20 +57,32 @@ function PortalIcon({ name, size = 18 }: { name: IconName; size?: number }) {
 }
 
 const NAV_ICONS: Record<FacultyView, IconName> = {
-  dashboard: 'dashboard', assignments: 'sections', students: 'students', attendance: 'attendance', results: 'results', notices: 'notices', resources: 'resources', assistant: 'assistant', profile: 'settings',
+  dashboard: 'dashboard', assignments: 'sections', students: 'students', attendance: 'attendance', results: 'results', notices: 'notices', resources: 'resources', assistant: 'assistant', profile: 'settings', 'class-management': 'students', department: 'course',
 }
 
 export default function FacultyShell() {
   const { user, role, accessToken, logout } = useAuth()
   const [view, setView] = useState<FacultyView>('dashboard')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const navigation = buildFacultyNavigation(role, user?.effective_permissions)
+  const [testsDirty, setTestsDirty] = useState(false)
+  const [attendanceActionRequest, setAttendanceActionRequest] = useState<{ action: AttendanceAction; id: number }>({ action: 'overview', id: 0 })
+  const [activeAttendanceAction, setActiveAttendanceAction] = useState<AttendanceAction>('overview')
+  const { context, error: contextError } = useFacultyContext(accessToken, user?.faculty_context)
+  const navigation = buildFacultyNavigation(role, user?.effective_permissions, responsibilityPermissions(context))
   const displayName = user?.email?.trim() || 'Faculty'
   const initials = displayName.slice(0, 2).toUpperCase()
 
   function navigate(nextView: FacultyView) {
+    if (view === 'results' && nextView !== view && testsDirty && !window.confirm('Discard unsaved assessment changes?')) return
+    setTestsDirty(false)
     setView(nextView)
     setMobileNavOpen(false)
+  }
+
+  function navigateAttendanceAction(action: AttendanceAction) {
+    navigate('attendance')
+    setActiveAttendanceAction(action)
+    setAttendanceActionRequest((current) => ({ action, id: current.id + 1 }))
   }
 
   return (
@@ -83,12 +100,18 @@ export default function FacultyShell() {
               const active = item.key === view
               return <div key={item.key}>
                 <button type="button" onClick={() => navigate(item.key)} aria-current={active ? 'page' : undefined} className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium transition ${active ? 'bg-[#3d3012] text-[#ffd03b]' : 'text-slate-300 hover:bg-[#102235] hover:text-white'} focus:outline-none focus:ring-2 focus:ring-[#ffc72c]`}><span className={active ? 'text-[#ffc72c]' : 'text-slate-400 group-hover:text-slate-200'}><PortalIcon name={NAV_ICONS[item.key]} /></span><span className="truncate">{item.label}</span></button>
-                {item.key === 'attendance' && active ? <div className="ml-10 mt-1 space-y-1 border-l border-[#3d3012] pl-3">{['Overview', 'Mark Attendance', 'Upload Attendance', 'Import History'].map((label) => <button key={label} type="button" onClick={() => navigate('attendance')} className={`block w-full rounded-md px-2 py-1.5 text-left text-xs ${label === 'Overview' ? 'bg-[#1f1e18] text-[#ffd03b]' : 'text-slate-400 hover:text-white'}`}>{label}</button>)}</div> : null}
+                {item.key === 'attendance' && active ? <div className="ml-10 mt-1 space-y-1 border-l border-[#3d3012] pl-3">{([
+                  ['overview', 'Overview'],
+                  ['mark', 'Mark Attendance'],
+                  ['upload', 'Upload Attendance'],
+                  ['history', 'Import History'],
+                  ['students', 'Students'],
+                ] as const).map(([action, label]) => <button key={action} type="button" aria-current={activeAttendanceAction === action ? 'page' : undefined} onClick={() => navigateAttendanceAction(action)} className={`block w-full rounded-md px-2 py-1.5 text-left text-xs ${activeAttendanceAction === action ? 'bg-[#1f1e18] text-[#ffd03b]' : 'text-slate-400 hover:text-white'}`}>{label}</button>)}</div> : null}
               </div>
             })}
           </div>
         </nav>
-        <div className="px-3 pb-5"><div className="my-1 border-t border-[#1b2b3d]" /><button type="button" onClick={() => navigate('results')} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="tests" /></span>Tests &amp; Assessments</button><button type="button" onClick={() => navigate('profile')} aria-current={view === 'profile' ? 'page' : undefined} className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium ${view === 'profile' ? 'bg-[#3d3012] text-[#ffd03b]' : 'text-slate-300 hover:bg-[#102235] hover:text-white'} focus:outline-none focus:ring-2 focus:ring-[#ffc72c]`}><span className="text-slate-400"><PortalIcon name="settings" /></span>Profile &amp; Settings</button><button type="button" aria-label="Sign out" onClick={logout} className="group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="logout" /></span><span aria-hidden="true">Logout</span></button></div>
+        <div className="px-3 pb-5"><div className="my-1 border-t border-[#1b2b3d]" />{navigation.some(item => item.key === 'results') ? <button type="button" onClick={() => navigate('results')} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="tests" /></span>Tests &amp; Assessments</button> : null}<button type="button" onClick={() => navigate('profile')} aria-current={view === 'profile' ? 'page' : undefined} className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium ${view === 'profile' ? 'bg-[#3d3012] text-[#ffd03b]' : 'text-slate-300 hover:bg-[#102235] hover:text-white'} focus:outline-none focus:ring-2 focus:ring-[#ffc72c]`}><span className="text-slate-400"><PortalIcon name="settings" /></span>Profile &amp; Settings</button><button type="button" aria-label="Sign out" onClick={logout} className="group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="logout" /></span><span aria-hidden="true">Logout</span></button></div>
         <div className="border-t border-[#1b2b3d] p-4 text-[11px] text-slate-500">Authenticated faculty workspace</div>
       </aside>
 
@@ -103,11 +126,14 @@ export default function FacultyShell() {
           </div>
         </header>
         <main className="mx-auto w-full min-w-0 max-w-[1380px] px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
+          {contextError ? <p role="alert" className="mb-4 rounded border border-red-700 p-3">{contextError}</p> : null}
           {user === null ? <section role="status" className="rounded-2xl border border-[#26394e] bg-[#0d1c2c] p-8 text-center"><h1 className="text-2xl font-bold text-white">Faculty workspace unavailable</h1><p className="mt-3 text-sm text-slate-300">Your faculty identity could not be loaded. Please sign in again.</p><button type="button" onClick={logout} className="mt-6 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-[#ffc72c]">Sign out</button></section> : !navigation.some((item) => item.key === view) ? <section role="status" className="rounded-2xl border border-[#26394e] bg-[#0d1c2c] p-8 text-center"><h1 className="text-2xl font-bold text-white">No available views</h1><p className="mt-3 text-sm text-slate-300">Your account has no permissions for the selected faculty view.</p></section> : <>
             {view === 'dashboard' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">Dashboard</h1><FacultyDashboard user={user} onNavigate={navigate} /></> : null}
-            {view === 'profile' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">Profile</h1><FacultyProfile user={user} /></> : null}
+            {view === 'profile' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">Profile</h1><FacultyProfile user={user} context={context ?? null} /></> : null}
+            {(view === 'class-management' || view === 'department') && accessToken && context ? <FacultyResponsibilityWorkspace key={view} accessToken={accessToken} context={context} permission={view === 'department' ? 'academic.department.read' : 'academic.class.read'} /> : null}
             {view === 'assignments' && accessToken !== null ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">My Sections</h1><FacultyAssignments accessToken={accessToken} /></> : null}
-            {view === 'attendance' && accessToken !== null ? <FacultyAttendance accessToken={accessToken} /> : null}
+            {view === 'attendance' && accessToken !== null ? <FacultyAttendance accessToken={accessToken} actionRequest={attendanceActionRequest} scopeVersion={JSON.stringify(context)} onNavigateAssignments={() => navigate('assignments')} /> : null}
+            {view === 'results' && accessToken !== null ? <FacultyTests accessToken={accessToken} scopeVersion={JSON.stringify(context)} onDirtyChange={setTestsDirty} /> : null}
             {FACULTY_COMING_SOON_VIEWS.includes(view) && view !== 'attendance' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">{FACULTY_VIEW_HEADINGS[view]}</h1><FacultyComingSoon view={view} /></> : null}
             {view === 'assistant' ? <section aria-label="AI Assistant"><ChatShell /></section> : null}
           </>}

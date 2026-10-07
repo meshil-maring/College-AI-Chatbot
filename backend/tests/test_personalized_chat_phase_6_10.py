@@ -1319,7 +1319,10 @@ class TestHttpBoundary:
             user_id=OTHER_USER_ID, roles=["admin"]
         )
         mc = _mock_client(uuid4(), conversation_user_id=OTHER_USER_ID)
+        provider = MagicMock(spec=GenerationProvider)
+        provider.generate.return_value = GenerationResult(answer="General answer.")
         with (
+            patch("app.main.OpenRouterGenerationProvider", return_value=provider),
             patch("app.services.chat.get_admin_client", return_value=mc),
             patch("app.services.conversation_history.get_admin_client", return_value=mc),
             patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
@@ -1338,6 +1341,7 @@ class TestHttpBoundary:
             )
         assert response.status_code == 200
         m_ctx.assert_not_called()
+        provider.generate.assert_called_once()
 
 
 # ============================================================================

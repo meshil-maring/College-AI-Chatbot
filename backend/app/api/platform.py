@@ -51,11 +51,17 @@ from app.schemas.super_admin_registration import (
 from app.services import platform_admin_invitations as invitations_service
 from app.services import super_admin_registration as super_admin_service
 from app.services import platform_institutions as service
+from app.services import faculty_responsibilities
+from app.schemas.faculty_responsibilities import ResponsibilityCreate, ResponsibilityUpdate
 
 logger = logging.getLogger(__name__)
 
 _PLATFORM_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("GET", "/platform/me"): ("platform.read",),
+    ("GET", "/platform/institutions/{institution_id}/faculty-responsibilities"): ("faculty.assignments.manage",),
+    ("POST", "/platform/institutions/{institution_id}/faculty-responsibilities"): ("faculty.assignments.manage",),
+    ("PATCH", "/platform/institutions/{institution_id}/faculty-responsibilities/{responsibility_id}"): ("faculty.assignments.manage",),
+    ("DELETE", "/platform/institutions/{institution_id}/faculty-responsibilities/{responsibility_id}"): ("faculty.assignments.manage",),
     ("GET", "/platform/institutions"): ("platform.read",),
     ("POST", "/platform/institutions"): ("platform.manage",),
     ("GET", "/platform/institutions/{institution_id}"): ("platform.read",),
@@ -484,3 +490,23 @@ async def cancel_super_admin_invitation(
     current_user: dict = Depends(_SUPER_ADMIN),
 ) -> SuperAdminInvitationView:
     return super_admin_service.cancel_invitation(current_user, str(invitation_id))
+
+
+@router.get("/institutions/{institution_id}/faculty-responsibilities")
+def platform_faculty_responsibilities(institution_id: UUID, current_user: dict = Depends(_SUPER_ADMIN)) -> dict:
+    return faculty_responsibilities.management_data(current_user, institution_id)
+
+
+@router.post("/institutions/{institution_id}/faculty-responsibilities", status_code=201)
+def platform_create_responsibility(institution_id: UUID, body: ResponsibilityCreate, current_user: dict = Depends(_SUPER_ADMIN)) -> dict:
+    return faculty_responsibilities.change_responsibility(current_user, institution_id, body)
+
+
+@router.patch("/institutions/{institution_id}/faculty-responsibilities/{responsibility_id}")
+def platform_update_responsibility(institution_id: UUID, responsibility_id: UUID, body: ResponsibilityUpdate, current_user: dict = Depends(_SUPER_ADMIN)) -> dict:
+    return faculty_responsibilities.change_responsibility(current_user, institution_id, body, responsibility_id=responsibility_id)
+
+
+@router.delete("/institutions/{institution_id}/faculty-responsibilities/{responsibility_id}")
+def platform_revoke_responsibility(institution_id: UUID, responsibility_id: UUID, current_user: dict = Depends(_SUPER_ADMIN)) -> dict:
+    return faculty_responsibilities.change_responsibility(current_user, institution_id, None, responsibility_id=responsibility_id, revoke=True)

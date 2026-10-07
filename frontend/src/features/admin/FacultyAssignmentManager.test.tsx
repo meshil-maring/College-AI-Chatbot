@@ -32,6 +32,7 @@ describe('FacultyAssignmentManager', () => {
     vi.clearAllMocks()
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     vi.mocked(api.getFacultyAssignments).mockResolvedValue(assignmentData)
+    vi.mocked(api.getFacultyResponsibilityManagement).mockResolvedValue({ faculty: assignmentData.faculty, definitions: [], departments: [], sections: [], responsibilities: [] })
   })
 
   it('creates a selected active faculty-section assignment', async () => {

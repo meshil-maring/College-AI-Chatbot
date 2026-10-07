@@ -5,6 +5,8 @@ import {
   getFacultyAssignments,
   revokeFacultyAssignment,
 } from '../../services/adminApi.ts'
+import FacultyResponsibilityManager from './FacultyResponsibilityManager.tsx'
+import TeachingValidityEditor from './TeachingValidityEditor.tsx'
 
 type AssignmentData = Awaited<ReturnType<typeof getFacultyAssignments>>
 
@@ -16,6 +18,9 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [teachingStart, setTeachingStart] = useState('')
+  const [teachingEnd, setTeachingEnd] = useState('')
+  const [editingTeaching, setEditingTeaching] = useState<string | null>(null)
 
   const assignmentsQuery = useApiQuery<AssignmentData>(
     ['admin', 'faculty-assignments', accessToken],
@@ -41,7 +46,8 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
     setError(null)
     setNotice(null)
     try {
-      await createFacultyAssignment(accessToken, { faculty_user_id: facultyId, section_id: sectionId })
+      await createFacultyAssignment(accessToken, { faculty_user_id: facultyId, section_id: sectionId,
+        ...(teachingStart ? { start_at: new Date(teachingStart).toISOString(), end_at: teachingEnd ? new Date(teachingEnd).toISOString() : null } : {}) })
       setNotice('Faculty section assignment saved.')
       await load()
     } catch (cause) {
@@ -88,6 +94,10 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
             </label>
             <button type="button" disabled={busy || !facultyId || !sectionId} onClick={() => void assign()} className="self-end rounded-lg bg-emerald-700 px-3 py-2 text-sm disabled:opacity-50">Assign section</button>
           </div>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label>Teaching start (optional)<input type="datetime-local" value={teachingStart} onChange={(event) => setTeachingStart(event.target.value)} className="ml-2 rounded bg-slate-900 p-2" /></label>
+            <label>Teaching end (optional)<input type="datetime-local" disabled={!teachingStart} value={teachingEnd} onChange={(event) => setTeachingEnd(event.target.value)} className="ml-2 rounded bg-slate-900 p-2" /></label>
+          </div>
           {data.assignments.length === 0 ? <p className="text-sm text-slate-400">No active Faculty assignments.</p> : (
             <ul className="divide-y divide-slate-700">
               {data.assignments.map((assignment) => (
@@ -98,13 +108,17 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
                       {assignment.section.course.code} · {assignment.section.code} — {assignment.section.name}
                     </span>
                   </span>
+                  <span className="text-xs text-slate-300">{assignment.start_at ? new Date(assignment.start_at).toLocaleString() : 'Immediate'} → {assignment.end_at ? new Date(assignment.end_at).toLocaleString() : 'No end date'}{assignment.is_active === false ? ' · Disabled' : ''}</span>
+                  <button type="button" disabled={busy} onClick={() => setEditingTeaching(assignment.assignment_id)} className="rounded-lg border border-slate-500 px-3 py-1.5 text-sm">Manage teaching</button>
                   <button type="button" disabled={busy} onClick={() => void revoke(assignment.assignment_id)} className="rounded-lg border border-red-700 px-3 py-1.5 text-sm text-red-200 disabled:opacity-50">Revoke</button>
+                  {editingTeaching === assignment.assignment_id ? <TeachingValidityEditor accessToken={accessToken} assignment={assignment} onSaved={() => { setEditingTeaching(null); load() }} /> : null}
                 </li>
               ))}
             </ul>
           )}
         </>
       )}
+      <FacultyResponsibilityManager accessToken={accessToken} facultyId={facultyId} />
     </section>
   )
 }

@@ -588,11 +588,14 @@ async def test_api_login_rejected_student_returns_401():
 @pytest.mark.asyncio
 async def test_api_login_unknown_institution_code_returns_401():
     """Unknown institution_code fails safely for academic identifier."""
-    response = client.post(
-        "/api/v1/auth/student/login",
-        json={"identifier": APPROVED_REGISTER, "password": "password", "institution_code": "UNKNOWN"},
-    )
+    with patch("app.services.student_auth.get_admin_client", return_value=MagicMock(spec=Client)), \
+         patch("app.services.student_auth._find_institution_by_code", return_value=None) as institution:
+        response = client.post(
+            "/api/v1/auth/student/login",
+            json={"identifier": APPROVED_REGISTER, "password": "password", "institution_code": "UNKNOWN"},
+        )
     assert response.status_code == 401
+    institution.assert_called_once()
 
 
 @pytest.mark.asyncio

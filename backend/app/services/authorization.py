@@ -23,6 +23,7 @@ trusted.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -33,6 +34,95 @@ from app.repositories import tenancy as tenancy_repo
 PLATFORM = "platform"
 ORGANIZATION = "organization"
 INSTITUTION = "institution"
+
+
+def assignment_is_active(assignment: dict, now: datetime | None = None) -> bool:
+    """One UTC, half-open validity rule for teaching and responsibilities."""
+    if not assignment.get("is_active", True) or assignment.get("revoked_at") is not None:
+        return False
+    instant = now or datetime.now(timezone.utc)
+    try:
+        start = assignment.get("start_at") or assignment.get("assigned_at")
+        end = assignment.get("end_at")
+        def parse(value: Any) -> datetime:
+            parsed = value if isinstance(value, datetime) else datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                raise ValueError("Validity timestamps must include a timezone")
+            return parsed
+        return bool(start and parse(start) <= instant and (not end or instant < parse(end)))
+    except (ValueError, TypeError):
+        return False
+
+
+def academic_scope_contains(assignment: dict, resource: dict) -> bool:
+    """Containment on database-normalized scopes; missing fields fail closed."""
+    if not assignment.get("institution_id") or str(assignment["institution_id"]) != str(resource.get("institution_id")):
+        return False
+    fields = {
+        "institution": (), "department": ("department_id",),
+        "program": ("program_id",),
+        "semester": ("program_id", "academic_year_id", "semester_id"),
+        # Sections in this schema belong to individual subjects. Class scope
+        # groups their authoritative program/year/semester/code, never names.
+        "section": ("program_id", "academic_year_id", "semester_id", "section_code"),
+        "course": ("department_id", "course_id"),
+    }.get(str(assignment.get("scope_type")))
+    if fields is None:
+        return False
+    return all(assignment.get(key) is not None and str(assignment[key]) == str(resource.get(key)) for key in fields)
+
+
+def effective_authorization(
+    current_user: dict, resource: dict, permission: str, *,
+    teaching: list[dict], responsibilities: list[dict],
+    owner_user_id: str | None = None, require_owner: bool = False,
+    now: datetime | None = None,
+) -> bool:
+    """Extend Phase 8 permission checks with academic scope, validity and ownership.
+
+    Inputs are internal database projections, never request fields. Responsibility
+    grants are scoped and are never added to the unrestricted role grant set.
+    """
+    from app.core.security import has_permission
+    from app.core.permissions import permission_matches
+
+    user_id = current_user.get("user_id")
+    tenant = current_user.get("institution_id")
+    if (not user_id or current_user.get("status") != "active" or not tenant
+            or str(tenant) != str(resource.get("institution_id"))):
+        return False
+    if require_owner and str(owner_user_id) != str(user_id):
+        return False
+    # Institution role grant is part of the authenticated projection.
+    active_roles = {
+        grant.get("role") for grant in current_user.get("role_assignments", [])
+        if grant.get("is_active", True) and grant.get("scope_type") == "institution"
+        and str(grant.get("scope_id")) == str(tenant)
+        and grant.get("role") in current_user.get("roles", [])
+    }
+    if not active_roles:
+        return False
+    if active_roles.intersection({"admin", "staff"}) and has_permission(current_user, permission):
+        return True
+    if "faculty" not in active_roles:
+        return False
+    teaching_permissions = {"students.read", "attendance.read", "attendance.manage", "results.read", "results.manage",
+                            "courses.read", "subjects.read", "documents.read", "documents.create"}
+    if permission in teaching_permissions and has_permission(current_user, permission) and any(
+        str(row.get("faculty_user_id")) == str(user_id)
+        and str(row.get("institution_id")) == str(tenant)
+        and row.get("section_id") is not None
+        and str(row["section_id"]) == str(resource.get("section_id"))
+        and assignment_is_active(row, now) for row in teaching
+    ):
+        return True
+    return any(
+        str(row.get("faculty_user_id")) == str(user_id)
+        and assignment_is_active(row, now)
+        and academic_scope_contains(row, resource)
+        and permission_matches(row.get("permissions", []), permission)
+        for row in responsibilities
+    )
 
 
 @dataclass(frozen=True, slots=True)

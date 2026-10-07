@@ -86,6 +86,8 @@ export interface StudentAcademicResultRecord {
 
 /** One published per-test score. */
 export interface StudentTestResultRecord {
+  mark_status?: string | null
+  outcome?: string | null
   test_name: string | null
   test_type: string | null
   course_code: string | null

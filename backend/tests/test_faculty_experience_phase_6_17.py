@@ -143,6 +143,12 @@ def _assert_faculty_denied_on_student_endpoint(path: str) -> None:
     with _patch_faculty_auth(), patch(
         "app.repositories.admin_academics.get_student_by_user_id",
         return_value=None,
+    ), patch(
+        "app.repositories.admin_academics.get_student_academic_profile_row",
+        return_value=None,
+    ), patch(
+        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+        return_value=None,
     ):
         response = client.get(path, headers=AUTH_HEADERS)
     assert response.status_code == 404, f"{path}: {response.status_code}"
@@ -186,6 +192,9 @@ def test_faculty_identity_parameters_cannot_widen_student_scope():
     closed for a faculty principal (no student profile)."""
     with _patch_faculty_auth(), patch(
         "app.repositories.admin_academics.get_student_by_user_id",
+        return_value=None,
+    ), patch(
+        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
         return_value=None,
     ):
         response = client.get(

@@ -50,6 +50,8 @@ class StudentTestResultRecord(BaseModel):
     percentage: float | None = None
     letter_grade: str | None = None
     conducted_at: str | None = None
+    mark_status: str | None = None
+    outcome: str | None = None
 
     model_config = ConfigDict(extra="forbid")
 

@@ -62,6 +62,20 @@ beforeEach(() => {
 })
 
 describe('results detail page', () => {
+  it('distinguishes published zero, absent and exempt marks with server pass/fail', async () => {
+    const base = TEST_RESULTS.records[0]!
+    vi.mocked(getMyTestResultsSummary).mockResolvedValue({ summary: { records_available: true, total_results: 3 }, records: [
+      { ...base, test_name: 'Zero score', scored_marks: 0, max_marks: 100, percentage: 0, mark_status: 'present', outcome: 'fail' },
+      { ...base, test_name: 'Absent score', scored_marks: null, percentage: null, mark_status: 'absent', outcome: null },
+      { ...base, test_name: 'Exempt score', scored_marks: null, percentage: null, mark_status: 'exempt', outcome: null },
+    ] })
+    render(<ResultsDetailPage />)
+    const table = await screen.findByRole('table', { name: 'Your published test scores' })
+    expect(within(table).getByText('0/100')).toBeInTheDocument()
+    expect(within(table).getByText('Fail')).toBeInTheDocument()
+    expect(within(table).getByText('Absent')).toBeInTheDocument()
+    expect(within(table).getByText('Exempt')).toBeInTheDocument()
+  })
   it('renders academic context, backend summary values, and both categories', async () => {
     render(<ResultsDetailPage />)
     expect(await screen.findByText('Test College (TC01)')).toBeInTheDocument()

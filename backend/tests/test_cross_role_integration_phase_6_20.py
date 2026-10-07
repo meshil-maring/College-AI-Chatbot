@@ -197,6 +197,12 @@ def _assert_student_chain_closed(path: str) -> None:
         with _auth(role), patch(
             "app.repositories.admin_academics.get_student_by_user_id",
             return_value=None,
+        ), patch(
+            "app.repositories.admin_academics.get_student_academic_profile_row",
+            return_value=None,
+        ), patch(
+            "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+            return_value=None,
         ):
             response = client.get(path, headers=AUTH_HEADERS)
         assert response.status_code == 404, f"{role} {path}: {response.status_code}"

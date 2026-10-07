@@ -8,7 +8,7 @@
 
 /// <reference types="vitest/globals" />
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import FacultyShell from './FacultyShell.tsx'
 import type { CurrentUser } from '../../types/auth.ts'
@@ -29,11 +29,24 @@ vi.mock('../auth/AuthProvider.tsx', () => ({
 }))
 
 const chatShellSpy = vi.hoisted(() => vi.fn())
+const facultyAttendanceApi = vi.hoisted(() => ({
+  commitFacultyAttendanceImport: vi.fn(),
+  getFacultyAttendanceAssignments: vi.fn(),
+  getFacultyAttendanceRoster: vi.fn(),
+  markFacultyAttendance: vi.fn(),
+  uploadFacultyAttendance: vi.fn(),
+}))
 vi.mock('../chat/ChatShell.tsx', () => ({
   default: function ChatShellMock() {
     chatShellSpy('ChatShell rendered')
     return <div>ChatShellMock</div>
   },
+}))
+vi.mock('../../services/facultyAttendanceApi.ts', () => facultyAttendanceApi)
+vi.mock('../../services/facultyTestsApi.ts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../services/facultyTestsApi.ts')>(),
+  getTestResources: vi.fn().mockResolvedValue([]),
+  getTestTypes: vi.fn().mockResolvedValue([]),
 }))
 
 const FACULTY_USER: CurrentUser = {
@@ -61,6 +74,13 @@ afterEach(() => {
 })
 
 describe('FacultyShell', () => {
+  it('opens the implemented tests workflow in the existing shell', async () => {
+    const user = userEvent.setup()
+    render(<FacultyShell />)
+    await user.click(screen.getByRole('button', { name: 'Tests & Assessments' }))
+    expect(await screen.findByRole('heading', { name: 'Tests & Examinations' })).toBeInTheDocument()
+    expect(screen.queryByText('Coming Soon')).not.toBeInTheDocument()
+  })
   it('renders the faculty navigation with verified capabilities and Coming Soon sections', () => {
     render(<FacultyShell />)
     const nav = screen.getByRole('navigation', { name: 'Faculty navigation' })
@@ -79,7 +99,7 @@ describe('FacultyShell', () => {
   it('renders an inert Coming Soon placeholder for each section without a backend contract', async () => {
     const user = userEvent.setup()
     render(<FacultyShell />)
-    for (const label of ['Students', 'Results', 'Notices', 'Learning Resources']) {
+    for (const label of ['Students', 'Notices', 'Learning Resources']) {
       await user.click(screen.getByRole('button', { name: label }))
       expect(screen.getByRole('heading', { name: label, level: 1 })).toBeInTheDocument()
       expect(screen.getByText('Coming Soon')).toBeInTheDocument()
@@ -97,7 +117,7 @@ describe('FacultyShell', () => {
     vi.stubGlobal('fetch', fetchSpy)
     const user = userEvent.setup()
     render(<FacultyShell />)
-    for (const label of ['Students', 'Results', 'Notices', 'Learning Resources']) {
+    for (const label of ['Students', 'Notices', 'Learning Resources']) {
       await user.click(screen.getByRole('button', { name: label }))
     }
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -134,6 +154,20 @@ describe('FacultyShell', () => {
     // (the shell renders no page h1 for the assistant, matching StudentShell).
     expect(screen.getByRole('region', { name: 'AI Assistant' })).toBeInTheDocument()
     expect(chatShellSpy).toHaveBeenCalled()
+  })
+
+  it('opens the upload attendance workflow from the faculty sidebar when no assignment exists', async () => {
+    facultyAttendanceApi.getFacultyAttendanceAssignments.mockResolvedValue([])
+    facultyAttendanceApi.getFacultyAttendanceRoster.mockResolvedValue([])
+    const user = userEvent.setup()
+    render(<FacultyShell />)
+
+    await user.click(screen.getByRole('button', { name: 'Attendance' }))
+    await user.click(screen.getByRole('button', { name: 'Upload Attendance' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Upload Attendance' })
+    expect(within(dialog).getByRole('heading', { name: 'No Active Assignments' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'View My Sections' })).toBeInTheDocument()
   })
 
   it('navigates to the profile view', async () => {

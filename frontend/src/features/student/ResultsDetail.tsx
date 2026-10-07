@@ -127,7 +127,8 @@ function TestScoresTable({ records }: { records: StudentTestResultRecord[] }) {
                 {courseLabel(record?.course_name, record?.course_code)}
               </td>
               <td className="max-w-[8rem] truncate px-3 py-2 text-slate-200 tabular-nums">
-                {formatScore(record?.scored_marks, record?.max_marks)}
+                {record.mark_status && record.mark_status !== 'present' ? formatLabel(record.mark_status) : formatScore(record?.scored_marks, record?.max_marks)}
+                {record.outcome ? <span className="block text-xs text-slate-300">{formatLabel(record.outcome)}</span> : null}
                 {typeof record?.percentage === 'number' && Number.isFinite(record.percentage) ? (
                   <span className="block text-xs text-slate-500">{formatPercent(record.percentage)}</span>
                 ) : null}

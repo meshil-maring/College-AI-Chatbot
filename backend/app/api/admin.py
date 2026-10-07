@@ -61,6 +61,8 @@ from app.schemas.phase81 import (
     FacultyAssignmentRevoke,
     StaffPermissionGrantChange,
 )
+from app.schemas.faculty_responsibilities import AssignmentValidity, ResponsibilityCreate, ResponsibilityUpdate
+from app.services import faculty_responsibilities
 from app.services import (
     admin_academics,
     admin_dashboard,
@@ -149,6 +151,11 @@ _ADMIN_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("GET", "/admin/faculty-assignments"): ("faculty.assignments.manage",),
     ("POST", "/admin/faculty-assignments"): ("faculty.assignments.manage",),
     ("DELETE", "/admin/faculty-assignments/{assignment_id}"): ("faculty.assignments.manage",),
+    ("PATCH", "/admin/faculty-assignments/{assignment_id}"): ("faculty.assignments.manage",),
+    ("GET", "/admin/faculty-responsibilities"): ("faculty.assignments.manage",),
+    ("POST", "/admin/faculty-responsibilities"): ("faculty.assignments.manage",),
+    ("PATCH", "/admin/faculty-responsibilities/{responsibility_id}"): ("faculty.assignments.manage",),
+    ("DELETE", "/admin/faculty-responsibilities/{responsibility_id}"): ("faculty.assignments.manage",),
 }
 
 
@@ -200,9 +207,19 @@ _APPROVAL = require_institution_roles("admin", "staff")
 # unrestricted access. See app.core.security for the guard primitives.
 
 
-def _scope_institution(current_user: dict, requested: UUID | None) -> UUID | None:
+def _scope_institution(current_user: dict, requested: UUID | None) -> UUID:
     """Resolve the effective institution for an endpoint that accepts one."""
-    return scope_tenant(current_user, requested)
+    institution_id = scope_tenant(current_user, requested)
+    if institution_id is None:
+        raise AppError("Institution scope required", 403, "SCOPE_MISSING")
+    return institution_id
+
+
+def _required_institution(current_user: dict) -> UUID:
+    institution_id = user_tenant_id(current_user)
+    if institution_id is None:
+        raise AppError("Institution scope required", 403, "SCOPE_MISSING")
+    return institution_id
 
 
 def _assert_row_tenant(current_user: dict, institution_id: UUID | str | None) -> None:
@@ -292,7 +309,7 @@ def dashboard(
     no platform or provider information is ever serialized here.
     """
     return admin_dashboard.get_dashboard_summary(
-        institution_id=user_tenant_id(current_user),
+        institution_id=_required_institution(current_user),
     )
 
 
@@ -308,7 +325,7 @@ def list_membership_requests(
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipRequestList:
     return admin_memberships.list_requests(
-        user_tenant_id(current_user), role=role, status=status
+        _required_institution(current_user), role=role, status=status
     )
 
 
@@ -323,7 +340,7 @@ def approve_membership_request(
 ) -> MembershipDecisionResult:
     return admin_memberships.decide_request(
         current_user,
-        user_tenant_id(current_user),
+        _required_institution(current_user),
         request_id,
         approve=True,
         reason=body.reason if body else None,
@@ -341,7 +358,7 @@ def reject_membership_request(
 ) -> MembershipDecisionResult:
     return admin_memberships.decide_request(
         current_user,
-        user_tenant_id(current_user),
+        _required_institution(current_user),
         request_id,
         approve=False,
         reason=body.reason if body else None,
@@ -355,7 +372,7 @@ def list_membership_roster(
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipRoster:
     return admin_memberships.list_roster(
-        user_tenant_id(current_user), role=role, status=status
+        _required_institution(current_user), role=role, status=status
     )
 
 
@@ -368,7 +385,7 @@ def deactivate_membership(
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipLifecycleResult:
     return admin_memberships.set_active(
-        current_user, user_tenant_id(current_user), user_id, active=False
+        current_user, _required_institution(current_user), user_id, active=False
     )
 
 
@@ -381,7 +398,7 @@ def reactivate_membership(
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipLifecycleResult:
     return admin_memberships.set_active(
-        current_user, user_tenant_id(current_user), user_id, active=True
+        current_user, _required_institution(current_user), user_id, active=True
     )
 
 
@@ -396,7 +413,7 @@ def resend_membership_invitation(
 ) -> AdminInvitationResendResponse:
     peer = request.client.host if request.client else "unknown"
     return admin_memberships.resend(
-        current_user, user_tenant_id(current_user), invitation_id, peer
+        current_user, _required_institution(current_user), invitation_id, peer
     )
 
 
@@ -1346,11 +1363,38 @@ def get_faculty_assignments(
     )
 
 
+@router.get("/faculty-responsibilities")
+def get_faculty_responsibilities(current_user: dict = Depends(_ADMIN)) -> dict:
+    return faculty_responsibilities.management_data(current_user, UUID(str(user_tenant_id(current_user))))
+
+
+@router.post("/faculty-responsibilities", status_code=201)
+def create_responsibility(body: ResponsibilityCreate, current_user: dict = Depends(_ADMIN)) -> dict:
+    return faculty_responsibilities.change_responsibility(current_user, UUID(str(user_tenant_id(current_user))), body)
+
+
+@router.patch("/faculty-responsibilities/{responsibility_id}")
+def update_responsibility(responsibility_id: UUID, body: ResponsibilityUpdate, current_user: dict = Depends(_ADMIN)) -> dict:
+    return faculty_responsibilities.change_responsibility(current_user, UUID(str(user_tenant_id(current_user))), body, responsibility_id=responsibility_id)
+
+
+@router.delete("/faculty-responsibilities/{responsibility_id}")
+def delete_responsibility(responsibility_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
+    return faculty_responsibilities.change_responsibility(current_user, UUID(str(user_tenant_id(current_user))), None, responsibility_id=responsibility_id, revoke=True)
+
+
+@router.patch("/faculty-assignments/{assignment_id}")
+def update_teaching_assignment(assignment_id: UUID, body: AssignmentValidity, current_user: dict = Depends(_ADMIN)) -> dict:
+    return faculty_responsibilities.update_teaching(current_user, UUID(str(user_tenant_id(current_user))), assignment_id, body)
+
+
 @router.post("/faculty-assignments", status_code=201)
 def create_faculty_assignment(
     body: FacultyAssignmentCreate,
     current_user: dict = Depends(_ADMIN),
 ) -> dict:
+    if body.start_at is not None:
+        return faculty_responsibilities.create_teaching(current_user, UUID(str(user_tenant_id(current_user))), body)
     return phase81_rbac.manage_faculty_assignment(
         current_user,
         UUID(str(user_tenant_id(current_user))),

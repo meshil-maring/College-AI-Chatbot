@@ -75,7 +75,8 @@ STUDENT_RESULT_ITEM_COLUMNS = (
 TEST_RESULT_COLUMNS = (
     "test_result_id, student_id, course_id, section_id, academic_year_id, "
     "semester_id, test_name, test_type, max_marks, scored_marks, percentage, "
-    "letter_grade, conducted_at, status, created_at, updated_at"
+    "letter_grade, conducted_at, status, created_at, updated_at, mark_status, institution_id, "
+    "faculty_tests(status,passing_marks)"
 )
 
 STUDENT_ATTENDANCE_COLUMNS = (
