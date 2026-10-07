@@ -1,30 +1,16 @@
 ﻿import { useEffect, useRef, useState } from 'react'
+import { Globe2, ShieldCheck, UserRound } from 'lucide-react'
 import { FUTURE_CAPABILITIES, GATEWAY_ENTRIES, type GatewayEntry } from './landingConfig.ts'
 
 function GatewayIcon({ role }: { role: GatewayEntry['role'] }) {
   const common = 'h-6 w-6'
   if (role === 'public') {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={common}>
-        <path d="M4 7.5h16M7.5 4v16M16.5 4v16M4 16.5h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    )
+    return <Globe2 aria-hidden="true" className={common} strokeWidth={1.6} />
   }
   if (role === 'super_admin') {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={common}>
-        <path d="M12 3 4.5 6v5.2c0 4.7 3.2 8.2 7.5 9.8 4.3-1.6 7.5-5.1 7.5-9.8V6L12 3Z" stroke="currentColor" strokeWidth="1.6" />
-        <path d="m9.2 12 1.8 1.8 3.9-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    )
+    return <ShieldCheck aria-hidden="true" className={common} strokeWidth={1.6} />
   }
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={common}>
-      <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M5.5 20c.5-4 2.7-6 6.5-6s6 2 6.5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  )
+  return <UserRound aria-hidden="true" className={common} strokeWidth={1.6} />
 }
 
 function GatewayCard({ entry }: { entry: GatewayEntry }) {

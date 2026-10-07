@@ -27,6 +27,26 @@
  */
 
 import type { ReactNode } from 'react'
+import {
+  AlertCircle,
+  ArrowRight,
+  Bell,
+  BookOpen,
+  CalendarCheck,
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  CircleHelp,
+  Database,
+  FileCheck2,
+  FileText,
+  GraduationCap,
+  LoaderCircle,
+  RefreshCw,
+  UserCheck,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { getDashboardSummary } from '../../services/adminApi.ts'
@@ -42,22 +62,30 @@ interface AdminDashboardProps {
 function MetricTile({
   label,
   value,
+  icon: Icon,
   tone = 'default',
 }: {
   label: string
   value: number | null
+  icon: LucideIcon
   tone?: 'default' | 'accent'
 }) {
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-      <div
-        className={
-          tone === 'accent'
-            ? 'text-2xl font-bold text-amber-400'
-            : 'text-2xl font-bold text-emerald-400'
-        }
-      >
-        {value === null ? '—' : value}
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className={
+            tone === 'accent'
+              ? 'text-2xl font-bold text-amber-400'
+              : 'text-2xl font-bold text-emerald-400'
+          }
+        >
+          {value === null ? '—' : value}
+        </div>
+        <Icon
+          aria-hidden="true"
+          className={tone === 'accent' ? 'h-5 w-5 text-amber-400' : 'h-5 w-5 text-emerald-400'}
+        />
       </div>
       <div className="mt-1 text-xs text-slate-400">{label}</div>
       {value === null ? (
@@ -67,10 +95,19 @@ function MetricTile({
   )
 }
 
-function SectionCard({ title, children }: { title: string; children: ReactNode }) {
+function SectionCard({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string
+  icon: LucideIcon
+  children: ReactNode
+}) {
   return (
     <section className="min-w-0 rounded-2xl border border-slate-700 bg-slate-800/50 p-5">
-      <h3 className="break-words text-sm font-semibold uppercase tracking-wide text-slate-300">
+      <h3 className="flex items-center gap-2 break-words text-sm font-semibold uppercase tracking-wide text-slate-300">
+        <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-400" />
         {title}
       </h3>
       <div className="mt-4">{children}</div>
@@ -95,7 +132,10 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div role="status" className="text-slate-400">Loading dashboard…</div>
+        <div role="status" className="inline-flex items-center gap-2 text-slate-400">
+          <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
+          Loading dashboard…
+        </div>
       </div>
     )
   }
@@ -104,6 +144,7 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
     return (
       <div className="space-y-4">
         <div role="alert" className="rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <AlertCircle aria-hidden="true" className="mr-2 inline-block h-4 w-4 align-text-bottom" />
           {error}
         </div>
         <button
@@ -111,6 +152,7 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           onClick={load}
           className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
+          <RefreshCw aria-hidden="true" className="mr-1.5 inline-block h-3.5 w-3.5 align-text-bottom" />
           Retry
         </button>
       </div>
@@ -157,51 +199,52 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
       {/* Headline metrics */}
       <section aria-label="Key metrics" className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <MetricTile label="Students" value={students.total} />
+        <MetricTile label="Students" value={students.total} icon={Users} />
         <MetricTile
           label="Pending Approvals"
           value={students.pending_approvals}
+          icon={UserCheck}
           tone={students.pending_approvals > 0 ? 'accent' : 'default'}
         />
-        <MetricTile label="Active Knowledge Sources" value={knowledge.sources_active} />
-        <MetricTile label="Active Notices" value={communication.active_notices} />
+        <MetricTile label="Active Knowledge Sources" value={knowledge.sources_active} icon={BookOpen} />
+        <MetricTile label="Active Notices" value={communication.active_notices} icon={Bell} />
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* B. Students */}
-        <SectionCard title="Students">
+        <SectionCard title="Students" icon={GraduationCap}>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <MetricTile label="Total" value={students.total} />
-            <MetricTile label="Pending" value={students.pending_approvals} />
-            <MetricTile label="Approved" value={students.approved} />
-            <MetricTile label="Active" value={students.active} />
+            <MetricTile label="Total" value={students.total} icon={Users} />
+            <MetricTile label="Pending" value={students.pending_approvals} icon={UserCheck} />
+            <MetricTile label="Approved" value={students.approved} icon={CheckCircle2} />
+            <MetricTile label="Active" value={students.active} icon={GraduationCap} />
           </div>
         </SectionCard>
 
         {/* C. Knowledge */}
-        <SectionCard title="Knowledge">
+        <SectionCard title="Knowledge" icon={BookOpen}>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <MetricTile label="Sources" value={knowledge.sources_total} />
-            <MetricTile label="Active Sources" value={knowledge.sources_active} />
-            <MetricTile label="Documents" value={knowledge.documents_total} />
-            <MetricTile label="Failed Processing" value={knowledge.failed_processing_runs} />
+            <MetricTile label="Sources" value={knowledge.sources_total} icon={Database} />
+            <MetricTile label="Active Sources" value={knowledge.sources_active} icon={BookOpen} />
+            <MetricTile label="Documents" value={knowledge.documents_total} icon={FileText} />
+            <MetricTile label="Failed Processing" value={knowledge.failed_processing_runs} icon={AlertCircle} />
           </div>
         </SectionCard>
 
         {/* E. Academics */}
-        <SectionCard title="Academic Overview">
+        <SectionCard title="Academic Overview" icon={ClipboardList}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <MetricTile label="Attendance Records" value={academics.attendance_records} />
-            <MetricTile label="Test Results" value={academics.test_results} />
-            <MetricTile label="Results" value={academics.results} />
+            <MetricTile label="Attendance Records" value={academics.attendance_records} icon={CalendarCheck} />
+            <MetricTile label="Test Results" value={academics.test_results} icon={ClipboardCheck} />
+            <MetricTile label="Results" value={academics.results} icon={FileCheck2} />
           </div>
         </SectionCard>
 
         {/* D. Communication */}
-        <SectionCard title="Communication">
+        <SectionCard title="Communication" icon={Bell}>
           <div className="grid grid-cols-2 gap-4">
-            <MetricTile label="Active FAQs" value={communication.active_faqs} />
-            <MetricTile label="Active Notices" value={communication.active_notices} />
+            <MetricTile label="Active FAQs" value={communication.active_faqs} icon={CircleHelp} />
+            <MetricTile label="Active Notices" value={communication.active_notices} icon={Bell} />
           </div>
           <div className="mt-5">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -260,6 +303,7 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                   <span className="mt-1 block break-words text-xs text-slate-400">
                     {action.description}
                   </span>
+                  <ArrowRight aria-hidden="true" className="mt-3 h-4 w-4 text-emerald-400" />
                 </button>
               </li>
             ))}

@@ -27,6 +27,7 @@
  */
 
 import { useState } from 'react'
+import { Check, RefreshCw, X } from 'lucide-react'
 import { useApiMutation, useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   AdminApiError,
@@ -128,6 +129,7 @@ export default function AdminApprovals({ accessToken }: { accessToken: string })
           onClick={() => void loadQueue()}
           className="mt-4 rounded-lg border border-slate-600 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
         >
+          <RefreshCw aria-hidden="true" className="mr-1.5 inline-block h-4 w-4 align-text-bottom" />
           Retry
         </button>
       </section>
@@ -222,6 +224,7 @@ export default function AdminApprovals({ accessToken }: { accessToken: string })
                     onClick={() => void decide(student, 'approve')}
                     className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   >
+                    <Check aria-hidden="true" className="mr-1.5 inline-block h-4 w-4 align-text-bottom" />
                     Approve
                   </button>
                   <button
@@ -230,6 +233,7 @@ export default function AdminApprovals({ accessToken }: { accessToken: string })
                     onClick={() => void decide(student, 'reject')}
                     className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   >
+                    <X aria-hidden="true" className="mr-1.5 inline-block h-4 w-4 align-text-bottom" />
                     Reject
                   </button>
                 </div>

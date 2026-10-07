@@ -30,6 +30,24 @@
  */
 
 import { useState } from 'react'
+import {
+  Bell,
+  Bot,
+  CalendarCheck,
+  CircleHelp,
+  ClipboardCheck,
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  ShieldCheck,
+  UserCheck,
+  UserCircle,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import ChatShell from '../chat/ChatShell.tsx'
 import AdminDashboard from './AdminDashboard.tsx'
@@ -46,6 +64,23 @@ import StaffFacultyManager from './StaffFacultyManager.tsx'
 import StaffPermissionManager from './StaffPermissionManager.tsx'
 import FacultyAssignmentManager from './FacultyAssignmentManager.tsx'
 import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adminNavigation.ts'
+
+const ADMIN_NAV_ICONS: Record<AdminView, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  approvals: UserCheck,
+  'staff-faculty': Users,
+  students: GraduationCap,
+  attendance: CalendarCheck,
+  results: ClipboardCheck,
+  'test-results': ClipboardList,
+  notices: Bell,
+  documents: FileText,
+  faqs: CircleHelp,
+  assistant: Bot,
+  profile: UserCircle,
+  permissions: ShieldCheck,
+  'faculty-assignments': Settings,
+}
 
 export default function AdminShell() {
   const { user, role, accessToken, logout } = useAuth()
@@ -68,8 +103,9 @@ export default function AdminShell() {
           <button
             type="button"
             onClick={logout}
-            className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
           >
+            <LogOut aria-hidden="true" className="h-4 w-4" />
             Sign out
           </button>
         </div>
@@ -84,12 +120,16 @@ export default function AdminShell() {
                       type="button"
                       onClick={() => setCurrentView(item.key)}
                       aria-current={active ? 'page' : undefined}
-                      className={`rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
                         active
                           ? 'bg-emerald-600 text-white'
                           : 'border border-slate-600 text-slate-200 hover:bg-slate-700'
                       }`}
                     >
+                      {(() => {
+                        const Icon = ADMIN_NAV_ICONS[item.key]
+                        return <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                      })()}
                       {item.label}
                     </button>
                   </li>
@@ -113,8 +153,9 @@ export default function AdminShell() {
             <button
               type="button"
               onClick={logout}
-              className="mt-6 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400"
             >
+              <LogOut aria-hidden="true" className="h-4 w-4" />
               Sign out
             </button>
           </section>

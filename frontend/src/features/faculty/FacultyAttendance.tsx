@@ -1,5 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  AlertTriangle,
+  ArrowLeft,
+  BarChart3,
+  CalendarDays,
+  Check,
+  Cloud,
+  Clock3,
+  Download,
+  Ellipsis,
+  GraduationCap,
+  Plus,
+  Search,
+  Upload,
+  Users,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
+import {
   commitFacultyAttendanceImport,
   getFacultyAttendanceAssignments,
   getFacultyAttendanceRoster,
@@ -18,24 +36,28 @@ type ImportedStats = { percentage: number | null; present: number | null; absent
 const surface = 'rounded-xl border border-[#1e3348] bg-[#0d1c2c]'
 const input = 'rounded-lg border border-[#263d55] bg-[#091725] px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-[#ffc72c] focus:ring-1 focus:ring-[#ffc72c]'
 
-function Glyph({ name, size = 18 }: { name: 'search' | 'download' | 'plus' | 'upload' | 'more' | 'users' | 'calendar' | 'chart' | 'clock' | 'check' | 'alert' | 'close' | 'back' | 'cloud'; size?: number }) {
-  const paths = {
-    search: 'm20 20-4.2-4.2m2.2-5.3a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z',
-    download: 'M12 3v12m0 0 4-4m-4 4-4-4M5 21h14',
-    plus: 'M12 5v14M5 12h14',
-    upload: 'M12 16V4m0 0 4 4m-4-4L8 8M5 15v4h14v-4',
-    more: 'M5 12h.01M12 12h.01M19 12h.01',
-    users: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm5-6.7a3 3 0 0 1 0 5.4M17 15h1.5a3.5 3.5 0 0 1 3.5 3.5V20',
-    calendar: 'M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Zm3-2v4m8-4v4M7 10h10',
-    chart: 'M4 19V9m8 10V4m8 15v-7',
-    clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-14v5l3 2',
-    check: 'm5 12 4 4L19 6',
-    alert: 'M12 9v4m0 4h.01M10.3 3.8 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z',
-    close: 'M6 6l12 12M18 6 6 18',
-    back: 'm15 18-6-6 6-6M9 12h10',
-    cloud: 'M7 18a4 4 0 1 1 .7-7.9A5 5 0 0 1 17 9a4 4 0 0 1 0 8H7Z',
-  } as const
-  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name]} /></svg>
+type GlyphName = 'search' | 'download' | 'plus' | 'upload' | 'more' | 'users' | 'calendar' | 'chart' | 'clock' | 'check' | 'alert' | 'close' | 'back' | 'cloud'
+
+const GLYPHS: Record<GlyphName, LucideIcon> = {
+  search: Search,
+  download: Download,
+  plus: Plus,
+  upload: Upload,
+  more: Ellipsis,
+  users: Users,
+  calendar: CalendarDays,
+  chart: BarChart3,
+  clock: Clock3,
+  check: Check,
+  alert: AlertTriangle,
+  close: X,
+  back: ArrowLeft,
+  cloud: Cloud,
+}
+
+function Glyph({ name, size = 18 }: { name: GlyphName; size?: number }) {
+  const Icon = GLYPHS[name]
+  return <Icon aria-hidden="true" size={size} strokeWidth={1.8} />
 }
 
 function formatPercent(value: number | null) {
@@ -79,7 +101,7 @@ function Stepper({ active, success = false }: { active: UploadStep; success?: bo
 }
 
 function EmptyAssignment() {
-  return <section className={`${surface} flex min-h-[420px] flex-col items-center justify-center px-6 py-14 text-center`}><div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#17293d] text-[#ffc72c]"><svg aria-hidden="true" width="42" height="42" viewBox="0 0 40 40" fill="currentColor"><path d="m4 13 16-7 16 7-16 7L4 13Zm5 4v8l11 5 11-5v-8l-11 5L9 17Zm25-2h2v10h-2V15Z" /></svg></div><h2 className="text-xl font-bold text-white">No Active Assignments</h2><p className="mt-3 max-w-md text-sm leading-6 text-slate-400">You currently don't have any active course/section assignments. Once an administrator assigns you to a section, your attendance classes will appear here.</p></section>
+  return <section className={`${surface} flex min-h-[420px] flex-col items-center justify-center px-6 py-14 text-center`}><div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#17293d] text-[#ffc72c]"><GraduationCap aria-hidden="true" className="h-[42px] w-[42px]" strokeWidth={1.7} /></div><h2 className="text-xl font-bold text-white">No Active Assignments</h2><p className="mt-3 max-w-md text-sm leading-6 text-slate-400">You currently don't have any active course/section assignments. Once an administrator assigns you to a section, your attendance classes will appear here.</p></section>
 }
 
 export default function FacultyAttendance({ accessToken }: { accessToken: string }) {
