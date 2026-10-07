@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   createFacultyAssignment,
   getFacultyAssignments,
@@ -16,22 +17,22 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
-  async function load() {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await getFacultyAssignments(accessToken)
-      setData(result)
-      setFacultyId((previous) => previous || result.faculty[0]?.id || '')
-      setSectionId((previous) => previous || result.sections[0]?.section_id || '')
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load Faculty assignments.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const assignmentsQuery = useApiQuery<AssignmentData>(
+    ['admin', 'faculty-assignments', accessToken],
+    () => getFacultyAssignments(accessToken),
+  )
 
-  useEffect(() => { void load() }, [accessToken])
+  function load() { void assignmentsQuery.refetch() }
+
+  useEffect(() => {
+    setLoading(assignmentsQuery.isFetching)
+    if (assignmentsQuery.data) {
+      setData(assignmentsQuery.data)
+      setFacultyId((previous) => previous || assignmentsQuery.data.faculty[0]?.id || '')
+      setSectionId((previous) => previous || assignmentsQuery.data.sections[0]?.section_id || '')
+    }
+    if (assignmentsQuery.isError) setError(assignmentsQuery.error instanceof Error ? assignmentsQuery.error.message : 'Could not load Faculty assignments.')
+  }, [assignmentsQuery.data, assignmentsQuery.error, assignmentsQuery.isError, assignmentsQuery.isFetching])
 
   async function assign() {
     if (!facultyId || !sectionId) return

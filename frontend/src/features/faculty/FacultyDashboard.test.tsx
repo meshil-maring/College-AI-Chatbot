@@ -61,9 +61,9 @@ describe('FacultyDashboard workspace', () => {
     expect(screen.getByText('Attendance')).toBeInTheDocument()
     expect(screen.getByText('Results')).toBeInTheDocument()
     // Every surface without a backend contract carries the Coming Soon badge.
-    expect(screen.getAllByText('Coming Soon').length).toBeGreaterThanOrEqual(5)
+    expect(screen.getAllByText('Coming Soon').length).toBeGreaterThanOrEqual(4)
     // Verified capabilities are still marked Available, not Coming Soon.
-    expect(screen.getAllByText('Available').length).toBe(2)
+    expect(screen.getAllByText('Available').length).toBe(3)
   })
 
   it('renders the AI assistant entry point that navigates to the assistant', async () => {

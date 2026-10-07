@@ -27,7 +27,7 @@
  */
 
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { getDashboardSummary } from '../../services/adminApi.ts'
 import type { AdminView } from './adminNavigation.ts'
@@ -80,27 +80,17 @@ function SectionCard({ title, children }: { title: string; children: ReactNode }
 
 export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const { accessToken } = useAuth()
-  const [summary, setSummary] = useState<DashboardSummary | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    if (accessToken === null) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await getDashboardSummary(accessToken)
-      setSummary(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [accessToken])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const dashboardQuery = useApiQuery<DashboardSummary>(
+    ['admin', 'dashboard', accessToken],
+    () => getDashboardSummary(accessToken as string),
+    accessToken !== null,
+  )
+  const summary = dashboardQuery.data ?? null
+  const isLoading = dashboardQuery.isPending
+  const error = dashboardQuery.isError
+    ? (dashboardQuery.error instanceof Error ? dashboardQuery.error.message : 'Failed to load dashboard.')
+    : null
+  const load = () => { void dashboardQuery.refetch() }
 
   if (isLoading) {
     return (

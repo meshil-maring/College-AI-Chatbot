@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { getPlatformIdentity } from '../../services/platformApi.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { hasPermission } from '../auth/permissions.ts'
@@ -32,23 +33,19 @@ export default function SuperAdminShell() {
   const { user, accessToken, logout } = useAuth()
   const canReadPlatform = hasPermission(user?.effective_permissions, 'platform.read')
   const canReadAudit = hasPermission(user?.effective_permissions, 'platform.audit.read')
-  const [authorization, setAuthorization] = useState<'checking' | 'allowed' | 'denied'>('checking')
+  const authorizationQuery = useApiQuery(
+    ['platform', 'identity', accessToken],
+    () => getPlatformIdentity(accessToken as string),
+    accessToken !== null,
+  )
+  const authorization: 'checking' | 'allowed' | 'denied' = accessToken === null
+    ? 'denied'
+    : authorizationQuery.isPending
+      ? 'checking'
+      : authorizationQuery.isSuccess ? 'allowed' : 'denied'
   const [section, setSection] = useState<PlatformSection>(() =>
     canReadPlatform ? 'institutions' : 'audit',
   )
-
-  useEffect(() => {
-    let cancelled = false
-    if (accessToken === null) {
-      setAuthorization('denied')
-      return () => { cancelled = true }
-    }
-    void getPlatformIdentity(accessToken).then(
-      () => { if (!cancelled) setAuthorization('allowed') },
-      () => { if (!cancelled) setAuthorization('denied') },
-    )
-    return () => { cancelled = true }
-  }, [accessToken])
 
   if (authorization === 'checking') {
     return (

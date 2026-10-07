@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiMutation, useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   SuperAdminInvitationError,
   cancelSuperAdminInvitation,
@@ -13,50 +14,49 @@ import { hasPermission } from '../auth/permissions.ts'
 export default function SuperAdminInvitations() {
   const { accessToken, user } = useAuth()
   const canManage = hasPermission(user?.effective_permissions, 'platform.manage')
-  const [invitations, setInvitations] = useState<SuperAdminInvitation[]>([])
   const [email, setEmail] = useState('')
   const [link, setLink] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const invitationsQuery = useApiQuery<SuperAdminInvitation[]>(
+    ['platform', 'super-admin-invitations', accessToken],
+    () => listSuperAdminInvitations(accessToken as string),
+    accessToken !== null,
+  )
+  const inviteMutation = useApiMutation<{ invitation_url: string }, string>({
+    mutationFn: (address) => createSuperAdminInvitation(accessToken as string, address),
+  })
+  const cancelMutation = useApiMutation<SuperAdminInvitation, string>({
+    mutationFn: (id) => cancelSuperAdminInvitation(accessToken as string, id),
+  })
+  const invitations = invitationsQuery.data ?? []
+  const busy = inviteMutation.isPending
 
   const message = (err: unknown): string =>
     err instanceof SuperAdminInvitationError ? err.message : 'Something went wrong. Please try again.'
 
-  const refresh = useCallback(async (): Promise<void> => {
-    if (accessToken === null) return
-    try {
-      setInvitations(await listSuperAdminInvitations(accessToken))
-    } catch (err) {
-      setError(message(err))
-    }
-  }, [accessToken])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
+  const refresh = async (): Promise<void> => {
+    try { await invitationsQuery.refetch() } catch (err) { setError(message(err)) }
+  }
 
   const invite = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault()
     if (accessToken === null || email.trim() === '') return
-    setBusy(true)
     setError(null)
     setLink(null)
     try {
-      const created = await createSuperAdminInvitation(accessToken, email.trim())
+      const created = await inviteMutation.mutateAsync(email.trim())
       setLink(`${window.location.origin}${created.invitation_url}`)
       setEmail('')
       await refresh()
     } catch (err) {
       setError(message(err))
-    } finally {
-      setBusy(false)
     }
   }
 
   const cancel = async (id: string): Promise<void> => {
     if (accessToken === null) return
     try {
-      await cancelSuperAdminInvitation(accessToken, id)
+      await cancelMutation.mutateAsync(id)
       await refresh()
     } catch (err) {
       setError(message(err))

@@ -24,7 +24,9 @@
  *   - No frontend-network path other than services/api.ts is used.
  */
 
+import { useMutation } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
+import { queryClient } from '../lib/queryClient.ts'
 import { ApiError, chat } from '../services/api.ts'
 import { DEMO_INSTITUTION_ID } from '../features/chat/institution.ts'
 import { useAuth } from '../features/auth/AuthProvider.tsx'
@@ -137,10 +139,22 @@ export function useChat(): ChatState {
   const { accessToken } = useAuth()
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
+
+  const sendMutation = useMutation<
+    ChatResponse,
+    unknown,
+    { request: ChatRequest; accessToken: string }
+  >(
+    {
+      mutationKey: ['chat', accessToken],
+      mutationFn: ({ request, accessToken: token }) => chat(request, token),
+    },
+    queryClient,
+  )
+  const isLoading = sendMutation.isPending
 
   const sendMessage = useCallback(
     async (raw: string): Promise<void> => {
@@ -159,8 +173,6 @@ export function useChat(): ChatState {
         ...previous,
         { id: nextUiMessageId(), role: 'user', content: userQuery },
       ])
-      setIsLoading(true)
-
       // First request: omit session/conversation ids (the backend creates them).
       // Later requests: forward exactly what the backend returned.
       const request: ChatRequest = {
@@ -171,7 +183,7 @@ export function useChat(): ChatState {
       }
 
       try {
-        const response = await chat(request, accessToken)
+        const response = await sendMutation.mutateAsync({ request, accessToken })
         // The backend owns id creation; store and replay its values verbatim.
         setSessionId(response.session_id)
         setConversationId(response.conversation_id)
@@ -182,10 +194,10 @@ export function useChat(): ChatState {
       } catch (caught) {
         setError(chatErrorMessage(caught))
       } finally {
-        setIsLoading(false)
+        sendMutation.reset()
       }
     },
-    [accessToken, conversationId, isLoading, sessionId],
+    [accessToken, conversationId, isLoading, sendMutation, sessionId],
   )
 
   const resetChat = useCallback((): void => {
@@ -196,7 +208,7 @@ export function useChat(): ChatState {
     setSessionId(null)
     setConversationId(null)
     setError(null)
-    setIsLoading(false)
+    sendMutation.reset()
   }, [])
 
   const loadConversation = useCallback(
@@ -215,9 +227,9 @@ export function useChat(): ChatState {
       setConversationId(conversationId)
       setSessionId(null)
       setError(null)
-      setIsLoading(false)
+      sendMutation.reset()
     },
-    [],
+    [sendMutation],
   )
 
   return {

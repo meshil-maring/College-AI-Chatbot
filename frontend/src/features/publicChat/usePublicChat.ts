@@ -1,4 +1,6 @@
+import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { queryClient } from '../../lib/queryClient.ts'
 import { PublicChatError, publicChat, publicChatErrorMessage } from '../../services/publicChat.ts'
 import type { PublicChatMessage, PublicChatResponse, PublicConversation } from '../../types/publicChat.ts'
 import {
@@ -60,6 +62,17 @@ export function usePublicChat(institutionCode: string) {
     initialUnansweredUserId === null ? null : INTERRUPTED_REQUEST_MESSAGE,
   )
   const [failedMessageId, setFailedMessageId] = useState<string | null>(initialUnansweredUserId)
+  const answerMutation = useMutation<
+    PublicChatResponse,
+    unknown,
+    { response: Promise<PublicChatResponse> }
+  >(
+    {
+      mutationKey: ['public-chat', normalizedCode],
+      mutationFn: ({ response }) => response,
+    },
+    queryClient,
+  )
   const inFlight = useRef(false)
   const abortController = useRef<AbortController | null>(null)
   const activeInstitution = useRef(normalizedCode)
@@ -98,10 +111,14 @@ export function usePublicChat(institutionCode: string) {
     setError(null)
     setFailedMessageId(null)
     try {
-      const response = await publicChat({
+      // Start the request before entering the mutation scheduler so the
+      // existing duplicate-submit UX remains synchronous. TanStack Query then
+      // owns the mutation lifecycle and error boundary for the promise.
+      const responsePromise = publicChat({
         institution_code: requestInstitution,
         message: userMessage.content,
       }, { signal: controller.signal })
+      const response = await answerMutation.mutateAsync({ response: responsePromise })
       if (!controller.signal.aborted && activeInstitution.current === requestInstitution) {
         setConversation((current) => appendMessage(current, assistantMessage(response)))
       }
@@ -118,7 +135,7 @@ export function usePublicChat(institutionCode: string) {
         if (activeInstitution.current === requestInstitution) setIsLoading(false)
       }
     }
-  }, [normalizedCode])
+  }, [answerMutation, normalizedCode])
 
   const sendMessage = useCallback(async (raw: string): Promise<void> => {
     const content = raw.trim().replace(/\s+/g, ' ')

@@ -38,7 +38,7 @@ export function ResultsPage() {
  * returned, and content is plain text rendered as React text (never HTML).
  */
 export function NoticesPage() {
-  const notices = useStudentResource((token) => getMyNotices(token, 20), 'Unable to load notices.')
+  const notices = useStudentResource((token) => getMyNotices(token, 20), 'Unable to load notices.', '', 'notices-20')
   return (
     <SectionCard title="Notices from your institution" headingId="student-page-notices">
       <NoticesPanel notices={notices} />
@@ -55,7 +55,7 @@ export function NoticesPage() {
  * endpoint's only query field is `limit`).
  */
 export function ResourcesPage() {
-  const resources = useStudentResource((token) => getMyResources(token, 20), 'Unable to load learning resources.')
+  const resources = useStudentResource((token) => getMyResources(token, 20), 'Unable to load learning resources.', '', 'resources-20')
   return (
     <SectionCard title="Learning resources" headingId="student-page-resources">
       <ResourcesPanel resources={resources} />
@@ -71,15 +71,17 @@ export function ResourcesPage() {
  * request, shared by both cards below — one request per profile mount.
  */
 export function ProfilePage() {
-  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic profile.')
+  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic profile.', '', 'academic-profile')
   return (
     <div className="space-y-4">
       <SectionCard title="Your profile" headingId="student-page-profile">
         <StudentIdentityCard profile={profile} />
       </SectionCard>
-      <SectionCard title="Academic context" headingId="student-page-context">
-        <AcademicContextCard profile={profile} />
-      </SectionCard>
+      {profile.status !== 'loading' ? (
+        <SectionCard title="Academic context" headingId="student-page-context">
+          <AcademicContextCard profile={profile} />
+        </SectionCard>
+      ) : null}
     </div>
   )
 }

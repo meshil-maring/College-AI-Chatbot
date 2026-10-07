@@ -272,7 +272,7 @@ function AttendanceDetailBody({
 }
 
 export function AttendanceDetailPage() {
-  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic context.')
+  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic context.', '', 'academic-profile')
   const [filters, setFilters] = useState<StudentAttendanceFilters>({})
   const [fromDraft, setFromDraft] = useState('')
   const [toDraft, setToDraft] = useState('')
@@ -284,6 +284,7 @@ export function AttendanceDetailPage() {
     (token) => getMyAttendanceSummary(token, filters),
     LOAD_ERROR_MESSAGE,
     watchKey,
+    'attendance-detail',
   )
 
   const filtersActive = filters.dateFrom !== undefined || filters.dateTo !== undefined

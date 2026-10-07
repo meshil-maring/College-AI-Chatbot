@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useApiMutation, useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   AdminInvitationError,
   acceptInvitation,
@@ -49,25 +50,28 @@ export default function AdminInvitationPage({ token }: { token: string }) {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
-
-  const inspect = useCallback(async (): Promise<void> => {
-    setPhase({ kind: 'loading' })
-    try {
-      setPhase({ kind: 'ready', invitation: await inspectInvitation(token) })
-    } catch (err) {
-      setPhase({
-        kind: 'unusable',
-        message:
-          err instanceof AdminInvitationError
-            ? err.message
-            : 'This invitation link could not be verified.',
-      })
-    }
-  }, [token])
+  const invitationQuery = useApiQuery<AdminInvitationPublicView>(
+    ['admin-invitation', token],
+    () => inspectInvitation(token),
+  )
+  const acceptMutation = useApiMutation<
+    Awaited<ReturnType<typeof acceptInvitation>>,
+    { password: string; first_name?: string; last_name?: string }
+  >({
+    mutationFn: (payload) => acceptInvitation(token, payload),
+  })
 
   useEffect(() => {
-    void inspect()
-  }, [inspect])
+    if (invitationQuery.data) setPhase({ kind: 'ready', invitation: invitationQuery.data })
+    if (invitationQuery.isError) {
+      setPhase({
+        kind: 'unusable',
+        message: invitationQuery.error instanceof AdminInvitationError
+          ? invitationQuery.error.message
+          : 'This invitation link could not be verified.',
+      })
+    }
+  }, [invitationQuery.data, invitationQuery.error, invitationQuery.isError])
 
   const submit = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault()
@@ -84,7 +88,7 @@ export default function AdminInvitationPage({ token }: { token: string }) {
     const invitation = phase.invitation
     setPhase({ kind: 'submitting', invitation })
     try {
-      const result = await acceptInvitation(token, {
+      const result = await acceptMutation.mutateAsync({
         password,
         ...(firstName.trim() !== '' ? { first_name: firstName.trim() } : {}),
         ...(lastName.trim() !== '' ? { last_name: lastName.trim() } : {}),

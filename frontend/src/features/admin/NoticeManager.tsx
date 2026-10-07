@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import {
   createNotice,
@@ -17,28 +18,24 @@ import type { Notice, NoticeCreate } from '../../types/admin.ts'
 export default function NoticeManager() {
   const { accessToken } = useAuth()
   const [notices, setNotices] = useState<Notice[]>([])
+  const noticesQuery = useApiQuery<Notice[]>(
+    ['admin', 'notices', accessToken],
+    () => listNotices(accessToken as string),
+    accessToken !== null,
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Notice | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
-  const load = useCallback(async () => {
-    if (accessToken === null) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await listNotices(accessToken)
-      setNotices(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load notices.')
-    } finally {
+  useEffect(() => {
+    if (noticesQuery.isFetching) setIsLoading(true)
+    if (noticesQuery.data) { setNotices(noticesQuery.data); setIsLoading(false) }
+    if (noticesQuery.isError) {
+      setError(noticesQuery.error instanceof Error ? noticesQuery.error.message : 'Failed to load notices.')
       setIsLoading(false)
     }
-  }, [accessToken])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  }, [noticesQuery.data, noticesQuery.error, noticesQuery.isError, noticesQuery.isFetching])
 
   const handleDelete = useCallback(async (id: string) => {
     if (accessToken === null) return

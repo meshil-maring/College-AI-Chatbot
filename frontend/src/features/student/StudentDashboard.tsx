@@ -32,12 +32,12 @@ function ViewLink({ label, view, onNavigate }: { label: string; view: StudentVie
 }
 
 export default function StudentDashboard({ onNavigate }: { onNavigate: (view: StudentView) => void }) {
-  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic profile.')
-  const attendance = useStudentResource(getMyAttendanceSummary, 'Unable to load attendance.')
-  const results = useStudentResource(getMyResultsSummary, 'Unable to load results.')
-  const testResults = useStudentResource(getMyTestResultsSummary, 'Unable to load results.')
-  const notices = useStudentResource((token) => getMyNotices(token, 5), 'Unable to load notices.')
-  const resources = useStudentResource((token) => getMyResources(token, 6), 'Unable to load learning resources.')
+  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic profile.', '', 'academic-profile')
+  const attendance = useStudentResource(getMyAttendanceSummary, 'Unable to load attendance.', '', 'attendance-summary')
+  const results = useStudentResource(getMyResultsSummary, 'Unable to load results.', '', 'results-summary')
+  const testResults = useStudentResource(getMyTestResultsSummary, 'Unable to load results.', '', 'test-results-summary')
+  const notices = useStudentResource((token) => getMyNotices(token, 5), 'Unable to load notices.', '', 'notices-5')
+  const resources = useStudentResource((token) => getMyResources(token, 6), 'Unable to load learning resources.', '', 'resources-6')
 
   return (
     <div className="min-w-0 space-y-4 overflow-x-clip">

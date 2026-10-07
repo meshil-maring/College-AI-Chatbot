@@ -16,7 +16,7 @@
  *                                 (requires faculty.assignments.read)
  *        - AI Assistant        -> existing ChatShell (requires ai.chat)
  *
- *   2. INERT "Coming Soon" placeholders (Students, Attendance, Results,
+ *   2. INERT "Coming Soon" placeholders (Students, Results,
  *      Notices, Learning Resources): the Phase 7.24 audit verified that NO
  *      faculty-facing backend contract exists for these surfaces today, so
  *      the matching views fetch NOTHING, render NO data and expose NO
@@ -59,7 +59,6 @@ export type FacultyView =
  */
 export const FACULTY_COMING_SOON_VIEWS: readonly FacultyView[] = [
   'students',
-  'attendance',
   'results',
   'notices',
   'resources',
@@ -98,6 +97,7 @@ const FACULTY_VIEW_PERMISSIONS: Readonly<Partial<Record<FacultyView, string>>> =
   assistant: 'ai.chat',
   profile: 'profile.own.read',
   assignments: 'faculty.assignments.read',
+  attendance: 'attendance.read',
 }
 
 /**
@@ -179,8 +179,8 @@ export const FACULTY_WORKSPACE_SURFACES: readonly FacultyWorkspaceSurface[] = [
   {
     key: 'attendance',
     title: 'Attendance',
-    status: 'not-available',
-    description: 'Attendance access is not available for faculty accounts yet.',
+    status: 'available',
+    description: 'Review assigned rosters, mark attendance, and validate imports.',
   },
   {
     key: 'results',

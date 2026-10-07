@@ -79,7 +79,7 @@ describe('FacultyShell', () => {
   it('renders an inert Coming Soon placeholder for each section without a backend contract', async () => {
     const user = userEvent.setup()
     render(<FacultyShell />)
-    for (const label of ['Students', 'Attendance', 'Results', 'Notices', 'Learning Resources']) {
+    for (const label of ['Students', 'Results', 'Notices', 'Learning Resources']) {
       await user.click(screen.getByRole('button', { name: label }))
       expect(screen.getByRole('heading', { name: label, level: 1 })).toBeInTheDocument()
       expect(screen.getByText('Coming Soon')).toBeInTheDocument()
@@ -97,7 +97,7 @@ describe('FacultyShell', () => {
     vi.stubGlobal('fetch', fetchSpy)
     const user = userEvent.setup()
     render(<FacultyShell />)
-    for (const label of ['Students', 'Attendance', 'Results', 'Notices', 'Learning Resources']) {
+    for (const label of ['Students', 'Results', 'Notices', 'Learning Resources']) {
       await user.click(screen.getByRole('button', { name: label }))
     }
     expect(fetchSpy).not.toHaveBeenCalled()

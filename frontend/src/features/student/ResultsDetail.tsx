@@ -221,9 +221,9 @@ function ResultsSummaryFigures({
 }
 
 export function ResultsDetailPage() {
-  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic context.')
-  const results = useStudentResource(getMyResultsSummary, ACADEMIC_LOAD_ERROR_MESSAGE)
-  const testResults = useStudentResource(getMyTestResultsSummary, TEST_LOAD_ERROR_MESSAGE)
+  const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic context.', '', 'academic-profile')
+  const results = useStudentResource(getMyResultsSummary, ACADEMIC_LOAD_ERROR_MESSAGE, '', 'results-detail')
+  const testResults = useStudentResource(getMyTestResultsSummary, TEST_LOAD_ERROR_MESSAGE, '', 'test-results-detail')
 
   const bothUnavailable =
     results.status === 'loaded' &&

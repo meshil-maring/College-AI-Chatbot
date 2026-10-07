@@ -13,37 +13,27 @@
  * neutral state is shown instead of an error or a fabricated list.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { listStudents } from '../../services/adminApi.ts'
 import type { Student } from '../../types/admin.ts'
 
 export default function StudentManager() {
   const { accessToken, user } = useAuth()
-  const [students, setStudents] = useState<Student[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   // Tenant context resolved SERVER-SIDE (never typed by the admin).
   const institutionId = user?.institution_id ?? null
 
-  const load = useCallback(async () => {
-    if (accessToken === null || institutionId === null) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await listStudents(accessToken, institutionId)
-      setStudents(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load students.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [accessToken, institutionId])
-
-  useEffect(() => {
-    if (institutionId !== null) void load()
-  }, [load, institutionId])
+  const studentsQuery = useApiQuery<Student[]>(
+    ['admin', 'students', accessToken, institutionId],
+    () => listStudents(accessToken as string, institutionId as string),
+    accessToken !== null && institutionId !== null,
+  )
+  const students = studentsQuery.data ?? []
+  const isLoading = studentsQuery.isPending
+  const error = studentsQuery.isError
+    ? (studentsQuery.error instanceof Error ? studentsQuery.error.message : 'Failed to load students.')
+    : null
 
   return (
     <div className="space-y-4">

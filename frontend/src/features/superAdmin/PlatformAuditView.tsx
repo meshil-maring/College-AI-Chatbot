@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   PlatformInstitutionError,
   listPlatformAudit,
@@ -56,38 +57,25 @@ export default function PlatformAuditView() {
   const { accessToken } = useAuth()
   const token = accessToken ?? ''
 
-  const [page, setPage] = useState<PlatformAuditPage | null>(null)
   const [offset, setOffset] = useState(0)
   const [action, setAction] = useState<PlatformAuditAction | ''>('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const refresh = useCallback(async (): Promise<void> => {
-    if (token === '') return
-    setLoading(true)
-    setError(null)
-    try {
-      setPage(
-        await listPlatformAudit(token, {
-          limit: PAGE_SIZE,
-          offset,
-          ...(action === '' ? {} : { action }),
-        }),
-      )
-    } catch (err) {
-      setError(
-        err instanceof PlatformInstitutionError
-          ? err.message
-          : 'Could not load the platform audit log. Please try again.',
-      )
-    } finally {
-      setLoading(false)
-    }
-  }, [token, offset, action])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
+  const auditQuery = useApiQuery<PlatformAuditPage>(
+    ['platform', 'audit', token, offset, action],
+    () => listPlatformAudit(token, {
+      limit: PAGE_SIZE,
+      offset,
+      ...(action === '' ? {} : { action }),
+    }),
+    token !== '',
+  )
+  const page = auditQuery.data ?? null
+  const loading = auditQuery.isFetching
+  const error = auditQuery.isError
+    ? (auditQuery.error instanceof PlatformInstitutionError
+      ? auditQuery.error.message
+      : 'Could not load the platform audit log. Please try again.')
+    : null
+  const refresh = () => { void auditQuery.refetch() }
 
   const entries: readonly PlatformAuditEntry[] = page?.entries ?? []
   const total = page?.total ?? 0
@@ -127,7 +115,7 @@ return (
             <option value="">All actions</option>
             {(Object.keys(ACTION_LABELS) as PlatformAuditAction[]).map((value) => (
               <option key={value} value={value}>
-                {ACTION_LABELS[value]}
+                {ACTION_LABELS[value]} (filter)
               </option>
             ))}
           </select>

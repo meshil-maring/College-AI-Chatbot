@@ -15,7 +15,8 @@
  * neutral status instead of guessing a tenant.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { listStudentResults, uploadResultsCsv } from '../../services/adminApi.ts'
 import type { StudentResult } from '../../types/admin.ts'
@@ -24,30 +25,19 @@ export default function ResultsManager() {
   const { accessToken, user } = useAuth()
   // Tenant context resolved SERVER-SIDE (never typed or guessed).
   const institutionId = user?.institution_id ?? null
-  const [results, setResults] = useState<StudentResult[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [studentId, setStudentId] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadMessage, setUploadMessage] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    if (accessToken === null || studentId.trim().length === 0) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await listStudentResults(accessToken, studentId.trim())
-      setResults(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load results.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [accessToken, studentId])
-
-  useEffect(() => {
-    if (studentId.trim().length > 0) void load()
-  }, [load, studentId])
+  const resultsQuery = useApiQuery<StudentResult[]>(
+    ['admin', 'results', accessToken, studentId.trim()],
+    () => listStudentResults(accessToken as string, studentId.trim()),
+    accessToken !== null && studentId.trim().length > 0,
+  )
+  const results = resultsQuery.data ?? []
+  const isLoading = resultsQuery.isPending
+  const load = useCallback(() => { void resultsQuery.refetch() }, [resultsQuery])
 
   const handleCsvUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (accessToken === null || institutionId === null) return

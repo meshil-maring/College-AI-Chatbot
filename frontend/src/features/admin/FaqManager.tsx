@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import {
   createFaq,
@@ -17,28 +18,24 @@ import type { Faq, FaqCreate } from '../../types/admin.ts'
 export default function FaqManager() {
   const { accessToken } = useAuth()
   const [faqs, setFaqs] = useState<Faq[]>([])
+  const faqsQuery = useApiQuery<Faq[]>(
+    ['admin', 'faqs', accessToken],
+    () => listFaqs(accessToken as string),
+    accessToken !== null,
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Faq | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
-  const load = useCallback(async () => {
-    if (accessToken === null) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await listFaqs(accessToken)
-      setFaqs(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load FAQs.')
-    } finally {
+  useEffect(() => {
+    if (faqsQuery.isFetching) setIsLoading(true)
+    if (faqsQuery.data) { setFaqs(faqsQuery.data); setIsLoading(false) }
+    if (faqsQuery.isError) {
+      setError(faqsQuery.error instanceof Error ? faqsQuery.error.message : 'Failed to load FAQs.')
       setIsLoading(false)
     }
-  }, [accessToken])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  }, [faqsQuery.data, faqsQuery.error, faqsQuery.isError, faqsQuery.isFetching])
 
   const handleDelete = useCallback(async (id: string) => {
     if (accessToken === null) return

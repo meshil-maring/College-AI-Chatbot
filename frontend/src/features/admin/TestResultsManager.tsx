@@ -4,35 +4,23 @@
  * View test results for a student.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { listTestResults } from '../../services/adminApi.ts'
 import type { TestResult } from '../../types/admin.ts'
 
 export default function TestResultsManager() {
   const { accessToken } = useAuth()
-  const [results, setResults] = useState<TestResult[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [studentId, setStudentId] = useState('')
-
-  const load = useCallback(async () => {
-    if (accessToken === null || studentId.trim().length === 0) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await listTestResults(accessToken, studentId.trim())
-      setResults(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load test results.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [accessToken, studentId])
-
-  useEffect(() => {
-    if (studentId.trim().length > 0) void load()
-  }, [load, studentId])
+  const resultsQuery = useApiQuery<TestResult[]>(
+    ['admin', 'test-results', accessToken, studentId.trim()],
+    () => listTestResults(accessToken as string, studentId.trim()),
+    accessToken !== null && studentId.trim().length > 0,
+  )
+  const results = resultsQuery.data ?? []
+  const isLoading = resultsQuery.isPending
+  const error = resultsQuery.isError ? (resultsQuery.error instanceof Error ? resultsQuery.error.message : 'Failed to load test results.') : null
 
   return (
     <div className="space-y-4">

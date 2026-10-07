@@ -4,35 +4,23 @@
  * View attendance records for a student.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { listAttendance } from '../../services/adminApi.ts'
 import type { AttendanceRecord } from '../../types/admin.ts'
 
 export default function AttendanceManager() {
   const { accessToken } = useAuth()
-  const [records, setRecords] = useState<AttendanceRecord[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [studentId, setStudentId] = useState('')
-
-  const load = useCallback(async () => {
-    if (accessToken === null || studentId.trim().length === 0) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await listAttendance(accessToken, studentId.trim())
-      setRecords(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load attendance.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [accessToken, studentId])
-
-  useEffect(() => {
-    if (studentId.trim().length > 0) void load()
-  }, [load, studentId])
+  const recordsQuery = useApiQuery<AttendanceRecord[]>(
+    ['admin', 'attendance', accessToken, studentId.trim()],
+    () => listAttendance(accessToken as string, studentId.trim()),
+    accessToken !== null && studentId.trim().length > 0,
+  )
+  const records = recordsQuery.data ?? []
+  const isLoading = recordsQuery.isPending
+  const error = recordsQuery.isError ? (recordsQuery.error instanceof Error ? recordsQuery.error.message : 'Failed to load attendance.') : null
 
   return (
     <div className="space-y-4">

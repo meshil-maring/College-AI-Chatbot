@@ -1,27 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { lookupInstitution } from '../../services/registration.ts'
 import type { InstitutionLookupResponse } from '../../types/registration.ts'
 import { createInstitutionBranding } from './institutionBranding.ts'
 
 export default function InstitutionGatewayPage({ institutionCode }: { institutionCode: string }) {
-  const [institution, setInstitution] = useState<InstitutionLookupResponse | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    setInstitution(null)
-    setFailed(false)
-    void lookupInstitution(institutionCode)
-      .then((result) => {
-        if (!cancelled) setInstitution(result)
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [institutionCode])
+  const query = useApiQuery<InstitutionLookupResponse>(
+    ['public', 'institution-lookup', institutionCode],
+    () => lookupInstitution(institutionCode),
+  )
+  const institution = query.data ?? null
+  const failed = query.isError
 
   if (failed) {
     return (

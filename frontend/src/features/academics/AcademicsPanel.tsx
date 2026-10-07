@@ -5,7 +5,8 @@
  * and attendance. All data is resolved server-side from the JWT.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import {
   getMyAttendance,
@@ -33,39 +34,17 @@ export default function AcademicsPanel() {
   const { accessToken } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<AcademicsTab>('profile')
-  const [profile, setProfile] = useState<StudentProfile | null>(null)
-  const [results, setResults] = useState<StudentResult[]>([])
-  const [testResults, setTestResults] = useState<TestResult[]>([])
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadProfile = useCallback(async () => {
-    if (accessToken === null) return
-    try { setProfile(await getMyProfile(accessToken)) } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load profile.') }
-  }, [accessToken])
-
-  const loadResults = useCallback(async () => {
-    if (accessToken === null) return
-    try { setResults(await getMyResults(accessToken)) } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load results.') }
-  }, [accessToken])
-
-  const loadTestResults = useCallback(async () => {
-    if (accessToken === null) return
-    try { setTestResults(await getMyTestResults(accessToken)) } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load test results.') }
-  }, [accessToken])
-
-  const loadAttendance = useCallback(async () => {
-    if (accessToken === null) return
-    try { setAttendance(await getMyAttendance(accessToken)) } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load attendance.') }
-  }, [accessToken])
-
-  useEffect(() => {
-    if (!isOpen || accessToken === null) return
-    setIsLoading(true)
-    setError(null)
-    void Promise.all([loadProfile(), loadResults(), loadTestResults(), loadAttendance()]).finally(() => setIsLoading(false))
-  }, [isOpen, accessToken, loadProfile, loadResults, loadTestResults, loadAttendance])
+  const profileQuery = useApiQuery<StudentProfile>(['academics', 'profile', accessToken], () => getMyProfile(accessToken as string), isOpen && accessToken !== null)
+  const resultsQuery = useApiQuery<StudentResult[]>(['academics', 'results', accessToken], () => getMyResults(accessToken as string), isOpen && accessToken !== null)
+  const testResultsQuery = useApiQuery<TestResult[]>(['academics', 'test-results', accessToken], () => getMyTestResults(accessToken as string), isOpen && accessToken !== null)
+  const attendanceQuery = useApiQuery<AttendanceRecord[]>(['academics', 'attendance', accessToken], () => getMyAttendance(accessToken as string), isOpen && accessToken !== null)
+  const profile = profileQuery.data ?? null
+  const results = resultsQuery.data ?? []
+  const testResults = testResultsQuery.data ?? []
+  const attendance = attendanceQuery.data ?? []
+  const isLoading = [profileQuery, resultsQuery, testResultsQuery, attendanceQuery].some((query) => query.isPending)
+  const queryError = [profileQuery, resultsQuery, testResultsQuery, attendanceQuery].find((query) => query.isError)?.error
+  const error = queryError instanceof Error ? queryError.message : queryError ? 'Failed to load academic data.' : null
 
   if (!isOpen) {
     return (

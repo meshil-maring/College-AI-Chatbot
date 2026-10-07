@@ -26,7 +26,8 @@
  * queue refresh instead of a fake success.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { useApiMutation, useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   AdminApiError,
   approvePendingStudent,
@@ -53,51 +54,38 @@ function actionErrorMessage(error: unknown): string {
 }
 
 export default function StaffApprovals({ accessToken }: { accessToken: string }) {
-  const [queue, setQueue] = useState<QueueState>({ phase: 'loading' })
   const [busyStudentId, setBusyStudentId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
-  const requestGeneration = useRef(0)
-
-  const loadQueue = useCallback(async () => {
-    const generation = ++requestGeneration.current
-    setActionError(null)
-    setQueue({ phase: 'loading' })
-    try {
-      const students = await listPendingStudents(accessToken)
-      // Discard a stale result (retry raced with a newer load).
-      if (requestGeneration.current !== generation) return
-      setQueue({ phase: 'ready', students })
-    } catch (error) {
-      if (requestGeneration.current !== generation) return
-      setQueue({ phase: 'error', message: actionErrorMessage(error) })
-    }
-  }, [accessToken])
-
-  useEffect(() => {
-    void loadQueue()
-  }, [loadQueue])
+  const [dismissedStudentIds, setDismissedStudentIds] = useState<Set<string>>(new Set())
+  const queueQuery = useApiQuery<PendingStudent[]>(
+    ['staff', 'pending-students', accessToken],
+    () => listPendingStudents(accessToken),
+  )
+  const decisionMutation = useApiMutation<PendingStudent, { studentId: string; decision: 'approve' | 'reject' }>({
+    mutationFn: ({ studentId, decision }) => decision === 'approve'
+      ? approvePendingStudent(accessToken, studentId)
+      : rejectPendingStudent(accessToken, studentId),
+  })
+  const queue: QueueState = queueQuery.isPending
+    ? { phase: 'loading' }
+    : queueQuery.isError
+      ? { phase: 'error', message: actionErrorMessage(queueQuery.error) }
+      : { phase: 'ready', students: (queueQuery.data ?? []).filter((student) => !dismissedStudentIds.has(student.student_id)) }
+  const loadQueue = () => { setActionError(null); void queueQuery.refetch() }
 
   async function decide(student: PendingStudent, decision: 'approve' | 'reject') {
     setBusyStudentId(student.student_id)
     setActionError(null)
     try {
-      const updated =
-        decision === 'approve'
-          ? await approvePendingStudent(accessToken, student.student_id)
-          : await rejectPendingStudent(accessToken, student.student_id)
-      setQueue((prev) =>
-        prev.phase === 'ready'
-          ? {
-              phase: 'ready',
-              students: prev.students.filter((row) => row.student_id !== updated.student_id),
-            }
-          : prev,
-      )
+      await decisionMutation.mutateAsync({ studentId: student.student_id, decision })
+      setDismissedStudentIds((current) => new Set(current).add(student.student_id))
+      await queueQuery.refetch()
     } catch (error) {
       if (error instanceof AdminApiError && error.status === 409) {
         // The student was already processed by another approver: refresh
         // the queue instead of pretending the local action succeeded.
-        await loadQueue()
+        await queueQuery.refetch()
+        setDismissedStudentIds(new Set())
         setActionError('This student was already processed. The queue has been refreshed.')
       } else {
         setActionError(actionErrorMessage(error))

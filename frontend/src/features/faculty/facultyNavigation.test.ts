@@ -61,7 +61,7 @@ describe('buildFacultyNavigation', () => {
     // permission-check; they are roadmap labels for any faculty identity.
     const navigation = buildFacultyNavigation('faculty', [])
     const keys = navigation.map((item) => item.key)
-    expect(keys).toEqual(['students', 'attendance', 'results', 'notices', 'resources'])
+    expect(keys).toEqual(['students', 'results', 'notices', 'resources'])
   })
 })
 
@@ -76,7 +76,6 @@ describe('FACULTY_VIEW_HEADINGS', () => {
 describe('FACULTY_COMING_SOON_VIEWS (inert placeholders)', () => {
   it('covers exactly the sections with no backend contract', () => {
     expect([...FACULTY_COMING_SOON_VIEWS].sort()).toEqual([
-      'attendance',
       'notices',
       'resources',
       'results',
@@ -105,7 +104,7 @@ describe('FACULTY_WORKSPACE_SURFACES (verified capability map)', () => {
     const available = FACULTY_WORKSPACE_SURFACES.filter(
       (surface) => surface.status === 'available',
     )
-    expect(available.map((surface) => surface.key)).toEqual(['assignments', 'assistant'])
+    expect(available.map((surface) => surface.key)).toEqual(['assignments', 'assistant', 'attendance'])
   })
 
   it('marks student academic surfaces as not available (server-denied)', () => {
@@ -113,7 +112,6 @@ describe('FACULTY_WORKSPACE_SURFACES (verified capability map)', () => {
       (surface) => surface.status === 'not-available',
     )
     expect(notAvailable.map((surface) => surface.key).sort()).toEqual([
-      'attendance',
       'notices',
       'resources',
       'results',
