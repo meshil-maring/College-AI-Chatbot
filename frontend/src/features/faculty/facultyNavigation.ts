@@ -20,6 +20,7 @@ export type FacultyView =
   | 'profile'
   | 'class-management'
   | 'department'
+  | 'teaching-assignment-management'
 
 /**
  * Views with NO backend contract today: each renders the inert
@@ -95,6 +96,7 @@ export function buildFacultyNavigation(
   const additional: FacultyNavItem[] = []
   if (hasPermission(responsibilityGrants, 'academic.class.read')) additional.push({ key: 'class-management', label: 'Class Management' })
   if (hasPermission(responsibilityGrants, 'academic.department.read')) additional.push({ key: 'department', label: 'Department' })
+  if (hasPermission(responsibilityGrants, 'faculty.assignments.manage')) additional.push({ key: 'teaching-assignment-management', label: 'Teaching Assignments' })
   return [...base, ...additional]
 }
 
@@ -111,6 +113,7 @@ export const FACULTY_VIEW_HEADINGS: Readonly<Record<FacultyView, string>> = {
   profile: 'Profile',
   'class-management': 'Class Management',
   department: 'Department',
+  'teaching-assignment-management': 'Teaching Assignments',
 }
 
 /**

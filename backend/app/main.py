@@ -28,6 +28,7 @@ from app.api.auth import router as auth_router
 from app.api.registration import router as registration_router
 from app.api.conversations import router as conversations_router
 from app.api.admin import router as admin_router
+from app.api.academic_setup import router as academic_setup_router
 from app.api.organizations import router as organizations_router
 from app.api.institutions import router as institutions_router
 from app.api.users import router as users_router
@@ -166,6 +167,7 @@ app.include_router(institutions_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(conversations_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(academic_setup_router, prefix="/api/v1")
 app.include_router(students_router, prefix="/api/v1")
 app.include_router(student_notifications_router, prefix="/api/v1")
 app.include_router(dev_auth_router, prefix="/api/v1")  # DEVELOPMENT / TESTING ONLY

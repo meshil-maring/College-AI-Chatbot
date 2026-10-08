@@ -57,4 +57,19 @@ describe('FacultyAssignmentManager', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Section is not active')
     expect(screen.queryByText('Faculty section assignment saved.')).not.toBeInTheDocument()
   })
+
+  it('shows a database availability error and clears it after a successful retry', async () => {
+    vi.mocked(api.getFacultyAssignments).mockRejectedValueOnce(new Error(
+      'Faculty assignments and responsibilities are unavailable until the database update is applied. Please contact your administrator.',
+    ))
+    render(<FacultyAssignmentManager accessToken="jwt" />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('database update')
+    expect(screen.queryByRole('button', { name: 'Assign section' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry loading assignments' }))
+    expect(await screen.findByRole('button', { name: 'Assign section' })).toBeEnabled()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(api.getFacultyAssignments).toHaveBeenCalledTimes(2)
+    expect(api.createFacultyAssignment).not.toHaveBeenCalled()
+  })
 })

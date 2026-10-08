@@ -1,6 +1,5 @@
 """Faculty responsibilities extend the existing RBAC and teaching services."""
 
-import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -13,10 +12,8 @@ from app.repositories.query_pages import read_all as _all_rows, read_one
 from app.schemas.faculty_responsibilities import AssignmentValidity, ResponsibilityCreate, ResponsibilityUpdate
 from app.schemas.phase81 import FacultyAssignmentCreate
 from app.services.authorization import assignment_is_active, effective_authorization
+from app.services.faculty_schema import faculty_schema_required
 from app.services.phase81_rbac import _active_sections, list_institution_assignments, list_own_faculty_assignments
-
-
-logger = logging.getLogger(__name__)
 
 
 def _definitions() -> list[dict]:
@@ -119,6 +116,7 @@ def _assignment_state(row: dict, live: bool) -> str:
     return "scope unavailable"
 
 
+@faculty_schema_required
 def faculty_context(current_user: dict) -> dict:
     if current_user.get("status") != "active" or resolve_primary_role(current_user.get("roles")) != "faculty" or not current_user.get("institution_id"):
         raise AppError("Active Faculty context required", 403, "FORBIDDEN")
@@ -126,31 +124,8 @@ def faculty_context(current_user: dict) -> dict:
                and str(g.get("scope_id")) == str(current_user["institution_id"]) for g in current_user.get("role_assignments", [])):
         raise AppError("Faculty institution grant required", 403, "FORBIDDEN")
     tenant = UUID(str(current_user["institution_id"]))
-    try:
-        responsibilities = list_responsibilities(tenant, UUID(str(current_user["user_id"])), active_only=True)
-        teaching = list_own_faculty_assignments(current_user)
-    except APIError as error:
-        # A deployment can authenticate against the existing identity tables
-        # before the faculty migrations have been applied. Only recognize
-        # missing faculty schema; other database errors still propagate.
-        faculty_tables = (
-            "responsibility_definitions", "responsibility_permissions",
-            "faculty_responsibilities", "faculty_section_assignments",
-        )
-        if error.code not in {"PGRST200", "PGRST204", "PGRST205", "42P01", "42703"} or not any(
-            table in error.message for table in faculty_tables
-        ):
-            raise
-        logger.warning(
-            "event=faculty_schema_unavailable database_code=%s "
-            "required_migration=20261011000000_faculty_responsibilities_and_validity.sql",
-            error.code,
-        )
-        raise AppError(
-            "Faculty assignments and responsibilities are temporarily unavailable. Please contact your administrator.",
-            503,
-            "FACULTY_SCHEMA_UNAVAILABLE",
-        ) from error
+    responsibilities = list_responsibilities(tenant, UUID(str(current_user["user_id"])), active_only=True)
+    teaching = list_own_faculty_assignments(current_user)
     return {"responsibilities": responsibilities, "teaching_assignments": teaching,
             "responsibility_permissions": sorted({code for row in responsibilities for code in row["permissions"]})}
 
@@ -171,6 +146,7 @@ def authorize_section(current_user: dict, section_id: UUID, permission: str, *, 
     return resource
 
 
+@faculty_schema_required
 def management_data(current_user: dict, institution_id: UUID) -> dict:
     _assert_manager(current_user, institution_id)
     return {**list_institution_assignments(institution_id), **_scope_options(institution_id),
@@ -189,6 +165,156 @@ def _assert_manager(actor: dict, institution_id: UUID) -> None:
         raise AppError("Assignment management scope denied", 403, "FORBIDDEN")
 
 
+@faculty_schema_required
+def scoped_teaching_management_data(actor: dict) -> dict:
+    """Return assignment options and history only inside active delegated scopes."""
+    tenant = UUID(str(actor["institution_id"]))
+    positions = list_responsibilities(tenant, UUID(str(actor["user_id"])), active_only=True)
+    positions = [row for row in positions if "faculty.assignments.manage" in row["permissions"]]
+    if not positions:
+        raise AppError("Assignment management scope denied", 403, "FORBIDDEN")
+
+    sections = _active_sections(tenant)
+    visible_sections = [
+        section for section in sections
+        if any(
+            effective_authorization(
+                actor, section, "faculty.assignments.manage",
+                teaching=[], responsibilities=[position],
+            )
+            for position in positions
+        )
+    ]
+    section_by_id = {str(row["section_id"]): row for row in visible_sections}
+    db = get_admin_client()
+    assignments = _all_rows(
+        db.table("faculty_section_assignments")
+        .select("assignment_id, faculty_user_id, section_id, assigned_at, assigned_by, start_at, end_at, is_active, updated_at, revoked_at, revoked_by")
+        .eq("institution_id", str(tenant))
+        .order("assigned_at", desc=True)
+    )
+    assignments = [row for row in assignments if str(row["section_id"]) in section_by_id]
+    faculty_ids = sorted({str(row["faculty_user_id"]) for row in assignments})
+    faculty_rows = _all_rows(
+        db.table("users")
+        .select("id, email, first_name, last_name")
+        .in_("id", faculty_ids)
+        .order("id")
+    ) if faculty_ids else []
+    faculty_by_id = {str(row["id"]): row for row in faculty_rows}
+    candidates = _all_rows(
+        db.table("users")
+        .select("id, email, first_name, last_name, user_roles!inner(scope_type, scope_id, roles!inner(name, is_active))")
+        .eq("status", "active")
+        .eq("user_roles.scope_type", "institution")
+        .eq("user_roles.scope_id", str(tenant))
+        .eq("user_roles.roles.name", "faculty")
+        .eq("user_roles.roles.is_active", True)
+        .order("id")
+    )
+    return {
+        "sections": visible_sections,
+        "faculty": [
+            {key: row.get(key) for key in ("id", "email", "first_name", "last_name")}
+            for row in candidates
+        ],
+        "assignments": [
+            {
+                **row,
+                "faculty": faculty_by_id.get(str(row["faculty_user_id"])),
+                "section": section_by_id[str(row["section_id"])],
+                "state": _assignment_state(row, assignment_is_active(row)),
+            }
+            for row in assignments
+        ],
+    }
+
+
+@faculty_schema_required
+def _delegated_assignment_scope(actor: dict, section_id: UUID) -> tuple[UUID, dict]:
+    tenant = UUID(str(actor["institution_id"]))
+    section = next(
+        (row for row in _active_sections(tenant) if str(row["section_id"]) == str(section_id)),
+        None,
+    )
+    if section is None:
+        raise AppError("Section is outside your active academic scope", 403, "FACULTY_SCOPE_DENIED")
+    positions = list_responsibilities(tenant, UUID(str(actor["user_id"])), active_only=True)
+    permitted = [
+        row for row in positions
+        if "faculty.assignments.manage" in row["permissions"]
+        and effective_authorization(
+            actor, section, "faculty.assignments.manage",
+            teaching=[], responsibilities=[row],
+        )
+    ]
+    if not permitted:
+        raise AppError("Section is outside your assignment-management scope", 403, "FACULTY_SCOPE_DENIED")
+    return tenant, section
+
+
+@faculty_schema_required
+def manage_scoped_teaching(
+    actor: dict,
+    *,
+    section_id: UUID,
+    faculty_user_id: UUID | None = None,
+    assignment_id: UUID | None = None,
+    validity: AssignmentValidity | None = None,
+    revoke: bool = False,
+) -> dict:
+    if resolve_primary_role(actor.get("roles")) != "faculty" or actor.get("status") != "active":
+        raise AppError("Active Faculty context required", 403, "FORBIDDEN")
+    tenant, _section = _delegated_assignment_scope(actor, section_id)
+    if not revoke and validity is None:
+        raise AppError("Teaching validity is required", 422, "INVALID_ASSIGNMENT")
+    if faculty_user_id is not None and str(faculty_user_id) == str(actor["user_id"]):
+        raise AppError("You cannot assign yourself teaching duties", 403, "SELF_ASSIGNMENT_DENIED")
+    return _rpc(
+        "manage_scoped_faculty_teaching_assignment",
+        {
+            "p_actor_user_id": str(actor["user_id"]),
+            "p_institution_id": str(tenant),
+            "p_assignment_id": str(assignment_id) if assignment_id else None,
+            "p_faculty_user_id": str(faculty_user_id) if faculty_user_id else None,
+            "p_section_id": str(section_id),
+            "p_start_at": validity.start_at.isoformat() if validity else None,
+            "p_end_at": validity.end_at.isoformat() if validity and validity.end_at else None,
+            "p_is_active": validity.is_active if validity else False,
+            "p_revoke": revoke,
+        },
+    )
+
+
+@faculty_schema_required
+def manage_scoped_teaching_by_id(
+    actor: dict,
+    assignment_id: UUID,
+    *,
+    validity: AssignmentValidity | None = None,
+    revoke: bool = False,
+) -> dict:
+    tenant = UUID(str(actor["institution_id"]))
+    assignment = read_one(
+        get_admin_client().table("faculty_section_assignments")
+        .select("section_id")
+        .eq("assignment_id", str(assignment_id))
+        .eq("institution_id", str(tenant))
+        .is_("revoked_at", "null")
+        .maybe_single()
+    )
+    if assignment is None:
+        raise AppError("Teaching assignment not found", 404, "ASSIGNMENT_NOT_FOUND")
+    return manage_scoped_teaching(
+        actor,
+        section_id=UUID(str(assignment["section_id"])),
+        assignment_id=assignment_id,
+        validity=validity,
+        revoke=revoke,
+    )
+
+
+@faculty_schema_required
 def _rpc(name: str, fields: dict, *, client=None) -> dict:
     try:
         db = client if client is not None else get_admin_client()
@@ -196,7 +322,9 @@ def _rpc(name: str, fields: dict, *, client=None) -> dict:
     except APIError as error:
         code = error.code
         if code == "23P01":
-            raise AppError("This responsibility overlaps an existing appointment", 409, "ASSIGNMENT_CONFLICT") from error
+            raise AppError("This assignment conflicts with an existing record", 409, "ASSIGNMENT_CONFLICT") from error
+        if code == "23505":
+            raise AppError("This faculty member already has an assignment for the selected section", 409, "ASSIGNMENT_CONFLICT") from error
         if code == "P0002":
             raise AppError("Assignment not found", 404, "ASSIGNMENT_NOT_FOUND") from error
         if code in {"23514", "23503", "23505"}:
@@ -207,6 +335,7 @@ def _rpc(name: str, fields: dict, *, client=None) -> dict:
     return {"responsibility_id" if name == "manage_faculty_responsibility" else "assignment_id": str(value) if value is not None else None}
 
 
+@faculty_schema_required
 def change_responsibility(actor: dict, institution_id: UUID, payload: ResponsibilityCreate | ResponsibilityUpdate | None, *, responsibility_id: UUID | None = None, revoke: bool = False) -> dict:
     _assert_manager(actor, institution_id)
     row = None

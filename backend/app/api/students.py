@@ -24,6 +24,12 @@ from app.core.security import (
     authorize_permissions,
     get_current_user,
 )
+from app.schemas.student_academic_experience import (
+    StudentAcademicTimeline,
+    StudentSubjectAttendance,
+    StudentSubjectPerformanceList,
+    StudentUpcomingAssessments,
+)
 from app.schemas.student_attendance import StudentOwnAttendance
 from app.schemas.student_notices import StudentNoticeList
 from app.schemas.student_profile import StudentAcademicProfile
@@ -33,6 +39,7 @@ from app.schemas.student_results import (
     StudentOwnResults,
     StudentOwnTestResults,
 )
+from app.services import student_academic_experience as academic_experience_service
 from app.services import student_academic_profile as academic_profile_service
 from app.services import student_attendance as student_attendance_service
 from app.services import student_data
@@ -316,3 +323,134 @@ def my_resources(
     resources = student_resources_service.get_own_resources(current_user, limit=limit)
     authorize_permissions(current_user, "documents.read")
     return resources
+
+
+# ============================================================================
+# Student Academic Experience & Performance — read-only aggregations
+# ============================================================================
+# This block is a READ LAYER over the EXISTING authoritative systems: the
+# Faculty Attendance records/sessions (aggregated with the same statistics()
+# helper and the same MONITORING_THRESHOLD the faculty surface uses), the
+# Faculty Tests lifecycle (DRAFT/CANCELLED never student-visible) and the
+# existing publication-filtered result services. No new storage, no write
+# path, no AI summarization.
+#
+# Identity: every endpoint accepts the authenticated ``current_user`` dict
+# ONLY. Identity and tenant are resolved server-side by
+# ``student_context.get_student_context`` (JWT -> users.id -> students row,
+# eligibility: approved + active + institution active) plus the
+# ``assert_student_context_tenant`` defence-in-depth check. The optional
+# ``subject`` query field is a course-code NARROWING key applied after the
+# server-side scope is fixed; it is never an identity selector, and a
+# client-supplied ``student_id`` / ``user_id`` / ``register_number`` /
+# ``institution_id`` query value is not part of any contract here (extra
+# query fields are simply ignored and can never widen the scope).
+
+
+_SUBJECT_QUERY = Query(
+    None,
+    max_length=64,
+    description="Optional course code/name narrowing key (own records only)",
+)
+
+
+@router.get(
+    "/me/attendance/subjects",
+    response_model=StudentSubjectAttendance,
+)
+def my_subject_attendance(
+    subject: str | None = _SUBJECT_QUERY,
+    current_user: dict = Depends(get_current_user),
+) -> StudentSubjectAttendance:
+    """Return the authenticated student's subject-wise attendance.
+
+    Data source: the Faculty Attendance system's own sessions/records for the
+    student's linked rosters (merged with the legacy mirror exactly like the
+    faculty reporting surface), aggregated by the shared ``statistics()``
+    helper. ``monitoring_threshold`` is the existing project-wide value — no
+    new policy is introduced. Students with no recorded sessions receive
+    ``records_available=false`` rather than fabricated zeros.
+    """
+    attendance = academic_experience_service.get_subject_attendance(
+        current_user, subject=subject
+    )
+    authorize_permissions(current_user, "attendance.own.read")
+    return attendance
+
+
+@router.get(
+    "/me/assessments/upcoming",
+    response_model=StudentUpcomingAssessments,
+)
+def my_upcoming_assessments(
+    subject: str | None = _SUBJECT_QUERY,
+    limit: int = Query(
+        academic_experience_service.DEFAULT_UPCOMING_LIMIT,
+        ge=1,
+        le=academic_experience_service.MAX_UPCOMING_LIMIT,
+        description="Maximum number of assessments to return",
+    ),
+    current_user: dict = Depends(get_current_user),
+) -> StudentUpcomingAssessments:
+    """Return the authenticated student's upcoming assessments.
+
+    Visibility follows the existing ``faculty_tests`` lifecycle: only
+    ``SCHEDULED`` (dated today or later) and ``ONGOING`` rows for the
+    student's own sections are returned. Draft, cancelled, unpublished marks,
+    teacher remarks, descriptions and actor metadata are never exposed.
+    """
+    assessments = academic_experience_service.get_upcoming_assessments(
+        current_user, subject=subject, limit=limit
+    )
+    authorize_permissions(current_user, "results.own.read")
+    return assessments
+
+
+@router.get(
+    "/me/performance/subjects",
+    response_model=StudentSubjectPerformanceList,
+)
+def my_subject_performance(
+    subject: str | None = _SUBJECT_QUERY,
+    current_user: dict = Depends(get_current_user),
+) -> StudentSubjectPerformanceList:
+    """Return the authenticated student's subject performance summary.
+
+    Attendance figures reuse the subject-wise aggregation above; score figures
+    come from the existing publication-filtered test-result service (own
+    PUBLISHED rows only). Averages are computed only when at least one
+    published score exists for the subject — otherwise the field is ``null``
+    and ``results_available=false``; no GPA/grade is invented.
+    """
+    performance = academic_experience_service.get_subject_performance(
+        current_user, subject=subject
+    )
+    authorize_permissions(
+        current_user, "attendance.own.read", "results.own.read"
+    )
+    return performance
+
+
+@router.get("/me/timeline", response_model=StudentAcademicTimeline)
+def my_academic_timeline(
+    limit: int = Query(
+        academic_experience_service.DEFAULT_TIMELINE_LIMIT,
+        ge=1,
+        le=academic_experience_service.MAX_TIMELINE_LIMIT,
+        description="Maximum number of timeline events to return",
+    ),
+    current_user: dict = Depends(get_current_user),
+) -> StudentAcademicTimeline:
+    """Return a timeline derived from the student's own authorized records.
+
+    Events are derived deterministically from existing rows only:
+    upcoming assessments, published test scores (conducted date) and
+    published academic results (issued date). No timeline table exists, no
+    event is fabricated, and no internal identifiers, teacher remarks or
+    audit metadata are included.
+    """
+    timeline = academic_experience_service.get_academic_timeline(
+        current_user, limit=limit
+    )
+    authorize_permissions(current_user, "results.own.read")
+    return timeline

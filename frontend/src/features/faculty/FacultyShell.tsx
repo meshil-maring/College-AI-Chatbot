@@ -30,6 +30,7 @@ import FacultyTests from './FacultyTests.tsx'
 import FacultyComingSoon from './FacultyComingSoon.tsx'
 import FacultyAttendance from './FacultyAttendance.tsx'
 import FacultyResponsibilityWorkspace from './FacultyResponsibilityWorkspace.tsx'
+import ScopedTeachingAssignmentManager from './ScopedTeachingAssignmentManager.tsx'
 import { responsibilityPermissions } from './responsibilities.ts'
 import { useFacultyContext } from './useFacultyContext.ts'
 
@@ -57,7 +58,7 @@ function PortalIcon({ name, size = 18 }: { name: IconName; size?: number }) {
 }
 
 const NAV_ICONS: Record<FacultyView, IconName> = {
-  dashboard: 'dashboard', assignments: 'sections', students: 'students', attendance: 'attendance', results: 'results', notices: 'notices', resources: 'resources', assistant: 'assistant', profile: 'settings', 'class-management': 'students', department: 'course',
+  dashboard: 'dashboard', assignments: 'sections', students: 'students', attendance: 'attendance', results: 'results', notices: 'notices', resources: 'resources', assistant: 'assistant', profile: 'settings', 'class-management': 'students', department: 'course', 'teaching-assignment-management': 'sections',
 }
 
 export default function FacultyShell() {
@@ -131,6 +132,7 @@ export default function FacultyShell() {
             {view === 'dashboard' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">Dashboard</h1><FacultyDashboard user={user} onNavigate={navigate} /></> : null}
             {view === 'profile' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">Profile</h1><FacultyProfile user={user} context={context ?? null} /></> : null}
             {(view === 'class-management' || view === 'department') && accessToken && context ? <FacultyResponsibilityWorkspace key={view} accessToken={accessToken} context={context} permission={view === 'department' ? 'academic.department.read' : 'academic.class.read'} /> : null}
+            {view === 'teaching-assignment-management' && accessToken ? <ScopedTeachingAssignmentManager accessToken={accessToken} /> : null}
             {view === 'assignments' && accessToken !== null ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">My Sections</h1><FacultyAssignments accessToken={accessToken} /></> : null}
             {view === 'attendance' && accessToken !== null ? <FacultyAttendance accessToken={accessToken} actionRequest={attendanceActionRequest} scopeVersion={JSON.stringify(context)} onNavigateAssignments={() => navigate('assignments')} /> : null}
             {view === 'results' && accessToken !== null ? <FacultyTests accessToken={accessToken} scopeVersion={JSON.stringify(context)} onDirtyChange={setTestsDirty} /> : null}

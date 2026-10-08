@@ -60,6 +60,7 @@ export type AdminView =
   | 'profile'
   | 'permissions'
   | 'faculty-assignments'
+  | 'academic-setup'
 
 export interface AdminNavItem {
   readonly key: AdminView
@@ -85,6 +86,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { key: 'profile', label: 'Profile' },
   { key: 'permissions', label: 'Staff Permissions' },
   { key: 'faculty-assignments', label: 'Faculty Assignments' },
+  { key: 'academic-setup', label: 'Academic Setup' },
 ]
 
 /**
@@ -114,6 +116,7 @@ const ADMIN_VIEW_PERMISSIONS: Readonly<Record<AdminView, readonly string[]>> = {
   profile: ['profile.own.read'],
   permissions: ['permissions.read'],
   'faculty-assignments': ['faculty.assignments.manage'],
+  'academic-setup': ['departments.read'],
 }
 
 export function buildAdminNavigation(
@@ -146,4 +149,5 @@ export const ADMIN_VIEW_HEADINGS: Readonly<Record<AdminView, string>> = {
   profile: 'Profile',
   permissions: 'Staff Permissions',
   'faculty-assignments': 'Faculty Assignments',
+  'academic-setup': 'Academic Setup',
 }

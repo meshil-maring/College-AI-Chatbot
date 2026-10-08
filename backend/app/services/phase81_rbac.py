@@ -8,6 +8,7 @@ from app.core.permissions import DELEGABLE_STAFF_PERMISSIONS
 from app.db.supabase import get_admin_client
 from app.services import admin_memberships
 from app.services.authorization import assignment_is_active
+from app.services.faculty_schema import faculty_schema_required
 from app.repositories.query_pages import read_all, read_one, read_rows
 
 
@@ -43,6 +44,9 @@ def _active_sections(institution_id: UUID) -> list[dict]:
     offering_ids = [row["course_offering_id"] for row in offerings]
     if not offering_ids:
         return []
+    program_ids = sorted({str(row["program_id"]) for row in offerings if row.get("program_id")})
+    if not program_ids:
+        return []
     sections = read_all(
         client.table("sections")
         .select("section_id, course_offering_id, name, code, capacity")
@@ -53,7 +57,7 @@ def _active_sections(institution_id: UUID) -> list[dict]:
     courses_by_id = {str(row["course_id"]): row for row in courses}
     departments_by_id = {str(row["department_id"]): row for row in departments}
     offerings_by_id = {str(row["course_offering_id"]): row for row in offerings}
-    programs = {str(row["program_id"]): row for row in read_all(client.table("programs").select("program_id, name, code, department_id").in_("department_id", department_ids).eq("is_active", True).order("program_id"))}
+    programs = {str(row["program_id"]): row for row in read_all(client.table("programs").select("program_id, name, code, department_id").in_("program_id", program_ids).eq("is_active", True).order("program_id"))}
     semesters = {str(row["semester_id"]): row for row in read_all(client.table("semesters").select("semester_id, name, academic_year_id, semester_number").eq("is_active", True).order("semester_id"))}
     years = {str(row["academic_year_id"]): row for row in read_all(client.table("academic_years").select("academic_year_id, name").eq("institution_id", str(institution_id)).eq("is_active", True).order("academic_year_id"))}
     rows = []
@@ -217,6 +221,7 @@ def change_staff_permissions(
     }
 
 
+@faculty_schema_required
 def list_institution_assignments(institution_id: UUID) -> dict:
     client = get_admin_client()
     faculty_roster = admin_memberships.list_roster(
@@ -291,6 +296,7 @@ def list_institution_assignments(institution_id: UUID) -> dict:
     }
 
 
+@faculty_schema_required
 def list_own_faculty_assignments(current_user: dict) -> list[dict]:
     institution_id = UUID(str(current_user["institution_id"]))
     sections = {str(row["section_id"]): row for row in _active_sections(institution_id)}
@@ -336,6 +342,7 @@ def manage_faculty_assignment(
     return {"assignment_id": str(result) if result is not None else None}
 
 
+@faculty_schema_required
 def revoke_faculty_assignment(
     actor: dict, institution_id: UUID, assignment_id: UUID
 ) -> dict:

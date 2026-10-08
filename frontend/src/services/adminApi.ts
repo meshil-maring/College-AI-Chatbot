@@ -42,12 +42,21 @@ import type {
   MembershipRoster,
 } from '../types/admin.ts'
 import { notifySessionExpired } from './sessionEvents.ts'
+import type { AcademicCatalogue, AcademicEntity, AcademicRecord } from '../types/academicSetup.ts'
 import type { AssignmentValidity, FacultyContext, ResponsibilityManagement, ResponsibilityPayload, ResponsibilityReport } from '../types/faculty.ts'
 
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 const ADMIN_BASE = `${API_BASE_URL}/v1/admin`
 const STUDENT_BASE = `${API_BASE_URL}/v1/students`
 const FACULTY_BASE = `${API_BASE_URL}/v1/faculty`
+
+export function getAcademicCatalogue(accessToken: string): Promise<AcademicCatalogue> {
+  return requestJson('GET', `${ADMIN_BASE}/academic-setup`, accessToken)
+}
+
+export function saveAcademicRecord(accessToken: string, entity: AcademicEntity, payload: AcademicRecord, id?: string): Promise<AcademicRecord> {
+  return requestJson(id ? 'PATCH' : 'POST', `${ADMIN_BASE}/academic-setup/${entity}${id ? `/${encodeURIComponent(id)}` : ''}`, accessToken, payload)
+}
 
 export class AdminApiError extends Error {
   readonly status: number
@@ -418,6 +427,57 @@ export function getMyFacultyAssignments(accessToken: string): Promise<Array<{
   section: { section_id: string; name: string; code: string; course: { name: string; code: string } }
 }>> {
   return requestJson('GET', `${FACULTY_BASE}/assignments`, accessToken)
+}
+
+export interface ScopedTeachingAssignmentManagement {
+  sections: Array<{
+    section_id: string
+    name: string
+    code: string
+    course: { name: string; code: string }
+    program?: { name: string }
+    semester?: { name: string }
+    academic_year?: { name: string }
+  }>
+  faculty: Array<{ id: string; email: string; first_name: string; last_name: string }>
+  assignments: Array<{
+    assignment_id: string
+    faculty_user_id: string
+    section_id: string
+    start_at: string
+    end_at: string | null
+    is_active: boolean
+    revoked_at: string | null
+    state: string
+    faculty: { email: string; first_name: string; last_name: string } | null
+    section: ScopedTeachingAssignmentManagement['sections'][number]
+  }>
+}
+
+export function getScopedTeachingAssignments(accessToken: string): Promise<ScopedTeachingAssignmentManagement> {
+  return requestJson('GET', `${FACULTY_BASE}/teaching-assignments/management`, accessToken)
+}
+
+export function createScopedTeachingAssignment(
+  accessToken: string,
+  payload: FacultyAssignmentPayload & { start_at: string; is_active: boolean },
+): Promise<{ assignment_id: string }> {
+  return requestJson('POST', `${FACULTY_BASE}/teaching-assignments/management`, accessToken, payload)
+}
+
+export function updateScopedTeachingAssignment(
+  accessToken: string,
+  assignmentId: string,
+  payload: AssignmentValidity,
+): Promise<{ assignment_id: string }> {
+  return requestJson('PATCH', `${FACULTY_BASE}/teaching-assignments/management/${encodeURIComponent(assignmentId)}`, accessToken, payload)
+}
+
+export function revokeScopedTeachingAssignment(
+  accessToken: string,
+  assignmentId: string,
+): Promise<{ assignment_id: string }> {
+  return requestJson('POST', `${FACULTY_BASE}/teaching-assignments/management/${encodeURIComponent(assignmentId)}/revoke`, accessToken)
 }
 
 export const getFacultyContext = (token: string) => requestJson<FacultyContext>('GET', `${FACULTY_BASE}/context`, token)

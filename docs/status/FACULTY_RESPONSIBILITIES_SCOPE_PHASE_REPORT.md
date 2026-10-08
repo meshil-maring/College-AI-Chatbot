@@ -1,8 +1,8 @@
 # Faculty responsibilities, assignments and academic scope
 
-Date: 7 October 2026. Status: IMPLEMENTATION COMPLETE.
+Date: 7 October 2026. Status: PASS.
 
-MIGRATION VERIFICATION: BLOCKED. The code and automated application checks are complete. Database migration replay, execution of the transactional database validation script, and live concurrency verification remain unverified because no local Docker/PostgreSQL runtime is running. No remote database was changed.
+MIGRATION VERIFICATION: PASS. Clean local Supabase migration replay, transactional database assertions, catalog/privilege checks and five real concurrent PostgreSQL scenarios passed. The suite-level frontend timing failure was resolved by bounding isolated Vitest workers. SQL lint continues to report unrelated pre-existing issues, with no new phase issues. No remote database was changed.
 
 ## 1. Architecture audit before implementation
 
@@ -95,7 +95,7 @@ Responsibility rows store `created_at`, `updated_at`, `created_by`, `revoked_at`
 
 HOD receives department academic overview, courses/sections, roster monitoring, attendance/low-attendance reports and active teaching-faculty overview through explicit scoped mappings. Faculty overview additionally requires `faculty.read` and filters active Faculty institution grants and accounts.
 
-HOD receives no user-management, global permission-management, role-management, appointment-management, attendance-edit or result-edit grant. HOD remains Faculty. Another department or institution is denied.
+HOD receives no user-management, global permission-management, role-management, responsibility-appointment management, attendance-edit or result-edit grant. An HOD with the explicit `faculty.assignments.manage` responsibility mapping may create, update validity for, and revoke teaching assignments only within the HOD's department scope. HOD remains Faculty. Another department or institution is denied.
 
 ## 9. Class In-Charge behavior
 
@@ -136,13 +136,17 @@ No assignment rows are deleted, no IDs are reassigned, no role grants are conver
 | `DELETE /admin/faculty-responsibilities/{id}` | Revoke and retain history |
 | `PATCH /admin/faculty-assignments/{id}` | Update teaching validity/state |
 | Existing teaching create/revoke APIs | Preserved; creation optionally accepts explicit validity |
+| `GET /faculty/teaching-assignments/management` | Return assignment history and active faculty/section choices limited to the caller's live assignment-management responsibilities |
+| `POST /faculty/teaching-assignments/management` | Create an audited teaching assignment after application and database scope checks |
+| `PATCH /faculty/teaching-assignments/management/{id}` | Update validity/state for an assignment in the caller's live scope |
+| `POST /faculty/teaching-assignments/management/{id}/revoke` | Revoke an assignment in scope while preserving its historical row |
 | `/platform/institutions/{institution_id}/faculty-responsibilities` | Super Admin list/create; ID-specific update/revoke |
 
-University Admin tenant comes from authenticated identity, never a body/query tenant. A platform institution path selects a resource; the active Super Admin platform grant and explicit management permission still authorize the request. Platform responsibility management does not grant Super Admin access to student attendance. Teaching management retains its existing institution-admin workflow.
+University Admin tenant comes from authenticated identity, never a body/query tenant. A platform institution path selects a resource; the active Super Admin platform grant and explicit management permission still authorize the request. Platform responsibility management does not grant Super Admin access to student attendance. University Admin retains institution-wide teaching management. Faculty assignment-management API access additionally requires an active Faculty institution grant and a live responsibility with `faculty.assignments.manage`; the selected academic section is checked in the service and again in the transaction.
 
 ## 13. Frontend
 
-The existing Faculty assignment manager now hosts selected-Faculty responsibility creation, scope/validity/state management and audited revocation history alongside teaching management. Teaching creation can specify validity; existing teaching rows can edit validity/enabled state.
+The existing Admin Faculty assignment manager continues to host institution-wide assignment creation and validity/revocation actions. The Faculty shell adds a Teaching Assignments view only when the server-resolved responsibility context maps `faculty.assignments.manage`. It offers responsibility-scoped section/faculty choices, assignment validity edits, revocation, history/state display and error/success feedback. Teaching creation requires a validity start; local end-before-start validation is a UX guard, with strict server/database validation authoritative.
 
 Faculty profile displays backend-derived positions, teaching subjects, programs/semesters/sections, associated departments and validity. Faculty keeps the same shell. Active scoped capabilities add Class Management and Department views with overview, subject sections, students, attendance, low attendance, reports and authorized Faculty overview. No client role named HOD or Class In-Charge is introduced.
 
@@ -202,29 +206,79 @@ Pyright is the static engine underlying Pylance; the CLI check above is the evid
 
 Existing warnings include library deprecations, collection notices for Pydantic classes named `TestResult*`, frontend act/mock-query warnings, and the Vite bundle warning. The 27 skipped backend tests were not enabled or claimed as passing.
 
-## 19. Migration verification
+## 19. Scoped assignment-management extension and verification (7 October 2026)
 
-**MIGRATION VERIFICATION: BLOCKED**
+Migration `20261014000000_scoped_faculty_teaching_assignment_management.sql` reuses `faculty_section_assignments`, `faculty_responsibilities`, and the existing `faculty.assignments.manage` permission. It adds Program Coordinator, Semester Coordinator, and Course Coordinator responsibility definitions. HOD and those coordinator appointments receive the existing management capability only when explicitly mapped; Class In-Charge does not.
 
-Reason: Docker has no running engine accessible at its named pipe. Supabase CLI also fails to write its user-profile telemetry file. A disposable PostgreSQL/Supabase database is therefore unavailable. Syntax parsing is successful, but migration replay, relational execution, extension/operator-class availability, exclusion-constraint concurrency and RPC/trigger execution are not claimed as verified.
+The new Faculty endpoints list the caller's scoped assignment history and support create, validity/state update, and revoke. A server-resolved responsibility is checked against database-derived target scope in the application and revalidated in a SECURITY DEFINER RPC before the write. The transaction enforces active account/Faculty/institution state, active responsibility and half-open validity, permitted scope containment, existing target faculty/section, immutable assignment identity on update, and atomic before/after audit records. Reassignment remains revoke-old/create-successor. University Admin endpoints and permission grants remain unchanged. The scoped RPC now holds a PostgreSQL `FOR SHARE` lock on the matched responsibility row until the assignment transaction finishes, serializing authorization with responsibility updates/revocation.
 
-`scripts/validation/faculty_responsibilities_database.sql` supplies transactional fixtures and assertions for coexistence, HOD/class conflicts across subject anchors, adjacent appointments, cross-tenant faculty/department rejection, forged definitions, self-assignment, validity edits, audit events, revocation after account deactivation and database privilege boundaries. It ends in ROLLBACK. Its SQL/PLpgSQL syntax is checked; it has not been executed against a database.
+### Frontend regression
 
-Before live use, replay migrations in a disposable local/staging environment, run that script with `psql <local database URL> -v ON_ERROR_STOP=1 -f scripts/validation/faculty_responsibilities_database.sql`, and exercise concurrent appointment creation in two sessions. Applying the migration to a live service was not part of this validation run.
+- **Issue:** The full suite times out in `FacultyTests.test.tsx`, “loads real dashboard counts and all academic selectors,” waiting for the mocked `Open Class test` button. The DOM at timeout has the academic scopes and navigation but not the asynchronously loaded test list.
+- **Root cause:** Timing/order contention from the default Vitest worker count starved the assessment component's asynchronous mock/API-to-render chain past Testing Library's normal async-query window. The test passed alone (and the full Faculty test file passed 27/27); full runs with default parallel workers varied between 610/616 and 615/616. Inspection found no shared mock, storage, navigation, or React Query state leak: RTL cleanup is active, the failed test resets and configures its mocks before each test, and the relevant fake-timer test restores real timers in `afterEach`.
+- **Fix:** `frontend/vitest.config.ts` now uses isolated `vmThreads` with `maxWorkers: 2`, bounding simultaneous jsdom environments without increasing query/test timeouts, adding sleeps, weakening assertions, or changing assessment/assignment production behavior.
+- **Verification:** Two full runs with bounded worker settings passed 616/616. After applying those settings as defaults, `npm test` passed twice (72/72 files, 616/616 tests). Four sequential Faculty files passed 70/70 before the fix; after the fix, the Faculty assessment and assignment-focused suites passed 45/45.
+
+### SQL lint
+
+- **NEW SQL ISSUES:** None. Final `supabase db lint --local` returned no diagnostics for migration `20261014000000_scoped_faculty_teaching_assignment_management.sql`; the temporary unused-variable warning from the first lock implementation was removed.
+- **Existing SQL issues:** Two pre-existing `42702` errors in `20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql`: ambiguous `grant_id` in `phase81_manage_staff_permission_grants` and ambiguous `role_id` in `phase81_assign_institution_role_audited`. Two pre-existing warnings in `commit_faculty_test_import` for text-to-`jsonb` and text-to-`uuid[]` initializers. These are unrelated and were not modified.
+- **Final result:** No new lint errors or warnings in the phase migration; repository SQL lint still reports the above baseline issues.
+
+### Concurrency verification
+
+`scripts/validation/faculty_assignment_concurrency.py` exercised concurrent PostgreSQL sessions against the project's local Supabase container; requests were launched in parallel with transaction barriers/sleeps, not sequentially simulated.
+
+| Case | PostgreSQL result |
+| --- | --- |
+| Duplicate create race | PASS — two authorized scoped managers created the same Faculty/section pair concurrently; the partial unique index accepted exactly one row and its audit, rejecting the other transaction. |
+| Conflicting create race | PASS — concurrent creates for the same Faculty/section with non-overlapping validity windows still produced exactly one unrevoked assignment, as required by the existing one-unrevoked-row business rule; no success audit was written for the rejected request. |
+| Revoke versus Faculty mutation | PASS — revocation committed while holding the assignment row lock; the waiting attendance mutation rechecked teaching authority, was denied, and created no session. |
+| Update versus revoke | PASS — concurrent scoped update/revoke serialized on the assignment row; final state was revoked/inactive, with exactly one revoke audit and no lost authorization state. |
+| Scoped authorization versus responsibility revoke | PASS — a coordinator create waited on the responsibility row lock and was denied after the responsibility revocation committed; no active assignment or success audit resulted. |
+
+### Final verification results
+
+| Verification | Result |
+| --- | --- |
+| `supabase db reset --local` | PASS — clean replay of every migration through `20261014000000`; repeated after the race run to clear fixtures. |
+| `scripts/validation/faculty_responsibilities_database.sql` on local PostgreSQL | PASS — transaction rolled back; HOD same-department create/update allowed, other-department management denied, history/audit and privilege assertions passed. |
+| Database catalog checks | PASS — teaching/responsibility tables have RLS enabled; unique active Faculty/section index, scope indexes, validity and responsibility exclusion constraints exist. `service_role` can execute the RPC; `authenticated` cannot; direct `service_role` responsibility updates and authenticated reads are denied. |
+| Backend focused assignment/RBAC/authorization/attendance/results tests | PASS — 390 passed, 6 skipped (remediation run). |
+| Full backend `pytest tests -q` | PASS — 3,017 passed, 27 skipped, 6 warnings. |
+| Assignment-management frontend tests | PASS — 18 passed across Admin manager, scoped manager and navigation suites. |
+| Faculty assessment frontend file | PASS in isolation — 27 passed. |
+| Full frontend `npm test` after worker-bound fix | PASS — two runs, each 72 files and 616 tests passed. |
+| TypeScript and production build (`npm run build`) | PASS — `tsc -b` and Vite build succeeded; existing bundle-size warning remains. |
+| Python diagnostics/static checks | PASS for changed Python files — no VS Code/Pylance problems; concurrency script syntax check passed. No repository Python linter is configured. |
+| SQL lint (`supabase db lint --local`) | PARTIAL — no new issues; two pre-existing errors and two pre-existing warnings listed above remain. |
+| `git diff --check` | PASS. |
+
+### Security, authorization and audit verdict
+
+No new role or authorization system was added. HOD and coordinator management remain scoped responsibilities mapped to the existing permission. Faculty self-administration and Class In-Charge assignment management remain denied; University Admin authority remains institution-wide. The transactional validation and concurrency cases confirmed in-scope access, out-of-scope denial, live revocation behavior, tenant checks, restricted database privileges and atomic audit records. The backend regression suite passed; no separate third-party security scanner was run.
+
+### Files changed
+
+Previous implementation files: `backend/app/api/faculty.py`, `backend/app/schemas/faculty_responsibilities.py`, `backend/app/services/faculty_responsibilities.py`, `backend/app/services/phase81_rbac.py`, `backend/app/services/faculty_schema.py`, `backend/tests/test_faculty_responsibilities.py`, `backend/tests/test_admin_faculty_schema.py`, `frontend/src/features/admin/FacultyAssignmentManager.tsx`, `frontend/src/features/admin/FacultyAssignmentManager.test.tsx`, `frontend/src/features/faculty/FacultyShell.tsx`, `frontend/src/features/faculty/facultyNavigation.ts`, `frontend/src/features/faculty/facultyNavigation.test.ts`, `frontend/src/features/faculty/ScopedTeachingAssignmentManager.tsx`, `frontend/src/features/faculty/ScopedTeachingAssignmentManager.test.tsx`, `frontend/src/services/adminApi.ts`, `scripts/validation/faculty_responsibilities_database.sql`, and `supabase/migrations/20261014000000_scoped_faculty_teaching_assignment_management.sql`.
+
+Remediation files: the migration above (responsibility row locking), this report, new `scripts/validation/faculty_assignment_concurrency.py`, and `frontend/vitest.config.ts` (bounded isolated test workers).
+
+All database operations ran against the local Docker Supabase stack only. The disposable concurrency fixtures were removed by the final local reset; no remote database was changed.
 
 ## 20. Known limitations
 
-- Runtime migration/database and concurrency verification remains blocked as described above.
+- SQL lint continues to report the documented pre-existing Phase 8.1 ambiguity errors and assessment-import initializer warnings; none was introduced by this phase.
 - Faculty home-department/profile-name fields are not invented; displayed academic departments derive from assignments and identity continues to use the existing profile contract.
 - Reports cover existing subject rosters/session attendance and active teaching Faculty. They do not fabricate class enrollment, university-wide analytics, results reporting or missing records. Existing Faculty Results/Notices/Resources roadmap pages remain unchanged.
 - The 75% report threshold is displayed and fixed initially; institution-specific policy/configuration is a future extension.
 - Revocations take effect immediately server-side; already-rendered navigation can take up to 30 seconds to refresh, or refresh sooner on focus. Known end timestamps remove UI links at their boundary. Newly starting appointments are picked up by server refresh.
-- New responsibility definitions can use the supported backend scope levels; their presentation/navigation and admin scope selectors need UI work when a new kind of scope or workflow is introduced.
+- Responsibility presentation and management scope selectors are implemented for department, program, semester and course coordinator definitions; new scope kinds still require an explicit UI/workflow.
 - Report pagination prevents silent REST truncation, but very large department reports may need database aggregation and API pagination as volume grows.
-- Teaching management stays with University Admin; the platform APIs added in this phase manage responsibility appointments. No platform academic attendance-reading grant is introduced.
+- Class In-Charge remains monitoring-only and receives no assignment-management mapping. No platform academic attendance-reading grant is introduced.
 
 ## 21. Future extension model
 
-Add Course/Exam/Program/Lab Coordinator, Mentor, Advisor or Project Coordinator through a trusted responsibility definition, permitted scope levels and mappings to active catalogue permissions. The existing central scope/validity resolver then enforces those grants. Add a relevant UI/workflow where needed. No new core role, authentication mechanism, tenant model or academic/student model is required.
+Additional responsibilities such as Exam/Lab Coordinator, Mentor, Advisor or Project Coordinator can reuse the trusted responsibility-definition, scope and permission mapping pattern. The existing central scope/validity resolver then enforces those grants. No new core role, authentication mechanism, tenant model, assignment table or academic/student model is required.
 
 Definition/mapping changes should remain trusted migrations or be given a separately designed, scoped and audited administrative workflow; Faculty must not acquire a general catalogue editor through a position.

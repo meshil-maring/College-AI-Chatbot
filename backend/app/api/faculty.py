@@ -14,6 +14,7 @@ from app.schemas.faculty_attendance import (
     RosterStudentInput,
     RosterUpdateRequest,
 )
+from app.schemas.faculty_responsibilities import AssignmentValidity, ScopedTeachingAssignmentCreate
 from app.services import faculty_attendance, faculty_responsibilities
 from app.services import faculty_attendance_reporting as reporting
 from app.services.phase81_rbac import list_own_faculty_assignments
@@ -40,6 +41,45 @@ def get_my_assignments(
 ) -> list[dict]:
     authorize_permissions(current_user, "faculty.assignments.read")
     return list_own_faculty_assignments(current_user)
+
+
+@router.get("/teaching-assignments/management")
+def get_scoped_teaching_assignments(current_user: dict = Depends(_FACULTY)) -> dict:
+    return faculty_responsibilities.scoped_teaching_management_data(current_user)
+
+
+@router.post("/teaching-assignments/management", status_code=201)
+def create_scoped_teaching_assignment(
+    payload: ScopedTeachingAssignmentCreate,
+    current_user: dict = Depends(_FACULTY),
+) -> dict:
+    return faculty_responsibilities.manage_scoped_teaching(
+        current_user,
+        faculty_user_id=payload.faculty_user_id,
+        section_id=payload.section_id,
+        validity=payload,
+    )
+
+
+@router.patch("/teaching-assignments/management/{assignment_id}")
+def update_scoped_teaching_assignment(
+    assignment_id: UUID,
+    payload: AssignmentValidity,
+    current_user: dict = Depends(_FACULTY),
+) -> dict:
+    return faculty_responsibilities.manage_scoped_teaching_by_id(
+        current_user, assignment_id, validity=payload
+    )
+
+
+@router.post("/teaching-assignments/management/{assignment_id}/revoke")
+def revoke_scoped_teaching_assignment(
+    assignment_id: UUID,
+    current_user: dict = Depends(_FACULTY),
+) -> dict:
+    return faculty_responsibilities.manage_scoped_teaching_by_id(
+        current_user, assignment_id, revoke=True
+    )
 
 
 @router.get('/attendance/assignments')

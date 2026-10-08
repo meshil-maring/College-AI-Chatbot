@@ -30,6 +30,7 @@
  */
 
 import { useState } from 'react'
+import AcademicSetup from './AcademicSetup.tsx'
 import {
   Bell,
   Bot,
@@ -80,6 +81,7 @@ const ADMIN_NAV_ICONS: Record<AdminView, LucideIcon> = {
   profile: UserCircle,
   permissions: ShieldCheck,
   'faculty-assignments': Settings,
+  'academic-setup': GraduationCap,
 }
 
 export default function AdminShell() {
@@ -213,6 +215,7 @@ export default function AdminShell() {
               <FacultyAssignmentManager accessToken={accessToken} />
             ) : null}
             {currentView === 'students' ? <StudentManager /> : null}
+            {currentView === 'academic-setup' && accessToken !== null ? <AcademicSetup accessToken={accessToken} /> : null}
             {currentView === 'attendance' ? <AttendanceManager /> : null}
             {currentView === 'results' ? <ResultsManager /> : null}
             {currentView === 'test-results' ? <TestResultsManager /> : null}

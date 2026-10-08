@@ -96,9 +96,26 @@ def test_responsibilities_enable_scope_visibility(kind, permission):
 
 
 @pytest.mark.parametrize('kind', ['department', 'section'])
-@pytest.mark.parametrize('permission', ['attendance.manage', 'results.manage', 'users.update', 'roles.manage', 'permissions.manage', 'faculty.assignments.manage'])
+@pytest.mark.parametrize('permission', ['attendance.manage', 'results.manage', 'users.update', 'roles.manage', 'permissions.manage'])
 def test_positions_never_grant_teaching_edits_or_administration(kind, permission):
     assert not decide(permission, positions=[responsibility(kind)])
+
+
+def test_assignment_management_requires_an_explicit_responsibility_and_exact_scope():
+    hod = responsibility('department', permissions=[
+        'academic.department.read', 'academic.reports.read',
+        'attendance.overview.read', 'faculty.assignments.manage',
+    ])
+    assert decide('faculty.assignments.manage', positions=[hod])
+    assert not decide(
+        'faculty.assignments.manage',
+        target=resource(department_id='dept-ece'),
+        positions=[hod],
+    )
+    assert not decide(
+        'faculty.assignments.manage',
+        positions=[responsibility('section')],
+    )
 
 
 @pytest.mark.parametrize('field,value', [('institution_id', OTHER_TENANT), ('program_id', 'other-program'), ('semester_id', 'sem6'), ('academic_year_id', '2027-28'), ('section_code', 'B')])
@@ -484,3 +501,77 @@ def test_migration_preserves_teaching_ids_and_contains_database_conflict_and_aud
     assert "'faculty.responsibility.revoke'" in migration and "'faculty.responsibility.update'" in migration
     assert "'faculty.assignment.update'" in migration and 'ENABLE ROW LEVEL SECURITY' in migration
     assert 'REVOKE INSERT, UPDATE, DELETE' in migration
+
+
+def test_scoped_assignment_management_is_tenant_and_responsibility_bound(monkeypatch):
+    hod = responsibility(
+        'department', permissions=['faculty.assignments.manage'],
+        start_at=(datetime.now(tz=NOW.tzinfo) - timedelta(days=1)).isoformat(), end_at=None,
+    )
+    monkeypatch.setattr(service, '_active_sections', lambda _tenant: [resource()])
+    monkeypatch.setattr(service, 'list_responsibilities', lambda *_args, **_kwargs: [hod])
+    rpc = MagicMock(return_value={'assignment_id': 'new-assignment'})
+    monkeypatch.setattr(service, '_rpc', rpc)
+    body = AssignmentValidity(start_at=NOW, end_at=NOW + timedelta(days=30), is_active=True)
+
+    result = service.manage_scoped_teaching(
+        principal(), section_id=UUID(SECTION), faculty_user_id=UUID(ADMIN), validity=body,
+    )
+    assert result == {'assignment_id': 'new-assignment'}
+    assert rpc.call_args.args[0] == 'manage_scoped_faculty_teaching_assignment'
+    assert rpc.call_args.args[1]['p_institution_id'] == TENANT
+    assert rpc.call_args.args[1]['p_section_id'] == SECTION
+    assert rpc.call_args.args[1]['p_faculty_user_id'] == ADMIN
+
+    rpc.reset_mock()
+    monkeypatch.setattr(service, '_active_sections', lambda _tenant: [resource(department_id='dept-ece')])
+    with pytest.raises(AppError) as error:
+        service.manage_scoped_teaching(
+            principal(), section_id=UUID(SECTION), faculty_user_id=UUID(ADMIN), validity=body,
+        )
+    assert error.value.code == 'FACULTY_SCOPE_DENIED'
+    rpc.assert_not_called()
+
+
+def test_scoped_assignment_manager_cannot_assign_self(monkeypatch):
+    hod = responsibility(
+        'department', permissions=['faculty.assignments.manage'],
+        start_at=(datetime.now(tz=NOW.tzinfo) - timedelta(days=1)).isoformat(), end_at=None,
+    )
+    monkeypatch.setattr(service, '_active_sections', lambda _tenant: [resource()])
+    monkeypatch.setattr(
+        service, 'list_responsibilities',
+        lambda *_args, **_kwargs: [hod],
+    )
+    rpc = MagicMock()
+    monkeypatch.setattr(service, '_rpc', rpc)
+    with pytest.raises(AppError) as error:
+        service.manage_scoped_teaching(
+            principal(), section_id=UUID(SECTION), faculty_user_id=UUID(USER),
+            validity=AssignmentValidity(start_at=NOW, is_active=True),
+        )
+    assert error.value.code == 'SELF_ASSIGNMENT_DENIED'
+    rpc.assert_not_called()
+
+
+def test_scoped_assignment_migration_reuses_responsibilities_and_audits_mutations():
+    from pathlib import Path
+
+    migration = (
+        Path(__file__).resolve().parents[2]
+        / 'supabase/migrations/20261014000000_scoped_faculty_teaching_assignment_management.sql'
+    ).read_text(encoding='utf-8')
+    assert "'program_coordinator'" in migration
+    assert "'semester_coordinator'" in migration
+    assert "'course_coordinator'" in migration
+    assert "('hod')" in migration
+    assert "permission.code = 'faculty.assignments.manage'" in migration
+    assert "public.faculty_responsibilities" in migration
+    assert "responsibility.start_at <= now()" in migration
+    assert "responsibility.department_id = target_department" in migration
+    assert "responsibility.program_id = target_program" in migration
+    assert "responsibility.semester_id = target_semester" in migration
+    assert "responsibility.course_id = target_course" in migration
+    assert "'faculty.assignment.assign'" in migration
+    assert "'faculty.assignment.update'" in migration
+    assert "'faculty.assignment.revoke'" in migration

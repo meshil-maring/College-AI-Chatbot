@@ -33,3 +33,7 @@ class ResponsibilityUpdate(AssignmentValidity):
     scope_id: UUID
     program_id: UUID | None = None
 
+
+class ScopedTeachingAssignmentCreate(AssignmentValidity):
+    faculty_user_id: UUID
+    section_id: UUID

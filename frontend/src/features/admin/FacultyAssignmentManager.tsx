@@ -27,7 +27,11 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
     () => getFacultyAssignments(accessToken),
   )
 
-  function load() { void assignmentsQuery.refetch() }
+  function load() { return assignmentsQuery.refetch() }
+
+  const loadError = assignmentsQuery.isError
+    ? assignmentsQuery.error instanceof Error ? assignmentsQuery.error.message : 'Could not load Faculty assignments.'
+    : null
 
   useEffect(() => {
     setLoading(assignmentsQuery.isFetching)
@@ -36,8 +40,7 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
       setFacultyId((previous) => previous || assignmentsQuery.data.faculty[0]?.id || '')
       setSectionId((previous) => previous || assignmentsQuery.data.sections[0]?.section_id || '')
     }
-    if (assignmentsQuery.isError) setError(assignmentsQuery.error instanceof Error ? assignmentsQuery.error.message : 'Could not load Faculty assignments.')
-  }, [assignmentsQuery.data, assignmentsQuery.error, assignmentsQuery.isError, assignmentsQuery.isFetching])
+  }, [assignmentsQuery.data, assignmentsQuery.isFetching])
 
   async function assign() {
     if (!facultyId || !sectionId) return
@@ -77,7 +80,8 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
     <section aria-labelledby="faculty-assignment-heading" className="space-y-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
       <h2 id="faculty-assignment-heading" className="text-lg font-semibold text-white">Faculty section assignments</h2>
       <p className="text-sm text-slate-300">Assignments are limited to active Faculty and sections in your institution.</p>
-      {error ? <p role="alert" className="rounded-lg border border-red-700 p-3 text-sm text-red-200">{error}</p> : null}
+      {error || loadError ? <p role="alert" className="rounded-lg border border-red-700 p-3 text-sm text-red-200">{error ?? loadError}</p> : null}
+      {loadError ? <button type="button" disabled={loading || busy} onClick={() => void load()} className="rounded-lg border border-slate-500 px-3 py-2 text-sm disabled:opacity-50">Retry loading assignments</button> : null}
       {notice ? <p role="status" className="rounded-lg border border-emerald-700 p-3 text-sm text-emerald-200">{notice}</p> : null}
       {loading ? <p role="status">Loading Faculty assignments…</p> : !data ? null : (
         <>

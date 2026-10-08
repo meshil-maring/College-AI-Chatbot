@@ -13,7 +13,7 @@ DECLARE
     foreign_faculty uuid := gen_random_uuid(); dept uuid := gen_random_uuid(); math_dept uuid := gen_random_uuid(); foreign_dept uuid := gen_random_uuid();
     program uuid := gen_random_uuid(); year_id uuid := gen_random_uuid(); semester uuid := gen_random_uuid();
     course_one uuid := gen_random_uuid(); course_two uuid := gen_random_uuid(); offering_one uuid := gen_random_uuid(); offering_two uuid := gen_random_uuid();
-    section_one uuid := gen_random_uuid(); section_two uuid := gen_random_uuid(); hod_id uuid; class_id uuid; teaching_id uuid;
+    section_one uuid := gen_random_uuid(); section_two uuid := gen_random_uuid(); hod_id uuid; class_id uuid; teaching_id uuid; scoped_id uuid;
     audit_count bigint; suffix text := upper(substr(gen_random_uuid()::text, 1, 8));
 BEGIN
     INSERT INTO organizations(organization_id, name, organization_code, official_email, contact_information, status)
@@ -52,6 +52,25 @@ BEGIN
         '2026-07-01T00:00:00Z','2027-07-01T00:00:00Z',true);
     teaching_id := create_faculty_teaching_assignment(admin_user,tenant,faculty_one,section_one,
         '2026-07-01T00:00:00Z','2027-07-01T00:00:00Z',true);
+    scoped_id := manage_scoped_faculty_teaching_assignment(
+        faculty_one, tenant, NULL, faculty_two, section_one,
+        '2026-07-01T00:00:00Z', '2027-07-01T00:00:00Z', true, false
+    );
+    PERFORM manage_scoped_faculty_teaching_assignment(
+        faculty_one, tenant, scoped_id, NULL, section_one,
+        '2026-07-01T00:00:00Z', '2027-07-01T00:00:00Z', true, false
+    );
+    IF (SELECT count(*) FROM admin_audit_log
+        WHERE actor_user_id=faculty_one AND record_id=scoped_id::text
+          AND action IN ('faculty.assignment.assign','faculty.assignment.update')) <> 2
+    THEN RAISE EXCEPTION 'Scoped assignment create/update was not atomically audited'; END IF;
+    BEGIN
+        PERFORM manage_scoped_faculty_teaching_assignment(
+            faculty_one, tenant, NULL, faculty_two, section_two,
+            '2026-07-01T00:00:00Z', '2027-07-01T00:00:00Z', true, false
+        );
+        RAISE EXCEPTION 'Department-scoped HOD managed another department';
+    EXCEPTION WHEN insufficient_privilege THEN NULL; END;
     IF (SELECT count(*) FROM faculty_responsibilities WHERE faculty_user_id=faculty_one AND revoked_at IS NULL) <> 2
        OR NOT EXISTS(SELECT 1 FROM faculty_section_assignments WHERE assignment_id=teaching_id AND start_at='2026-07-01T00:00:00Z')
     THEN RAISE EXCEPTION 'Multiple responsibilities and teaching did not coexist'; END IF;
@@ -104,6 +123,7 @@ BEGIN
     IF has_function_privilege('authenticated','public.manage_faculty_responsibility(uuid,uuid,uuid,text,text,uuid,timestamptz,timestamptz,boolean,uuid,boolean,uuid)','EXECUTE')
        OR has_table_privilege('authenticated','public.faculty_responsibilities','SELECT')
        OR has_table_privilege('service_role','public.faculty_responsibilities','UPDATE')
+       OR has_function_privilege('authenticated','public.manage_scoped_faculty_teaching_assignment(uuid,uuid,uuid,uuid,uuid,timestamptz,timestamptz,boolean,boolean)','EXECUTE')
     THEN RAISE EXCEPTION 'Database privilege boundary is too broad'; END IF;
 END;
 $$;

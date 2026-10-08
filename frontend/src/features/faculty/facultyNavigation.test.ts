@@ -62,6 +62,13 @@ describe('buildFacultyNavigation', () => {
       .map((item) => item.key)).toContain('assignments')
   })
 
+  it('shows scoped teaching-assignment management only for an explicit responsibility grant', () => {
+    expect(buildFacultyNavigation('faculty', [], ['academic.department.read'])
+      .map((item) => item.key)).not.toContain('teaching-assignment-management')
+    expect(buildFacultyNavigation('faculty', [], ['faculty.assignments.manage'])
+      .map((item) => item.key)).toContain('teaching-assignment-management')
+  })
+
   it('keeps the inert Coming Soon placeholders even with no capability grants', () => {
     // Placeholders expose no backend capability, so there is nothing to
     // permission-check; they are roadmap labels for any faculty identity.

@@ -7,6 +7,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // Bound parallel jsdom environments so async UI queries are not starved
+    // by the default worker count on hosts exposing many logical CPUs.
+    pool: 'vmThreads',
+    maxWorkers: 2,
     // Several accessibility-oriented form tests intentionally type through
     // every field. On constrained CI hosts, parallel jsdom workers can push a
     // correct user-event sequence past Vitest's 5s default and leave its

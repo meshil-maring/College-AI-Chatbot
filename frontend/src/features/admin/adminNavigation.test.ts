@@ -32,6 +32,7 @@ describe('buildAdminNavigation', () => {
       'profile',
       'permissions',
       'faculty-assignments',
+      'academic-setup',
     ])
   })
 

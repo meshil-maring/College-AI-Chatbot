@@ -13,6 +13,12 @@ from app.services.phase81_rbac import _active_sections
 ROSTER_FIELDS = ('roster_id', 'register_number', 'university_roll_number', 'student_name',
                  'email', 'roster_status', 'linked_student_id', 'reconciliation_state')
 
+# The project's EXISTING attendance monitoring threshold (percent). Used by
+# the faculty section overview, the delegated responsibilities report and the
+# student academic experience. One constant so every surface reports the same
+# policy value; no new threshold is introduced anywhere.
+MONITORING_THRESHOLD = 75
+
 
 def resources(user: dict) -> list[dict]:
     context = faculty_context(user)
@@ -31,7 +37,7 @@ def statistics(records: list[dict]) -> dict:
     percentage = round(100 * counts['present'] / len(records), 2) if records else None
     return {'record_count': len(records), 'present': counts['present'], 'absent': counts['absent'],
             'late': counts['late'], 'excused': counts['excused'], 'attendance_percentage': percentage,
-            'low_attendance': percentage is not None and percentage < 75}
+            'low_attendance': percentage is not None and percentage < MONITORING_THRESHOLD}
 
 
 def section_data(user: dict, section_id: UUID) -> tuple[dict, list[dict], list[dict], list[dict]]:
@@ -75,7 +81,7 @@ def overview(user: dict, section_id: UUID) -> dict:
     dates = set(by_date) | {s['session_date'] for s in sessions}
     return {'section': section, 'total_students': len(students), 'session_count': len(dates),
             **statistics(records), 'average_attendance': statistics(records)['attendance_percentage'],
-            'low_attendance_count': sum(s['low_attendance'] for s in students), 'monitoring_threshold': 75,
+            'low_attendance_count': sum(s['low_attendance'] for s in students), 'monitoring_threshold': MONITORING_THRESHOLD,
             'trend': [{'date': date, **statistics(by_date.get(date, []))} for date in sorted(dates)]}
 
 
