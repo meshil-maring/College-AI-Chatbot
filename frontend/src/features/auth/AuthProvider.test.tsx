@@ -23,6 +23,7 @@ import {
   resetSessionExpiredListeners,
 } from '../../services/sessionEvents.ts'
 import type { CurrentUser } from '../../types/auth.ts'
+import { NAVIGATION_QUERY_POLICY, queryClient } from '../../lib/queryClient.ts'
 
 vi.mock('../../services/auth.ts', async () => {
   const actual = await vi.importActual<typeof import('../../services/auth.ts')>(
@@ -77,6 +78,53 @@ beforeEach(() => {
   vi.mocked(authService.revokeSession).mockReset()
   vi.mocked(authService.revokeSession).mockResolvedValue({ message: 'revoked' })
   resetSessionExpiredListeners()
+})
+
+describe('navigation cache session lifetime', () => {
+  const cachedKey = ['admin', 'academic-setup', 'saved-token']
+
+  async function restoreAndCache() {
+    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, 'saved-token')
+    vi.mocked(authService.fetchCurrentUser).mockResolvedValue(ME_ADMIN)
+    renderProvider()
+    await waitFor(() => expect(captured?.status).toBe('authenticated'))
+    await queryClient.fetchQuery({ queryKey: cachedKey, queryFn: async () => 'private academic records', ...NAVIGATION_QUERY_POLICY })
+    expect(queryClient.getQueryData(cachedKey)).toBe('private academic records')
+  }
+
+  it('removes retained data when signing out', async () => {
+    await restoreAndCache()
+    await act(async () => { await captured?.logout() })
+    expect(captured?.status).toBe('unauthenticated')
+    expect(queryClient.getQueryData(cachedKey)).toBeUndefined()
+  })
+
+  it('removes retained data when the current session expires', async () => {
+    await restoreAndCache()
+    act(() => notifySessionExpired('saved-token'))
+    await waitFor(() => expect(captured?.status).toBe('unauthenticated'))
+    expect(queryClient.getQueryData(cachedKey)).toBeUndefined()
+  })
+
+  it('clears retained data before adopting a session from another tab', async () => {
+    await restoreAndCache()
+    let resolve!: (user: CurrentUser) => void
+    vi.mocked(authService.fetchCurrentUser).mockImplementationOnce(() => new Promise((done) => { resolve = done }))
+    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, 'replacement-token')
+    act(() => window.dispatchEvent(new StorageEvent('storage', { key: ACCESS_TOKEN_STORAGE_KEY, storageArea: window.localStorage })))
+    expect(captured?.status).toBe('restoring')
+    expect(queryClient.getQueryData(cachedKey)).toBeUndefined()
+    await act(async () => resolve(ME_STUDENT))
+    await waitFor(() => expect(captured?.accessToken).toBe('replacement-token'))
+    expect(captured?.user).toEqual(ME_STUDENT)
+  })
+
+  it('keeps cached data when a late expiry notification names another session', async () => {
+    await restoreAndCache()
+    act(() => notifySessionExpired('retired-token'))
+    expect(captured?.status).toBe('authenticated')
+    expect(queryClient.getQueryData(cachedKey)).toBe('private academic records')
+  })
 })
 
 describe('restore (refresh bootstrap)', () => {

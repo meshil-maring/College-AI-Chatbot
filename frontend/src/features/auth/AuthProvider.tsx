@@ -37,6 +37,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AuthError, authErrorMessage, authenticate as authenticateRequest, fetchCurrentUser, refreshSession, revokeSession } from '../../services/auth.ts'
 import { SESSION_EXPIRED_MESSAGE, onSessionExpired } from '../../services/sessionEvents.ts'
 import type { CurrentUser } from '../../types/auth.ts'
+import { clearNavigationQueryCache } from '../../lib/queryClient.ts'
 
 /** localStorage key for the saved access token (opaque, never a password). */
 export const ACCESS_TOKEN_STORAGE_KEY: string = 'college-ai-chatbot.access-token'
@@ -162,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** Commit (or clear) the session token in state AND in the race-guard ref. */
   const setSessionToken = useCallback((token: string | null): void => {
+    if (sessionTokenRef.current !== token) clearNavigationQueryCache()
     sessionTokenRef.current = token
     setAccessToken(token)
   }, [])
@@ -174,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const clearSession = useCallback((message: string | null): void => {
     sessionGenerationRef.current += 1
+    clearNavigationQueryCache()
     sessionTokenRef.current = null
     clearStoredProviderSession()
     setUser(null)
@@ -474,8 +477,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // login/restore result for the previous session.
       sessionGenerationRef.current += 1
       const generationAtStart = sessionGenerationRef.current
-      sessionTokenRef.current = nextToken
-      setAccessToken(nextToken)
+      setSessionToken(nextToken)
       setStatus('restoring')
       void fetchCurrentUser(nextToken)
         .then((me) => {

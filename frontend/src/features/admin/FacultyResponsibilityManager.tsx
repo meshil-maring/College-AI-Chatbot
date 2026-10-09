@@ -3,6 +3,7 @@ import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { createFacultyResponsibility, getFacultyResponsibilityManagement, revokeFacultyResponsibility, updateFacultyResponsibility } from '../../services/adminApi.ts'
 import type { FacultyResponsibility } from '../../types/faculty.ts'
 import { validityLabel } from '../faculty/responsibilities.ts'
+import { adminAcademicKeys } from './adminAcademicQueries.ts'
 
 export function localDateTime(value: string): string {
   const date = new Date(value)
@@ -10,7 +11,7 @@ export function localDateTime(value: string): string {
 }
 
 export default function FacultyResponsibilityManager({ accessToken, facultyId }: { accessToken: string; facultyId: string }) {
-  const query = useApiQuery(['admin', 'responsibilities', accessToken], () => getFacultyResponsibilityManagement(accessToken))
+  const query = useApiQuery(adminAcademicKeys.responsibilities(accessToken), () => getFacultyResponsibilityManagement(accessToken), true, { cache: 'navigation' })
   const [code, setCode] = useState('')
   const [scopeId, setScopeId] = useState('')
   const [start, setStart] = useState(() => localDateTime(new Date().toISOString()))

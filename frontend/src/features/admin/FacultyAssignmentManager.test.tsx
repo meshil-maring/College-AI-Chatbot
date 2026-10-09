@@ -47,6 +47,7 @@ describe('FacultyAssignmentManager', () => {
       })
     })
     expect(await screen.findByRole('status')).toHaveTextContent('Faculty section assignment saved.')
+    await waitFor(() => expect(api.getFacultyAssignments).toHaveBeenCalledTimes(2))
   })
 
   it('surfaces assignment failures and does not claim success', async () => {
@@ -71,5 +72,19 @@ describe('FacultyAssignmentManager', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(api.getFacultyAssignments).toHaveBeenCalledTimes(2)
     expect(api.createFacultyAssignment).not.toHaveBeenCalled()
+  })
+
+  it('keeps existing assignments visible during a manual refresh', async () => {
+    let resolve!: (data: typeof assignmentData) => void
+    vi.mocked(api.getFacultyAssignments).mockResolvedValueOnce(assignmentData).mockImplementationOnce(() => new Promise((done) => { resolve = done }))
+    render(<FacultyAssignmentManager accessToken="jwt" />)
+    await screen.findByRole('button', { name: 'Assign section' })
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh assignments' }))
+    expect(await screen.findByText('Updating Faculty assignments…')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Revoke' })).toBeInTheDocument()
+    expect(screen.queryByText('Loading Faculty assignments…')).not.toBeInTheDocument()
+    resolve({ ...assignmentData, assignments: [] })
+    expect(await screen.findByText('No active Faculty assignments.')).toBeInTheDocument()
+    expect(api.getFacultyAssignments).toHaveBeenCalledTimes(2)
   })
 })

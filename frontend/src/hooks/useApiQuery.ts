@@ -1,6 +1,6 @@
 import { useMutation, useQuery, type QueryKey, type UseMutationOptions, type UseQueryResult } from '@tanstack/react-query'
 import { useId, useState } from 'react'
-import { queryClient } from '../lib/queryClient.ts'
+import { NAVIGATION_QUERY_POLICY, queryClient } from '../lib/queryClient.ts'
 
 let nextQueryScope = 0
 
@@ -9,10 +9,16 @@ export function useApiQuery<T>(
   queryKey: QueryKey,
   queryFn: () => Promise<T>,
   enabled = true,
+  options: { cache?: 'navigation' } = {},
 ): UseQueryResult<T, unknown> {
   const instanceId = useId()
   const [scope] = useState(() => ++nextQueryScope)
-  return useQuery({ queryKey: [...queryKey, instanceId, scope], queryFn, enabled, retry: false, refetchOnMount: 'always', gcTime: 0 }, queryClient)
+  const retainOnNavigation = options.cache === 'navigation'
+  return useQuery({
+    queryKey: retainOnNavigation ? queryKey : [...queryKey, instanceId, scope],
+    queryFn, enabled, retry: false, refetchOnMount: 'always', gcTime: 0,
+    ...(retainOnNavigation ? NAVIGATION_QUERY_POLICY : {}),
+  }, queryClient)
 }
 
 export function useApiMutation<TData, TVariables>(

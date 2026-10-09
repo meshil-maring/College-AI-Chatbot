@@ -9,11 +9,12 @@
 
 /// <reference types="vitest/globals" />
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AdminShell from './AdminShell.tsx'
 import * as adminApi from '../../services/adminApi.ts'
 import type { DashboardSummary } from '../../types/admin.ts'
+import type { AcademicCatalogue } from '../../types/academicSetup.ts'
 import {
   buildDashboardSummary,
   emptyDashboardSummary,
@@ -146,5 +147,73 @@ describe('AdminShell', () => {
     render(<AdminShell />)
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(authState.logout).toHaveBeenCalledTimes(1)
+  })
+
+  function mockAcademicNavigation() {
+    const catalogue: AcademicCatalogue = {
+      institution_id: 'inst-1', manageable: ['departments'],
+      records: { departments: [{ department_id: 'department-1', name: 'Science', code: 'SCI', is_active: true }] },
+    }
+    vi.mocked(adminApi.getAcademicCatalogue).mockReset().mockResolvedValue(catalogue)
+    vi.mocked(adminApi.getFacultyAssignments).mockReset().mockResolvedValue({ faculty: [], sections: [], assignments: [] })
+    vi.mocked(adminApi.getFacultyResponsibilityManagement).mockReset().mockResolvedValue({ faculty: [], definitions: [], departments: [], sections: [], responsibilities: [] })
+    return catalogue
+  }
+
+  function navigate(label: string) {
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Admin navigation' })).getByRole('button', { name: label }))
+  }
+
+  it('reuses academic and faculty data when navigating between their screens', async () => {
+    mockAcademicNavigation()
+    render(<AdminShell />)
+    navigate('Academic Setup')
+    await screen.findByText('SCI · Science')
+    navigate('Faculty Assignments')
+    await screen.findByText('No active Faculty assignments.')
+    await screen.findByText('No responsibilities for the selected Faculty member.')
+    navigate('Academic Setup')
+    expect(screen.getByText('SCI · Science')).toBeInTheDocument()
+    expect(screen.queryByText('Loading academic setup…')).not.toBeInTheDocument()
+    navigate('Faculty Assignments')
+    expect(screen.getByText('No active Faculty assignments.')).toBeInTheDocument()
+    expect(screen.queryByText('Loading Faculty assignments…')).not.toBeInTheDocument()
+    expect(adminApi.getAcademicCatalogue).toHaveBeenCalledTimes(1)
+    expect(adminApi.getFacultyAssignments).toHaveBeenCalledTimes(1)
+    expect(adminApi.getFacultyResponsibilityManagement).toHaveBeenCalledTimes(1)
+  })
+
+  it('refreshes cached faculty options after academic changes and reuses the saved catalogue', async () => {
+    mockAcademicNavigation()
+    vi.mocked(adminApi.saveAcademicRecord).mockReset().mockResolvedValue({ saved: true })
+    render(<AdminShell />)
+    navigate('Faculty Assignments')
+    await screen.findByText('No active Faculty assignments.')
+    await screen.findByText('No responsibilities for the selected Faculty member.')
+    navigate('Academic Setup')
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit SCI' }))
+    fireEvent.change(screen.getByLabelText('Name *'), { target: { value: 'Updated Science' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save record' }))
+    await waitFor(() => expect(adminApi.getAcademicCatalogue).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit SCI' })).toBeEnabled())
+    expect(adminApi.getFacultyAssignments).toHaveBeenCalledTimes(1)
+    navigate('Faculty Assignments')
+    await waitFor(() => expect(adminApi.getFacultyAssignments).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(adminApi.getFacultyResponsibilityManagement).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.queryByText('Updating Faculty assignments…')).not.toBeInTheDocument())
+    navigate('Academic Setup')
+    expect(screen.getByText('SCI · Science')).toBeInTheDocument()
+    expect(adminApi.getAcademicCatalogue).toHaveBeenCalledTimes(2)
+  })
+
+  it('allows manually refreshing academic records within the freshness window', async () => {
+    const catalogue = mockAcademicNavigation()
+    render(<AdminShell />)
+    navigate('Academic Setup')
+    await screen.findByText('SCI · Science')
+    vi.mocked(adminApi.getAcademicCatalogue).mockResolvedValue({ ...catalogue, records: { departments: [{ department_id: 'department-1', name: 'New Science', code: 'SCI', is_active: true }] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh academic setup' }))
+    expect(await screen.findByText('SCI · New Science')).toBeInTheDocument()
+    expect(adminApi.getAcademicCatalogue).toHaveBeenCalledTimes(2)
   })
 })

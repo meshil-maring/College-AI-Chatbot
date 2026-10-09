@@ -4,6 +4,7 @@ import { getAcademicCatalogue, saveAcademicRecord } from '../../services/adminAp
 import type { AcademicCatalogue, AcademicEntity, AcademicRecord } from '../../types/academicSetup.ts'
 import AcademicSetupHelp from './AcademicSetupHelp.tsx'
 import { ACADEMIC_DEFINITIONS, ACADEMIC_ENTITIES as entities, type AcademicField as Field } from './academicSetupDefinitions.ts'
+import { adminAcademicKeys, invalidateFacultyAcademicOptions } from './adminAcademicQueries.ts'
 
 export { ACADEMIC_DEFINITIONS } from './academicSetupDefinitions.ts'
 const inputClass = 'mt-1 block w-full rounded-lg border border-slate-600 bg-slate-900 p-2 text-slate-100 disabled:opacity-60'
@@ -41,7 +42,7 @@ export default function AcademicSetup({ accessToken }: { accessToken: string }) 
   return <AcademicSetupWorkspace key={accessToken} accessToken={accessToken} />
 }
 function AcademicSetupWorkspace({ accessToken }: { accessToken: string }) {
-  const query = useApiQuery(['admin', 'academic-setup', accessToken], () => getAcademicCatalogue(accessToken))
+  const query = useApiQuery(adminAcademicKeys.setup(accessToken), () => getAcademicCatalogue(accessToken), true, { cache: 'navigation' })
   const [entity, setEntity] = useState<AcademicEntity>('departments')
   const [editing, setEditing] = useState<AcademicRecord | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -120,13 +121,18 @@ function AcademicSetupWorkspace({ accessToken }: { accessToken: string }) {
     setBusy(true)
     try {
       await saveAcademicRecord(accessToken, entity, payload, editing ? String(editing[definition.id]) : undefined)
-      setFormOpen(false); setEditing(null); setNotice('Academic record saved.'); await query.refetch()
+      setFormOpen(false); setEditing(null); setNotice('Academic record saved.')
+      await Promise.all([query.refetch(), invalidateFacultyAcademicOptions(accessToken)])
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save academic record.') }
     finally { setBusy(false) }
   }
   return <section className="space-y-5" aria-label="Academic setup workspace">
     <div className="rounded-2xl border border-slate-700 bg-slate-800 p-5">
-      <h2 className="text-lg font-semibold">Set up your college, step by step</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Set up your college, step by step</h2>
+        {data ? <button type="button" disabled={query.isFetching || busy || formOpen} onClick={() => void query.refetch()} className="rounded-lg border border-slate-600 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 disabled:opacity-50">Refresh academic setup</button> : null}
+      </div>
+      {query.isFetching && data ? <p aria-live="polite" className="mt-2 text-xs text-slate-400">Updating academic setup…</p> : null}
       <p className="mt-2 text-sm text-slate-300">Follow the numbered steps below. Add your college’s records at each step, then continue to the next. You can return to any step to add more.</p>
       <p className="mt-2 text-sm text-slate-400">Use the <span className="font-semibold text-emerald-300">ⓘ</span> beside a field for a short explanation. Hover, focus or tap to read it.</p>
       {data ? <div className="mt-4 space-y-2">

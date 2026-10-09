@@ -7,14 +7,17 @@ import {
 } from '../../services/adminApi.ts'
 import FacultyResponsibilityManager from './FacultyResponsibilityManager.tsx'
 import TeachingValidityEditor from './TeachingValidityEditor.tsx'
+import { adminAcademicKeys, invalidateFacultyResponsibilities } from './adminAcademicQueries.ts'
 
 type AssignmentData = Awaited<ReturnType<typeof getFacultyAssignments>>
 
 export default function FacultyAssignmentManager({ accessToken }: { accessToken: string }) {
-  const [data, setData] = useState<AssignmentData | null>(null)
+  return <FacultyAssignmentWorkspace key={accessToken} accessToken={accessToken} />
+}
+
+function FacultyAssignmentWorkspace({ accessToken }: { accessToken: string }) {
   const [facultyId, setFacultyId] = useState('')
   const [sectionId, setSectionId] = useState('')
-  const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -23,24 +26,28 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
   const [editingTeaching, setEditingTeaching] = useState<string | null>(null)
 
   const assignmentsQuery = useApiQuery<AssignmentData>(
-    ['admin', 'faculty-assignments', accessToken],
+    adminAcademicKeys.assignments(accessToken),
     () => getFacultyAssignments(accessToken),
+    true, { cache: 'navigation' },
   )
+  const data = assignmentsQuery.data
+  const loading = assignmentsQuery.isPending
 
-  function load() { return assignmentsQuery.refetch() }
+  async function load() {
+    await Promise.all([assignmentsQuery.refetch(), invalidateFacultyResponsibilities(accessToken)])
+  }
 
   const loadError = assignmentsQuery.isError
     ? assignmentsQuery.error instanceof Error ? assignmentsQuery.error.message : 'Could not load Faculty assignments.'
     : null
 
   useEffect(() => {
-    setLoading(assignmentsQuery.isFetching)
     if (assignmentsQuery.data) {
-      setData(assignmentsQuery.data)
-      setFacultyId((previous) => previous || assignmentsQuery.data.faculty[0]?.id || '')
-      setSectionId((previous) => previous || assignmentsQuery.data.sections[0]?.section_id || '')
+      const current = assignmentsQuery.data
+      setFacultyId((previous) => current.faculty.some((member) => member.id === previous) ? previous : current.faculty[0]?.id ?? '')
+      setSectionId((previous) => current.sections.some((section) => section.section_id === previous) ? previous : current.sections[0]?.section_id ?? '')
     }
-  }, [assignmentsQuery.data, assignmentsQuery.isFetching])
+  }, [assignmentsQuery.data])
 
   async function assign() {
     if (!facultyId || !sectionId) return
@@ -78,10 +85,14 @@ export default function FacultyAssignmentManager({ accessToken }: { accessToken:
 
   return (
     <section aria-labelledby="faculty-assignment-heading" className="space-y-4 rounded-2xl border border-slate-700 bg-slate-800 p-4">
-      <h2 id="faculty-assignment-heading" className="text-lg font-semibold text-white">Faculty section assignments</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="faculty-assignment-heading" className="text-lg font-semibold text-white">Faculty section assignments</h2>
+        {data ? <button type="button" disabled={assignmentsQuery.isFetching || busy} onClick={() => void load()} className="rounded-lg border border-slate-600 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 disabled:opacity-50">Refresh assignments</button> : null}
+      </div>
+      {assignmentsQuery.isFetching && data ? <p aria-live="polite" className="text-xs text-slate-400">Updating Faculty assignments…</p> : null}
       <p className="text-sm text-slate-300">Assignments are limited to active Faculty and sections in your institution.</p>
       {error || loadError ? <p role="alert" className="rounded-lg border border-red-700 p-3 text-sm text-red-200">{error ?? loadError}</p> : null}
-      {loadError ? <button type="button" disabled={loading || busy} onClick={() => void load()} className="rounded-lg border border-slate-500 px-3 py-2 text-sm disabled:opacity-50">Retry loading assignments</button> : null}
+      {loadError ? <button type="button" disabled={assignmentsQuery.isFetching || busy} onClick={() => void load()} className="rounded-lg border border-slate-500 px-3 py-2 text-sm disabled:opacity-50">Retry loading assignments</button> : null}
       {notice ? <p role="status" className="rounded-lg border border-emerald-700 p-3 text-sm text-emerald-200">{notice}</p> : null}
       {loading ? <p role="status">Loading Faculty assignments…</p> : !data ? null : (
         <>

@@ -10,9 +10,8 @@ export const queryClient = new QueryClient({
     queries: {
       retry: false,
       staleTime: 0,
-      // Server state is scoped to the mounted experience. Removing inactive
-      // entries prevents one authenticated test/session surface from leaking
-      // data into a later mount or a replaced session.
+      // Features opt into bounded navigation caching below. Other queries
+      // retain their existing lifetime within the mounted experience.
       gcTime: 0,
       refetchOnWindowFocus: false,
     },
@@ -21,3 +20,17 @@ export const queryClient = new QueryClient({
     },
   },
 })
+
+/** Retain recent reads in memory while navigating within one authenticated session. */
+export const NAVIGATION_QUERY_POLICY = {
+  staleTime: 60_000,
+  gcTime: 5 * 60_000,
+  refetchOnMount: true,
+  meta: { navigationCache: true },
+} as const
+
+export function clearNavigationQueryCache(): void {
+  // Removing queries also cancels their pending results so a retired session
+  // cannot refill the cache after a logout or a token replacement.
+  queryClient.removeQueries({ predicate: (query) => query.meta?.navigationCache === true })
+}
