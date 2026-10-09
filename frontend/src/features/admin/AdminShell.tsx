@@ -173,7 +173,7 @@ export default function AdminShell() {
           </section>
         ) : (
           <>
-            {currentView !== 'assistant' ? (
+            {currentView !== 'assistant' && currentView !== 'faculty-assignments' ? (
               <h1 className="mb-4 break-words text-2xl font-bold text-white">
                 {ADMIN_VIEW_HEADINGS[currentView]}
               </h1>
