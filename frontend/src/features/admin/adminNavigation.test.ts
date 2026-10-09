@@ -39,6 +39,7 @@ describe('buildAdminNavigation', () => {
   it('shows the new administration views only with their server permissions', () => {
     expect(buildAdminNavigation('admin', ['permissions.read']).map((item) => item.key)).toEqual(['permissions'])
     expect(buildAdminNavigation('admin', ['faculty.assignments.manage']).map((item) => item.key)).toEqual(['faculty-assignments'])
+    expect(buildAdminNavigation('admin', ['courses.read']).map((item) => item.key)).toEqual(['academic-setup'])
   })
 
   it('returns an empty navigation for every other role (fail closed)', () => {

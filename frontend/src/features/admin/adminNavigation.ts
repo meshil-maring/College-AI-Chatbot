@@ -116,7 +116,7 @@ const ADMIN_VIEW_PERMISSIONS: Readonly<Record<AdminView, readonly string[]>> = {
   profile: ['profile.own.read'],
   permissions: ['permissions.read'],
   'faculty-assignments': ['faculty.assignments.manage'],
-  'academic-setup': ['departments.read'],
+  'academic-setup': ['departments.read', 'courses.read', 'academic_years.read', 'semesters.read'],
 }
 
 export function buildAdminNavigation(
@@ -127,9 +127,9 @@ export function buildAdminNavigation(
   if (!ADMIN_SHELL_ROLES.includes(role)) return []
   if (permissions === undefined) return ADMIN_NAV_ITEMS
   return ADMIN_NAV_ITEMS.filter((item) =>
-    ADMIN_VIEW_PERMISSIONS[item.key].every((permission) =>
+    (item.key === 'academic-setup' ? ADMIN_VIEW_PERMISSIONS[item.key].some((permission) => hasPermission(permissions, permission)) : ADMIN_VIEW_PERMISSIONS[item.key].every((permission) =>
       hasPermission(permissions, permission),
-    ),
+    )),
   )
 }
 

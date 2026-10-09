@@ -1,5 +1,6 @@
 """Tenant-filtered reads and atomic, audited academic master writes."""
 
+import logging
 from uuid import UUID
 
 from postgrest.exceptions import APIError
@@ -9,6 +10,25 @@ from app.core.security import authorize_permissions, has_permission, user_tenant
 from app.db.supabase import get_admin_client
 from app.repositories.query_pages import read_all
 from app.schemas.academic_setup import CREATE_MODELS, IDS
+
+logger = logging.getLogger(__name__)
+_MISSING_SCHEMA_CODES = {"42703", "42P01", "42883", "PGRST202", "PGRST204", "PGRST205"}
+
+
+def _require_academic_schema(error: APIError) -> None:
+    if error.code not in _MISSING_SCHEMA_CODES:
+        return
+    logger.warning(
+        "event=academic_schema_unavailable database_code=%s "
+        "required_migration=20261016010000_academic_curriculum_semester_convergence.sql",
+        error.code,
+    )
+    raise AppError(
+        "Academic setup requires a database update. Please contact your administrator.",
+        503,
+        "ACADEMIC_SCHEMA_UNAVAILABLE",
+    ) from error
+
 
 RESOURCES = {
     "departments": "departments", "programs": "departments",
@@ -43,7 +63,11 @@ def catalogue(user: dict) -> dict:
         for offset in range(0, len(values), 100):
             query = db.table(entity).select(COLUMNS[entity]).order(IDS[entity])
             query = query.eq(column, str(institution)) if column == "institution_id" else query.in_(column, values[offset:offset + 100])
-            result.extend(read_all(query))
+            try:
+                result.extend(read_all(query))
+            except APIError as error:
+                _require_academic_schema(error)
+                raise
         return result
 
     # Every query is pinned through a tenant-owned ancestor, including inactive
@@ -87,6 +111,7 @@ def save(user: dict, entity: str, payload: dict, record_id: UUID | None = None) 
             "p_payload": payload,
         }).execute().data
     except APIError as error:
+        _require_academic_schema(error)
         mapping = {
             "23505": (409, "ACADEMIC_DUPLICATE", "An academic record with this identifier or current status already exists."),
             "23P01": (409, "ACADEMIC_DATE_CONFLICT", "Active academic year dates overlap an existing year."),
@@ -95,7 +120,6 @@ def save(user: dict, entity: str, payload: dict, record_id: UUID | None = None) 
             "22023": (422, "ACADEMIC_INPUT_INVALID", "Invalid academic fields or an immutable relationship was changed."),
             "P0002": (404, "ACADEMIC_NOT_FOUND", "Academic record not found in your institution."),
             "42501": (403, "FORBIDDEN", "Academic management permission required."),
-            "PGRST202": (503, "ACADEMIC_SCHEMA_UNAVAILABLE", "Academic setup requires the database update. Please contact your administrator."),
         }
         status, code, message = mapping.get(error.code, (500, "ACADEMIC_SAVE_FAILED", "Academic record could not be saved."))
         raise AppError(message, status, code) from error

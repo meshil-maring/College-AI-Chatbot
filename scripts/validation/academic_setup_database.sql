@@ -2,6 +2,10 @@
 BEGIN;
 SET LOCAL search_path = public, extensions;
 SELECT set_config('request.jwt.claim.role','service_role',true);
+CREATE FUNCTION public.academic_contract_reject_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'Injected audit failure'; END; $$;
+CREATE TRIGGER academic_contract_reject_audit BEFORE INSERT ON public.admin_audit_log FOR EACH ROW
+WHEN (NEW.record_data->'after'->>'code'='AUDIT-FAILURE-CONTRACT') EXECUTE FUNCTION public.academic_contract_reject_audit();
 DO $$
 DECLARE
     org uuid:=gen_random_uuid(); tenant uuid:=gen_random_uuid(); foreign_tenant uuid:=gen_random_uuid();
@@ -11,7 +15,7 @@ DECLARE
     before_count bigint; assignment uuid;
 BEGIN
     INSERT INTO public.organizations(organization_id,name,organization_code,official_email,contact_information,status)
-    VALUES(org,'Isolated contract','AS-'||org::text,'contract@example.invalid','Disposable verification','active');
+    VALUES(org,'Isolated contract','AS-'||upper(org::text),'contract@example.invalid','Disposable verification','active');
     INSERT INTO public.institutions(institution_id,name,code,organization_id,status)
     VALUES(tenant,'Isolated institution','AS-'||tenant::text,org,'active'),(foreign_tenant,'Foreign isolated institution','AS-'||foreign_tenant::text,org,'active');
     INSERT INTO auth.users(id,email) VALUES(actor,actor||'@example.invalid'),(faculty,faculty||'@example.invalid');
@@ -37,7 +41,7 @@ BEGIN
       ('courses',c,'course_id'),('program_courses',pc,'program_course_id'),('course_offerings',o,'course_offering_id'),('sections',sec,'section_id')) t(entity,item,key)
     LOOP
       PERFORM public.manage_academic_master_record(actor,tenant,entity,(item->>key)::uuid,'{"is_active":true}');
-      IF NOT EXISTS(SELECT 1 FROM public.admin_audit_log a WHERE a.institution_id=tenant AND a.table_name=entity AND a.record_id=(item->>key)::uuid AND a.record_data->'before' IS NOT NULL AND a.record_data->'after' IS NOT NULL)
+      IF NOT EXISTS(SELECT 1 FROM public.admin_audit_log a WHERE a.institution_id=tenant AND a.table_name=entity AND a.record_id=item->>key AND a.record_data->'before' IS NOT NULL AND a.record_data->'after' IS NOT NULL)
       THEN RAISE EXCEPTION 'Update audit missing for %',entity; END IF;
     END LOOP;
     -- Existing assignment RPC consumes the exact section produced by setup.
@@ -98,6 +102,14 @@ BEGIN
       RAISE EXCEPTION 'Inactive parent accepted';
     EXCEPTION WHEN check_violation THEN NULL; END;
     PERFORM public.manage_academic_master_record(actor,tenant,'departments',(d->>'department_id')::uuid,'{"is_active":true}');
+    BEGIN
+      PERFORM public.manage_academic_master_record(actor,tenant,'departments',NULL,'{"name":"Audit failure contract","code":"AUDIT-FAILURE-CONTRACT"}');
+      RAISE EXCEPTION 'Expected audit failure';
+    EXCEPTION WHEN raise_exception THEN
+      IF SQLERRM<>'Injected audit failure' THEN RAISE; END IF;
+    END;
+    IF EXISTS(SELECT 1 FROM public.departments WHERE institution_id=tenant AND code='AUDIT-FAILURE-CONTRACT') THEN RAISE EXCEPTION 'Unaudited mutation persisted'; END IF;
+    RAISE NOTICE 'PASS: audit failure rolls back academic mutation';
     -- Revocation at the database permission matrix remains effective.
     DELETE FROM public.role_permissions rp USING public.permissions permission,public.roles r
       WHERE rp.role_id=r.id AND r.name='admin' AND rp.permission_id=permission.permission_id AND permission.code='departments.manage';
@@ -143,27 +155,4 @@ BEGIN
 END;
 $$;
 RESET ROLE;
-ROLLBACK;
-
--- Prove failed audit rolls back the academic mutation in the same transaction.
-BEGIN;
-SELECT set_config('request.jwt.claim.role','service_role',true);
-CREATE FUNCTION public.academic_contract_reject_audit() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN RAISE EXCEPTION 'Injected audit failure'; END; $$;
-CREATE TRIGGER academic_contract_reject_audit BEFORE INSERT ON public.admin_audit_log FOR EACH ROW EXECUTE FUNCTION public.academic_contract_reject_audit();
-DO $$
-DECLARE actor uuid; tenant uuid;
-BEGIN
-  SELECT ur.user_id,ur.scope_id INTO actor,tenant FROM public.user_roles ur JOIN public.roles r ON r.id=ur.role_id JOIN public.users u ON u.id=ur.user_id JOIN public.institutions i ON i.institution_id=ur.scope_id
-  WHERE r.name='admin' AND ur.scope_type='institution' AND u.status='active' AND i.status='active' AND i.is_active LIMIT 1;
-  IF actor IS NULL THEN RAISE EXCEPTION 'Replay administrator unavailable for audit failure test'; END IF;
-  BEGIN
-    PERFORM public.manage_academic_master_record(actor,tenant,'departments',NULL,'{"name":"Audit failure contract","code":"AUDIT-FAILURE-CONTRACT"}');
-    RAISE EXCEPTION 'Expected audit failure';
-  EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM<>'Injected audit failure' THEN RAISE; END IF;
-  END;
-  IF EXISTS(SELECT 1 FROM public.departments WHERE institution_id=tenant AND code='AUDIT-FAILURE-CONTRACT') THEN RAISE EXCEPTION 'Unaudited mutation persisted'; END IF;
-  RAISE NOTICE 'PASS: audit failure rolls back academic mutation';
-END; $$;
 ROLLBACK;

@@ -26,7 +26,7 @@ try {
         & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
         if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
     }
-    foreach ($fixture in @('academic_setup_database.sql', 'faculty_responsibilities_database.sql', 'faculty_attendance_database.sql', 'faculty_tests_database.sql')) {
+    foreach ($fixture in @('academic_setup_sql_lint.sql', 'academic_setup_database.sql', 'faculty_responsibilities_database.sql', 'faculty_attendance_database.sql', 'faculty_tests_database.sql')) {
         & docker cp (Join-Path $PSScriptRoot $fixture) "${containerName}:/tmp/$fixture"
         if ($LASTEXITCODE -ne 0) { throw 'Could not copy contract fixture' }
         & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"

@@ -9,7 +9,8 @@ from postgrest.exceptions import APIError
 
 from app.core.security import get_current_user
 from app.main import app
-from app.services import academic_setup as service, authorization
+from app.services import academic_setup as service
+from app.services import authorization
 
 TENANT = "30000000-0000-0000-0000-000000000001"
 FOREIGN = "30000000-0000-0000-0000-000000000002"
@@ -133,7 +134,7 @@ def test_reparenting_null_required_fields_and_empty_updates_are_rejected(api, en
     db.rpc.assert_not_called()
 
 
-@pytest.mark.parametrize("code,status", [("23505", 409), ("23P01", 409), ("23514", 422), ("23503", 422), ("P0002", 404), ("42501", 403), ("PGRST202", 503), ("XX000", 500)])
+@pytest.mark.parametrize("code,status", [("23505", 409), ("23P01", 409), ("23514", 422), ("23503", 422), ("P0002", 404), ("42501", 403), ("PGRST202", 503), ("42703", 503), ("PGRST204", 503), ("XX000", 500)])
 def test_database_conflicts_and_foreign_ids_return_safe_errors(api, code, status):
     client, db, _, _ = api
     db.rpc.return_value.execute.side_effect = APIError({"code": code, "message": "PRIVATE_DATABASE_DIAGNOSTIC", "details": None, "hint": None})
@@ -189,3 +190,46 @@ def test_empty_catalogue_contains_no_fabricated_records(api):
     assert response.status_code == 200
     assert all(rows == [] for rows in response.json()["records"].values())
     assert db.table.call_count == 2
+
+
+@pytest.mark.parametrize("code", ["42703", "42P01", "PGRST204", "PGRST205"])
+def test_catalogue_missing_curriculum_schema_returns_a_safe_update_error(api, code, caplog):
+    client, db, _, _ = api
+
+    def table(entity):
+        query = MagicMock()
+        for method in ("select", "order", "eq", "in_", "range"):
+            getattr(query, method).return_value = query
+        if entity == "program_courses":
+            query.execute.side_effect = APIError({
+                "code": code, "message": "column program_courses.semester_id does not exist: PRIVATE_DATABASE_DIAGNOSTIC",
+                "details": None, "hint": None,
+            })
+        else:
+            source = {
+                "departments": [{"department_id": "d"}],
+                "programs": [{"program_id": "p", "department_id": "d"}],
+                "courses": [], "academic_years": [{"academic_year_id": "y"}],
+                "semesters": [],
+            }
+            query.execute.return_value = SimpleNamespace(data=source[entity])
+        return query
+
+    db.table.side_effect = table
+    response = client.get(BASE)
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "ACADEMIC_SCHEMA_UNAVAILABLE"
+    assert "database update" in response.json()["error"]["message"]
+    assert "PRIVATE_DATABASE_DIAGNOSTIC" not in response.text
+    assert "academic_schema_unavailable" in caplog.text
+    assert "20261016010000_academic_curriculum_semester_convergence.sql" in caplog.text
+
+
+def test_catalogue_other_database_errors_are_not_reported_as_missing_schema(api):
+    client, db, _, _ = api
+    query = db.table.return_value
+    for method in ("select", "order", "eq", "range"):
+        getattr(query, method).return_value = query
+    query.execute.side_effect = APIError({"code": "XX000", "message": "unrelated database error", "details": None, "hint": None})
+    with pytest.raises(APIError):
+        client.get(BASE)

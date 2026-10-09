@@ -4,7 +4,14 @@ from datetime import date
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, create_model, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    create_model,
+    field_validator,
+)
 
 Text = Annotated[str, Field(min_length=1, max_length=200)]
 Positive = Annotated[float, Field(gt=0)]
@@ -17,7 +24,7 @@ Entity = Literal[
 
 
 class MasterRecord(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, allow_inf_nan=False)
     is_active: StrictBool = True
 
     @field_validator("*", mode="after")

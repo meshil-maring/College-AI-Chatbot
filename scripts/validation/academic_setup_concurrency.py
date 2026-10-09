@@ -16,7 +16,7 @@ if label != "true":
 
 
 def sql(query):
-    return subprocess.run(["docker", "exec", "-i", container, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=verbose", "-At"], input=query, capture_output=True, text=True, timeout=40)
+    return subprocess.run(["docker", "exec", "-i", container, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=verbose", "-At"], input=query, capture_output=True, text=True, timeout=40, check=False)
 
 
 def checked(query):
@@ -33,7 +33,7 @@ def quote(value):
 org, tenant, a, b, dept, program, year, semester, course, offering = [str(uuid4()) for _ in range(10)]
 checked(f"""
 BEGIN;
-INSERT INTO organizations(organization_id,name,organization_code,official_email,contact_information,status) VALUES('{org}','Isolated race','AS-{org}','race@example.invalid','Disposable','active');
+INSERT INTO organizations(organization_id,name,organization_code,official_email,contact_information,status) VALUES('{org}','Isolated race','AS-{org.upper()}','race@example.invalid','Disposable','active');
 INSERT INTO institutions(institution_id,name,code,organization_id,status) VALUES('{tenant}','Isolated race','AS-{tenant}','{org}','active');
 INSERT INTO auth.users(id,email) VALUES('{a}','{a}@example.invalid'),('{b}','{b}@example.invalid');
 INSERT INTO users(id,auth_user_id,email,first_name,last_name) SELECT id,id,email,'Race','Admin' FROM auth.users WHERE id IN('{a}','{b}');
