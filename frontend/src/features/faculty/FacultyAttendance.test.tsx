@@ -1,8 +1,10 @@
 /// <reference types="vitest/globals" />
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FacultyAttendance from './FacultyAttendance.tsx'
+import { clearNavigationQueryCache, NAVIGATION_QUERY_POLICY, queryClient } from '../../lib/queryClient.ts'
+import { facultyAttendanceKeys } from './useFacultyAttendanceData.ts'
 import {
   commitFacultyAttendanceImport,
   getFacultyAttendanceAssignments,
@@ -56,12 +58,20 @@ const roster = [{
   imported_summary: { attendance_percentage: 1, total_classes: 200 },
 }]
 
+const overview = { total_students: 1, session_count: 28, present: 26, absent: 2, average_attendance: 92.86, low_attendance_count: 0, monitoring_threshold: 75, trend: [] }
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((done) => { resolve = done })
+  return { promise, resolve }
+}
+
 beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([assignment])
   vi.mocked(getFacultyAttendanceRoster).mockResolvedValue(roster)
   vi.mocked(getFacultyAttendanceStudents).mockResolvedValue({ items: roster, total: 1 })
-  vi.mocked(getFacultyAttendanceOverview).mockResolvedValue({ total_students: 1, session_count: 28, present: 26, absent: 2, average_attendance: 92.86, low_attendance_count: 0, monitoring_threshold: 75, trend: [] })
+  vi.mocked(getFacultyAttendanceOverview).mockResolvedValue(overview)
   vi.mocked(getFacultyAttendanceImports).mockResolvedValue([])
   vi.mocked(getFacultyAttendanceSessions).mockResolvedValue({ items: [], total: 0 })
   vi.mocked(getFacultyAttendanceProfile).mockResolvedValue({ student: roster[0], section: assignment.section, total: 1, history: [{ record_id: 'record-1', session_date: '2026-10-07', status: 'present' }] })
@@ -71,6 +81,174 @@ beforeEach(() => {
 })
 
 describe('FacultyAttendance', () => {
+  it('renders cached attendance immediately when revisiting without repeating fresh reads', async () => {
+    const first = render(<FacultyAttendance accessToken="token" />)
+    await screen.findByText('Rahul Sharma')
+    first.unmount()
+    render(<FacultyAttendance accessToken="token" />)
+    expect(screen.getByText('Rahul Sharma')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Subject' })).toHaveValue('assignment-1')
+    expect(screen.queryByText('Loading attendance summary…')).not.toBeInTheDocument()
+    expect(getFacultyAttendanceAssignments).toHaveBeenCalledTimes(1)
+    expect(getFacultyAttendanceOverview).toHaveBeenCalledTimes(1)
+    expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows students while a slow overview is still loading', async () => {
+    const summary = deferred<typeof overview>()
+    vi.mocked(getFacultyAttendanceOverview).mockReturnValueOnce(summary.promise)
+    render(<FacultyAttendance accessToken="token" />)
+    expect(await screen.findByText('Rahul Sharma')).toBeInTheDocument()
+    expect(screen.getByText('Loading attendance summary…')).toBeInTheDocument()
+    await act(async () => summary.resolve(overview))
+    await waitFor(() => expect(screen.queryByText('Loading attendance summary…')).not.toBeInTheDocument())
+  })
+
+  it.each(['mark', 'upload'] as const)('opens a requested %s workflow on both first entry and a cached visit', async (action) => {
+    const title = action === 'mark' ? 'Mark Attendance' : 'Upload Attendance'
+    const first = render(<FacultyAttendance accessToken="token" actionRequest={{ action, id: 1 }} />)
+    expect(await screen.findByRole('dialog', { name: title })).toBeInTheDocument()
+    await screen.findAllByText('Rahul Sharma')
+    first.unmount()
+    render(<FacultyAttendance accessToken="token" actionRequest={{ action, id: 2 }} />)
+    expect(screen.getByRole('dialog', { name: title })).toBeInTheDocument()
+    expect(getFacultyAttendanceAssignments).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the overview while a slow roster is still loading', async () => {
+    const students = deferred<{ items: typeof roster; total: number }>()
+    vi.mocked(getFacultyAttendanceStudents).mockReturnValueOnce(students.promise)
+    render(<FacultyAttendance accessToken="token" />)
+    await waitFor(() => expect(screen.getByText('Classes Conducted').parentElement).toHaveTextContent('28'))
+    expect(screen.queryByText('Rahul Sharma')).not.toBeInTheDocument()
+    await act(async () => students.resolve({ items: roster, total: 1 }))
+    expect(await screen.findByText('Rahul Sharma')).toBeInTheDocument()
+  })
+
+  it('displays the first roster page before remaining pages and waits for a complete export', async () => {
+    const remaining = deferred<{ items: typeof roster; total: number }>()
+    vi.mocked(getFacultyAttendanceStudents).mockResolvedValueOnce({ items: roster, total: 2 }).mockReturnValueOnce(remaining.promise)
+    render(<FacultyAttendance accessToken="token" />)
+    expect(await screen.findByText('Rahul Sharma')).toBeInTheDocument()
+    expect(await screen.findByText(/1 of 2 loaded/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Export/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Mark Attendance' })).toBeDisabled()
+    await act(async () => remaining.resolve({ items: [{ ...roster[0], roster_id: 'roster-2', student_name: 'Final Student' }], total: 2 }))
+    expect(await screen.findByText('Final Student')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Export/ })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Mark Attendance' })).toBeEnabled()
+    expect(screen.queryByText(/1 of 2 loaded/)).not.toBeInTheDocument()
+  })
+
+  it('keeps cached attendance visible while stale data refreshes on a revisit', async () => {
+    const first = render(<FacultyAttendance accessToken="token" />)
+    await screen.findByText('Rahul Sharma')
+    first.unmount()
+    for (const query of queryClient.getQueryCache().findAll({ queryKey: facultyAttendanceKeys.all('token') })) {
+      if (query.state.data !== undefined) queryClient.setQueryData(query.queryKey, query.state.data, {
+        updatedAt: Date.now() - NAVIGATION_QUERY_POLICY.staleTime - 1,
+      })
+    }
+    const students = deferred<{ items: typeof roster; total: number }>()
+    vi.mocked(getFacultyAttendanceStudents).mockReturnValueOnce(students.promise)
+    render(<FacultyAttendance accessToken="token" />)
+    expect(screen.getByText('Rahul Sharma')).toBeInTheDocument()
+    await waitFor(() => expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(2))
+    expect(screen.getByText('Rahul Sharma')).toBeInTheDocument()
+    await act(async () => students.resolve({ items: [{ ...roster[0], student_name: 'Updated Student' }], total: 1 }))
+    expect(await screen.findByText('Updated Student')).toBeInTheDocument()
+    expect(screen.queryByText('Rahul Sharma')).not.toBeInTheDocument()
+  })
+
+  it('skips fresh reads on focus and deduplicates an ongoing stale refresh', async () => {
+    render(<FacultyAttendance accessToken="token" />)
+    await screen.findByText('Rahul Sharma')
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    expect(getFacultyAttendanceAssignments).toHaveBeenCalledTimes(1)
+    expect(getFacultyAttendanceOverview).toHaveBeenCalledTimes(1)
+    expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(1)
+    for (const query of queryClient.getQueryCache().findAll({ queryKey: facultyAttendanceKeys.all('token') })) {
+      if (query.state.data !== undefined) queryClient.setQueryData(query.queryKey, query.state.data, {
+        updatedAt: Date.now() - NAVIGATION_QUERY_POLICY.staleTime - 1,
+      })
+    }
+    const students = deferred<{ items: typeof roster; total: number }>()
+    vi.mocked(getFacultyAttendanceStudents).mockReturnValueOnce(students.promise)
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    await act(async () => { window.dispatchEvent(new Event('focus')) })
+    expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(2)
+    expect(getFacultyAttendanceAssignments).toHaveBeenCalledTimes(2)
+    expect(getFacultyAttendanceOverview).toHaveBeenCalledTimes(2)
+    expect(screen.getByText('Rahul Sharma')).toBeInTheDocument()
+    await act(async () => students.resolve({ items: roster, total: 1 }))
+    await waitFor(() => expect(screen.queryByText('Refreshing attendance…')).not.toBeInTheDocument())
+  })
+
+  it('clears the previous session view immediately when the access token changes', async () => {
+    const view = render(<FacultyAttendance accessToken="token" />)
+    await screen.findByText('Rahul Sharma')
+    const resources = deferred<typeof assignment[]>()
+    vi.mocked(getFacultyAttendanceAssignments).mockReturnValueOnce(resources.promise)
+    vi.mocked(getFacultyAttendanceStudents).mockResolvedValue({ items: [{ ...roster[0], student_name: 'New Session Student' }], total: 1 })
+    view.rerender(<FacultyAttendance accessToken="new-token" />)
+    expect(screen.queryByText('Rahul Sharma')).not.toBeInTheDocument()
+    await act(async () => resources.resolve([assignment]))
+    expect(await screen.findByText('New Session Student')).toBeInTheDocument()
+    expect(getFacultyAttendanceOverview).toHaveBeenLastCalledWith('new-token', 'section-1')
+    expect(getFacultyAttendanceStudents).toHaveBeenLastCalledWith('new-token', 'section-1', expect.any(URLSearchParams))
+  })
+
+  it('removes attendance and paginated roster caches when the session cache is cleared', async () => {
+    const view = render(<FacultyAttendance accessToken="token" />)
+    await screen.findByText('Rahul Sharma')
+    view.unmount()
+    clearNavigationQueryCache()
+    expect(queryClient.getQueryCache().findAll({ queryKey: facultyAttendanceKeys.all('token') })).toHaveLength(0)
+    const resources = deferred<typeof assignment[]>()
+    vi.mocked(getFacultyAttendanceAssignments).mockReturnValueOnce(resources.promise)
+    render(<FacultyAttendance accessToken="token" />)
+    expect(screen.queryByText('Rahul Sharma')).not.toBeInTheDocument()
+    await act(async () => resources.resolve([assignment]))
+    expect(await screen.findByText('Rahul Sharma')).toBeInTheDocument()
+    expect(getFacultyAttendanceAssignments).toHaveBeenCalledTimes(2)
+    expect(getFacultyAttendanceOverview).toHaveBeenCalledTimes(2)
+    expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(2)
+  })
+
+  it('reuses section caches when switching subjects without showing another subject roster', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([assignment, {
+      ...assignment, assignment_id: 'assignment-2', section_id: 'section-2',
+      section: { ...assignment.section, section_id: 'section-2', course: { name: 'Algorithms', code: 'CS-502' } },
+    }])
+    vi.mocked(getFacultyAttendanceStudents).mockImplementation(async (_token, sectionId) => ({
+      items: sectionId === 'section-1' ? roster : [{ ...roster[0], student_name: 'Second Subject Student' }], total: 1,
+    }))
+    render(<FacultyAttendance accessToken="token" />)
+    await screen.findByText('Rahul Sharma')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Subject' }), 'assignment-2')
+    expect(await screen.findByText('Second Subject Student')).toBeInTheDocument()
+    expect(screen.queryByText('Rahul Sharma')).not.toBeInTheDocument()
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Subject' }), 'assignment-1')
+    expect(screen.getByText('Rahul Sharma')).toBeInTheDocument()
+    expect(screen.queryByText('Second Subject Student')).not.toBeInTheDocument()
+    expect(getFacultyAttendanceOverview).toHaveBeenCalledTimes(2)
+    expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(2)
+  })
+
+  it('hides cached records when a refresh rejects a revoked assignment', async () => {
+    const user = userEvent.setup()
+    render(<FacultyAttendance accessToken="token" />)
+    await user.click(await screen.findByRole('button', { name: 'View' }))
+    expect(screen.getByRole('dialog', { name: 'Student Attendance Profile' })).toBeInTheDocument()
+    vi.mocked(getFacultyAttendanceOverview).mockRejectedValue(new Error('Your teaching assignment is no longer valid'))
+    await act(async () => { await queryClient.invalidateQueries({ queryKey: facultyAttendanceKeys.section('token', '', 'section-1') }) })
+    expect(await screen.findByRole('alert')).toHaveTextContent('Your teaching assignment is no longer valid')
+    expect(screen.queryByText('Rahul Sharma')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Mark Attendance' })).toBeDisabled()
+  })
+
   it('renders an honest empty state when the faculty has no assignments', async () => {
     vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([])
     render(<FacultyAttendance accessToken="token" />)
@@ -98,9 +276,15 @@ describe('FacultyAttendance', () => {
     await user.click(screen.getByRole('button', { name: 'Mark Attendance' }))
     await user.click(screen.getByRole('button', { name: 'Mark all present' }))
     await user.selectOptions(screen.getByLabelText('Attendance for Rahul Sharma'), 'absent')
+    vi.mocked(getFacultyAttendanceStudents).mockResolvedValue({ items: [{ ...roster[0], attendance_percentage: 89.29, present: 25, absent: 3 }], total: 1 })
+    vi.mocked(getFacultyAttendanceOverview).mockResolvedValue({ ...overview, average_attendance: 89.29, present: 25, absent: 3 })
     await user.click(screen.getByRole('button', { name: 'Save Attendance' }))
     await waitFor(() => expect(markFacultyAttendance).toHaveBeenCalledWith('token', 'section-1', expect.any(String), { 'roster-1': 'absent' }))
     expect(await screen.findByText('1 attendance records saved.')).toBeInTheDocument()
+    await waitFor(() => expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(2))
+    expect(getFacultyAttendanceOverview).toHaveBeenCalledTimes(2)
+    expect(getFacultyAttendanceAssignments).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('89.29%')).toBeInTheDocument()
   })
 
   it('does not submit a student changed back to not marked', async () => {
@@ -267,5 +451,8 @@ describe('FacultyAttendance', () => {
     await user.click(screen.getByRole('button', { name: 'Import 1 Valid Records' }))
     expect(await screen.findByText('Attendance Imported Successfully')).toBeInTheDocument()
     expect(commitFacultyAttendanceImport).toHaveBeenCalledWith('token', 'import-1')
+    await waitFor(() => expect(getFacultyAttendanceStudents).toHaveBeenCalledTimes(2))
+    expect(getFacultyAttendanceOverview).toHaveBeenCalledTimes(2)
+    expect(getFacultyAttendanceAssignments).toHaveBeenCalledTimes(1)
   })
 })

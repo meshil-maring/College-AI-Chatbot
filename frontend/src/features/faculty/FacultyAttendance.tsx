@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useFacultyAttendanceData } from './useFacultyAttendanceData.ts'
 import { AttendanceAcademicFilters, AttendanceRecordedViews, AttendanceStudentHistory } from './attendance/AttendanceRecordedViews.tsx'
 import {
   AlertTriangle,
@@ -29,15 +30,10 @@ import {
 } from './attendance/UploadAttendanceStages.tsx'
 import {
   commitFacultyAttendanceImport,
-  getFacultyAttendanceAssignments,
   markFacultyAttendance,
   uploadFacultyAttendance,
   getFacultyAttendanceImportReview,
-  getFacultyAttendanceStudents,
-  getFacultyAttendanceOverview,
   correctFacultyAttendanceImportRow,
-  type AttendanceOverview,
-  type FacultyAttendanceAssignment,
   type FacultyAttendanceImportReview,
   type FacultyAttendanceRosterRow,
 } from '../../services/facultyAttendanceApi.ts'
@@ -98,21 +94,24 @@ function EmptyAssignment() {
 
 type AttendanceActionRequest = { action: 'overview' | 'students' | 'mark' | 'upload' | 'history'; id: number }
 
-export default function FacultyAttendance({
-  accessToken,
-  actionRequest,
-  onNavigateAssignments,
-  scopeVersion = '',
-}: {
+type FacultyAttendanceProps = {
   accessToken: string
   actionRequest?: AttendanceActionRequest
   onNavigateAssignments?: () => void
   scopeVersion?: string
-}) {
-  const [assignments, setAssignments] = useState<FacultyAttendanceAssignment[]>([])
+}
+
+export default function FacultyAttendance(props: FacultyAttendanceProps) {
+  return <FacultyAttendanceWorkspace key={JSON.stringify([props.accessToken, props.scopeVersion ?? ''])} {...props} />
+}
+
+function FacultyAttendanceWorkspace({
+  accessToken,
+  actionRequest,
+  onNavigateAssignments,
+  scopeVersion = '',
+}: FacultyAttendanceProps) {
   const [assignmentId, setAssignmentId] = useState('')
-  const [roster, setRoster] = useState<FacultyAttendanceRosterRow[]>([])
-  const [overview, setOverview] = useState<AttendanceOverview | null>(null)
   const [sort, setSort] = useState('register_number')
   const [statuses, setStatuses] = useState<Record<string, AttendanceValue>>({})
   const [sessionDate, setSessionDate] = useState(() => { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` })
@@ -131,20 +130,27 @@ export default function FacultyAttendance({
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [aiConfirmationFile, setAiConfirmationFile] = useState<File | null>(null)
   const [dragging, setDragging] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [rosterLoading, setRosterLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
-  const selected = assignments.find((assignment) => assignment.assignment_id === assignmentId)
+  const { assignments, selected, roster, overview, assignmentsQuery, overviewQuery, studentsQuery,
+    sectionUnavailable, rosterIncomplete, refreshSection, retry } = useFacultyAttendanceData(accessToken, scopeVersion, assignmentId)
+  const rosterLoading = !!selected && studentsQuery.isPending
+  const loadError = overviewQuery.error ?? studentsQuery.error
+  const refreshing = (assignmentsQuery.isFetching && !assignmentsQuery.isPending)
+    || (overviewQuery.isFetching && !overviewQuery.isPending)
+    || (studentsQuery.isFetching && !studentsQuery.isPending && !studentsQuery.isFetchingNextPage)
   const canManage = selected?.can_manage === true
   const scopeRef = useRef(selected?.section_id)
   scopeRef.current = selected?.section_id
 
+  useEffect(() => { setStatuses({}); setMarkPage(0); setProfile(null); setMarkOpen(false); setUploadOpen(false); setReview(null); setPendingFile(null); setAiConfirmationFile(null) }, [selected?.section_id, scopeVersion, accessToken])
+  useEffect(() => { if (sectionUnavailable) { setProfile(null); setMarkOpen(false); setStatuses({}) } }, [sectionUnavailable])
+
   useEffect(() => {
-    if (!actionRequest || actionRequest.id === 0) return
+    if (assignmentsQuery.isPending || !actionRequest || actionRequest.id === 0) return
     if (actionRequest.action === 'upload') {
       setUploadOpen(true)
       setUploadStep(1)
@@ -157,36 +163,7 @@ export default function FacultyAttendance({
     } else {
       setTab('students')
     }
-  }, [actionRequest])
-
-  useEffect(() => {
-    let current = true
-    setLoading(true); setError(null)
-    getFacultyAttendanceAssignments(accessToken).then((rows) => { if (current) { setAssignments(rows); setAssignmentId((previous) => rows.some((row) => row.assignment_id === previous) ? previous : rows[0]?.assignment_id || '') } }).catch(() => { if (current) { setAssignments([]); setRoster([]); setError('Unable to load attendance') } }).finally(() => { if (current) setLoading(false) })
-    return () => { current = false }
-  }, [accessToken, reloadKey, scopeVersion])
-
-  useEffect(() => {
-    if (!selected) { setRoster([]); setOverview(null); return }
-    let current = true
-    setRosterLoading(true); setError(null)
-    setRoster([]); setOverview(null); setStatuses({}); setProfile(null)
-    async function load() {
-      const summary = await getFacultyAttendanceOverview(accessToken, selected!.section_id)
-      const rows: FacultyAttendanceRosterRow[] = []
-      while (current) {
-        const result = await getFacultyAttendanceStudents(accessToken, selected!.section_id, new URLSearchParams({ limit: '500', offset: String(rows.length) }))
-        rows.push(...result.items)
-        if (rows.length >= result.total || result.items.length === 0) break
-      }
-      if (current) { setRoster(rows); setOverview(summary) }
-    }
-    void load().catch((cause: unknown) => { if (current) { setRoster([]); setError(cause instanceof Error ? cause.message : 'Unable to load attendance') } }).finally(() => { if (current) setRosterLoading(false) })
-    return () => { current = false }
-  }, [accessToken, selected?.section_id, reloadKey, scopeVersion])
-
-  useEffect(() => { setStatuses({}); setMarkPage(0); setProfile(null); setMarkOpen(false); setUploadOpen(false); setReview(null); setPendingFile(null); setAiConfirmationFile(null) }, [selected?.section_id, scopeVersion, accessToken])
-  useEffect(() => { const refresh = () => setReloadKey((key) => key + 1); window.addEventListener('focus', refresh); return () => window.removeEventListener('focus', refresh) }, [])
+  }, [actionRequest, assignmentsQuery.isPending])
 
   const filteredRoster = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -205,15 +182,16 @@ export default function FacultyAttendance({
 
   useEffect(() => {
     setPage(1)
-  }, [assignmentId, search, statusFilter, attendanceFilter])
+  }, [selected?.section_id, search, statusFilter, attendanceFilter])
 
   const metrics = useMemo(() => {
-    return { students: overview?.total_students ?? 0, average: overview?.average_attendance ?? null, low: overview?.low_attendance_count ?? 0, classes: overview?.session_count ?? null }
+    return { students: overview?.total_students ?? null, average: overview?.average_attendance ?? null, low: overview?.low_attendance_count ?? null, classes: overview?.session_count ?? null }
   }, [overview])
 
   function resetFilters() { setSearch(''); setStatusFilter('all'); setAttendanceFilter('all'); setPage(1) }
 
   function exportAttendance() {
+    if (rosterIncomplete || sectionUnavailable) return
     const escape = (value: string | number | null) => { const text = String(value ?? ''); return `"${(/^[\s]*[=+\-@]/.test(text) ? "'" : '') + text.replaceAll('"', '""')}"` }
     const csv = [['register_number', 'student_name', 'attendance_percentage', 'records'], ...filteredRoster.map((row) => [row.register_number, row.student_name, row.attendance_percentage ?? null, row.record_count ?? 0])].map((row) => row.map(escape).join(',')).join('\r\n')
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
@@ -244,16 +222,16 @@ export default function FacultyAttendance({
   }
 
   async function saveAttendance() {
-    if (!selected || !canManage || Object.keys(statuses).length === 0) return
+    if (!selected || !canManage || rosterIncomplete || sectionUnavailable || Object.keys(statuses).length === 0) return
     if (Object.keys(statuses).length > 500) { setError('Submit at most 500 marked students at a time.'); return }
     setSaving(true); setError(null); setMessage(null)
-    try { const result = await markFacultyAttendance(accessToken, selected.section_id, sessionDate, statuses); setMessage(`${result.record_count} attendance records saved.`); setMarkOpen(false); setReloadKey((key) => key + 1) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Attendance could not be saved. Please try again.') } finally { setSaving(false) }
+    try { const result = await markFacultyAttendance(accessToken, selected.section_id, sessionDate, statuses); setMessage(`${result.record_count} attendance records saved.`); setMarkOpen(false); setStatuses({}); void refreshSection(selected.section_id); setReloadKey((key) => key + 1) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Attendance could not be saved. Please try again.') } finally { setSaving(false) }
   }
 
   async function commit() {
-    if (!review || !canManage) return
+    if (!review || !canManage || !selected) return
     setSaving(true); setError(null)
-    try { await commitFacultyAttendanceImport(accessToken, review.import_id); setUploadStep(4); setUploadSuccess(true); setMessage('Attendance imported successfully.'); setReloadKey((key) => key + 1) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Import could not be committed. Please review the file and try again.') } finally { setSaving(false) }
+    try { await commitFacultyAttendanceImport(accessToken, review.import_id); setUploadStep(4); setUploadSuccess(true); setMessage('Attendance imported successfully.'); void refreshSection(selected.section_id); setReloadKey((key) => key + 1) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Import could not be committed. Please review the file and try again.') } finally { setSaving(false) }
   }
 
   function downloadValidationErrors() {
@@ -277,15 +255,15 @@ export default function FacultyAttendance({
     URL.revokeObjectURL(url)
   }
 
-  if (loading) return <div role="status" className="space-y-5"><div className="h-20 animate-pulse rounded-xl bg-[#102235]" /><div className="grid grid-cols-2 gap-3 lg:grid-cols-6">{Array.from({ length: 6 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-xl bg-[#102235]" />)}</div><div className="h-96 animate-pulse rounded-xl bg-[#102235]" /></div>
-  if (error === 'Unable to load attendance') return <section role="alert" className={`${surface} flex min-h-[360px] flex-col items-center justify-center px-6 text-center`}><div className="mb-4 rounded-full bg-red-500/10 p-4 text-red-300"><Glyph name="alert" size={28} /></div><h1 className="text-xl font-bold text-white">Unable to load attendance</h1><p className="mt-2 max-w-sm text-sm text-slate-400">We couldn't retrieve your attendance data. Please try again.</p><button type="button" onClick={() => setReloadKey((key) => key + 1)} className="mt-5 rounded-lg bg-[#ffc72c] px-4 py-2 text-sm font-semibold text-[#101820] hover:bg-[#ffd65d]">Try Again</button></section>
+  if (assignmentsQuery.isPending) return <div role="status" className="space-y-5"><div className="h-20 animate-pulse rounded-xl bg-[#102235]" /><div className="grid grid-cols-2 gap-3 lg:grid-cols-6">{Array.from({ length: 6 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-xl bg-[#102235]" />)}</div><div className="h-96 animate-pulse rounded-xl bg-[#102235]" /></div>
+  if (assignmentsQuery.isError) return <section role="alert" className={`${surface} flex min-h-[360px] flex-col items-center justify-center px-6 text-center`}><div className="mb-4 rounded-full bg-red-500/10 p-4 text-red-300"><Glyph name="alert" size={28} /></div><h1 className="text-xl font-bold text-white">Unable to load attendance</h1><p className="mt-2 max-w-sm text-sm text-slate-400">We couldn't retrieve your attendance data. Please try again.</p><button type="button" onClick={() => void retry()} className="mt-5 rounded-lg bg-[#ffc72c] px-4 py-2 text-sm font-semibold text-[#101820] hover:bg-[#ffd65d]">Try Again</button></section>
 
   return <section aria-label="Faculty Attendance" className="space-y-2">
-    <div className="flex flex-col justify-between gap-3 xl:flex-row xl:items-end"><div><div className="mb-1 flex items-center gap-2 text-[10px] text-slate-400"><span>Attendance</span><span>›</span><span>{selected?.section.course.code ?? 'Assigned scope'}</span><span>›</span><span>{selected?.section.name ?? 'Select a section'}</span><span>›</span><span>{selected?.section.course.name}</span></div><h1 className="text-[26px] font-bold tracking-tight leading-7 text-white">Attendance</h1><p className="mt-1 text-xs text-slate-300">Manage attendance for your assigned courses and sections.</p></div><div className="flex gap-2"><label className="relative hidden md:block"><span className="sr-only">Search students, register number</span><span className="pointer-events-none absolute left-3 top-2 text-slate-500"><Glyph name="search" size={15} /></span><input className={`${input} h-[30px] w-[243px] pl-9 text-[11px]`} placeholder="Search students, register number..." value={search} onChange={(event) => setSearch(event.target.value)} /></label><button type="button" onClick={exportAttendance} className="inline-flex items-center gap-2 rounded-md border border-[#69551d] bg-[#1f1b10] px-3 py-1.5 text-[11px] font-semibold text-[#ffc72c] hover:bg-[#30270f]"><Glyph name="download" size={15} />Export <span aria-hidden="true">⌄</span></button></div></div>
+    <div className="flex flex-col justify-between gap-3 xl:flex-row xl:items-end"><div><div className="mb-1 flex items-center gap-2 text-[10px] text-slate-400"><span>Attendance</span><span>›</span><span>{selected?.section.course.code ?? 'Assigned scope'}</span><span>›</span><span>{selected?.section.name ?? 'Select a section'}</span><span>›</span><span>{selected?.section.course.name}</span></div><h1 className="text-[26px] font-bold tracking-tight leading-7 text-white">Attendance</h1><p className="mt-1 text-xs text-slate-300">Manage attendance for your assigned courses and sections.</p></div><div className="flex gap-2"><label className="relative hidden md:block"><span className="sr-only">Search students, register number</span><span className="pointer-events-none absolute left-3 top-2 text-slate-500"><Glyph name="search" size={15} /></span><input className={`${input} h-[30px] w-[243px] pl-9 text-[11px]`} placeholder="Search students, register number..." value={search} onChange={(event) => setSearch(event.target.value)} /></label><button type="button" onClick={exportAttendance} disabled={!selected || rosterIncomplete || sectionUnavailable} className="inline-flex items-center gap-2 rounded-md border border-[#69551d] bg-[#1f1b10] px-3 py-1.5 text-[11px] font-semibold text-[#ffc72c] hover:bg-[#30270f]"><Glyph name="download" size={15} />Export <span aria-hidden="true">⌄</span></button></div></div>
 
     {assignments.length === 0 ? <EmptyAssignment /> : <>
       <div className={`${surface} grid gap-2.5 p-2 `}>
-        <AttendanceAcademicFilters scopes={assignments} selectedId={assignmentId} onChange={setAssignmentId} />
+        <AttendanceAcademicFilters scopes={assignments} selectedId={selected?.assignment_id ?? ''} onChange={setAssignmentId} />
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
@@ -297,14 +275,18 @@ export default function FacultyAttendance({
         <AttendanceMetric label={<>Low Attendance <span className="block text-[10px] font-normal">(&lt; 75%)</span></>} value={metrics.low} icon="alert" tone="amber" />
       </div>
 
+      {overviewQuery.isPending && selected ? <p role="status" className="text-xs text-slate-400">Loading attendance summary…</p> : refreshing ? <p role="status" className="text-xs text-slate-400">Refreshing attendance…</p> : null}
+      {loadError ? <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">{loadError instanceof Error ? loadError.message : 'Unable to load attendance'}<button type="button" onClick={() => void retry()} className="ml-3 underline">Try Again</button></p> : null}
+
       {!canManage ? <p className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-200">Monitoring access. Marking and imports require an active teaching assignment and attendance permission for this subject.</p> : null}
       <p className="text-xs text-slate-500">75% is a monitoring threshold. Percentages use present / all recorded statuses. Imported summaries do not create attendance history.</p>
       <div className={`${surface} overflow-hidden`}>
-        <div className="flex flex-col justify-between gap-2 border-b border-[#1e3348] px-2.5 pt-2 sm:flex-row sm:items-center sm:px-3"><div className="flex gap-1 overflow-x-auto">{([['students', 'Students', 'users'], ['history', 'Import History', 'clock'], ['sessions', 'Session-wise View', 'calendar'], ['reports', 'Reports', 'chart']] as const).map(([key, label, icon]) => <button key={key} type="button" onClick={() => setTab(key)} className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-2.5 py-2.5 text-[11px] font-semibold ${tab === key ? 'border-[#ffc72c] text-[#ffc72c]' : 'border-transparent text-slate-400 hover:text-white'}`}><Glyph name={icon} size={14} />{label}</button>)}</div><div className="flex gap-2 pb-2 sm:pb-0"><button type="button" disabled={!canManage || saving} onClick={() => setMarkOpen(true)} className="inline-flex items-center gap-1.5 rounded-md bg-[#ffc72c] px-3 py-1.5 text-[11px] font-bold text-[#101820] hover:bg-[#ffd65d]"><Glyph name="plus" size={14} />Mark Attendance</button><button type="button" disabled={!canManage || saving} onClick={() => { setUploadOpen(true); setUploadStep(1); setUploadSuccess(false) }} className="inline-flex items-center gap-1.5 rounded-md bg-[#6538ed] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#7d56ff]"><Glyph name="upload" size={14} />Upload Attendance</button></div></div>
+        <div className="flex flex-col justify-between gap-2 border-b border-[#1e3348] px-2.5 pt-2 sm:flex-row sm:items-center sm:px-3"><div className="flex gap-1 overflow-x-auto">{([['students', 'Students', 'users'], ['history', 'Import History', 'clock'], ['sessions', 'Session-wise View', 'calendar'], ['reports', 'Reports', 'chart']] as const).map(([key, label, icon]) => <button key={key} type="button" onClick={() => setTab(key)} className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-2.5 py-2.5 text-[11px] font-semibold ${tab === key ? 'border-[#ffc72c] text-[#ffc72c]' : 'border-transparent text-slate-400 hover:text-white'}`}><Glyph name={icon} size={14} />{label}</button>)}</div><div className="flex gap-2 pb-2 sm:pb-0"><button type="button" disabled={!canManage || saving || rosterIncomplete || sectionUnavailable} onClick={() => setMarkOpen(true)} className="inline-flex items-center gap-1.5 rounded-md bg-[#ffc72c] px-3 py-1.5 text-[11px] font-bold text-[#101820] hover:bg-[#ffd65d]"><Glyph name="plus" size={14} />Mark Attendance</button><button type="button" disabled={!canManage || saving} onClick={() => { setUploadOpen(true); setUploadStep(1); setUploadSuccess(false) }} className="inline-flex items-center gap-1.5 rounded-md bg-[#6538ed] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#7d56ff]"><Glyph name="upload" size={14} />Upload Attendance</button></div></div>
 
-        {tab !== 'students' && selected ? <AttendanceRecordedViews token={accessToken} sectionId={selected.section_id} view={tab} overview={overview} onReview={(id) => { setSaving(true); getFacultyAttendanceImportReview(accessToken, id).then((result) => { setReview(result); setUploadSuccess(false); setUploadOpen(true); setUploadStep(3) }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Unable to load import review')).finally(() => setSaving(false)) }} /> : <>
+        {tab !== 'students' && selected ? <AttendanceRecordedViews key={`${selected.section_id}:${reloadKey}`} token={accessToken} sectionId={selected.section_id} view={tab} overview={overview} onReview={(id) => { setSaving(true); getFacultyAttendanceImportReview(accessToken, id).then((result) => { setReview(result); setUploadSuccess(false); setUploadOpen(true); setUploadStep(3) }).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Unable to load import review')).finally(() => setSaving(false)) }} /> : <>
           <div className="flex flex-col gap-2 border-b border-[#1e3348] p-2 sm:flex-row sm:items-center sm:px-2.5"><label className="relative min-w-0 flex-1"><span className="sr-only">Search by name, register number or university roll number</span><span className="pointer-events-none absolute left-2.5 top-[7px] text-slate-500"><Glyph name="search" size={15} /></span><input className={`${input} h-[29px] w-full pl-8 text-[11px]`} placeholder="Search by name, register number or university roll number..." value={search} onChange={(event) => setSearch(event.target.value)} /></label><select aria-label="Filter by student status" className={`${input} h-[29px] w-full text-[11px] sm:w-[122px]`} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All Status</option><option value="ACTIVE">Active</option><option value="UNREGISTERED">Unregistered</option><option value="PENDING_APPROVAL">Pending Approval</option><option value="INACTIVE">Inactive</option></select><select aria-label="Filter by attendance" className={`${input} h-[29px] w-full text-[11px] sm:w-[155px]`} value={attendanceFilter} onChange={(event) => setAttendanceFilter(event.target.value)}><option value="all">All Attendance</option><option value="good">75% and above</option><option value="low">Below 75%</option><option value="unknown">Not available</option></select><button type="button" onClick={resetFilters} className="h-[29px] rounded-md border border-[#263d55] px-4 text-[11px] font-semibold text-slate-300 hover:bg-[#142638]">Reset</button></div>
           <label className="block p-2 text-xs text-slate-400">Sort students<select aria-label="Sort students" value={sort} onChange={(event) => setSort(event.target.value)} className={input}><option value="register_number">Register Number</option><option value="student_name">Student Name</option><option value="attendance">Attendance</option></select></label>
+          {rosterIncomplete && !rosterLoading && !sectionUnavailable ? <p role="status" className="px-3 pb-2 text-xs text-slate-400">Loading remaining students… {roster.length} of {studentsQuery.data?.pages[0]?.total ?? 0} loaded.</p> : null}
           {rosterLoading ? <div role="status" className="space-y-2 p-4">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-12 animate-pulse rounded bg-[#102235]" />)}</div> : filteredRoster.length === 0 ? <div className="p-12 text-center text-sm text-slate-400">No students match the current filters.</div> : <>
             <div className="overflow-x-auto"><table className="min-w-[920px] w-full text-left"><caption className="sr-only">Students attendance</caption><thead className="bg-[#0b1827] text-[10px] uppercase tracking-wide text-slate-400"><tr><th className="px-3 py-2 font-medium">#</th><th className="px-2.5 py-2 font-medium">Register Number</th><th className="px-2.5 py-2 font-medium">University Roll No.</th><th className="px-2.5 py-2 font-medium">Student Name</th><th className="px-2.5 py-2 font-medium">Email</th><th className="px-2.5 py-2 font-medium">Attendance ›</th><th className="px-2.5 py-2 font-medium">Registration / Monitoring</th><th className="px-2.5 py-2 font-medium">Actions</th></tr></thead><tbody>{visibleRoster.map((row, index) => { const stats = importedStats(row); return <tr key={row.roster_id} className="border-t border-[#1b3044] text-[11px] text-slate-300 transition-colors hover:bg-[#102235]"><td className="px-3 py-1.5 text-slate-500">{(currentPage - 1) * PAGE_SIZE + index + 1}</td><td className="px-2.5 py-1.5 font-medium text-slate-200">{row.register_number}</td><td className="px-2.5 py-1.5">{row.university_roll_number ?? '—'}</td><td className="px-2.5 py-1.5 font-medium text-white">{row.student_name}</td><td className="max-w-[170px] truncate px-2.5 py-1.5 text-slate-400">{row.email ?? '—'}</td><td className="px-2.5 py-1.5"><AttendanceMeter value={stats.percentage} /><span className="text-[10px] text-slate-500">{row.record_count ?? 0} records</span></td><td className="px-2.5 py-1.5"><AttendanceStatusBadge row={row} percentage={stats.percentage} /></td><td className="px-2.5 py-1.5"><div className="flex items-center gap-2"><button type="button" onClick={() => setProfile(row)} className="rounded-md border border-[#304862] px-3 py-1 text-[11px] font-semibold text-slate-200 hover:border-[#ffc72c] hover:text-[#ffc72c]">View</button></div></td></tr> })}</tbody></table></div>
             <div className="flex flex-col justify-between gap-3 border-t border-[#1e3348] px-4 py-2.5 text-xs text-slate-400 sm:flex-row sm:items-center"><span>Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredRoster.length)} of {filteredRoster.length} students</span><div className="flex items-center gap-1" aria-label="Attendance pagination"><button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded p-1.5 text-slate-400 hover:bg-[#142638] hover:text-white disabled:cursor-not-allowed disabled:opacity-30">‹</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => <button key={pageNumber} type="button" aria-label={`Page ${pageNumber}`} aria-current={pageNumber === currentPage ? 'page' : undefined} onClick={() => setPage(pageNumber)} className={`min-w-7 rounded px-2 py-1.5 text-xs ${pageNumber === currentPage ? 'bg-[#1b2d43] font-semibold text-white' : 'text-slate-400 hover:bg-[#142638] hover:text-white'}`}>{pageNumber}</button>)}<button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} className="rounded p-1.5 text-slate-400 hover:bg-[#142638] hover:text-white disabled:cursor-not-allowed disabled:opacity-30">›</button></div></div>
