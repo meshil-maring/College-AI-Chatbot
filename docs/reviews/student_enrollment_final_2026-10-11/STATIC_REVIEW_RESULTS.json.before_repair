@@ -1,0 +1,105 @@
+{
+  "review_date": "2026-10-11",
+  "timezone": "Asia/Calcutta",
+  "kind": "bounded static artifact checks only",
+  "failures": [],
+  "required_artifacts_present": 7,
+  "fixture_scenarios": 35,
+  "existing_files_preservation": {
+    "baseline": 1074,
+    "changed": [],
+    "missing": []
+  },
+  "git_status_outside_review_unchanged": true,
+  "local_markdown_links_checked": 32,
+  "broken_links": [],
+  "whitespace_findings": [],
+  "sql_lexical_balance_checked": true,
+  "sql_declared_constraint_inventory": {
+    "student_institution_identifiers": {
+      "checks": 6,
+      "foreign_keys": 3,
+      "unique_constraints": 1
+    },
+    "student_enrollments": {
+      "checks": 18,
+      "foreign_keys": 7,
+      "unique_constraints": 1
+    },
+    "student_academic_placements": {
+      "checks": 8,
+      "foreign_keys": 3,
+      "unique_constraints": 1
+    },
+    "student_enrollment_events": {
+      "checks": 15,
+      "foreign_keys": 4,
+      "unique_constraints": 3
+    }
+  },
+  "sql_declared_functions": [
+    {
+      "name": "enrollment_review_child_guard",
+      "args": ""
+    },
+    {
+      "name": "enrollment_review_immutable",
+      "args": ""
+    },
+    {
+      "name": "enrollment_review_event_guard",
+      "args": ""
+    },
+    {
+      "name": "enrollment_review_event_required",
+      "args": ""
+    },
+    {
+      "name": "enrollment_review_assert_actor",
+      "args": "p_actor uuid,p_tenant uuid,p_permission text"
+    },
+    {
+      "name": "enrollment_review_assert_activation",
+      "args": "p_id uuid,p_date date"
+    },
+    {
+      "name": "enrollment_review_append",
+      "args": "p_id uuid,p_actor uuid,p_op uuid,p_type text,p_date date, p_request jsonb,p_before jsonb,p_reason text,p_placement uuid,p_corrects uuid,p_details jsonb,p_transfer uuid"
+    },
+    {
+      "name": "enrollment_review_command",
+      "args": "p_actor uuid,p_tenant uuid,p_id uuid,p_expected_version bigint, p_operation_id uuid,p_action text,p_args jsonb"
+    },
+    {
+      "name": "enrollment_review_handoff",
+      "args": "p_actor uuid,p_source uuid,p_destination uuid, p_source_version bigint,p_destination_version bigint,p_operation_id uuid,p_args jsonb"
+    }
+  ],
+  "sql_routine_reference_inventory_matches": true,
+  "postgresql_or_plpgsql_parser_run": false,
+  "sql_executed": false,
+  "database_connected": false,
+  "application_tests_run": false,
+  "database_tests_run": false,
+  "harness_tests_rerun": false,
+  "docker_invoked": false,
+  "limitations": [
+    "Lexical balance and inventories are not PostgreSQL syntax/semantic validation.",
+    "Manual design review cannot establish installed ACL/RLS or populated concurrency behavior.",
+    "Saved harness test results were read, not rerun."
+  ],
+  "current_migration_file_count": 39,
+  "highest_migration_filename": "20261016010000_academic_curriculum_semester_convergence.sql",
+  "artifact_hashes": {
+    "ADR-ENROLLMENT-003.md": "278cdc388af6491d874c0706aacd242a0d4bee19eba6fae5c857d47e2b9fb741",
+    "REVIEW_SUMMARY.md": "3b06de372dc42d9d992db9e8bbbc0790c7b34c48cffa4a907bbe2312122d1bba",
+    "SOURCE_EVIDENCE.json": "6f4cd69ce31673d2388555080a945cd21486a097d70790d0dbe693948f3381e8",
+    "STUDENT_ENROLLMENT_MIGRATION_PLAN.md": "292a9c4b15af7db214f03672435a36dd1f96e4a09b2f8b07ca496fc059284210",
+    "STUDENT_ENROLLMENT_SCHEMA_FINAL_REVIEW.md": "a375b9a4eeca9aac1594c80d30923297fd97746e5273005ee35199cf2844ae01",
+    "student_enrollment_schema_review_draft.sql": "0ff9b917da73dd0c112e3f540d60849ffffc2db51aeb61965c14b67a08a030b6",
+    "STUDENT_ENROLLMENT_SECURITY_REVIEW.md": "7fe2ff0f36d813ae334e28f99c3cede5f089b3f517fd6ed4d6e9cc1f719336ea",
+    "STUDENT_ENROLLMENT_TEST_PLAN.md": "086cfc5e37973c782c6d9c8cf1b16c37f77d2fdbfbf198bd8459c25de5c29399",
+    "synthetic_fixtures.json": "14b028e8283719a86cc7ae6411ca8e0ad9603e72947fb1b48124f1e4fee3878c"
+  },
+  "status_comparison_note": "Git leading status whitespace preserved; initial checker strip() was corrected to rstrip(newline)."
+}

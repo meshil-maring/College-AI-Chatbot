@@ -1,0 +1,1594 @@
+[
+  {
+    "runner": "academic_setup",
+    "case": "persistent_name",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_academic_setup_database.ps1 : Could not create isolated disposable database\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_academic_setup_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-academic-setup-8ea1deeb0982",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=8ea1deeb09824f4c9098c3307453c343",
+        "--label",
+        "collegeai.validation.purpose=academic-setup",
+        "-e",
+        "POSTGRES_PASSWORD=74258e4b0e8846b3aeb02376e90013b3",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ]
+    ]
+  },
+  {
+    "runner": "academic_setup",
+    "case": "persistent_id",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "Traceback (most recent call last):\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 128, in <module>\n    guard_proxy()\n    ~~~~~~~~~~~^^\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 103, in guard_proxy\n    exec(code, {\"__name__\": \"__main__\"})\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<string>\", line 1, in <module>\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation\\disposable_container.py\", line 63, in validate_disposable_target\n    raise RuntimeError(\"Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\")\nRuntimeError: Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\nF:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_academic_setup_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_academic_setup_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-academic-setup-fde768a5460b",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=fde768a5460b4d7aa5c8ab6ccf6caea9",
+        "--label",
+        "collegeai.validation.purpose=academic-setup",
+        "-e",
+        "POSTGRES_PASSWORD=1ffed20700b34a0995dc80298f1998be",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "fde768a5460b4d7aa5c8ab6ccf6caea9",
+        "academic-setup"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "academic_setup",
+    "case": "validator_failure",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_academic_setup_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_academic_setup_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-academic-setup-1b32aa423189",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=1b32aa4231894e7888f5132f9a0ac796",
+        "--label",
+        "collegeai.validation.purpose=academic-setup",
+        "-e",
+        "POSTGRES_PASSWORD=b2cc8ae87fda4dbe86499f3f7e0e527b",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "1b32aa4231894e7888f5132f9a0ac796",
+        "academic-setup"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "academic_setup",
+    "case": "validator_empty",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_academic_setup_database.ps1 : You cannot call a method on a null-valued expression.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_academic_setup_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-academic-setup-a81fb9cc0904",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=a81fb9cc09044774bfba8c6401c307f2",
+        "--label",
+        "collegeai.validation.purpose=academic-setup",
+        "-e",
+        "POSTGRES_PASSWORD=e87ce957b4a1427b9655d8477d0dd388",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "a81fb9cc09044774bfba8c6401c307f2",
+        "academic-setup"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "academic_setup",
+    "case": "validator_missing",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_academic_setup_database.ps1 : The term '__collegeai_missing_python_command__' is not recognized as the \nname of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was \nincluded, verify that the path is correct and try again.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_academic_setup_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-academic-setup-f7926d159b33",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=f7926d159b334b1a90432ab0361cf6ef",
+        "--label",
+        "collegeai.validation.purpose=academic-setup",
+        "-e",
+        "POSTGRES_PASSWORD=721a72e5b42e4864a3902da422168d7f",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "f7926d159b334b1a90432ab0361cf6ef",
+        "academic-setup"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "academic_setup",
+    "case": "remote_host",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_academic_setup_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": []
+  },
+  {
+    "runner": "academic_setup",
+    "case": "remote_context",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_academic_setup_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ]
+    ]
+  },
+  {
+    "runner": "academic_setup",
+    "case": "wrong_engine",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Expected local Docker Desktop engine\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_academic_setup_database.ps1:14 char:73\n+ ... ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }\n+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Expected local Docker Desktop engine:String) [], RuntimeException\n    + FullyQualifiedErrorId : Expected local Docker Desktop engine\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "persistent_name",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_assignment_database.ps1 : Could not create isolated disposable database\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_assignment_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-assignment-461f027a01ff",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=461f027a01ff4278bf057360b646c0ac",
+        "--label",
+        "collegeai.validation.purpose=faculty-assignment",
+        "-e",
+        "POSTGRES_PASSWORD=b14c7ad5ab21431287dab9cb256a4760",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "persistent_id",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "Traceback (most recent call last):\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 128, in <module>\n    guard_proxy()\n    ~~~~~~~~~~~^^\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 103, in guard_proxy\n    exec(code, {\"__name__\": \"__main__\"})\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<string>\", line 1, in <module>\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation\\disposable_container.py\", line 63, in validate_disposable_target\n    raise RuntimeError(\"Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\")\nRuntimeError: Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\nF:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_assignment_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_assignment_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-assignment-e48fdcb211e5",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=e48fdcb211e5499ab96594c489623e32",
+        "--label",
+        "collegeai.validation.purpose=faculty-assignment",
+        "-e",
+        "POSTGRES_PASSWORD=c1438b3731fa4906b07e7d31d9d285c2",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "e48fdcb211e5499ab96594c489623e32",
+        "faculty-assignment"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "validator_failure",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_assignment_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_assignment_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-assignment-56db919de161",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=56db919de1614cd3aa01ab170b8b8be7",
+        "--label",
+        "collegeai.validation.purpose=faculty-assignment",
+        "-e",
+        "POSTGRES_PASSWORD=1eabe17c7a2949f2853225423f1b394a",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "56db919de1614cd3aa01ab170b8b8be7",
+        "faculty-assignment"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "validator_empty",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_assignment_database.ps1 : You cannot call a method on a null-valued expression.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_assignment_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-assignment-a9092f282524",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=a9092f28252447dfbfb64b7cbff380dc",
+        "--label",
+        "collegeai.validation.purpose=faculty-assignment",
+        "-e",
+        "POSTGRES_PASSWORD=2533c69de0cf458caa371bb0083e6961",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "a9092f28252447dfbfb64b7cbff380dc",
+        "faculty-assignment"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "validator_missing",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_assignment_database.ps1 : The term '__collegeai_missing_python_command__' is not recognized as the \nname of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was \nincluded, verify that the path is correct and try again.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_assignment_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-assignment-710de41aa56c",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=710de41aa56c4d11a8ed7ba417d4dc02",
+        "--label",
+        "collegeai.validation.purpose=faculty-assignment",
+        "-e",
+        "POSTGRES_PASSWORD=36868820abd24ec99fd5f9ae1db6d4e9",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "710de41aa56c4d11a8ed7ba417d4dc02",
+        "faculty-assignment"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "remote_host",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_assignment_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": []
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "remote_context",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_assignment_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_assignment",
+    "case": "wrong_engine",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Expected local Docker Desktop engine\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_assignment_database.ps1:14 char:73\n+ ... ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }\n+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Expected local Docker Desktop engine:String) [], RuntimeException\n    + FullyQualifiedErrorId : Expected local Docker Desktop engine\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "persistent_name",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_attendance_database.ps1 : Could not create isolated disposable database\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_attendance_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-attendance-fa11d65e8901",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=fa11d65e89014fc9baaed8e231caec0f",
+        "--label",
+        "collegeai.validation.purpose=faculty-attendance",
+        "-e",
+        "POSTGRES_PASSWORD=3fc80555d8774ceca998f54dc67c211b",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "persistent_id",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "Traceback (most recent call last):\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 128, in <module>\n    guard_proxy()\n    ~~~~~~~~~~~^^\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 103, in guard_proxy\n    exec(code, {\"__name__\": \"__main__\"})\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<string>\", line 1, in <module>\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation\\disposable_container.py\", line 63, in validate_disposable_target\n    raise RuntimeError(\"Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\")\nRuntimeError: Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\nF:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_attendance_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_attendance_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-attendance-5f96fc8de4dc",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=5f96fc8de4dc40fbbc206ab62627bebc",
+        "--label",
+        "collegeai.validation.purpose=faculty-attendance",
+        "-e",
+        "POSTGRES_PASSWORD=8076ae2a98fd40afb199ca68dd3c5859",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "5f96fc8de4dc40fbbc206ab62627bebc",
+        "faculty-attendance"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "validator_failure",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_attendance_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_attendance_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-attendance-a7cd44ae2289",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=a7cd44ae22894a9ca8777e7ced16f2bb",
+        "--label",
+        "collegeai.validation.purpose=faculty-attendance",
+        "-e",
+        "POSTGRES_PASSWORD=0830dc474cbd46978535587ec4f70602",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "a7cd44ae22894a9ca8777e7ced16f2bb",
+        "faculty-attendance"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "validator_empty",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_attendance_database.ps1 : You cannot call a method on a null-valued expression.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_attendance_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-attendance-0be2497edad0",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=0be2497edad048c59c61d4c12b6c26dd",
+        "--label",
+        "collegeai.validation.purpose=faculty-attendance",
+        "-e",
+        "POSTGRES_PASSWORD=77b98df24370443a9a002871bdf3e647",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "0be2497edad048c59c61d4c12b6c26dd",
+        "faculty-attendance"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "validator_missing",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_attendance_database.ps1 : The term '__collegeai_missing_python_command__' is not recognized as the \nname of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was \nincluded, verify that the path is correct and try again.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_attendance_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-attendance-0cd914c0dfb0",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=0cd914c0dfb046ee8aa2446526d137bb",
+        "--label",
+        "collegeai.validation.purpose=faculty-attendance",
+        "-e",
+        "POSTGRES_PASSWORD=0ece730e4f614a6d949ba10c7d29f833",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "0cd914c0dfb046ee8aa2446526d137bb",
+        "faculty-attendance"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "remote_host",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_attendance_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": []
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "remote_context",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_attendance_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_attendance",
+    "case": "wrong_engine",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Expected local Docker Desktop engine\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_attendance_database.ps1:14 char:73\n+ ... ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }\n+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Expected local Docker Desktop engine:String) [], RuntimeException\n    + FullyQualifiedErrorId : Expected local Docker Desktop engine\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "persistent_name",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_tests_database.ps1 : Could not create isolated disposable database\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_tests_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-tests-35d1cf4b083e",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=35d1cf4b083e468e9bdfa3f14cf75985",
+        "--label",
+        "collegeai.validation.purpose=faculty-tests",
+        "-e",
+        "POSTGRES_PASSWORD=6bd21064e93643b5b0054b218ed802d3",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "persistent_id",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "Traceback (most recent call last):\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 128, in <module>\n    guard_proxy()\n    ~~~~~~~~~~~^^\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\review_safety.py\", line 103, in guard_proxy\n    exec(code, {\"__name__\": \"__main__\"})\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<string>\", line 1, in <module>\n  File \"F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation\\disposable_container.py\", line 63, in validate_disposable_target\n    raise RuntimeError(\"Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\")\nRuntimeError: Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited\nF:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_tests_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_tests_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-tests-629dfbdc52c1",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=629dfbdc52c1435e8e856d460ac3b7ac",
+        "--label",
+        "collegeai.validation.purpose=faculty-tests",
+        "-e",
+        "POSTGRES_PASSWORD=847c2921c34c4d3da40eb450203ee744",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "629dfbdc52c1435e8e856d460ac3b7ac",
+        "faculty-tests"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "validator_failure",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_tests_database.ps1 : Disposable container safety validation failed\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_tests_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-tests-3054ee49744b",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=3054ee49744b43d79226a41ee3f37d3b",
+        "--label",
+        "collegeai.validation.purpose=faculty-tests",
+        "-e",
+        "POSTGRES_PASSWORD=5ebe33c4ce7943e3b57d612d7bfe5a1a",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "3054ee49744b43d79226a41ee3f37d3b",
+        "faculty-tests"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "validator_empty",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_tests_database.ps1 : You cannot call a method on a null-valued expression.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_tests_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-tests-2286c67d6426",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=2286c67d64264784aa68c57e6c9f6aee",
+        "--label",
+        "collegeai.validation.purpose=faculty-tests",
+        "-e",
+        "POSTGRES_PASSWORD=58719cb84f1f4b79aa46dddbf2888a68",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "2286c67d64264784aa68c57e6c9f6aee",
+        "faculty-tests"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "validator_missing",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "WARNING: Cleanup refused because container ownership label did not match this run\n",
+    "stderr": "F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\valida\ntion\\verify_faculty_tests_database.ps1 : The term '__collegeai_missing_python_command__' is not recognized as the name \nof a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, \nverify that the path is correct and try again.\nAt F:\\Git \nProject\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\runner_mock.ps1:35 char:1\n+ & $env:REVIEW_RUNNER\n+ ~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException\n    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,verify_faculty_tests_database.ps1\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ],
+      [
+        "docker",
+        "run",
+        "--rm",
+        "-d",
+        "--network",
+        "none",
+        "--tmpfs",
+        [
+          "/var/lib/postgresql/data:rw",
+          "size=536870912"
+        ],
+        "--name",
+        "codex-faculty-tests-3d40a9e1365a",
+        "--label",
+        "collegeai.validation.disposable=true",
+        "--label",
+        "collegeai.validation.run=3d40a9e1365a4bae83cac686373865b7",
+        "--label",
+        "collegeai.validation.purpose=faculty-tests",
+        "-e",
+        "POSTGRES_PASSWORD=99668469353d4909b50055133bf50afe",
+        "public.ecr.aws/supabase/postgres:17.6.1.166"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pg_isready",
+        "-U",
+        "postgres"
+      ],
+      [
+        "docker",
+        "exec",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "cat",
+        "/proc/1/comm"
+      ],
+      [
+        "python",
+        "-c",
+        "import sys; sys.path.insert(0, r'F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\validation'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "3d40a9e1365a4bae83cac686373865b7",
+        "faculty-tests"
+      ],
+      [
+        "docker",
+        "inspect",
+        "--format",
+        "{{ index .Config.Labels \"collegeai.validation.run\" }}",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "remote_host",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_tests_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": []
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "remote_context",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Only local Docker Desktop desktop-linux is permitted\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_tests_database.ps1:13 char:80\n+ ... p-linux') { throw 'Only local Docker Desktop desktop-linux is permitt ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Only local Dock...ux is permitted:String) [], RuntimeException\n    + FullyQualifiedErrorId : Only local Docker Desktop desktop-linux is permitted\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ]
+    ]
+  },
+  {
+    "runner": "faculty_tests",
+    "case": "wrong_engine",
+    "exit": 1,
+    "rejected_before_sql_copy_stop": true,
+    "dangerous_calls": [],
+    "stdout": "",
+    "stderr": "Expected local Docker Desktop engine\nAt F:\\Git Project\\CollegeAIChatbot\\docs\\evidence\\patch_reviews\\college_ai_enrollment_review_patch_v2\\source\\scripts\\val\nidation\\verify_faculty_tests_database.ps1:14 char:73\n+ ... ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }\n+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Expected local Docker Desktop engine:String) [], RuntimeException\n    + FullyQualifiedErrorId : Expected local Docker Desktop engine\n \n",
+    "calls": [
+      [
+        "docker",
+        "context",
+        "show"
+      ],
+      [
+        "docker",
+        "info",
+        "--format",
+        "{{.Name}}"
+      ]
+    ]
+  }
+]

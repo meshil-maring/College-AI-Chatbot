@@ -1,11 +1,15 @@
 """Actual assessment races, restricted to the local disposable verifier."""
 
+import argparse
 import json
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from faculty_attendance_concurrency import CONTAINER, command, literal, sql
+from disposable_container import docker_arguments
+
+import faculty_attendance_concurrency as attendance
+from faculty_attendance_concurrency import command, configure_target, literal, sql
 
 
 def checked(query):
@@ -23,13 +27,15 @@ def race(queries):
     return results
 
 
-def main():
-    if command(['docker', 'context', 'show']).stdout.strip() != 'desktop-linux':
-        raise RuntimeError('Only local Docker Desktop is allowed')
-    container = json.loads(command(['docker', 'inspect', CONTAINER], check=True).stdout)[0]
-    if container['Mounts'] or container['HostConfig']['PortBindings'] or not container['Config']['Labels'].get('collegeai.attendance-verification'):
-        raise RuntimeError('Expected disposable verification container')
-    fixture = Path('scripts/validation/faculty_tests_database.sql').read_text()
+def main(argv=None):
+    attendance.CONTAINER = None
+    parser = argparse.ArgumentParser(description='Run assessment concurrency tests in an isolated disposable container')
+    parser.add_argument('container_id')
+    parser.add_argument('run_token')
+    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
+    args = parser.parse_args(argv)
+    configure_target(args.container_id, args.run_token, args.purpose)
+    fixture = Path(__file__).resolve().with_name('faculty_tests_database.sql').read_text(encoding='utf-8')
     seed = fixture[:fixture.index('    t:=save_faculty_test')]
     seed += """    RAISE NOTICE 'EXAM_FIXTURE %',jsonb_build_object('actor',faculty_one,'tenant',tenant,'section',section_one,
        'other',faculty_two,'admin',admin_user,'roster',roster_one,'data',data-'start_time'-'end_time');
@@ -83,7 +89,7 @@ COMMIT;
             f"(SELECT count(*) FROM admin_audit_log WHERE record_id={test2} AND action='test.import.commit')<>1 "
             "THEN RAISE EXCEPTION 'Duplicate import records/audits'; END IF; END; $$;")
     # Live authorization is rechecked after waiting on the same roster lock.
-    holder = subprocess.Popen(['docker', 'exec', '-i', CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'],
+    holder = subprocess.Popen(docker_arguments('exec', '-i', attendance.CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'),
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     holder.stdin.write(f"BEGIN; SELECT pg_advisory_xact_lock(hashtextextended('attendance:'||{tenant}::text,0)); "
                        f"UPDATE faculty_section_assignments SET revoked_at=now(),revoked_by={literal(ctx['admin'])} WHERE faculty_user_id={actor} AND institution_id={tenant}; "

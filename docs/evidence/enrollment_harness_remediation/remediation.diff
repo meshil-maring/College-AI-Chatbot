@@ -1,0 +1,2680 @@
+--- a/scripts/validation/academic_setup_concurrency.py
++++ b/scripts/validation/academic_setup_concurrency.py
+@@ -1,77 +1,89 @@
+-"""Academic duplicate races, restricted to the disposable verification container."""
+-
+-import json
+-import subprocess
+-import sys
+-import threading
+-from concurrent.futures import ThreadPoolExecutor
+-from uuid import uuid4
+-
+-container = sys.argv[1]
+-if not container.startswith("codex-academic-setup-"):
+-    raise SystemExit("Only an academic setup verification container is allowed")
+-label = subprocess.run(["docker", "inspect", "--format", '{{ index .Config.Labels "collegeai.academic-setup-verification" }}', container], capture_output=True, text=True, check=True).stdout.strip()
+-if label != "true":
+-    raise SystemExit("Disposable container label required")
+-
+-
+-def sql(query):
+-    return subprocess.run(["docker", "exec", "-i", container, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=verbose", "-At"], input=query, capture_output=True, text=True, timeout=40, check=False)
+-
+-
+-def checked(query):
+-    result = sql(query)
+-    if result.returncode:
+-        raise RuntimeError(result.stderr)
+-    return result.stdout.strip()
+-
+-
+-def quote(value):
+-    return "'" + str(value).replace("'", "''") + "'"
+-
+-
+-org, tenant, a, b, dept, program, year, semester, course, offering = [str(uuid4()) for _ in range(10)]
+-checked(f"""
+-BEGIN;
+-INSERT INTO organizations(organization_id,name,organization_code,official_email,contact_information,status) VALUES('{org}','Isolated race','AS-{org.upper()}','race@example.invalid','Disposable','active');
+-INSERT INTO institutions(institution_id,name,code,organization_id,status) VALUES('{tenant}','Isolated race','AS-{tenant}','{org}','active');
+-INSERT INTO auth.users(id,email) VALUES('{a}','{a}@example.invalid'),('{b}','{b}@example.invalid');
+-INSERT INTO users(id,auth_user_id,email,first_name,last_name) SELECT id,id,email,'Race','Admin' FROM auth.users WHERE id IN('{a}','{b}');
+-INSERT INTO user_roles(user_id,role_id,scope_type,scope_id,scope_organization_id) SELECT u.id,r.id,'institution','{tenant}','{org}' FROM (VALUES('{a}'::uuid),('{b}'::uuid)) u(id) CROSS JOIN roles r WHERE r.name='admin';
+-INSERT INTO departments(department_id,institution_id,name,code) VALUES('{dept}','{tenant}','Race parent','PARENT');
+-INSERT INTO programs(program_id,department_id,name,code,degree_type,duration_years) VALUES('{program}','{dept}','Race parent','PARENT','BSc',3);
+-INSERT INTO academic_years(academic_year_id,institution_id,name,code,start_date,end_date) VALUES('{year}','{tenant}','2026-27','Y26','2026-07-01','2027-06-30');
+-INSERT INTO semesters(semester_id,academic_year_id,name,code,semester_number,start_date,end_date) VALUES('{semester}','{year}','Semester 1','S1',1,'2026-07-01','2026-12-31');
+-INSERT INTO courses(course_id,department_id,name,code) VALUES('{course}','{dept}','Race subject','SUBJECT');
+-INSERT INTO program_courses(program_id,course_id,course_type) VALUES('{program}','{course}','core');
+-COMMIT;
+-""")
+-
+-
+-def race(entity, payloads, expected="23505"):
+-    barrier = threading.Barrier(2)
+-    def worker(pair):
+-        actor, payload = pair
+-        barrier.wait()
+-        return sql("BEGIN; SELECT set_config('request.jwt.claim.role','service_role',true); SELECT manage_academic_master_record(" + ",".join([quote(actor), quote(tenant), quote(entity), "NULL", quote(json.dumps(payload)) + "::jsonb"]) + "); SELECT pg_sleep(0.4); COMMIT;")
+-    with ThreadPoolExecutor(max_workers=2) as pool:
+-        results = list(pool.map(worker, zip([a, b], payloads)))
+-    if sorted(result.returncode for result in results) != [0, 3]:
+-        raise RuntimeError(f"{entity}: wrong race outcomes: {[r.stderr for r in results]}")
+-    failure = next(result for result in results if result.returncode)
+-    if expected not in failure.stderr:
+-        raise RuntimeError(f"{entity}: unexpected error {failure.stderr}")
+-    count = checked(f"SELECT count(*) FROM admin_audit_log WHERE institution_id='{tenant}' AND action='academic.{entity}.create';")
+-    if count != "1":
+-        raise RuntimeError(f"{entity}: successful create was not audited exactly once")
+-    print(f"PASS: concurrent {entity} creates: one commit, one {expected}; one audit")
+-
+-
+-race("departments", [{"name": "Race department", "code": "RACE"}, {"name": "Race department", "code": " race "}])
+-race("programs", [{"department_id": dept, "name": "Race program", "code": code, "degree_type": "BSc", "duration_years": 3} for code in ["RACE", "race"]])
+-payload = {"program_id": program, "course_id": course, "academic_year_id": year, "semester_id": semester}
+-race("course_offerings", [payload, payload])
+-offering = checked(f"SELECT course_offering_id FROM course_offerings WHERE program_id='{program}';")
+-race("sections", [{"course_offering_id": offering, "name": "Section A", "code": code} for code in ["A", " a "]])
+-race("academic_years", [{"name": "Next year", "code": code, "start_date": "2027-07-01", "end_date": "2028-06-30"} for code in ["Y27A", "Y27B"]], "23P01")
+-print("ACADEMIC CONCURRENCY PASS: five races in disposable database; no remote or persistent fixtures")
++"""Academic duplicate races, restricted to the disposable verification container."""
++
++import argparse
++import json
++import subprocess
++import threading
++from concurrent.futures import ThreadPoolExecutor
++from uuid import uuid4
++
++from disposable_container import docker_arguments, validate_disposable_target
++
++CONTAINER = None
++
++
++def sql(query):
++    if not CONTAINER:
++        raise RuntimeError("Disposable target must be configured before SQL calls")
++    return subprocess.run(docker_arguments("exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=verbose", "-At"), input=query, capture_output=True, text=True, timeout=40, check=False)
++
++
++def checked(query):
++    result = sql(query)
++    if result.returncode:
++        raise RuntimeError(result.stderr)
++    return result.stdout.strip()
++
++
++def quote(value):
++    return "'" + str(value).replace("'", "''") + "'"
++
++
++def main(argv=None):
++    global CONTAINER
++    CONTAINER = None
++    parser = argparse.ArgumentParser(description="Academic concurrency checks against an isolated disposable container")
++    parser.add_argument("container_id")
++    parser.add_argument("run_token")
++    parser.add_argument("purpose", choices=["academic-setup"])
++    args = parser.parse_args(argv)
++    CONTAINER = validate_disposable_target(args.container_id, args.run_token, args.purpose)
++    org, tenant, a, b, dept, program, year, semester, course, offering = [str(uuid4()) for _ in range(10)]
++    checked(f"""
++    BEGIN;
++    INSERT INTO organizations(organization_id,name,organization_code,official_email,contact_information,status) VALUES('{org}','Isolated race','AS-{org.upper()}','race@example.invalid','Disposable','active');
++    INSERT INTO institutions(institution_id,name,code,organization_id,status) VALUES('{tenant}','Isolated race','AS-{tenant}','{org}','active');
++    INSERT INTO auth.users(id,email) VALUES('{a}','{a}@example.invalid'),('{b}','{b}@example.invalid');
++    INSERT INTO users(id,auth_user_id,email,first_name,last_name) SELECT id,id,email,'Race','Admin' FROM auth.users WHERE id IN('{a}','{b}');
++    INSERT INTO user_roles(user_id,role_id,scope_type,scope_id,scope_organization_id) SELECT u.id,r.id,'institution','{tenant}','{org}' FROM (VALUES('{a}'::uuid),('{b}'::uuid)) u(id) CROSS JOIN roles r WHERE r.name='admin';
++    INSERT INTO departments(department_id,institution_id,name,code) VALUES('{dept}','{tenant}','Race parent','PARENT');
++    INSERT INTO programs(program_id,department_id,name,code,degree_type,duration_years) VALUES('{program}','{dept}','Race parent','PARENT','BSc',3);
++    INSERT INTO academic_years(academic_year_id,institution_id,name,code,start_date,end_date) VALUES('{year}','{tenant}','2026-27','Y26','2026-07-01','2027-06-30');
++    INSERT INTO semesters(semester_id,academic_year_id,name,code,semester_number,start_date,end_date) VALUES('{semester}','{year}','Semester 1','S1',1,'2026-07-01','2026-12-31');
++    INSERT INTO courses(course_id,department_id,name,code) VALUES('{course}','{dept}','Race subject','SUBJECT');
++    INSERT INTO program_courses(program_id,course_id,course_type) VALUES('{program}','{course}','core');
++    COMMIT;
++    """)
++
++
++    def race(entity, payloads, expected="23505"):
++        barrier = threading.Barrier(2)
++        def worker(pair):
++            actor, payload = pair
++            barrier.wait()
++            return sql("BEGIN; SELECT set_config('request.jwt.claim.role','service_role',true); SELECT manage_academic_master_record(" + ",".join([quote(actor), quote(tenant), quote(entity), "NULL", quote(json.dumps(payload)) + "::jsonb"]) + "); SELECT pg_sleep(0.4); COMMIT;")
++        with ThreadPoolExecutor(max_workers=2) as pool:
++            results = list(pool.map(worker, zip([a, b], payloads)))
++        if sorted(result.returncode for result in results) != [0, 3]:
++            raise RuntimeError(f"{entity}: wrong race outcomes: {[r.stderr for r in results]}")
++        failure = next(result for result in results if result.returncode)
++        if expected not in failure.stderr:
++            raise RuntimeError(f"{entity}: unexpected error {failure.stderr}")
++        count = checked(f"SELECT count(*) FROM admin_audit_log WHERE institution_id='{tenant}' AND action='academic.{entity}.create';")
++        if count != "1":
++            raise RuntimeError(f"{entity}: successful create was not audited exactly once")
++        print(f"PASS: concurrent {entity} creates: one commit, one {expected}; one audit")
++
++
++    race("departments", [{"name": "Race department", "code": "RACE"}, {"name": "Race department", "code": " race "}])
++    race("programs", [{"department_id": dept, "name": "Race program", "code": code, "degree_type": "BSc", "duration_years": 3} for code in ["RACE", "race"]])
++    payload = {"program_id": program, "course_id": course, "academic_year_id": year, "semester_id": semester}
++    race("course_offerings", [payload, payload])
++    offering = checked(f"SELECT course_offering_id FROM course_offerings WHERE program_id='{program}';")
++    race("sections", [{"course_offering_id": offering, "name": "Section A", "code": code} for code in ["A", " a "]])
++    race("academic_years", [{"name": "Next year", "code": code, "start_date": "2027-07-01", "end_date": "2028-06-30"} for code in ["Y27A", "Y27B"]], "23P01")
++    print("ACADEMIC CONCURRENCY PASS: five races in disposable database; no remote or persistent fixtures")
++
++
++if __name__ == "__main__":
++    main()
+--- a/scripts/validation/faculty_assignment_concurrency.py
++++ b/scripts/validation/faculty_assignment_concurrency.py
+@@ -1,376 +1,387 @@
+-"""Exercise scoped teaching-assignment races against the local Supabase database."""
+-
+-import json
+-import subprocess
+-from concurrent.futures import ThreadPoolExecutor
+-
+-CONTAINER = "supabase_db_CollegeAIChatbot"
+-IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.166"
+-
+-
+-def command(args, **kwargs):
+-    return subprocess.run(args, capture_output=True, text=True, timeout=60, **kwargs)
+-
+-
+-def sql(query):
+-    return command(
+-        [
+-            "docker",
+-            "exec",
+-            "-i",
+-            CONTAINER,
+-            "psql",
+-            "-U",
+-            "postgres",
+-            "-d",
+-            "postgres",
+-            "-v",
+-            "ON_ERROR_STOP=1",
+-            "-At",
+-        ],
+-        input=query,
+-    )
+-
+-
+-def literal(value):
+-    return "'" + str(value).replace("'", "''") + "'"
+-
+-
+-def checked(query):
+-    result = sql(query)
+-    if result.returncode:
+-        raise RuntimeError(result.stderr)
+-    return result.stdout.strip()
+-
+-
+-def race(queries):
+-    with ThreadPoolExecutor(max_workers=2) as pool:
+-        return list(pool.map(sql, queries))
+-
+-
+-def scoped_call(actor, tenant, faculty, section, start, end, active, revoke=False, assignment=None):
+-    return (
+-        "SELECT manage_scoped_faculty_teaching_assignment("
+-        + ",".join(
+-            [
+-                literal(actor),
+-                literal(tenant),
+-                literal(assignment) if assignment else "NULL",
+-                literal(faculty) if faculty else "NULL",
+-                literal(section) if section else "NULL",
+-                start or "NULL",
+-                end or "NULL",
+-                str(active).lower(),
+-                str(revoke).lower(),
+-            ]
+-        )
+-        + ");"
+-    )
+-
+-
+-def expect_one_success_one_failure(results, expected_error):
+-    if sorted(result.returncode for result in results) != [0, 3]:
+-        raise RuntimeError(f"Expected one commit and one rejection: {[(r.returncode, r.stderr) for r in results]}")
+-    rejected = next(result for result in results if result.returncode)
+-    if expected_error not in rejected.stderr:
+-        raise RuntimeError(f"Expected {expected_error!r}, got {rejected.stderr}")
+-    return next(result for result in results if not result.returncode).stdout.strip().splitlines()[-1]
+-
+-
+-def wait_for_marker(process, marker):
+-    while True:
+-        line = process.stdout.readline()
+-        if marker in line:
+-            return
+-        if process.poll() is not None:
+-            raise RuntimeError(f"Lock-holder exited before {marker}: {process.stderr.read()}")
+-
+-
+-def main():
+-    context = command(["docker", "context", "show"])
+-    if context.returncode or context.stdout.strip() != "desktop-linux":
+-        raise RuntimeError("Only Docker Desktop's local Supabase database is allowed")
+-    inspected = json.loads(command(["docker", "inspect", CONTAINER], check=True).stdout)[0]
+-    bindings = inspected["NetworkSettings"]["Ports"].get("5432/tcp") or []
+-    if inspected["Config"]["Image"] != IMAGE or not any(binding.get("HostPort") == "54322" for binding in bindings):
+-        raise RuntimeError("Expected the project's local Supabase PostgreSQL container")
+-
+-    fixture = r"""
+-BEGIN;
+-SET LOCAL search_path = public, extensions;
+-SELECT set_config('request.jwt.claim.role', 'service_role', true);
+-DO $$
+-DECLARE
+-    org uuid := gen_random_uuid(); tenant uuid := gen_random_uuid();
+-    admin_user uuid := gen_random_uuid(); manager_hod uuid := gen_random_uuid();
+-    manager_program uuid := gen_random_uuid(); manager_course uuid := gen_random_uuid();
+-    faculty_a uuid := gen_random_uuid(); faculty_b uuid := gen_random_uuid();
+-    dept uuid := gen_random_uuid(); math_dept uuid := gen_random_uuid();
+-    program uuid := gen_random_uuid(); year_id uuid := gen_random_uuid();
+-    semester uuid := gen_random_uuid(); course_one uuid := gen_random_uuid();
+-    course_two uuid := gen_random_uuid(); offering_one uuid := gen_random_uuid();
+-    offering_two uuid := gen_random_uuid(); section_one uuid := gen_random_uuid();
+-    section_two uuid := gen_random_uuid(); roster uuid := gen_random_uuid();
+-    hod_id uuid; program_id uuid; course_id uuid; assignment_id uuid;
+-    suffix text := upper(substr(gen_random_uuid()::text, 1, 8));
+-BEGIN
+-    INSERT INTO organizations(organization_id, name, organization_code, official_email, contact_information, status)
+-    VALUES(org, 'Assignment race verification', 'AR-' || suffix, 'race@example.invalid', 'Local fixture', 'active');
+-    INSERT INTO institutions(institution_id, name, code, organization_id, status)
+-    VALUES(tenant, 'Assignment race verification', 'ARI-' || suffix, org, 'active');
+-    INSERT INTO auth.users(id, email) VALUES
+-        (admin_user, admin_user || '@example.invalid'),
+-        (manager_hod, manager_hod || '@example.invalid'),
+-        (manager_program, manager_program || '@example.invalid'),
+-        (manager_course, manager_course || '@example.invalid'),
+-        (faculty_a, faculty_a || '@example.invalid'),
+-        (faculty_b, faculty_b || '@example.invalid');
+-    INSERT INTO users(id, auth_user_id, email, first_name, last_name)
+-    SELECT id, id, email, 'Race', 'Fixture' FROM auth.users
+-    WHERE id IN (admin_user, manager_hod, manager_program, manager_course, faculty_a, faculty_b);
+-    INSERT INTO user_roles(user_id, role_id, scope_type, scope_id, scope_organization_id)
+-    SELECT admin_user, id, 'institution', tenant, org FROM roles WHERE name = 'admin';
+-    INSERT INTO user_roles(user_id, role_id, scope_type, scope_id, scope_organization_id)
+-    SELECT person.id, role.id, 'institution', tenant, org
+-    FROM (VALUES(manager_hod), (manager_program), (manager_course), (faculty_a), (faculty_b)) AS person(id)
+-    CROSS JOIN roles AS role WHERE role.name = 'faculty';
+-    INSERT INTO departments(department_id, institution_id, name, code) VALUES
+-        (dept, tenant, 'Computer Science', 'CS-' || suffix),
+-        (math_dept, tenant, 'Mathematics', 'MA-' || suffix);
+-    INSERT INTO programs(program_id, department_id, name, code, degree_type, duration_years)
+-    VALUES(program, dept, 'B.Tech', 'BT-' || suffix, 'B.Tech', 4);
+-    INSERT INTO academic_years(academic_year_id, institution_id, name, code, start_date, end_date)
+-    VALUES(year_id, tenant, '2026-27', 'AY-' || suffix, '2026-07-01', '2027-06-30');
+-    INSERT INTO semesters(semester_id, academic_year_id, name, code, semester_number, start_date, end_date)
+-    VALUES(semester, year_id, 'Semester 5', 'S5-' || suffix, 5, '2026-07-01', '2026-12-31');
+-    INSERT INTO courses(course_id, department_id, name, code) VALUES
+-        (course_one, dept, 'Data Mining', 'DM-' || suffix),
+-        (course_two, math_dept, 'Mathematics', 'MT-' || suffix);
+-    INSERT INTO program_courses(program_id, course_id, course_type) VALUES
+-        (program, course_one, 'core'), (program, course_two, 'elective');
+-    INSERT INTO course_offerings(course_offering_id, course_id, program_id, academic_year_id, semester_id)
+-    VALUES(offering_one, course_one, program, year_id, semester),
+-          (offering_two, course_two, program, year_id, semester);
+-    INSERT INTO sections(section_id, course_offering_id, name, code) VALUES
+-        (section_one, offering_one, 'Section A', 'A'),
+-        (section_two, offering_two, 'Section A', 'A');
+-    hod_id := manage_faculty_responsibility(admin_user, tenant, manager_hod, 'hod', 'department', dept,
+-        now() - interval '1 day', NULL, true);
+-    program_id := manage_faculty_responsibility(admin_user, tenant, manager_program, 'program_coordinator',
+-        'program', program, now() - interval '1 day', NULL, true);
+-    course_id := manage_faculty_responsibility(admin_user, tenant, manager_course, 'course_coordinator',
+-        'course', course_one, now() - interval '1 day', NULL, true);
+-    assignment_id := create_faculty_teaching_assignment(admin_user, tenant, faculty_a, section_two,
+-        now() - interval '1 day', NULL, true);
+-    INSERT INTO faculty_attendance_rosters(roster_id, institution_id, section_id, course_offering_id,
+-        semester_id, register_number, university_roll_number, student_name, created_by)
+-    VALUES(roster, tenant, section_two, offering_two, semester, 'R-' || suffix, 'U-' || suffix,
+-        'Concurrency fixture', faculty_a);
+-    RAISE NOTICE 'ASSIGNMENT_FIXTURE %', jsonb_build_object(
+-        'tenant', tenant, 'admin', admin_user, 'manager_hod', manager_hod,
+-        'manager_program', manager_program, 'manager_course', manager_course,
+-        'faculty_a', faculty_a, 'faculty_b', faculty_b, 'section_one', section_one,
+-        'section_two', section_two, 'course_one', course_one, 'roster', roster,
+-        'course_responsibility', course_id, 'mutation_assignment', assignment_id);
+-END; $$;
+-COMMIT;
+-"""
+-    seeded = sql(fixture)
+-    if seeded.returncode:
+-        raise RuntimeError(seeded.stderr)
+-    marker = next(
+-        line.split("ASSIGNMENT_FIXTURE ", 1)[1]
+-        for line in seeded.stderr.splitlines()
+-        if "ASSIGNMENT_FIXTURE " in line
+-    )
+-    ctx = json.loads(marker)
+-    tenant = literal(ctx["tenant"])
+-    base = "SELECT set_config('request.jwt.claim.role','service_role',false); "
+-
+-    def create(actor, faculty, section, start="now() - interval '1 day'", end="NULL"):
+-        return base + scoped_call(actor, ctx["tenant"], faculty, section, start, end, True)
+-
+-    create_race = race(
+-        [
+-            "SELECT pg_sleep(0.2); " + create(ctx["manager_hod"], ctx["faculty_a"], ctx["section_one"]),
+-            "SELECT pg_sleep(0.2); " + create(ctx["manager_program"], ctx["faculty_a"], ctx["section_one"]),
+-        ]
+-    )
+-    created_id = expect_one_success_one_failure(create_race, "uq_faculty_section_assignments_active")
+-    duplicate_count = checked(
+-        f"SELECT count(*) FROM faculty_section_assignments WHERE institution_id={tenant} "
+-        f"AND faculty_user_id={literal(ctx['faculty_a'])} AND section_id={literal(ctx['section_one'])} AND revoked_at IS NULL;"
+-    )
+-    if duplicate_count != "1" or checked(
+-        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
+-        f"AND record_id={literal(created_id)} AND action='faculty.assignment.assign';"
+-    ) != "1":
+-        raise RuntimeError("Duplicate create race left inconsistent assignment or audit state")
+-
+-    checked(
+-        base
+-        + scoped_call(
+-            ctx["manager_hod"], ctx["tenant"], None, None, None, None, False, True, created_id
+-        )
+-    )
+-    conflict_race = race(
+-        [
+-            "SELECT pg_sleep(0.2); "
+-            + create(
+-                ctx["manager_hod"],
+-                ctx["faculty_a"],
+-                ctx["section_one"],
+-                "now() - interval '4 days'",
+-                "now() - interval '3 days'",
+-            ),
+-            "SELECT pg_sleep(0.2); "
+-            + create(
+-                ctx["manager_program"],
+-                ctx["faculty_a"],
+-                ctx["section_one"],
+-                "now() + interval '3 days'",
+-                "now() + interval '4 days'",
+-            ),
+-        ]
+-    )
+-    conflict_id = expect_one_success_one_failure(conflict_race, "uq_faculty_section_assignments_active")
+-    if checked(
+-        f"SELECT count(*) FROM faculty_section_assignments WHERE institution_id={tenant} "
+-        f"AND faculty_user_id={literal(ctx['faculty_a'])} AND section_id={literal(ctx['section_one'])} AND revoked_at IS NULL;"
+-    ) != "1" or checked(
+-        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
+-        f"AND record_id={literal(conflict_id)} AND action='faculty.assignment.assign';"
+-    ) != "1":
+-        raise RuntimeError("Non-overlapping validity windows bypassed the one-unrevoked-assignment rule")
+-    checked(
+-        base
+-        + scoped_call(
+-            ctx["manager_program"], ctx["tenant"], None, None, None, None, False, True, conflict_id
+-        )
+-    )
+-
+-    revoke = subprocess.Popen(
+-        [
+-            "docker", "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
+-            "-v", "ON_ERROR_STOP=1", "-At",
+-        ],
+-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+-    )
+-    revoke.stdin.write(
+-        "BEGIN; "
+-        + base
+-        + scoped_call(
+-            ctx["manager_program"], ctx["tenant"], None, None, None, None, False, True,
+-            ctx["mutation_assignment"],
+-        )
+-        + " SELECT 'REVOKED_HELD'; SELECT pg_sleep(1); COMMIT;\n"
+-    )
+-    revoke.stdin.flush()
+-    wait_for_marker(revoke, "REVOKED_HELD")
+-    mutation = sql(
+-        base
+-        + f"SELECT mark_faculty_attendance({literal(ctx['faculty_a'])},{tenant},"
+-        + f"{literal(ctx['section_two'])},current_date + 1,"
+-        + f"jsonb_build_object({literal(ctx['roster'])},'present'));"
+-    )
+-    revoke.communicate(timeout=15)
+-    if revoke.returncode or mutation.returncode != 3 or "Teaching mutation denied" not in mutation.stderr:
+-        raise RuntimeError("Attendance mutation was not denied after the concurrent assignment revoke")
+-    if checked(
+-        f"SELECT count(*) FROM faculty_attendance_sessions WHERE section_id={literal(ctx['section_two'])} "
+-        "AND session_date=current_date + 1;"
+-    ) != "0":
+-        raise RuntimeError("Revoked assignment produced an attendance session")
+-
+-    assignment_id = checked(
+-        base
+-        + scoped_call(
+-            ctx["manager_program"], ctx["tenant"], ctx["faculty_b"], ctx["section_one"],
+-            "now() - interval '1 day'", "NULL", True,
+-        )
+-    ).splitlines()[-1]
+-    update = (
+-        "SELECT pg_sleep(0.2); "
+-        + base
+-        + scoped_call(
+-            ctx["manager_hod"], ctx["tenant"], None, None, "now() - interval '2 days'",
+-            "NULL", True, False, assignment_id,
+-        )
+-    )
+-    revoke_assignment = (
+-        "SELECT pg_sleep(0.2); "
+-        + base
+-        + scoped_call(
+-            ctx["manager_program"], ctx["tenant"], None, None, None, None, False, True, assignment_id
+-        )
+-    )
+-    update_results, revoke_results = race([update, revoke_assignment])
+-    if revoke_results.returncode:
+-        raise RuntimeError(f"Concurrent revoke failed: {revoke_results.stderr}")
+-    if update_results.returncode and "Teaching assignment not found" not in update_results.stderr:
+-        raise RuntimeError(f"Concurrent update failed unexpectedly: {update_results.stderr}")
+-    if checked(
+-        f"SELECT count(*) FROM faculty_section_assignments WHERE assignment_id={literal(assignment_id)} "
+-        "AND revoked_at IS NOT NULL AND is_active=false;"
+-    ) != "1":
+-        raise RuntimeError("Update-versus-revoke race did not leave the assignment revoked")
+-    if checked(
+-        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
+-        f"AND record_id={literal(assignment_id)} AND action='faculty.assignment.revoke';"
+-    ) != "1":
+-        raise RuntimeError("Update-versus-revoke race has missing or duplicate revoke audit")
+-
+-    revoke_responsibility = subprocess.Popen(
+-        [
+-            "docker", "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
+-            "-v", "ON_ERROR_STOP=1", "-At",
+-        ],
+-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+-    )
+-    revoke_responsibility.stdin.write(
+-        "BEGIN; "
+-        + base
+-        + "SELECT manage_faculty_responsibility("
+-        + ",".join(
+-            [
+-                literal(ctx["admin"]), tenant, literal(ctx["manager_course"]),
+-                "'course_coordinator'", "'course'", literal(ctx["course_one"]),
+-                "NULL", "NULL", "false", literal(ctx["course_responsibility"]), "true",
+-            ]
+-        )
+-        + "); SELECT 'RESPONSIBILITY_REVOKED_HELD'; SELECT pg_sleep(1); COMMIT;\n"
+-    )
+-    revoke_responsibility.stdin.flush()
+-    wait_for_marker(revoke_responsibility, "RESPONSIBILITY_REVOKED_HELD")
+-    scoped_attempt = sql(
+-        base + create(ctx["manager_course"], ctx["faculty_b"], ctx["section_one"])
+-    )
+-    revoke_responsibility.communicate(timeout=15)
+-    if (
+-        revoke_responsibility.returncode
+-        or scoped_attempt.returncode != 3
+-        or "Active scoped assignment-management responsibility required" not in scoped_attempt.stderr
+-    ):
+-        raise RuntimeError("Responsibility revocation raced into a scoped privilege escalation")
+-    if checked(
+-        f"SELECT count(*) FROM faculty_section_assignments WHERE institution_id={tenant} "
+-        f"AND faculty_user_id={literal(ctx['faculty_b'])} AND section_id={literal(ctx['section_one'])} "
+-        "AND revoked_at IS NULL;"
+-    ) != "0":
+-        raise RuntimeError("Revoked coordinator created an assignment outside the authorized state")
+-    if checked(
+-        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
+-        f"AND actor_user_id={literal(ctx['manager_course'])} "
+-        "AND action='faculty.assignment.assign';"
+-    ) != "0":
+-        raise RuntimeError("Denied scoped assignment attempt emitted a success audit")
+-
+-    print(
+-        "PASS: concurrent duplicate and non-overlapping-validity conflicts; "
+-        "revoke versus attendance mutation; update versus revoke; "
+-        "responsibility revoke versus scoped create; consistency and audit checks"
+-    )
+-
+-
+-if __name__ == "__main__":
+-    main()
++"""Exercise scoped teaching-assignment races against an isolated disposable PostgreSQL container."""
++
++import argparse
++import json
++import subprocess
++from concurrent.futures import ThreadPoolExecutor
++
++from disposable_container import docker_arguments, validate_disposable_target
++
++CONTAINER = None
++
++
++def configure_target(container_id, run_token, purpose):
++    global CONTAINER
++    CONTAINER = None
++    CONTAINER = validate_disposable_target(container_id, run_token, purpose)
++
++
++def command(args, **kwargs):
++    return subprocess.run(docker_arguments(*args[1:]), capture_output=True, text=True, timeout=60, **kwargs)
++
++
++def sql(query):
++    if not CONTAINER:
++        raise RuntimeError('Disposable target must be configured before SQL calls')
++    return command(
++        [
++            "docker",
++            "exec",
++            "-i",
++            CONTAINER,
++            "psql",
++            "-U",
++            "postgres",
++            "-d",
++            "postgres",
++            "-v",
++            "ON_ERROR_STOP=1",
++            "-At",
++        ],
++        input=query,
++    )
++
++
++def literal(value):
++    return "'" + str(value).replace("'", "''") + "'"
++
++
++def checked(query):
++    result = sql(query)
++    if result.returncode:
++        raise RuntimeError(result.stderr)
++    return result.stdout.strip()
++
++
++def race(queries):
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        return list(pool.map(sql, queries))
++
++
++def scoped_call(actor, tenant, faculty, section, start, end, active, revoke=False, assignment=None):
++    return (
++        "SELECT manage_scoped_faculty_teaching_assignment("
++        + ",".join(
++            [
++                literal(actor),
++                literal(tenant),
++                literal(assignment) if assignment else "NULL",
++                literal(faculty) if faculty else "NULL",
++                literal(section) if section else "NULL",
++                start or "NULL",
++                end or "NULL",
++                str(active).lower(),
++                str(revoke).lower(),
++            ]
++        )
++        + ");"
++    )
++
++
++def expect_one_success_one_failure(results, expected_error):
++    if sorted(result.returncode for result in results) != [0, 3]:
++        raise RuntimeError(f"Expected one commit and one rejection: {[(r.returncode, r.stderr) for r in results]}")
++    rejected = next(result for result in results if result.returncode)
++    if expected_error not in rejected.stderr:
++        raise RuntimeError(f"Expected {expected_error!r}, got {rejected.stderr}")
++    return next(result for result in results if not result.returncode).stdout.strip().splitlines()[-1]
++
++
++def wait_for_marker(process, marker):
++    while True:
++        line = process.stdout.readline()
++        if marker in line:
++            return
++        if process.poll() is not None:
++            raise RuntimeError(f"Lock-holder exited before {marker}: {process.stderr.read()}")
++
++
++def main(argv=None):
++    global CONTAINER
++    CONTAINER = None
++    parser = argparse.ArgumentParser(description='Run assignment concurrency tests in an isolated disposable container')
++    parser.add_argument('container_id')
++    parser.add_argument('run_token')
++    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
++    args = parser.parse_args(argv)
++    configure_target(args.container_id, args.run_token, args.purpose)
++
++    fixture = r"""
++BEGIN;
++SET LOCAL search_path = public, extensions;
++SELECT set_config('request.jwt.claim.role', 'service_role', true);
++DO $$
++DECLARE
++    org uuid := gen_random_uuid(); tenant uuid := gen_random_uuid();
++    admin_user uuid := gen_random_uuid(); manager_hod uuid := gen_random_uuid();
++    manager_program uuid := gen_random_uuid(); manager_course uuid := gen_random_uuid();
++    faculty_a uuid := gen_random_uuid(); faculty_b uuid := gen_random_uuid();
++    dept uuid := gen_random_uuid(); math_dept uuid := gen_random_uuid();
++    program uuid := gen_random_uuid(); year_id uuid := gen_random_uuid();
++    semester uuid := gen_random_uuid(); course_one uuid := gen_random_uuid();
++    course_two uuid := gen_random_uuid(); offering_one uuid := gen_random_uuid();
++    offering_two uuid := gen_random_uuid(); section_one uuid := gen_random_uuid();
++    section_two uuid := gen_random_uuid(); roster uuid := gen_random_uuid();
++    hod_id uuid; program_id uuid; course_id uuid; assignment_id uuid;
++    suffix text := upper(substr(gen_random_uuid()::text, 1, 8));
++BEGIN
++    INSERT INTO organizations(organization_id, name, organization_code, official_email, contact_information, status)
++    VALUES(org, 'Assignment race verification', 'AR-' || suffix, 'race@example.invalid', 'Local fixture', 'active');
++    INSERT INTO institutions(institution_id, name, code, organization_id, status)
++    VALUES(tenant, 'Assignment race verification', 'ARI-' || suffix, org, 'active');
++    INSERT INTO auth.users(id, email) VALUES
++        (admin_user, admin_user || '@example.invalid'),
++        (manager_hod, manager_hod || '@example.invalid'),
++        (manager_program, manager_program || '@example.invalid'),
++        (manager_course, manager_course || '@example.invalid'),
++        (faculty_a, faculty_a || '@example.invalid'),
++        (faculty_b, faculty_b || '@example.invalid');
++    INSERT INTO users(id, auth_user_id, email, first_name, last_name)
++    SELECT id, id, email, 'Race', 'Fixture' FROM auth.users
++    WHERE id IN (admin_user, manager_hod, manager_program, manager_course, faculty_a, faculty_b);
++    INSERT INTO user_roles(user_id, role_id, scope_type, scope_id, scope_organization_id)
++    SELECT admin_user, id, 'institution', tenant, org FROM roles WHERE name = 'admin';
++    INSERT INTO user_roles(user_id, role_id, scope_type, scope_id, scope_organization_id)
++    SELECT person.id, role.id, 'institution', tenant, org
++    FROM (VALUES(manager_hod), (manager_program), (manager_course), (faculty_a), (faculty_b)) AS person(id)
++    CROSS JOIN roles AS role WHERE role.name = 'faculty';
++    INSERT INTO departments(department_id, institution_id, name, code) VALUES
++        (dept, tenant, 'Computer Science', 'CS-' || suffix),
++        (math_dept, tenant, 'Mathematics', 'MA-' || suffix);
++    INSERT INTO programs(program_id, department_id, name, code, degree_type, duration_years)
++    VALUES(program, dept, 'B.Tech', 'BT-' || suffix, 'B.Tech', 4);
++    INSERT INTO academic_years(academic_year_id, institution_id, name, code, start_date, end_date)
++    VALUES(year_id, tenant, '2026-27', 'AY-' || suffix, '2026-07-01', '2027-06-30');
++    INSERT INTO semesters(semester_id, academic_year_id, name, code, semester_number, start_date, end_date)
++    VALUES(semester, year_id, 'Semester 5', 'S5-' || suffix, 5, '2026-07-01', '2026-12-31');
++    INSERT INTO courses(course_id, department_id, name, code) VALUES
++        (course_one, dept, 'Data Mining', 'DM-' || suffix),
++        (course_two, math_dept, 'Mathematics', 'MT-' || suffix);
++    INSERT INTO program_courses(program_id, course_id, course_type) VALUES
++        (program, course_one, 'core'), (program, course_two, 'elective');
++    INSERT INTO course_offerings(course_offering_id, course_id, program_id, academic_year_id, semester_id)
++    VALUES(offering_one, course_one, program, year_id, semester),
++          (offering_two, course_two, program, year_id, semester);
++    INSERT INTO sections(section_id, course_offering_id, name, code) VALUES
++        (section_one, offering_one, 'Section A', 'A'),
++        (section_two, offering_two, 'Section A', 'A');
++    hod_id := manage_faculty_responsibility(admin_user, tenant, manager_hod, 'hod', 'department', dept,
++        now() - interval '1 day', NULL, true);
++    program_id := manage_faculty_responsibility(admin_user, tenant, manager_program, 'program_coordinator',
++        'program', program, now() - interval '1 day', NULL, true);
++    course_id := manage_faculty_responsibility(admin_user, tenant, manager_course, 'course_coordinator',
++        'course', course_one, now() - interval '1 day', NULL, true);
++    assignment_id := create_faculty_teaching_assignment(admin_user, tenant, faculty_a, section_two,
++        now() - interval '1 day', NULL, true);
++    INSERT INTO faculty_attendance_rosters(roster_id, institution_id, section_id, course_offering_id,
++        semester_id, register_number, university_roll_number, student_name, created_by)
++    VALUES(roster, tenant, section_two, offering_two, semester, 'R-' || suffix, 'U-' || suffix,
++        'Concurrency fixture', faculty_a);
++    RAISE NOTICE 'ASSIGNMENT_FIXTURE %', jsonb_build_object(
++        'tenant', tenant, 'admin', admin_user, 'manager_hod', manager_hod,
++        'manager_program', manager_program, 'manager_course', manager_course,
++        'faculty_a', faculty_a, 'faculty_b', faculty_b, 'section_one', section_one,
++        'section_two', section_two, 'course_one', course_one, 'roster', roster,
++        'course_responsibility', course_id, 'mutation_assignment', assignment_id);
++END; $$;
++COMMIT;
++"""
++    seeded = sql(fixture)
++    if seeded.returncode:
++        raise RuntimeError(seeded.stderr)
++    marker = next(
++        line.split("ASSIGNMENT_FIXTURE ", 1)[1]
++        for line in seeded.stderr.splitlines()
++        if "ASSIGNMENT_FIXTURE " in line
++    )
++    ctx = json.loads(marker)
++    tenant = literal(ctx["tenant"])
++    base = "SELECT set_config('request.jwt.claim.role','service_role',false); "
++
++    def create(actor, faculty, section, start="now() - interval '1 day'", end="NULL"):
++        return base + scoped_call(actor, ctx["tenant"], faculty, section, start, end, True)
++
++    create_race = race(
++        [
++            "SELECT pg_sleep(0.2); " + create(ctx["manager_hod"], ctx["faculty_a"], ctx["section_one"]),
++            "SELECT pg_sleep(0.2); " + create(ctx["manager_program"], ctx["faculty_a"], ctx["section_one"]),
++        ]
++    )
++    created_id = expect_one_success_one_failure(create_race, "uq_faculty_section_assignments_active")
++    duplicate_count = checked(
++        f"SELECT count(*) FROM faculty_section_assignments WHERE institution_id={tenant} "
++        f"AND faculty_user_id={literal(ctx['faculty_a'])} AND section_id={literal(ctx['section_one'])} AND revoked_at IS NULL;"
++    )
++    if duplicate_count != "1" or checked(
++        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
++        f"AND record_id={literal(created_id)} AND action='faculty.assignment.assign';"
++    ) != "1":
++        raise RuntimeError("Duplicate create race left inconsistent assignment or audit state")
++
++    checked(
++        base
++        + scoped_call(
++            ctx["manager_hod"], ctx["tenant"], None, None, None, None, False, True, created_id
++        )
++    )
++    conflict_race = race(
++        [
++            "SELECT pg_sleep(0.2); "
++            + create(
++                ctx["manager_hod"],
++                ctx["faculty_a"],
++                ctx["section_one"],
++                "now() - interval '4 days'",
++                "now() - interval '3 days'",
++            ),
++            "SELECT pg_sleep(0.2); "
++            + create(
++                ctx["manager_program"],
++                ctx["faculty_a"],
++                ctx["section_one"],
++                "now() + interval '3 days'",
++                "now() + interval '4 days'",
++            ),
++        ]
++    )
++    conflict_id = expect_one_success_one_failure(conflict_race, "uq_faculty_section_assignments_active")
++    if checked(
++        f"SELECT count(*) FROM faculty_section_assignments WHERE institution_id={tenant} "
++        f"AND faculty_user_id={literal(ctx['faculty_a'])} AND section_id={literal(ctx['section_one'])} AND revoked_at IS NULL;"
++    ) != "1" or checked(
++        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
++        f"AND record_id={literal(conflict_id)} AND action='faculty.assignment.assign';"
++    ) != "1":
++        raise RuntimeError("Non-overlapping validity windows bypassed the one-unrevoked-assignment rule")
++    checked(
++        base
++        + scoped_call(
++            ctx["manager_program"], ctx["tenant"], None, None, None, None, False, True, conflict_id
++        )
++    )
++
++    revoke = subprocess.Popen(
++        docker_arguments(
++            "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
++            "-v", "ON_ERROR_STOP=1", "-At",
++        ),
++        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
++    )
++    revoke.stdin.write(
++        "BEGIN; "
++        + base
++        + scoped_call(
++            ctx["manager_program"], ctx["tenant"], None, None, None, None, False, True,
++            ctx["mutation_assignment"],
++        )
++        + " SELECT 'REVOKED_HELD'; SELECT pg_sleep(1); COMMIT;\n"
++    )
++    revoke.stdin.flush()
++    wait_for_marker(revoke, "REVOKED_HELD")
++    mutation = sql(
++        base
++        + f"SELECT mark_faculty_attendance({literal(ctx['faculty_a'])},{tenant},"
++        + f"{literal(ctx['section_two'])},current_date + 1,"
++        + f"jsonb_build_object({literal(ctx['roster'])},'present'));"
++    )
++    revoke.communicate(timeout=15)
++    if revoke.returncode or mutation.returncode != 3 or "Teaching mutation denied" not in mutation.stderr:
++        raise RuntimeError("Attendance mutation was not denied after the concurrent assignment revoke")
++    if checked(
++        f"SELECT count(*) FROM faculty_attendance_sessions WHERE section_id={literal(ctx['section_two'])} "
++        "AND session_date=current_date + 1;"
++    ) != "0":
++        raise RuntimeError("Revoked assignment produced an attendance session")
++
++    assignment_id = checked(
++        base
++        + scoped_call(
++            ctx["manager_program"], ctx["tenant"], ctx["faculty_b"], ctx["section_one"],
++            "now() - interval '1 day'", "NULL", True,
++        )
++    ).splitlines()[-1]
++    update = (
++        "SELECT pg_sleep(0.2); "
++        + base
++        + scoped_call(
++            ctx["manager_hod"], ctx["tenant"], None, None, "now() - interval '2 days'",
++            "NULL", True, False, assignment_id,
++        )
++    )
++    revoke_assignment = (
++        "SELECT pg_sleep(0.2); "
++        + base
++        + scoped_call(
++            ctx["manager_program"], ctx["tenant"], None, None, None, None, False, True, assignment_id
++        )
++    )
++    update_results, revoke_results = race([update, revoke_assignment])
++    if revoke_results.returncode:
++        raise RuntimeError(f"Concurrent revoke failed: {revoke_results.stderr}")
++    if update_results.returncode and "Teaching assignment not found" not in update_results.stderr:
++        raise RuntimeError(f"Concurrent update failed unexpectedly: {update_results.stderr}")
++    if checked(
++        f"SELECT count(*) FROM faculty_section_assignments WHERE assignment_id={literal(assignment_id)} "
++        "AND revoked_at IS NOT NULL AND is_active=false;"
++    ) != "1":
++        raise RuntimeError("Update-versus-revoke race did not leave the assignment revoked")
++    if checked(
++        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
++        f"AND record_id={literal(assignment_id)} AND action='faculty.assignment.revoke';"
++    ) != "1":
++        raise RuntimeError("Update-versus-revoke race has missing or duplicate revoke audit")
++
++    revoke_responsibility = subprocess.Popen(
++        docker_arguments(
++            "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
++            "-v", "ON_ERROR_STOP=1", "-At",
++        ),
++        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
++    )
++    revoke_responsibility.stdin.write(
++        "BEGIN; "
++        + base
++        + "SELECT manage_faculty_responsibility("
++        + ",".join(
++            [
++                literal(ctx["admin"]), tenant, literal(ctx["manager_course"]),
++                "'course_coordinator'", "'course'", literal(ctx["course_one"]),
++                "NULL", "NULL", "false", literal(ctx["course_responsibility"]), "true",
++            ]
++        )
++        + "); SELECT 'RESPONSIBILITY_REVOKED_HELD'; SELECT pg_sleep(1); COMMIT;\n"
++    )
++    revoke_responsibility.stdin.flush()
++    wait_for_marker(revoke_responsibility, "RESPONSIBILITY_REVOKED_HELD")
++    scoped_attempt = sql(
++        base + create(ctx["manager_course"], ctx["faculty_b"], ctx["section_one"])
++    )
++    revoke_responsibility.communicate(timeout=15)
++    if (
++        revoke_responsibility.returncode
++        or scoped_attempt.returncode != 3
++        or "Active scoped assignment-management responsibility required" not in scoped_attempt.stderr
++    ):
++        raise RuntimeError("Responsibility revocation raced into a scoped privilege escalation")
++    if checked(
++        f"SELECT count(*) FROM faculty_section_assignments WHERE institution_id={tenant} "
++        f"AND faculty_user_id={literal(ctx['faculty_b'])} AND section_id={literal(ctx['section_one'])} "
++        "AND revoked_at IS NULL;"
++    ) != "0":
++        raise RuntimeError("Revoked coordinator created an assignment outside the authorized state")
++    if checked(
++        f"SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} "
++        f"AND actor_user_id={literal(ctx['manager_course'])} "
++        "AND action='faculty.assignment.assign';"
++    ) != "0":
++        raise RuntimeError("Denied scoped assignment attempt emitted a success audit")
++
++    print(
++        "PASS: concurrent duplicate and non-overlapping-validity conflicts; "
++        "revoke versus attendance mutation; update versus revoke; "
++        "responsibility revoke versus scoped create; consistency and audit checks"
++    )
++
++
++if __name__ == "__main__":
++    main()
+--- a/scripts/validation/faculty_attendance_concurrency.py
++++ b/scripts/validation/faculty_attendance_concurrency.py
+@@ -1,73 +1,87 @@
+-"""Real concurrent writes, restricted to the disposable attendance container.
+-
+-Run from the repository root after all migrations. Seeds only that disposable
+-container; never accepts a remote URL, credential, or arbitrary database name.
+-"""
+-import json
+-import subprocess
+-from concurrent.futures import ThreadPoolExecutor
+-from pathlib import Path
+-
+-CONTAINER = 'codex-attendance-verify-20261007'
+-
+-
+-def command(args, **kwargs):
+-    return subprocess.run(args, capture_output=True, text=True, timeout=60, **kwargs)
+-
+-
+-def sql(query):
+-    return command(['docker', 'exec', '-i', CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres',
+-                    '-v', 'ON_ERROR_STOP=1', '-At'], input=query)
+-
+-
+-def literal(value):
+-    return "'" + str(value).replace("'", "''") + "'"
+-
+-
+-def main():
+-    if command(['docker', 'context', 'show']).stdout.strip() != 'desktop-linux':
+-        raise RuntimeError('Only local Docker Desktop is allowed')
+-    container = json.loads(command(['docker', 'inspect', CONTAINER], check=True).stdout)[0]
+-    if container['Config']['Image'] != 'public.ecr.aws/supabase/postgres:17.6.1.166' or container['Mounts'] or container['HostConfig']['PortBindings']:
+-        raise RuntimeError('Expected disposable container without mounts or host ports')
+-    fixture = Path('scripts/validation/faculty_attendance_database.sql').read_text(encoding='utf-8')
+-    seed = fixture[:fixture.index('    PERFORM commit_faculty_attendance_import')]
+-    seed += """    RAISE NOTICE 'ATTENDANCE_FIXTURE %', jsonb_build_object('tenant',tenant,'actor',faculty_one,
+-        'admin',admin_user,'section',section_one,'import',attendance_import_id,'version',version,'rows',rows);
+-END; $$;
+-COMMIT;
+-"""
+-    result = sql(seed)
+-    if result.returncode: raise RuntimeError(result.stderr)
+-    context = json.loads(next(line.split('ATTENDANCE_FIXTURE ', 1)[1] for line in result.stderr.splitlines() if 'ATTENDANCE_FIXTURE ' in line))
+-    actor, tenant, section = (literal(context[k]) for k in ('actor', 'tenant', 'section'))
+-    commit = 'SELECT commit_faculty_attendance_import(' + ','.join([
+-        actor, tenant, literal(context['import']), literal(context['version']), literal(json.dumps(context['rows'])) + '::jsonb']) + ');'
+-    with ThreadPoolExecutor(max_workers=2) as pool:
+-        results = list(pool.map(sql, [commit, commit]))
+-    if sorted(r.returncode for r in results) != [0, 3] or not any('already committed' in r.stderr for r in results):
+-        raise RuntimeError('Concurrent duplicate commit did not allow exactly one transaction: ' + str([(r.returncode, r.stderr) for r in results]))
+-    row = sql(f"SELECT roster_id FROM faculty_attendance_rosters WHERE institution_id={tenant} AND register_number={literal(context['rows'][0]['normalized_data']['register_number'])};").stdout.strip()
+-    if not row: raise RuntimeError('Committed roster missing')
+-    mark = f"SELECT mark_faculty_attendance({actor},{tenant},{section},'2026-10-08'," + literal(json.dumps({row: 'present'})) + '::jsonb);'
+-    with ThreadPoolExecutor(max_workers=2) as pool:
+-        results = list(pool.map(sql, [mark, mark]))
+-    if any(r.returncode for r in results): raise RuntimeError('Concurrent same-owner marking failed')
+-    check = sql(f"SELECT count(*) FROM faculty_attendance_sessions WHERE section_id={section} AND session_date='2026-10-08'; SELECT count(*) FROM faculty_attendance_records WHERE roster_id='{row}'; SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} AND action='attendance.import.commit';")
+-    if check.stdout.strip().splitlines() != ['1', '2', '1']: raise RuntimeError('Concurrent writes produced duplicate sessions, records or commits')
+-    # A request waiting on the transaction lock must observe committed revocation.
+-    holder = subprocess.Popen(['docker','exec','-i',CONTAINER,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1','-At'],
+-                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+-    holder.stdin.write(f"BEGIN; SELECT pg_advisory_xact_lock(hashtextextended('attendance:' || {tenant}::text,0)); UPDATE faculty_section_assignments SET revoked_at=now(),revoked_by={literal(context['admin'])} WHERE institution_id={tenant} AND faculty_user_id={actor}; SELECT 'LOCK_HELD'; SELECT pg_sleep(2); COMMIT;\n")
+-    holder.stdin.flush()
+-    while 'LOCK_HELD' not in holder.stdout.readline():
+-        if holder.poll() is not None: raise RuntimeError('Revocation lock holder failed')
+-    denied = sql(mark)
+-    holder.communicate(timeout=15)
+-    if holder.returncode or denied.returncode != 3 or 'Teaching mutation denied' not in denied.stderr:
+-        raise RuntimeError('A waiting request did not observe revocation')
+-    print('PASS: concurrent import commit, same-owner marking, uniqueness, atomic audit, and revocation recheck')
+-
+-
+-if __name__ == '__main__':
+-    main()
++"""Real concurrent writes, restricted to the disposable attendance container.
++
++Run from the repository root after all migrations. Seeds only that disposable
++container; never accepts a remote URL, credential, or arbitrary database name.
++"""
++import argparse
++import json
++import subprocess
++from concurrent.futures import ThreadPoolExecutor
++from pathlib import Path
++
++from disposable_container import docker_arguments, validate_disposable_target
++
++CONTAINER = None
++
++
++def configure_target(container_id, run_token, purpose):
++    global CONTAINER
++    CONTAINER = None
++    CONTAINER = validate_disposable_target(container_id, run_token, purpose)
++
++
++def command(args, **kwargs):
++    return subprocess.run(docker_arguments(*args[1:]), capture_output=True, text=True, timeout=60, **kwargs)
++
++
++def sql(query):
++    if not CONTAINER:
++        raise RuntimeError('Disposable target must be configured before SQL calls')
++    return command(['docker', 'exec', '-i', CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres',
++                    '-v', 'ON_ERROR_STOP=1', '-At'], input=query)
++
++
++def literal(value):
++    return "'" + str(value).replace("'", "''") + "'"
++
++
++def main(argv=None):
++    global CONTAINER
++    CONTAINER = None
++    parser = argparse.ArgumentParser(description='Run attendance concurrency tests in an isolated disposable container')
++    parser.add_argument('container_id')
++    parser.add_argument('run_token')
++    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
++    args = parser.parse_args(argv)
++    configure_target(args.container_id, args.run_token, args.purpose)
++    fixture = Path(__file__).resolve().with_name('faculty_attendance_database.sql').read_text(encoding='utf-8')
++    seed = fixture[:fixture.index('    PERFORM commit_faculty_attendance_import')]
++    seed += """    RAISE NOTICE 'ATTENDANCE_FIXTURE %', jsonb_build_object('tenant',tenant,'actor',faculty_one,
++        'admin',admin_user,'section',section_one,'import',attendance_import_id,'version',version,'rows',rows);
++END; $$;
++COMMIT;
++"""
++    result = sql(seed)
++    if result.returncode: raise RuntimeError(result.stderr)
++    context = json.loads(next(line.split('ATTENDANCE_FIXTURE ', 1)[1] for line in result.stderr.splitlines() if 'ATTENDANCE_FIXTURE ' in line))
++    actor, tenant, section = (literal(context[k]) for k in ('actor', 'tenant', 'section'))
++    commit = 'SELECT commit_faculty_attendance_import(' + ','.join([
++        actor, tenant, literal(context['import']), literal(context['version']), literal(json.dumps(context['rows'])) + '::jsonb']) + ');'
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        results = list(pool.map(sql, [commit, commit]))
++    if sorted(r.returncode for r in results) != [0, 3] or not any('already committed' in r.stderr for r in results):
++        raise RuntimeError('Concurrent duplicate commit did not allow exactly one transaction: ' + str([(r.returncode, r.stderr) for r in results]))
++    row = sql(f"SELECT roster_id FROM faculty_attendance_rosters WHERE institution_id={tenant} AND register_number={literal(context['rows'][0]['normalized_data']['register_number'])};").stdout.strip()
++    if not row: raise RuntimeError('Committed roster missing')
++    mark = f"SELECT mark_faculty_attendance({actor},{tenant},{section},'2026-10-08'," + literal(json.dumps({row: 'present'})) + '::jsonb);'
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        results = list(pool.map(sql, [mark, mark]))
++    if any(r.returncode for r in results): raise RuntimeError('Concurrent same-owner marking failed')
++    check = sql(f"SELECT count(*) FROM faculty_attendance_sessions WHERE section_id={section} AND session_date='2026-10-08'; SELECT count(*) FROM faculty_attendance_records WHERE roster_id='{row}'; SELECT count(*) FROM admin_audit_log WHERE institution_id={tenant} AND action='attendance.import.commit';")
++    if check.stdout.strip().splitlines() != ['1', '2', '1']: raise RuntimeError('Concurrent writes produced duplicate sessions, records or commits')
++    # A request waiting on the transaction lock must observe committed revocation.
++    holder = subprocess.Popen(docker_arguments('exec','-i',CONTAINER,'psql','-U','postgres','-d','postgres','-v','ON_ERROR_STOP=1','-At'),
++                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
++    holder.stdin.write(f"BEGIN; SELECT pg_advisory_xact_lock(hashtextextended('attendance:' || {tenant}::text,0)); UPDATE faculty_section_assignments SET revoked_at=now(),revoked_by={literal(context['admin'])} WHERE institution_id={tenant} AND faculty_user_id={actor}; SELECT 'LOCK_HELD'; SELECT pg_sleep(2); COMMIT;\n")
++    holder.stdin.flush()
++    while 'LOCK_HELD' not in holder.stdout.readline():
++        if holder.poll() is not None: raise RuntimeError('Revocation lock holder failed')
++    denied = sql(mark)
++    holder.communicate(timeout=15)
++    if holder.returncode or denied.returncode != 3 or 'Teaching mutation denied' not in denied.stderr:
++        raise RuntimeError('A waiting request did not observe revocation')
++    print('PASS: concurrent import commit, same-owner marking, uniqueness, atomic audit, and revocation recheck')
++
++
++if __name__ == '__main__':
++    main()
+--- a/scripts/validation/faculty_tests_concurrency.py
++++ b/scripts/validation/faculty_tests_concurrency.py
+@@ -1,103 +1,109 @@
+-"""Actual assessment races, restricted to the local disposable verifier."""
+-
+-import json
+-import subprocess
+-from concurrent.futures import ThreadPoolExecutor
+-from pathlib import Path
+-
+-from faculty_attendance_concurrency import CONTAINER, command, literal, sql
+-
+-
+-def checked(query):
+-    result = sql(query)
+-    if result.returncode:
+-        raise RuntimeError(result.stderr)
+-    return result.stdout.strip()
+-
+-
+-def race(queries):
+-    with ThreadPoolExecutor(max_workers=2) as pool:
+-        results = list(pool.map(sql, queries))
+-    if sorted(r.returncode for r in results) != [0, 3]:
+-        raise RuntimeError(str([(r.returncode, r.stderr) for r in results]))
+-    return results
+-
+-
+-def main():
+-    if command(['docker', 'context', 'show']).stdout.strip() != 'desktop-linux':
+-        raise RuntimeError('Only local Docker Desktop is allowed')
+-    container = json.loads(command(['docker', 'inspect', CONTAINER], check=True).stdout)[0]
+-    if container['Mounts'] or container['HostConfig']['PortBindings'] or not container['Config']['Labels'].get('collegeai.attendance-verification'):
+-        raise RuntimeError('Expected disposable verification container')
+-    fixture = Path('scripts/validation/faculty_tests_database.sql').read_text()
+-    seed = fixture[:fixture.index('    t:=save_faculty_test')]
+-    seed += """    RAISE NOTICE 'EXAM_FIXTURE %',jsonb_build_object('actor',faculty_one,'tenant',tenant,'section',section_one,
+-       'other',faculty_two,'admin',admin_user,'roster',roster_one,'data',data-'start_time'-'end_time');
+-END; $$;
+-COMMIT;
+-"""
+-    result = sql(seed)
+-    if result.returncode:
+-        raise RuntimeError(result.stderr)
+-    ctx = json.loads(next(line.split('EXAM_FIXTURE ', 1)[1] for line in result.stderr.splitlines() if 'EXAM_FIXTURE ' in line))
+-    actor, tenant, section = (literal(ctx[k]) for k in ('actor', 'tenant', 'section'))
+-    data = literal(json.dumps(ctx['data'])) + '::jsonb'
+-    create = f'SELECT save_faculty_test({actor},{tenant},{section},{data});'
+-    results = race([create, create])
+-    t = json.loads(next(r.stdout.strip() for r in results if r.returncode == 0))
+-    test = literal(t['test_id'])
+-
+-    def transition(version, action):
+-        return f"SELECT transition_faculty_test({actor},{tenant},{test},{version},{literal(action)});"
+-
+-    checked(transition(1, 'schedule'))
+-    checked(transition(2, 'complete'))
+-    rosters = checked(f'SELECT roster_id FROM faculty_attendance_rosters WHERE section_id={section} ORDER BY roster_id;').splitlines()
+-    rows = literal(json.dumps([{'roster_id': r, 'mark_status': 'present', 'scored_marks': 50} for r in rosters])) + '::jsonb'
+-    checked(f'SELECT save_faculty_test_marks({actor},{tenant},{test},3,{rows});')
+-    race([transition(4, 'submit'), transition(4, 'submit')])
+-    race([transition(5, 'publish'), transition(5, 'publish')])
+-    mark = f'SELECT save_faculty_test_marks({actor},{tenant},{test},6,{rows});'
+-    race([transition(6, 'lock'), mark])
+-    checked(f"DO $$ BEGIN IF (SELECT version FROM faculty_tests WHERE test_id={test})<>7 OR "
+-            f"(SELECT count(*) FROM admin_audit_log WHERE record_id={test} AND action='test.lock')<>1 "
+-            "THEN RAISE EXCEPTION 'Duplicate transition or audit'; END IF; END; $$;")
+-    # A co-teacher and the owner compete; only the owner can update metadata.
+-    data2 = dict(ctx['data'], title='Import race')
+-    t2 = json.loads(checked(f'SELECT save_faculty_test({actor},{tenant},{section},{literal(json.dumps(data2))}::jsonb);'))
+-    test2 = literal(t2['test_id'])
+-    checked(f"SELECT set_config('request.jwt.claim.role','service_role',false); SELECT create_faculty_teaching_assignment({literal(ctx['admin'])},{tenant},{literal(ctx['other'])},{section},now()-interval '1 day',NULL,true);")
+-    update = lambda teacher: f'SELECT save_faculty_test({teacher},{tenant},{section},{literal(json.dumps(data2))}::jsonb,{test2},1);'
+-    race([update(actor), update(literal(ctx['other']))])
+-    for version, action in [(2, 'schedule'), (3, 'complete')]:
+-        checked(f"SELECT transition_faculty_test({actor},{tenant},{test2},{version},{literal(action)});")
+-    register = checked(f"SELECT register_number FROM faculty_attendance_rosters WHERE roster_id={literal(ctx['roster'])};")
+-    raw = {'register_number': register, 'mark_status': 'present', 'scored_marks': '75'}
+-    review_rows = [{'row_number': 2, 'raw_data': raw, 'normalized_data': raw, 'validation_status': 'VALID', 'errors': [], 'warnings': []}]
+-    staged = json.loads(checked(f"SELECT stage_faculty_test_import({actor},{tenant},{test2},'marks.csv','CSV','{{\"valid\":1}}'," + literal(json.dumps(review_rows)) + '::jsonb);'))
+-    imported = literal(staged['import_id'])
+-    stamp = checked(f'SELECT updated_at FROM faculty_attendance_imports WHERE import_id={imported};')
+-    commit = f'SELECT commit_faculty_test_import({actor},{tenant},{imported},{literal(stamp)},4);'
+-    race([commit, commit])
+-    checked(f"DO $$ BEGIN IF (SELECT count(*) FROM test_results WHERE test_id={test2})<>1 OR "
+-            f"(SELECT count(*) FROM admin_audit_log WHERE record_id={test2} AND action='test.import.commit')<>1 "
+-            "THEN RAISE EXCEPTION 'Duplicate import records/audits'; END IF; END; $$;")
+-    # Live authorization is rechecked after waiting on the same roster lock.
+-    holder = subprocess.Popen(['docker', 'exec', '-i', CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'],
+-                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+-    holder.stdin.write(f"BEGIN; SELECT pg_advisory_xact_lock(hashtextextended('attendance:'||{tenant}::text,0)); "
+-                       f"UPDATE faculty_section_assignments SET revoked_at=now(),revoked_by={literal(ctx['admin'])} WHERE faculty_user_id={actor} AND institution_id={tenant}; "
+-                       "SELECT 'LOCK_HELD'; SELECT pg_sleep(2); COMMIT;\n")
+-    holder.stdin.flush()
+-    while 'LOCK_HELD' not in holder.stdout.readline():
+-        if holder.poll() is not None:
+-            raise RuntimeError('Lock holder failed')
+-    denied = sql(f'SELECT save_faculty_test_marks({actor},{tenant},{test2},5,{rows});')
+-    holder.communicate(timeout=15)
+-    if holder.returncode or denied.returncode != 3 or 'Teaching mutation denied' not in denied.stderr:
+-        raise RuntimeError('Waiting assessment write did not recheck revocation')
+-    print('PASS: duplicate creation, co-teacher ownership, simultaneous submit/publish/lock, marks versus lock, import commit, audits and revocation after wait')
+-
+-
+-if __name__ == '__main__':
+-    main()
++"""Actual assessment races, restricted to the local disposable verifier."""
++
++import argparse
++import json
++import subprocess
++from concurrent.futures import ThreadPoolExecutor
++from pathlib import Path
++
++from disposable_container import docker_arguments
++
++import faculty_attendance_concurrency as attendance
++from faculty_attendance_concurrency import command, configure_target, literal, sql
++
++
++def checked(query):
++    result = sql(query)
++    if result.returncode:
++        raise RuntimeError(result.stderr)
++    return result.stdout.strip()
++
++
++def race(queries):
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        results = list(pool.map(sql, queries))
++    if sorted(r.returncode for r in results) != [0, 3]:
++        raise RuntimeError(str([(r.returncode, r.stderr) for r in results]))
++    return results
++
++
++def main(argv=None):
++    attendance.CONTAINER = None
++    parser = argparse.ArgumentParser(description='Run assessment concurrency tests in an isolated disposable container')
++    parser.add_argument('container_id')
++    parser.add_argument('run_token')
++    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
++    args = parser.parse_args(argv)
++    configure_target(args.container_id, args.run_token, args.purpose)
++    fixture = Path(__file__).resolve().with_name('faculty_tests_database.sql').read_text(encoding='utf-8')
++    seed = fixture[:fixture.index('    t:=save_faculty_test')]
++    seed += """    RAISE NOTICE 'EXAM_FIXTURE %',jsonb_build_object('actor',faculty_one,'tenant',tenant,'section',section_one,
++       'other',faculty_two,'admin',admin_user,'roster',roster_one,'data',data-'start_time'-'end_time');
++END; $$;
++COMMIT;
++"""
++    result = sql(seed)
++    if result.returncode:
++        raise RuntimeError(result.stderr)
++    ctx = json.loads(next(line.split('EXAM_FIXTURE ', 1)[1] for line in result.stderr.splitlines() if 'EXAM_FIXTURE ' in line))
++    actor, tenant, section = (literal(ctx[k]) for k in ('actor', 'tenant', 'section'))
++    data = literal(json.dumps(ctx['data'])) + '::jsonb'
++    create = f'SELECT save_faculty_test({actor},{tenant},{section},{data});'
++    results = race([create, create])
++    t = json.loads(next(r.stdout.strip() for r in results if r.returncode == 0))
++    test = literal(t['test_id'])
++
++    def transition(version, action):
++        return f"SELECT transition_faculty_test({actor},{tenant},{test},{version},{literal(action)});"
++
++    checked(transition(1, 'schedule'))
++    checked(transition(2, 'complete'))
++    rosters = checked(f'SELECT roster_id FROM faculty_attendance_rosters WHERE section_id={section} ORDER BY roster_id;').splitlines()
++    rows = literal(json.dumps([{'roster_id': r, 'mark_status': 'present', 'scored_marks': 50} for r in rosters])) + '::jsonb'
++    checked(f'SELECT save_faculty_test_marks({actor},{tenant},{test},3,{rows});')
++    race([transition(4, 'submit'), transition(4, 'submit')])
++    race([transition(5, 'publish'), transition(5, 'publish')])
++    mark = f'SELECT save_faculty_test_marks({actor},{tenant},{test},6,{rows});'
++    race([transition(6, 'lock'), mark])
++    checked(f"DO $$ BEGIN IF (SELECT version FROM faculty_tests WHERE test_id={test})<>7 OR "
++            f"(SELECT count(*) FROM admin_audit_log WHERE record_id={test} AND action='test.lock')<>1 "
++            "THEN RAISE EXCEPTION 'Duplicate transition or audit'; END IF; END; $$;")
++    # A co-teacher and the owner compete; only the owner can update metadata.
++    data2 = dict(ctx['data'], title='Import race')
++    t2 = json.loads(checked(f'SELECT save_faculty_test({actor},{tenant},{section},{literal(json.dumps(data2))}::jsonb);'))
++    test2 = literal(t2['test_id'])
++    checked(f"SELECT set_config('request.jwt.claim.role','service_role',false); SELECT create_faculty_teaching_assignment({literal(ctx['admin'])},{tenant},{literal(ctx['other'])},{section},now()-interval '1 day',NULL,true);")
++    update = lambda teacher: f'SELECT save_faculty_test({teacher},{tenant},{section},{literal(json.dumps(data2))}::jsonb,{test2},1);'
++    race([update(actor), update(literal(ctx['other']))])
++    for version, action in [(2, 'schedule'), (3, 'complete')]:
++        checked(f"SELECT transition_faculty_test({actor},{tenant},{test2},{version},{literal(action)});")
++    register = checked(f"SELECT register_number FROM faculty_attendance_rosters WHERE roster_id={literal(ctx['roster'])};")
++    raw = {'register_number': register, 'mark_status': 'present', 'scored_marks': '75'}
++    review_rows = [{'row_number': 2, 'raw_data': raw, 'normalized_data': raw, 'validation_status': 'VALID', 'errors': [], 'warnings': []}]
++    staged = json.loads(checked(f"SELECT stage_faculty_test_import({actor},{tenant},{test2},'marks.csv','CSV','{{\"valid\":1}}'," + literal(json.dumps(review_rows)) + '::jsonb);'))
++    imported = literal(staged['import_id'])
++    stamp = checked(f'SELECT updated_at FROM faculty_attendance_imports WHERE import_id={imported};')
++    commit = f'SELECT commit_faculty_test_import({actor},{tenant},{imported},{literal(stamp)},4);'
++    race([commit, commit])
++    checked(f"DO $$ BEGIN IF (SELECT count(*) FROM test_results WHERE test_id={test2})<>1 OR "
++            f"(SELECT count(*) FROM admin_audit_log WHERE record_id={test2} AND action='test.import.commit')<>1 "
++            "THEN RAISE EXCEPTION 'Duplicate import records/audits'; END IF; END; $$;")
++    # Live authorization is rechecked after waiting on the same roster lock.
++    holder = subprocess.Popen(docker_arguments('exec', '-i', attendance.CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'),
++                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
++    holder.stdin.write(f"BEGIN; SELECT pg_advisory_xact_lock(hashtextextended('attendance:'||{tenant}::text,0)); "
++                       f"UPDATE faculty_section_assignments SET revoked_at=now(),revoked_by={literal(ctx['admin'])} WHERE faculty_user_id={actor} AND institution_id={tenant}; "
++                       "SELECT 'LOCK_HELD'; SELECT pg_sleep(2); COMMIT;\n")
++    holder.stdin.flush()
++    while 'LOCK_HELD' not in holder.stdout.readline():
++        if holder.poll() is not None:
++            raise RuntimeError('Lock holder failed')
++    denied = sql(f'SELECT save_faculty_test_marks({actor},{tenant},{test2},5,{rows});')
++    holder.communicate(timeout=15)
++    if holder.returncode or denied.returncode != 3 or 'Teaching mutation denied' not in denied.stderr:
++        raise RuntimeError('Waiting assessment write did not recheck revocation')
++    print('PASS: duplicate creation, co-teacher ownership, simultaneous submit/publish/lock, marks versus lock, import commit, audits and revocation after wait')
++
++
++if __name__ == '__main__':
++    main()
+--- a/scripts/validation/disposable_container.py
++++ b/scripts/validation/disposable_container.py
+@@ -0,0 +1,165 @@
++"""Local-only, run-owned Docker target checks. Never opens a database."""
++from __future__ import annotations
++
++import argparse
++import json
++import os
++import re
++import subprocess
++
++EXPECTED_IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.166"
++DATA_DIRECTORY = "/var/lib/postgresql/data"
++MAX_TMPFS_BYTES = 536870912
++ALLOWED_PURPOSES = {
++    "academic-setup", "faculty-attendance", "faculty-tests", "faculty-assignment",
++    "data-reset",
++}
++DOCKER_CONTEXT = "desktop-linux"
++LOCAL_ENDPOINT = "npipe:////./pipe/dockerDesktopLinuxEngine"
++
++
++def docker_arguments(*args: str) -> list[str]:
++    if os.environ.get("DOCKER_HOST"):
++        raise RuntimeError("DOCKER_HOST overrides are prohibited for validation")
++    if os.environ.get("DOCKER_CONTEXT") not in (None, "", DOCKER_CONTEXT):
++        raise RuntimeError("DOCKER_CONTEXT overrides are prohibited for validation")
++    return ["docker", "--context", DOCKER_CONTEXT, *args]
++
++
++def command(args: list[str], **kwargs):
++    return subprocess.run(args, capture_output=True, text=True, timeout=20, **kwargs)
++
++
++def validate_local_engine() -> None:
++    docker_arguments()  # Reject overrides before even inspecting context state.
++    context = command(["docker", "context", "show"])
++    if context.returncode or context.stdout.strip() != DOCKER_CONTEXT:
++        raise RuntimeError("Only the local desktop-linux context is allowed")
++    endpoint = command(docker_arguments("context", "inspect", DOCKER_CONTEXT))
++    if endpoint.returncode:
++        raise RuntimeError("Cannot inspect the local Docker context")
++    contexts = json.loads(endpoint.stdout)
++    if not isinstance(contexts, list) or len(contexts) != 1:
++        raise RuntimeError("Expected exactly one Docker context")
++    if contexts[0].get("Endpoints", {}).get("docker", {}).get("Host") != LOCAL_ENDPOINT:
++        raise RuntimeError("Expected the local Docker Desktop Linux named pipe")
++    engine = command(docker_arguments("info", "--format", "{{.Name}} {{.OSType}}"))
++    if engine.returncode or engine.stdout.strip() != "docker-desktop linux":
++        raise RuntimeError("Expected the local Docker Desktop Linux engine")
++
++
++def expected_name(run_token: str, purpose: str) -> str:
++    return f"codex-{purpose}-{run_token[:12]}"
++
++
++def validate_arguments(container_id: str, run_token: str, purpose: str) -> None:
++    if not re.fullmatch(r"[a-f0-9]{64}", container_id or ""):
++        raise RuntimeError("Pass the full 64-character container ID emitted by the runner")
++    if not re.fullmatch(r"[a-f0-9]{32}", run_token or ""):
++        raise RuntimeError("Invalid validation run token")
++    if purpose not in ALLOWED_PURPOSES:
++        raise RuntimeError("Unrecognized disposable validation purpose")
++
++
++def owned_container(container_id: str, run_token: str, purpose: str) -> dict:
++    """Inspect ownership by full ID and fresh token; never resolve names/aliases."""
++    validate_arguments(container_id, run_token, purpose)
++    validate_local_engine()
++    inspected = command(docker_arguments("inspect", container_id))
++    if inspected.returncode:
++        raise RuntimeError("The supplied container ID cannot be inspected")
++    objects = json.loads(inspected.stdout)
++    if not isinstance(objects, list) or len(objects) != 1 or not isinstance(objects[0], dict):
++        raise RuntimeError("Expected exactly one inspected container")
++    container = objects[0]
++    config = container.get("Config") or {}
++    labels = config.get("Labels") or {}
++    if container.get("Id") != container_id:
++        raise RuntimeError("Docker returned a different container ID")
++    if container.get("Name") != "/" + expected_name(run_token, purpose):
++        raise RuntimeError("Unexpected container name; persistent project targets are prohibited")
++    if config.get("Image") != EXPECTED_IMAGE:
++        raise RuntimeError("Unexpected PostgreSQL image")
++    if labels.get("collegeai.validation.disposable") != "true":
++        raise RuntimeError("Disposable validation label is missing")
++    if labels.get("collegeai.validation.run") != run_token:
++        raise RuntimeError("Run token does not match this container")
++    if labels.get("collegeai.validation.purpose") != purpose:
++        raise RuntimeError("Validation purpose does not match this container")
++    if (container.get("HostConfig") or {}).get("AutoRemove") is not True:
++        raise RuntimeError("Disposable containers must be created with --rm")
++    return container
++
++
++def validate_tmpfs_options(options: str) -> None:
++    """Require explicit writable memory storage capped at 512 MiB."""
++    if not isinstance(options, str):
++        raise RuntimeError("Invalid tmpfs options")
++    parts = options.split(",")
++    sizes = [part[5:] for part in parts if part.startswith("size=")]
++    if len(parts) != len(set(parts)) or parts.count("rw") != 1 or len(sizes) != 1:
++        raise RuntimeError("Expected writable tmpfs with one explicit size limit")
++    if any(part not in {"rw", "noexec", "nosuid", "nodev"} and not part.startswith("size=") for part in parts):
++        raise RuntimeError("Unexpected tmpfs options")
++    size = re.fullmatch(r"([0-9]+)([kKmMgG]?)", sizes[0])
++    if not size:
++        raise RuntimeError("Invalid tmpfs size limit")
++    multiplier = {"": 1, "k": 1024, "m": 1024**2, "g": 1024**3}[size[2].lower()]
++    if not 0 < int(size[1]) * multiplier <= MAX_TMPFS_BYTES:
++        raise RuntimeError("Tmpfs size must be positive and at most 512 MiB")
++
++
++def validate_disposable_target(container_id: str, run_token: str, purpose: str) -> str:
++    container = owned_container(container_id, run_token, purpose)
++    if (container.get("State") or {}).get("Running") is not True:
++        raise RuntimeError("Disposable validation container is not running")
++    host = container.get("HostConfig") or {}
++    mounts = container.get("Mounts") or []
++    # --tmpfs uses HostConfig.Tmpfs; its legacy representation may have Mounts=[].
++    # A mirrored tmpfs entry is also accepted, but no volume/bind/extra mount is.
++    if not isinstance(mounts, list) or len(mounts) > 1:
++        raise RuntimeError("Unexpected mounts; persistent mounts are prohibited")
++    if mounts and (mounts[0].get("Type") != "tmpfs" or mounts[0].get("Destination") != DATA_DIRECTORY):
++        raise RuntimeError("Expected only data-directory tmpfs; persistent mounts are prohibited")
++    tmpfs = host.get("Tmpfs") or {}
++    if not isinstance(tmpfs, dict) or set(tmpfs) != {DATA_DIRECTORY}:
++        raise RuntimeError("Expected only the PostgreSQL data-directory tmpfs")
++    validate_tmpfs_options(tmpfs[DATA_DIRECTORY])
++    if host.get("Binds") or host.get("Mounts") or host.get("VolumesFrom"):
++        raise RuntimeError("Unexpected bind, mount, or inherited storage configuration")
++    data_directories = [entry.split("=", 1)[1] for entry in (container.get("Config") or {}).get("Env", []) if entry.startswith("PGDATA=")]
++    if data_directories != [DATA_DIRECTORY]:
++        raise RuntimeError("PostgreSQL data directory must be the validated tmpfs")
++    if host.get("PortBindings") or host.get("PublishAllPorts"):
++        raise RuntimeError("Database containers with published host ports are prohibited")
++    if host.get("NetworkMode") != "none":
++        raise RuntimeError("Disposable validation containers must use Docker network=none")
++    return container_id
++
++
++def validate_cleanup_target(container_id: str, run_token: str, purpose: str) -> str:
++    # Ownership, not successful database validation, authorizes cleanup. A failed
++    # bootstrap/misconfigured run-owned container still needs to be stopped.
++    owned_container(container_id, run_token, purpose)
++    return container_id
++
++
++def main(argv=None) -> None:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("action", choices=["local", "validate", "cleanup"])
++    parser.add_argument("target", nargs="*")
++    args = parser.parse_args(argv)
++    if args.action == "local":
++        if args.target:
++            parser.error("local accepts no target")
++        validate_local_engine()
++        print("LOCAL PASS")
++    else:
++        if len(args.target) != 3:
++            parser.error("target requires full container ID, run token, and purpose")
++        validator = validate_disposable_target if args.action == "validate" else validate_cleanup_target
++        print(validator(*args.target))
++
++
++if __name__ == "__main__":
++    main()
+--- a/scripts/validation/verify_academic_setup_database.ps1
++++ b/scripts/validation/verify_academic_setup_database.ps1
+@@ -1,46 +1,85 @@
+-[CmdletBinding()]
+-param()
+-$ErrorActionPreference = 'Continue'
+-$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+-$containerName = 'codex-academic-setup-' + [guid]::NewGuid().ToString('N').Substring(0, 10)
+-$containerId = $null
+-$verificationExit = 1
+-if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop is permitted' }
+-if ((& docker info --format '{{.Name}}').Trim() -ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }
+-try {
+-    $fixturePassword = [guid]::NewGuid().ToString('N')
+-    $containerId = (& docker run --rm -d --name $containerName --label 'collegeai.academic-setup-verification=true' -e "POSTGRES_PASSWORD=$fixturePassword" public.ecr.aws/supabase/postgres:17.6.1.166).Trim()
+-    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create disposable database' }
+-    $ready = $false
+-    for ($attempt = 0; $attempt -lt 100; $attempt++) {
+-        & docker exec $containerName pg_isready -U postgres *> $null
+-        if ($LASTEXITCODE -eq 0 -and ([string](& docker exec $containerName cat /proc/1/comm 2>$null)).Trim() -match '^[.]?postgres') { $ready = $true; break }
+-        Start-Sleep -Milliseconds 500
+-    }
+-    if (-not $ready) { throw 'Disposable database did not become ready' }
+-    & docker cp (Join-Path $repository 'supabase\migrations') "${containerName}:/tmp/migrations"
+-    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
+-    $migrations = Get-ChildItem -LiteralPath (Join-Path $repository 'supabase\migrations') -Filter '*.sql' | Sort-Object Name
+-    foreach ($migration in $migrations) {
+-        Write-Output "REPLAY $($migration.Name)"
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
+-        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
+-    }
+-    foreach ($fixture in @('academic_setup_sql_lint.sql', 'academic_setup_database.sql', 'faculty_responsibilities_database.sql', 'faculty_attendance_database.sql', 'faculty_tests_database.sql')) {
+-        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerName}:/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw 'Could not copy contract fixture' }
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
+-    }
+-    & (Join-Path $repository 'backend\.venv\Scripts\python.exe') (Join-Path $PSScriptRoot 'academic_setup_concurrency.py') $containerName
+-    if ($LASTEXITCODE -ne 0) { throw 'Academic concurrency contracts failed' }
+-    Write-Output "DATABASE PASS: $($migrations.Count) migrations; academic, responsibility, attendance and assessment contracts; academic races"
+-    $verificationExit = 0
+-} catch { Write-Error $_ }
+-finally {
+-    if ($containerId -match '^[a-f0-9]{64}$') {
+-        & docker stop $containerId | Out-Null
+-        if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
+-    }
+-}
+-exit $verificationExit
++[CmdletBinding()]
++param([string]$PythonExecutable = 'python')
++$ErrorActionPreference = 'Continue' # PostgreSQL NOTICEs use native stderr; check native exit codes explicitly.
++$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
++$validator = Join-Path $PSScriptRoot 'disposable_container.py'
++$purpose = 'academic-setup'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-' + $purpose + '-' + $runToken.Substring(0, 12)
++$containerId = $null
++$created = $false
++$verificationExit = 1
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++try {
++    $null = Get-Command $PythonExecutable -ErrorAction Stop
++    $localResult = & $PythonExecutable $validator local
++    $localExit = $LASTEXITCODE
++    if ($localExit -ne 0 -or ([string]$localResult).Trim() -cne 'LOCAL PASS') { throw 'Local Docker safety preflight failed' }
++
++    $fixturePassword = [guid]::NewGuid().ToString('N')
++    $createdOutput = & docker --context desktop-linux run --pull=never --rm -d --network none `
++        --tmpfs '/var/lib/postgresql/data:rw,size=536870912' --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" --label "collegeai.validation.purpose=$purpose" `
++        -e 'PGDATA=/var/lib/postgresql/data' -e "POSTGRES_PASSWORD=$fixturePassword" $image
++    $creationExit = $LASTEXITCODE
++    $containerId = ([string]$createdOutput).Trim()
++    if ($creationExit -ne 0 -or $containerId -cnotmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++    $created = $true
++
++    # Validate ownership/storage before even probing database readiness. Never use a name or fallback.
++    $verifiedId = & $PythonExecutable $validator validate $containerId $runToken $purpose
++    $validationExit = $LASTEXITCODE
++    if ($validationExit -ne 0 -or ([string]$verifiedId).Trim() -cne $containerId) { throw 'Disposable container safety validation failed' }
++
++    $ready = $false
++    for ($attempt = 0; $attempt -lt 100; $attempt++) {
++        & docker --context desktop-linux exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0) {
++            $serverProcess = & docker --context desktop-linux exec $containerId cat /proc/1/comm 2>$null
++            if ($LASTEXITCODE -eq 0 -and ([string]$serverProcess).Trim() -match '^[.]?postgres') { $ready = $true; break }
++        }
++        Start-Sleep -Milliseconds 500
++    }
++    if (-not $ready) { throw 'Disposable database did not become ready' }
++
++    $migrationPath = Join-Path $repository 'supabase\migrations'
++    $migrations = @(Get-ChildItem -LiteralPath $migrationPath -Filter '*.sql' -ErrorAction Stop | Sort-Object Name)
++    if (-not $migrations.Count) { throw 'No migrations found; refusing an empty verification' }
++    & docker --context desktop-linux cp $migrationPath "${containerId}:/tmp/migrations"
++    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
++    foreach ($migration in $migrations) {
++        Write-Output "REPLAY $($migration.Name)"
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
++    }
++    foreach ($fixture in @('academic_setup_sql_lint.sql', 'academic_setup_database.sql', 'faculty_responsibilities_database.sql', 'faculty_attendance_database.sql', 'faculty_tests_database.sql')) {
++        $fixturePath = Join-Path $PSScriptRoot $fixture
++        if (-not (Test-Path -LiteralPath $fixturePath -PathType Leaf)) { throw "Missing fixture: $fixture" }
++        & docker --context desktop-linux cp $fixturePath "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
++    }
++    & $PythonExecutable (Join-Path $PSScriptRoot 'academic_setup_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed: academic_setup_concurrency.py' }
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; $purpose contracts passed"
++    $verificationExit = 0
++} catch {
++    Write-Error $_
++} finally {
++    if ($created -and $containerId -cmatch '^[a-f0-9]{64}$') {
++        try {
++            # Plain JSON inspection in Python avoids PowerShell's native Go-template quoting bug.
++            $ownedId = & $PythonExecutable $validator cleanup $containerId $runToken $purpose
++            $ownershipExit = $LASTEXITCODE
++            if ($ownershipExit -ne 0 -or ([string]$ownedId).Trim() -cne $containerId) { throw 'Cleanup ownership check failed; refusing to stop this target' }
++            & docker --context desktop-linux stop --timeout 10 $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { throw 'Disposable verification container cleanup failed' }
++        } catch {
++            $verificationExit = 1
++            Write-Warning ([string]$_)
++        }
++    }
++}
++exit $verificationExit
+--- a/scripts/validation/verify_faculty_assignment_database.ps1
++++ b/scripts/validation/verify_faculty_assignment_database.ps1
+@@ -0,0 +1,85 @@
++[CmdletBinding()]
++param([string]$PythonExecutable = 'python')
++$ErrorActionPreference = 'Continue' # PostgreSQL NOTICEs use native stderr; check native exit codes explicitly.
++$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
++$validator = Join-Path $PSScriptRoot 'disposable_container.py'
++$purpose = 'faculty-assignment'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-' + $purpose + '-' + $runToken.Substring(0, 12)
++$containerId = $null
++$created = $false
++$verificationExit = 1
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++try {
++    $null = Get-Command $PythonExecutable -ErrorAction Stop
++    $localResult = & $PythonExecutable $validator local
++    $localExit = $LASTEXITCODE
++    if ($localExit -ne 0 -or ([string]$localResult).Trim() -cne 'LOCAL PASS') { throw 'Local Docker safety preflight failed' }
++
++    $fixturePassword = [guid]::NewGuid().ToString('N')
++    $createdOutput = & docker --context desktop-linux run --pull=never --rm -d --network none `
++        --tmpfs '/var/lib/postgresql/data:rw,size=536870912' --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" --label "collegeai.validation.purpose=$purpose" `
++        -e 'PGDATA=/var/lib/postgresql/data' -e "POSTGRES_PASSWORD=$fixturePassword" $image
++    $creationExit = $LASTEXITCODE
++    $containerId = ([string]$createdOutput).Trim()
++    if ($creationExit -ne 0 -or $containerId -cnotmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++    $created = $true
++
++    # Validate ownership/storage before even probing database readiness. Never use a name or fallback.
++    $verifiedId = & $PythonExecutable $validator validate $containerId $runToken $purpose
++    $validationExit = $LASTEXITCODE
++    if ($validationExit -ne 0 -or ([string]$verifiedId).Trim() -cne $containerId) { throw 'Disposable container safety validation failed' }
++
++    $ready = $false
++    for ($attempt = 0; $attempt -lt 100; $attempt++) {
++        & docker --context desktop-linux exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0) {
++            $serverProcess = & docker --context desktop-linux exec $containerId cat /proc/1/comm 2>$null
++            if ($LASTEXITCODE -eq 0 -and ([string]$serverProcess).Trim() -match '^[.]?postgres') { $ready = $true; break }
++        }
++        Start-Sleep -Milliseconds 500
++    }
++    if (-not $ready) { throw 'Disposable database did not become ready' }
++
++    $migrationPath = Join-Path $repository 'supabase\migrations'
++    $migrations = @(Get-ChildItem -LiteralPath $migrationPath -Filter '*.sql' -ErrorAction Stop | Sort-Object Name)
++    if (-not $migrations.Count) { throw 'No migrations found; refusing an empty verification' }
++    & docker --context desktop-linux cp $migrationPath "${containerId}:/tmp/migrations"
++    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
++    foreach ($migration in $migrations) {
++        Write-Output "REPLAY $($migration.Name)"
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
++    }
++    foreach ($fixture in @('faculty_responsibilities_database.sql', 'faculty_attendance_database.sql')) {
++        $fixturePath = Join-Path $PSScriptRoot $fixture
++        if (-not (Test-Path -LiteralPath $fixturePath -PathType Leaf)) { throw "Missing fixture: $fixture" }
++        & docker --context desktop-linux cp $fixturePath "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
++    }
++    & $PythonExecutable (Join-Path $PSScriptRoot 'faculty_assignment_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed: faculty_assignment_concurrency.py' }
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; $purpose contracts passed"
++    $verificationExit = 0
++} catch {
++    Write-Error $_
++} finally {
++    if ($created -and $containerId -cmatch '^[a-f0-9]{64}$') {
++        try {
++            # Plain JSON inspection in Python avoids PowerShell's native Go-template quoting bug.
++            $ownedId = & $PythonExecutable $validator cleanup $containerId $runToken $purpose
++            $ownershipExit = $LASTEXITCODE
++            if ($ownershipExit -ne 0 -or ([string]$ownedId).Trim() -cne $containerId) { throw 'Cleanup ownership check failed; refusing to stop this target' }
++            & docker --context desktop-linux stop --timeout 10 $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { throw 'Disposable verification container cleanup failed' }
++        } catch {
++            $verificationExit = 1
++            Write-Warning ([string]$_)
++        }
++    }
++}
++exit $verificationExit
+--- a/scripts/validation/verify_faculty_attendance_database.ps1
++++ b/scripts/validation/verify_faculty_attendance_database.ps1
+@@ -1,56 +1,85 @@
+-[CmdletBinding()]
+-param()
+-$ErrorActionPreference = 'Continue' # PostgreSQL NOTICE output is native stderr, not a failure.
+-$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+-$containerName = 'codex-attendance-verify-20261007'
+-$containerId = $null
+-$verificationExit = 1
+-if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop is permitted' }
+-if ((& docker info --format '{{.Name}}').Trim() -ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }
+-if (& docker ps -aq --filter "name=^/$containerName`$") { throw 'Verification container already exists; refusing to reuse it' }
+-try {
+-    $fixturePassword = [guid]::NewGuid().ToString('N')
+-    $containerId = (& docker run --rm -d --name $containerName --label 'collegeai.attendance-verification=true' -e "POSTGRES_PASSWORD=$fixturePassword" public.ecr.aws/supabase/postgres:17.6.1.166).Trim()
+-    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create disposable database' }
+-    $ready = $false
+-    for ($attempt = 0; $attempt -lt 100; $attempt++) {
+-        & docker exec $containerName pg_isready -U postgres *> $null
+-        if ($LASTEXITCODE -eq 0) {
+-            # pg_isready also accepts the temporary server used by image init.
+-            # PID 1 becomes postgres only after bootstrap finishes.
+-            $serverProcess = [string](& docker exec $containerName cat /proc/1/comm 2>$null)
+-            if ($serverProcess.Trim() -match '^[.]?postgres') { $ready = $true; break }
+-        }
+-        Start-Sleep -Milliseconds 500
+-    }
+-    if (-not $ready) { throw 'Disposable database did not become ready' }
+-    & docker cp (Join-Path $repository 'supabase\migrations') "${containerName}:/tmp/migrations"
+-    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
+-    $migrations = Get-ChildItem -LiteralPath (Join-Path $repository 'supabase\migrations') -Filter '*.sql' | Sort-Object Name
+-    foreach ($migration in $migrations) {
+-        Write-Output "REPLAY $($migration.Name)"
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
+-        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
+-    }
+-    foreach ($fixture in @('faculty_responsibilities_database.sql','faculty_attendance_database.sql')) {
+-        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerName}:/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw 'Could not copy contract fixture' }
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
+-    }
+-    Push-Location $repository
+-    try {
+-        & python scripts/validation/faculty_attendance_concurrency.py
+-        if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed' }
+-    } finally { Pop-Location }
+-    Write-Output "DATABASE PASS: $($migrations.Count) migrations replayed; responsibility, attendance and concurrency contracts passed"
+-    $verificationExit = 0
+-} catch {
+-    Write-Error $_
+-} finally {
+-    if ($containerId -match '^[a-f0-9]{64}$') {
+-        & docker stop $containerId | Out-Null
+-        if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
+-    }
+-}
+-exit $verificationExit
++[CmdletBinding()]
++param([string]$PythonExecutable = 'python')
++$ErrorActionPreference = 'Continue' # PostgreSQL NOTICEs use native stderr; check native exit codes explicitly.
++$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
++$validator = Join-Path $PSScriptRoot 'disposable_container.py'
++$purpose = 'faculty-attendance'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-' + $purpose + '-' + $runToken.Substring(0, 12)
++$containerId = $null
++$created = $false
++$verificationExit = 1
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++try {
++    $null = Get-Command $PythonExecutable -ErrorAction Stop
++    $localResult = & $PythonExecutable $validator local
++    $localExit = $LASTEXITCODE
++    if ($localExit -ne 0 -or ([string]$localResult).Trim() -cne 'LOCAL PASS') { throw 'Local Docker safety preflight failed' }
++
++    $fixturePassword = [guid]::NewGuid().ToString('N')
++    $createdOutput = & docker --context desktop-linux run --pull=never --rm -d --network none `
++        --tmpfs '/var/lib/postgresql/data:rw,size=536870912' --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" --label "collegeai.validation.purpose=$purpose" `
++        -e 'PGDATA=/var/lib/postgresql/data' -e "POSTGRES_PASSWORD=$fixturePassword" $image
++    $creationExit = $LASTEXITCODE
++    $containerId = ([string]$createdOutput).Trim()
++    if ($creationExit -ne 0 -or $containerId -cnotmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++    $created = $true
++
++    # Validate ownership/storage before even probing database readiness. Never use a name or fallback.
++    $verifiedId = & $PythonExecutable $validator validate $containerId $runToken $purpose
++    $validationExit = $LASTEXITCODE
++    if ($validationExit -ne 0 -or ([string]$verifiedId).Trim() -cne $containerId) { throw 'Disposable container safety validation failed' }
++
++    $ready = $false
++    for ($attempt = 0; $attempt -lt 100; $attempt++) {
++        & docker --context desktop-linux exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0) {
++            $serverProcess = & docker --context desktop-linux exec $containerId cat /proc/1/comm 2>$null
++            if ($LASTEXITCODE -eq 0 -and ([string]$serverProcess).Trim() -match '^[.]?postgres') { $ready = $true; break }
++        }
++        Start-Sleep -Milliseconds 500
++    }
++    if (-not $ready) { throw 'Disposable database did not become ready' }
++
++    $migrationPath = Join-Path $repository 'supabase\migrations'
++    $migrations = @(Get-ChildItem -LiteralPath $migrationPath -Filter '*.sql' -ErrorAction Stop | Sort-Object Name)
++    if (-not $migrations.Count) { throw 'No migrations found; refusing an empty verification' }
++    & docker --context desktop-linux cp $migrationPath "${containerId}:/tmp/migrations"
++    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
++    foreach ($migration in $migrations) {
++        Write-Output "REPLAY $($migration.Name)"
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
++    }
++    foreach ($fixture in @('faculty_responsibilities_database.sql', 'faculty_attendance_database.sql')) {
++        $fixturePath = Join-Path $PSScriptRoot $fixture
++        if (-not (Test-Path -LiteralPath $fixturePath -PathType Leaf)) { throw "Missing fixture: $fixture" }
++        & docker --context desktop-linux cp $fixturePath "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
++    }
++    & $PythonExecutable (Join-Path $PSScriptRoot 'faculty_attendance_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed: faculty_attendance_concurrency.py' }
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; $purpose contracts passed"
++    $verificationExit = 0
++} catch {
++    Write-Error $_
++} finally {
++    if ($created -and $containerId -cmatch '^[a-f0-9]{64}$') {
++        try {
++            # Plain JSON inspection in Python avoids PowerShell's native Go-template quoting bug.
++            $ownedId = & $PythonExecutable $validator cleanup $containerId $runToken $purpose
++            $ownershipExit = $LASTEXITCODE
++            if ($ownershipExit -ne 0 -or ([string]$ownedId).Trim() -cne $containerId) { throw 'Cleanup ownership check failed; refusing to stop this target' }
++            & docker --context desktop-linux stop --timeout 10 $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { throw 'Disposable verification container cleanup failed' }
++        } catch {
++            $verificationExit = 1
++            Write-Warning ([string]$_)
++        }
++    }
++}
++exit $verificationExit
+--- a/scripts/validation/verify_faculty_tests_database.ps1
++++ b/scripts/validation/verify_faculty_tests_database.ps1
+@@ -1,58 +1,87 @@
+-[CmdletBinding()]
+-param()
+-$ErrorActionPreference = 'Continue' # PostgreSQL NOTICE output is native stderr, not a failure.
+-$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+-$containerName = 'codex-attendance-verify-20261007'
+-$containerId = $null
+-$verificationExit = 1
+-if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop is permitted' }
+-if ((& docker info --format '{{.Name}}').Trim() -ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }
+-if (& docker ps -aq --filter "name=^/$containerName`$") { throw 'Verification container already exists; refusing to reuse it' }
+-try {
+-    $fixturePassword = [guid]::NewGuid().ToString('N')
+-    $containerId = (& docker run --rm -d --name $containerName --label 'collegeai.attendance-verification=true' -e "POSTGRES_PASSWORD=$fixturePassword" public.ecr.aws/supabase/postgres:17.6.1.166).Trim()
+-    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create disposable database' }
+-    $ready = $false
+-    for ($attempt = 0; $attempt -lt 100; $attempt++) {
+-        & docker exec $containerName pg_isready -U postgres *> $null
+-        if ($LASTEXITCODE -eq 0) {
+-            # pg_isready also accepts the temporary server used by image init.
+-            # PID 1 becomes postgres only after bootstrap finishes.
+-            $serverProcess = [string](& docker exec $containerName cat /proc/1/comm 2>$null)
+-            if ($serverProcess.Trim() -match '^[.]?postgres') { $ready = $true; break }
+-        }
+-        Start-Sleep -Milliseconds 500
+-    }
+-    if (-not $ready) { throw 'Disposable database did not become ready' }
+-    & docker cp (Join-Path $repository 'supabase\migrations') "${containerName}:/tmp/migrations"
+-    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
+-    $migrations = Get-ChildItem -LiteralPath (Join-Path $repository 'supabase\migrations') -Filter '*.sql' | Sort-Object Name
+-    foreach ($migration in $migrations) {
+-        Write-Output "REPLAY $($migration.Name)"
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
+-        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
+-    }
+-    foreach ($fixture in @('faculty_responsibilities_database.sql','faculty_attendance_database.sql','faculty_tests_database.sql')) {
+-        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerName}:/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw 'Could not copy contract fixture' }
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
+-    }
+-    Push-Location $repository
+-    try {
+-        & python scripts/validation/faculty_attendance_concurrency.py
+-        if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed' }
+-    } finally { Pop-Location }
+-    & python scripts/validation/faculty_tests_concurrency.py
+-    if ($LASTEXITCODE -ne 0) { throw 'Assessment concurrency contracts failed' }
+-    Write-Output "DATABASE PASS: $($migrations.Count) migrations replayed; responsibility, attendance, assessment and concurrency contracts passed"
+-    $verificationExit = 0
+-} catch {
+-    Write-Error $_
+-} finally {
+-    if ($containerId -match '^[a-f0-9]{64}$') {
+-        & docker stop $containerId | Out-Null
+-        if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
+-    }
+-}
+-exit $verificationExit
++[CmdletBinding()]
++param([string]$PythonExecutable = 'python')
++$ErrorActionPreference = 'Continue' # PostgreSQL NOTICEs use native stderr; check native exit codes explicitly.
++$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
++$validator = Join-Path $PSScriptRoot 'disposable_container.py'
++$purpose = 'faculty-tests'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-' + $purpose + '-' + $runToken.Substring(0, 12)
++$containerId = $null
++$created = $false
++$verificationExit = 1
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++try {
++    $null = Get-Command $PythonExecutable -ErrorAction Stop
++    $localResult = & $PythonExecutable $validator local
++    $localExit = $LASTEXITCODE
++    if ($localExit -ne 0 -or ([string]$localResult).Trim() -cne 'LOCAL PASS') { throw 'Local Docker safety preflight failed' }
++
++    $fixturePassword = [guid]::NewGuid().ToString('N')
++    $createdOutput = & docker --context desktop-linux run --pull=never --rm -d --network none `
++        --tmpfs '/var/lib/postgresql/data:rw,size=536870912' --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" --label "collegeai.validation.purpose=$purpose" `
++        -e 'PGDATA=/var/lib/postgresql/data' -e "POSTGRES_PASSWORD=$fixturePassword" $image
++    $creationExit = $LASTEXITCODE
++    $containerId = ([string]$createdOutput).Trim()
++    if ($creationExit -ne 0 -or $containerId -cnotmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++    $created = $true
++
++    # Validate ownership/storage before even probing database readiness. Never use a name or fallback.
++    $verifiedId = & $PythonExecutable $validator validate $containerId $runToken $purpose
++    $validationExit = $LASTEXITCODE
++    if ($validationExit -ne 0 -or ([string]$verifiedId).Trim() -cne $containerId) { throw 'Disposable container safety validation failed' }
++
++    $ready = $false
++    for ($attempt = 0; $attempt -lt 100; $attempt++) {
++        & docker --context desktop-linux exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0) {
++            $serverProcess = & docker --context desktop-linux exec $containerId cat /proc/1/comm 2>$null
++            if ($LASTEXITCODE -eq 0 -and ([string]$serverProcess).Trim() -match '^[.]?postgres') { $ready = $true; break }
++        }
++        Start-Sleep -Milliseconds 500
++    }
++    if (-not $ready) { throw 'Disposable database did not become ready' }
++
++    $migrationPath = Join-Path $repository 'supabase\migrations'
++    $migrations = @(Get-ChildItem -LiteralPath $migrationPath -Filter '*.sql' -ErrorAction Stop | Sort-Object Name)
++    if (-not $migrations.Count) { throw 'No migrations found; refusing an empty verification' }
++    & docker --context desktop-linux cp $migrationPath "${containerId}:/tmp/migrations"
++    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
++    foreach ($migration in $migrations) {
++        Write-Output "REPLAY $($migration.Name)"
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
++    }
++    foreach ($fixture in @('faculty_responsibilities_database.sql', 'faculty_attendance_database.sql', 'faculty_tests_database.sql')) {
++        $fixturePath = Join-Path $PSScriptRoot $fixture
++        if (-not (Test-Path -LiteralPath $fixturePath -PathType Leaf)) { throw "Missing fixture: $fixture" }
++        & docker --context desktop-linux cp $fixturePath "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker --context desktop-linux exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
++    }
++    & $PythonExecutable (Join-Path $PSScriptRoot 'faculty_attendance_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed: faculty_attendance_concurrency.py' }
++    & $PythonExecutable (Join-Path $PSScriptRoot 'faculty_tests_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed: faculty_tests_concurrency.py' }
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; $purpose contracts passed"
++    $verificationExit = 0
++} catch {
++    Write-Error $_
++} finally {
++    if ($created -and $containerId -cmatch '^[a-f0-9]{64}$') {
++        try {
++            # Plain JSON inspection in Python avoids PowerShell's native Go-template quoting bug.
++            $ownedId = & $PythonExecutable $validator cleanup $containerId $runToken $purpose
++            $ownershipExit = $LASTEXITCODE
++            if ($ownershipExit -ne 0 -or ([string]$ownedId).Trim() -cne $containerId) { throw 'Cleanup ownership check failed; refusing to stop this target' }
++            & docker --context desktop-linux stop --timeout 10 $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { throw 'Disposable verification container cleanup failed' }
++        } catch {
++            $verificationExit = 1
++            Write-Warning ([string]$_)
++        }
++    }
++}
++exit $verificationExit
+--- a/scripts/validation/verify_supabase_data_reset.py
++++ b/scripts/validation/verify_supabase_data_reset.py
+@@ -3,12 +3,19 @@
+ from __future__ import annotations
+ 
+ import json
+-import os
+ import re
+ import subprocess
+ import time
+ from pathlib import Path
+ from uuid import uuid4
++
++from disposable_container import (
++    docker_arguments,
++    expected_name,
++    validate_cleanup_target,
++    validate_disposable_target,
++    validate_local_engine,
++)
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.166"
+@@ -24,7 +31,7 @@
+ 
+ def docker(*args: str, sql: str | None = None, expect_success: bool = True) -> str:
+     result = subprocess.run(
+-        ["docker", "--context", "desktop-linux", *args],
++        docker_arguments(*args),
+         input=sql,
+         capture_output=True,
+         text=True,
+@@ -39,27 +46,12 @@
+ 
+ 
+ def main() -> None:
+-    if os.environ.get("DOCKER_HOST"):
+-        raise RuntimeError("Refusing an ambiguous DOCKER_HOST")
+-    if docker("info", "--format", "{{.Name}} {{.OSType}}") != "docker-desktop linux":
+-        raise RuntimeError("Only the local Docker Desktop Linux engine is permitted")
+-
+-    container_name = f"collegeai-reset-verify-{uuid4().hex[:12]}"
+-    container_id = docker(
+-        "run",
+-        "--pull=never",
+-        "--rm",
+-        "-d",
+-        "--name",
+-        container_name,
+-        "--label",
+-        "collegeai.data-reset-verification=true",
+-        "-e",
+-        f"POSTGRES_PASSWORD={uuid4().hex}",
+-        IMAGE,
+-    )
+-    if not re.fullmatch(r"[a-f0-9]{64}", container_id):
+-        raise RuntimeError("Disposable container creation did not return a valid ID")
++    validate_local_engine()
++    run_token = uuid4().hex
++    purpose = "data-reset"
++    container_name = expected_name(run_token, purpose)
++    container_id = None
++    created = False
+ 
+     def execute(
+         sql: str, *, expect_success: bool = True, user: str = "postgres"
+@@ -98,22 +90,33 @@
+         return tuple(map(int, value.split(",")))
+ 
+     try:
++        container_id = docker(
++            "run", "--pull=never", "--rm", "-d", "--network", "none",
++            "--tmpfs", "/var/lib/postgresql/data:rw,size=536870912",
++            "--name", container_name,
++            "--label", "collegeai.validation.disposable=true",
++            "--label", f"collegeai.validation.run={run_token}",
++            "--label", f"collegeai.validation.purpose={purpose}",
++            "-e", "PGDATA=/var/lib/postgresql/data",
++            "-e", f"POSTGRES_PASSWORD={uuid4().hex}", IMAGE,
++        )
++        if not re.fullmatch(r"[a-f0-9]{64}", container_id):
++            raise RuntimeError("Disposable container creation did not return a valid ID")
++        created = True
++        container_id = validate_disposable_target(container_id, run_token, purpose)
+         print(
+             "Disposable local database created; waiting for initialization", flush=True
+         )
+         for _ in range(100):
+             process = docker("exec", container_id, "cat", "/proc/1/comm")
+             readiness = subprocess.run(
+-                [
+-                    "docker",
+-                    "--context",
+-                    "desktop-linux",
++                docker_arguments(
+                     "exec",
+                     container_id,
+                     "pg_isready",
+                     "-U",
+                     "postgres",
+-                ],
++                ),
+                 capture_output=True,
+                 text=True,
+                 check=False,
+@@ -264,8 +267,11 @@
+         assert json.loads(execute(inspect))["platform_onboarding"]["status"] == "active"
+         print("PASS: missing platform seed is restored", flush=True)
+     finally:
+-        # Only stop the exact container created above. No mounts, volumes or ports.
+-        docker("stop", container_id)
++        if created:
++            # Plain inspection JSON checks the exact ID, name, token, and labels.
++            # A failed bootstrap is still cleaned up; foreign resources are not.
++            owned_id = validate_cleanup_target(container_id, run_token, purpose)
++            docker("stop", "--timeout", "10", owned_id)
+ 
+ 
+ if __name__ == "__main__":
+--- a/scripts/validation/test_disposable_container.py
++++ b/scripts/validation/test_disposable_container.py
+@@ -0,0 +1,364 @@
++"""Safety regressions using mocked subprocesses only; no Docker/DB access."""
++import contextlib
++import importlib
++import io
++import json
++import os
++from pathlib import Path
++import sys
++import tempfile
++import unittest
++from unittest.mock import patch
++
++import disposable_container as target
++
++CONTAINER_ID = "a" * 64
++RUN_TOKEN = "b" * 32
++PURPOSE = "faculty-attendance"
++
++
++def inspected_container(purpose=PURPOSE, token=RUN_TOKEN):
++    return {
++        "Id": CONTAINER_ID,
++        "Name": "/" + target.expected_name(token, purpose),
++        "State": {"Running": True},
++        "Config": {
++            "Image": target.EXPECTED_IMAGE,
++            "Env": ["PGDATA=" + target.DATA_DIRECTORY],
++            "Labels": {
++                "collegeai.validation.disposable": "true",
++                "collegeai.validation.run": token,
++                "collegeai.validation.purpose": purpose,
++            },
++        },
++        "Mounts": [],
++        "HostConfig": {
++            "Binds": [], "Mounts": [], "VolumesFrom": [],
++            "Tmpfs": {target.DATA_DIRECTORY: "rw,size=536870912"},
++            "AutoRemove": True, "PortBindings": {}, "PublishAllPorts": False,
++            "NetworkMode": "none",
++        },
++    }
++
++
++def mock_commands(container, calls, mode="valid"):
++    def run(argv, **kwargs):
++        calls.append(argv)
++        pinned = ["docker", "--context", "desktop-linux"]
++        if argv == ["docker", "context", "show"]:
++            output = "remote" if mode == "remote_context" else "desktop-linux"
++        elif argv == pinned + ["context", "inspect", "desktop-linux"]:
++            endpoint = "tcp://example.invalid:2375" if mode == "remote_endpoint" else target.LOCAL_ENDPOINT
++            output = json.dumps([{"Endpoints": {"docker": {"Host": endpoint}}}])
++        elif argv == pinned + ["info", "--format", "{{.Name}} {{.OSType}}"]:
++            output = "remote-engine linux" if mode == "wrong_engine" else "docker-desktop linux"
++        elif argv == pinned + ["inspect", CONTAINER_ID]:
++            if mode == "inspect_failed":
++                from subprocess import CompletedProcess
++                return CompletedProcess(argv, 1, "", "inspection unavailable")
++            output = "not json" if mode == "malformed_json" else json.dumps([container])
++        else:
++            raise AssertionError("Unmocked Docker/database operation: " + repr(argv))
++        from subprocess import CompletedProcess
++        return CompletedProcess(argv, 0, output + "\n", "")
++    return run
++
++
++class DisposableTargetTests(unittest.TestCase):
++    def setUp(self):
++        self.environment = patch.dict(os.environ, {"DOCKER_HOST": "", "DOCKER_CONTEXT": ""})
++        self.environment.start()
++        self.addCleanup(self.environment.stop)
++
++    def call_with(self, container, *, cleanup=False, mode="valid", purpose=PURPOSE):
++        calls = []
++        validator = target.validate_cleanup_target if cleanup else target.validate_disposable_target
++        with patch("subprocess.run", side_effect=mock_commands(container, calls, mode)):
++            return validator(CONTAINER_ID, RUN_TOKEN, purpose)
++
++    def test_accepts_exact_isolated_run_owned_container(self):
++        self.assertEqual(self.call_with(inspected_container()), CONTAINER_ID)
++
++    def test_rejects_wrong_run_token(self):
++        value = inspected_container()
++        value["Config"]["Labels"]["collegeai.validation.run"] = "c" * 32
++        with self.assertRaisesRegex(RuntimeError, "Run token"):
++            self.call_with(value)
++
++    def test_rejects_persistent_volume(self):
++        value = inspected_container()
++        value["Mounts"] = [{"Type": "volume", "Destination": target.DATA_DIRECTORY}]
++        with self.assertRaisesRegex(RuntimeError, "persistent mounts"):
++            self.call_with(value)
++
++    def test_rejects_published_port(self):
++        value = inspected_container()
++        value["HostConfig"]["PortBindings"] = {"5432/tcp": [{"HostPort": "54322"}]}
++        with self.assertRaisesRegex(RuntimeError, "published host ports"):
++            self.call_with(value)
++
++    def test_rejects_network_access(self):
++        value = inspected_container()
++        value["HostConfig"]["NetworkMode"] = "bridge"
++        with self.assertRaisesRegex(RuntimeError, "network=none"):
++            self.call_with(value)
++
++    def test_rejects_arbitrary_id_before_inspection(self):
++        with patch("subprocess.run", side_effect=AssertionError("subprocess reached")):
++            with self.assertRaisesRegex(RuntimeError, "64-character"):
++                target.validate_disposable_target("supabase_db_CollegeAIChatbot", RUN_TOKEN, PURPOSE)
++
++    def test_accepts_legacy_and_mirrored_tmpfs_metadata(self):
++        for mounts in [[], [{"Type": "tmpfs", "Destination": target.DATA_DIRECTORY}]]:
++            with self.subTest(mounts=mounts):
++                value = inspected_container()
++                value["Mounts"] = mounts
++                self.assertEqual(self.call_with(value), CONTAINER_ID)
++
++    def test_rejects_invalid_tmpfs_limits(self):
++        cases = ["rw", "rw,size=0", "rw,size=-1", "rw,size=536870913", "rw,size=1g",
++                 "size=512m", "rw,size=bogus", "rw,size=1,size=2", "rw,rw,size=1",
++                 "rw,size=1,unknown", "rw,size=1,", None]
++        for options in cases:
++            with self.subTest(options=options):
++                value = inspected_container()
++                value["HostConfig"]["Tmpfs"][target.DATA_DIRECTORY] = options
++                with self.assertRaises(RuntimeError):
++                    self.call_with(value)
++
++    def test_accepts_bounded_size_units(self):
++        for options in ["rw,size=1", "rw,size=512m", "rw,size=524288k,nosuid,nodev,noexec"]:
++            value = inspected_container()
++            value["HostConfig"]["Tmpfs"][target.DATA_DIRECTORY] = options
++            self.assertEqual(self.call_with(value), CONTAINER_ID)
++
++    def test_rejects_extra_or_alternative_storage(self):
++        cases = {
++            "binds": lambda c: c["HostConfig"].update(Binds=["/disk:/data"]),
++            "raw_mount": lambda c: c["HostConfig"].update(Mounts=[{"Type": "volume"}]),
++            "inherited": lambda c: c["HostConfig"].update(VolumesFrom=["other"]),
++            "extra_tmpfs": lambda c: c["HostConfig"]["Tmpfs"].update({"/extra": "rw,size=1"}),
++            "missing_tmpfs": lambda c: c["HostConfig"].update(Tmpfs={}),
++            "bind_mount": lambda c: c.update(Mounts=[{"Type": "bind", "Destination": target.DATA_DIRECTORY}]),
++            "extra_mount": lambda c: c.update(Mounts=[{"Type": "tmpfs", "Destination": target.DATA_DIRECTORY}, {"Type": "volume", "Destination": "/extra"}]),
++            "wrong_destination": lambda c: c.update(Mounts=[{"Type": "tmpfs", "Destination": "/extra"}]),
++            "wrong_pgdata": lambda c: c["Config"].update(Env=["PGDATA=/other"]),
++            "missing_pgdata": lambda c: c["Config"].update(Env=[]),
++            "duplicate_pgdata": lambda c: c["Config"].update(Env=["PGDATA=/other", "PGDATA=" + target.DATA_DIRECTORY]),
++            "publish_all": lambda c: c["HostConfig"].update(PublishAllPorts=True),
++        }
++        for name, mutate in cases.items():
++            with self.subTest(case=name):
++                value = inspected_container()
++                mutate(value)
++                with self.assertRaises(RuntimeError):
++                    self.call_with(value)
++
++    def test_validation_and_cleanup_reject_foreign_ownership(self):
++        cases = {
++            "persistent_name": lambda c: c.update(Name="/supabase_db_CollegeAIChatbot"),
++            "other_run_name": lambda c: c.update(Name="/codex-faculty-attendance-" + "c" * 12),
++            "different_id": lambda c: c.update(Id="c" * 64),
++            "missing_labels": lambda c: c["Config"].update(Labels={}),
++            "wrong_token": lambda c: c["Config"]["Labels"].update({"collegeai.validation.run": "c" * 32}),
++            "wrong_purpose": lambda c: c["Config"]["Labels"].update({"collegeai.validation.purpose": "academic-setup"}),
++            "wrong_image": lambda c: c["Config"].update(Image="postgres:latest"),
++            "no_autoremove": lambda c: c["HostConfig"].update(AutoRemove=False),
++        }
++        for name, mutate in cases.items():
++            for cleanup in [False, True]:
++                with self.subTest(case=name, cleanup=cleanup):
++                    value = inspected_container()
++                    mutate(value)
++                    with self.assertRaises(RuntimeError):
++                        self.call_with(value, cleanup=cleanup)
++
++    def test_cleanup_accepts_owned_failed_bootstrap_without_sql_or_templates(self):
++        value = inspected_container()
++        value["State"]["Running"] = False
++        value["Mounts"] = [{"Type": "volume", "Destination": target.DATA_DIRECTORY}]
++        calls = []
++        with patch("subprocess.run", side_effect=mock_commands(value, calls)):
++            self.assertEqual(target.validate_cleanup_target(CONTAINER_ID, RUN_TOKEN, PURPOSE), CONTAINER_ID)
++        self.assertIn(target.docker_arguments("inspect", CONTAINER_ID), calls)
++        self.assertFalse(any("{{ index" in str(arg) for call in calls for arg in call))
++        self.assertFalse(any("exec" in call or "stop" in call for call in calls))
++
++    def test_rejects_stopped_container_for_database_operations(self):
++        value = inspected_container()
++        value["State"]["Running"] = False
++        with self.assertRaisesRegex(RuntimeError, "not running"):
++            self.call_with(value)
++
++    def test_remote_or_unavailable_engine_and_inspect_fail_closed(self):
++        for mode in ["remote_context", "remote_endpoint", "wrong_engine", "inspect_failed", "malformed_json"]:
++            with self.subTest(mode=mode):
++                with self.assertRaises((RuntimeError, ValueError)):
++                    self.call_with(inspected_container(), mode=mode)
++
++    def test_rejects_docker_environment_overrides(self):
++        for name in ["DOCKER_HOST", "DOCKER_CONTEXT"]:
++            with self.subTest(variable=name), patch.dict(os.environ, {name: "remote"}), patch("subprocess.run", side_effect=AssertionError("subprocess reached")):
++                with self.assertRaises(RuntimeError):
++                    target.validate_local_engine()
++
++
++class HelperSafetyTests(unittest.TestCase):
++    HELPERS = {
++        "academic_setup_concurrency": "academic-setup",
++        "faculty_assignment_concurrency": "faculty-assignment",
++        "faculty_attendance_concurrency": "faculty-attendance",
++        "faculty_tests_concurrency": "faculty-tests",
++    }
++
++    def setUp(self):
++        env = patch.dict(os.environ, {"DOCKER_HOST": "", "DOCKER_CONTEXT": ""})
++        env.start()
++        self.addCleanup(env.stop)
++        self.modules = {name: importlib.import_module(name) for name in self.HELPERS}
++        for module in self.modules.values():
++            if hasattr(module, "CONTAINER"):
++                module.CONTAINER = None
++
++    def test_imports_have_no_docker_or_database_side_effects(self):
++        with patch("subprocess.run", side_effect=AssertionError("subprocess reached")), patch("subprocess.Popen", side_effect=AssertionError("Popen reached")):
++            for module in self.modules.values():
++                importlib.reload(module)
++
++    def test_all_helpers_reject_persistent_name_and_full_id_before_sql(self):
++        for name, purpose in self.HELPERS.items():
++            for supplied_id in ["supabase_db_CollegeAIChatbot", CONTAINER_ID]:
++                with self.subTest(helper=name, target=supplied_id):
++                    container = inspected_container(purpose=purpose)
++                    container["Name"] = "/supabase_db_CollegeAIChatbot"
++                    container["Mounts"] = [{"Type": "volume", "Destination": target.DATA_DIRECTORY}]
++                    with patch("subprocess.run", side_effect=mock_commands(container, [])), patch("subprocess.Popen", side_effect=AssertionError("Popen reached")):
++                        with self.assertRaises(RuntimeError):
++                            self.modules[name].main([supplied_id, RUN_TOKEN, purpose])
++
++    def test_sql_requires_configuration_for_every_helper(self):
++        with patch("subprocess.run", side_effect=AssertionError("subprocess reached")):
++            for name, module in self.modules.items():
++                with self.subTest(helper=name), self.assertRaisesRegex(RuntimeError, "configured"):
++                    module.sql("never executed")
++
++    def test_failed_reconfiguration_clears_imported_target(self):
++        attendance = self.modules["faculty_attendance_concurrency"]
++        tests = self.modules["faculty_tests_concurrency"]
++        with patch("subprocess.run", side_effect=mock_commands(inspected_container(), [])):
++            attendance.configure_target(CONTAINER_ID, RUN_TOKEN, PURPOSE)
++        with self.assertRaises(RuntimeError):
++            attendance.configure_target("supabase_db_CollegeAIChatbot", RUN_TOKEN, PURPOSE)
++        self.assertIsNone(attendance.CONTAINER)
++        with self.assertRaisesRegex(RuntimeError, "configured"):
++            tests.sql("never executed")
++
++    def test_failed_cli_parse_clears_previous_target(self):
++        for name, module in self.modules.items():
++            with self.subTest(helper=name):
++                module.CONTAINER = CONTAINER_ID
++                module_attendance = self.modules["faculty_attendance_concurrency"]
++                module_attendance.CONTAINER = CONTAINER_ID
++                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
++                    module.main([])
++                if name == "faculty_tests_concurrency":
++                    self.assertIsNone(module_attendance.CONTAINER)
++                else:
++                    self.assertIsNone(module.CONTAINER)
++
++    def test_imported_assessment_sql_uses_exact_attendance_id_and_pinned_context(self):
++        attendance = self.modules["faculty_attendance_concurrency"]
++        tests = self.modules["faculty_tests_concurrency"]
++        with patch("subprocess.run", side_effect=mock_commands(inspected_container(), [])):
++            attendance.configure_target(CONTAINER_ID, RUN_TOKEN, PURPOSE)
++        with patch("subprocess.run") as run:
++            tests.sql("not executed")
++            argv = run.call_args.args[0]
++            self.assertEqual(argv[:6], ["docker", "--context", "desktop-linux", "exec", "-i", CONTAINER_ID])
++
++    def test_fixture_paths_resolve_from_helper_location_outside_checkout(self):
++        old_directory = Path.cwd()
++        with tempfile.TemporaryDirectory() as unrelated:
++            try:
++                os.chdir(unrelated)
++                for name in ["faculty_attendance_concurrency", "faculty_tests_concurrency"]:
++                    module = self.modules[name]
++                    purpose = self.HELPERS[name]
++                    paths = []
++                    read_text = Path.read_text
++                    def record_read(path, *args, **kwargs):
++                        paths.append(path)
++                        return read_text(path, *args, **kwargs)
++                    with self.subTest(helper=name), patch("subprocess.run", side_effect=mock_commands(inspected_container(purpose=purpose), [])), patch.object(Path, "read_text", record_read), patch.object(module, "sql", side_effect=RuntimeError("fixture read completed")):
++                        with self.assertRaisesRegex(RuntimeError, "fixture read completed"):
++                            module.main([CONTAINER_ID, RUN_TOKEN, purpose])
++                    expected = Path(module.__file__).resolve().with_name(name.replace("_concurrency", "_database") + ".sql")
++                    self.assertEqual(paths, [expected])
++            finally:
++                os.chdir(old_directory)
++
++    def test_reset_runner_rejects_persistent_target_without_probe_or_sql(self):
++        reset = importlib.import_module("verify_supabase_data_reset")
++        calls = []
++        def reject_persistent(argv, **kwargs):
++            if argv[3:4] == ["run"]:
++                from subprocess import CompletedProcess
++                return CompletedProcess(argv, 0, "supabase_db_CollegeAIChatbot", "")
++            return mock_commands(inspected_container(), calls)(argv, **kwargs)
++        with patch("subprocess.run", side_effect=reject_persistent), self.assertRaisesRegex(RuntimeError, "valid ID"):
++            reset.main()
++        self.assertFalse(any("exec" in call or "stop" in call for call in calls))
++
++    def reset_scenario(self, scenario):
++        reset = importlib.import_module("verify_supabase_data_reset")
++        container = inspected_container(purpose="data-reset")
++        calls = []
++        def run(argv, **kwargs):
++            from subprocess import CompletedProcess
++            operation = argv[3] if argv[:3] == ["docker", "--context", "desktop-linux"] else None
++            if operation == "run":
++                calls.append(argv)
++                token = next(arg.split("=", 1)[1] for arg in argv if arg.startswith("collegeai.validation.run="))
++                container["Name"] = "/" + target.expected_name(token, "data-reset")
++                container["Config"]["Labels"]["collegeai.validation.run"] = token
++                if scenario == "foreign":
++                    container["Name"] = "/supabase_db_CollegeAIChatbot"
++                if scenario == "volume":
++                    container["Mounts"] = [{"Type": "volume", "Destination": target.DATA_DIRECTORY}]
++                return CompletedProcess(argv, 1 if scenario == "creation_failed" else 0, CONTAINER_ID, "creation failed")
++            if operation == "exec":
++                calls.append(argv)
++                if scenario != "bootstrap_failed" or argv[5] != "cat":
++                    raise AssertionError("Database operation reached: " + repr(argv))
++                raise RuntimeError("mock bootstrap failure")
++            if operation == "stop":
++                calls.append(argv)
++                return CompletedProcess(argv, 0, CONTAINER_ID, "")
++            return mock_commands(container, calls)(argv, **kwargs)
++        with contextlib.redirect_stdout(io.StringIO()), patch("subprocess.run", side_effect=run), self.assertRaises(RuntimeError):
++            reset.main()
++        return calls
++
++    def test_reset_full_id_persistent_storage_rejected_and_owned_failure_cleaned(self):
++        calls = self.reset_scenario("volume")
++        self.assertFalse(any("exec" in call for call in calls))
++        self.assertEqual([call for call in calls if "stop" in call], [target.docker_arguments("stop", "--timeout", "10", CONTAINER_ID)])
++
++    def test_reset_foreign_full_id_never_probed_or_stopped(self):
++        calls = self.reset_scenario("foreign")
++        self.assertFalse(any("exec" in call or "stop" in call for call in calls))
++
++    def test_reset_creation_failure_never_cleans_borrowed_id(self):
++        calls = self.reset_scenario("creation_failed")
++        self.assertFalse(any("exec" in call or "inspect" in call[3:4] or "stop" in call for call in calls))
++
++    def test_reset_bootstrap_failure_cleans_only_validated_created_id(self):
++        calls = self.reset_scenario("bootstrap_failed")
++        probe = next(i for i, call in enumerate(calls) if "exec" in call)
++        inspect = next(i for i, call in enumerate(calls) if call[3:4] == ["inspect"])
++        self.assertLess(inspect, probe)
++        self.assertEqual([call for call in calls if "stop" in call], [target.docker_arguments("stop", "--timeout", "10", CONTAINER_ID)])
++
++
++if __name__ == "__main__":
++    unittest.main(testRunner=unittest.TextTestRunner(stream=sys.stdout, verbosity=2))
+--- a/scripts/validation/test_runner_safety.py
++++ b/scripts/validation/test_runner_safety.py
+@@ -0,0 +1,133 @@
++"""Execute PowerShell runners against command doubles. No real Docker/SQL calls."""
++import json
++import os
++from pathlib import Path
++import subprocess
++import sys
++import tempfile
++import unittest
++from concurrent.futures import ThreadPoolExecutor
++from unittest.mock import patch
++
++import disposable_container as guard
++from test_disposable_container import CONTAINER_ID, inspected_container, mock_commands
++
++SCRIPTS = Path(__file__).resolve().parent
++RUNNERS = ["academic_setup", "faculty_assignment", "faculty_attendance", "faculty_tests"]
++ORIGINAL_CASES = ["persistent_name", "persistent_id", "validator_failure", "validator_empty", "validator_missing", "remote_host", "remote_context", "wrong_engine"]
++EXTRA_CASES = ["valid", "owned_storage_failure", "migration_copy_failure", "cleanup_wrong_token", "cleanup_wrong_name", "cleanup_malformed_json", "cleanup_inspect_failed", "cleanup_empty", "cleanup_mismatch", "stop_failed", "creation_failed", "validator_mismatch", "remote_endpoint", "remote_env_context", "tmpfs_unbounded"]
++
++
++def guard_proxy():
++    argv = sys.argv[2:]
++    assert Path(argv[0]).name == "disposable_container.py"
++    action = argv[1]
++    mode = os.environ["REVIEW_MODE"]
++    metadata_path = Path(os.environ["REVIEW_METADATA"])
++    metadata = json.loads(metadata_path.read_text(encoding="utf-8-sig")) if metadata_path.exists() else {"token": "b" * 32, "purpose": "faculty-attendance"}
++    container = inspected_container(metadata["purpose"], metadata["token"])
++    if mode == "persistent_id":
++        container["Name"] = "/supabase_db_CollegeAIChatbot"
++        container["Mounts"] = [{"Type": "volume", "Destination": guard.DATA_DIRECTORY}]
++    if mode in {"validator_failure", "validator_empty", "validator_missing", "validator_mismatch"} and action == "cleanup":
++        container["Config"]["Labels"]["collegeai.validation.run"] = "c" * 32
++    if mode == "owned_storage_failure":
++        container["Mounts"] = [{"Type": "volume", "Destination": guard.DATA_DIRECTORY}]
++    if mode == "tmpfs_unbounded":
++        container["HostConfig"]["Tmpfs"][guard.DATA_DIRECTORY] = "rw"
++    if mode == "cleanup_wrong_token" and action == "cleanup":
++        container["Config"]["Labels"]["collegeai.validation.run"] = "c" * 32
++    if mode == "cleanup_wrong_name" and action == "cleanup":
++        container["Name"] = "/supabase_db_CollegeAIChatbot"
++    fake_mode = mode
++    if action == "cleanup" and mode == "cleanup_malformed_json":
++        fake_mode = "malformed_json"
++    if action == "cleanup" and mode == "cleanup_inspect_failed":
++        fake_mode = "inspect_failed"
++    fake = mock_commands(container, [], fake_mode)
++    def run(argv, **kwargs):
++        with Path(os.environ["REVIEW_LOG"]).open("a", encoding="utf-8") as log:
++            log.write(json.dumps(["guard-subprocess", *argv]) + "\n")
++        return fake(argv, **kwargs)
++    with patch("subprocess.run", side_effect=run), patch("subprocess.Popen", side_effect=AssertionError("Guard Popen reached")):
++        guard.main(argv[1:])
++
++
++def runner_case(stem, mode, temporary):
++    executable = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
++    log = temporary / f"{stem}-{mode}.jsonl"
++    metadata = temporary / f"{stem}-{mode}.metadata.json"
++    env = dict(os.environ, REVIEW_RUNNER=str(SCRIPTS / f"verify_{stem}_database.ps1"), REVIEW_LOG=str(log), REVIEW_MODE=mode, REVIEW_PYTHON=sys.executable, REVIEW_PROXY=str(Path(__file__).resolve()), REVIEW_METADATA=str(metadata))
++    env.pop("DOCKER_HOST", None)
++    env.pop("DOCKER_CONTEXT", None)
++    result = subprocess.run([str(executable), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCRIPTS / "test_runner_worker.ps1")], capture_output=True, text=True, env=env, cwd=temporary, timeout=60)
++    calls = [json.loads(line.lstrip("\ufeff")) for line in log.read_text(encoding="utf-8-sig").splitlines()] if log.exists() else []
++    docker_calls = [call for call in calls if call[0] == "docker"]
++    stops = [call for call in docker_calls if call[3] == "stop"]
++    copies = [call for call in docker_calls if call[3] == "cp"]
++    probes = [call for call in docker_calls if call[3] == "exec"]
++    expected_success = mode == "valid"
++    expected_stop = mode in {"valid", "owned_storage_failure", "tmpfs_unbounded", "migration_copy_failure", "stop_failed"}
++    validation_failure = mode in set(ORIGINAL_CASES + ["owned_storage_failure", "tmpfs_unbounded", "creation_failed", "validator_mismatch", "remote_endpoint", "remote_env_context"])
++    issues = []
++    if (result.returncode == 0) != expected_success:
++        issues.append(f"wrong exit status: {result.returncode}")
++    if len(stops) != int(expected_stop):
++        issues.append(f"wrong cleanup count: {len(stops)}")
++    if validation_failure and (copies or probes):
++        issues.append("copy/readiness/SQL reached before target validation")
++    for call in docker_calls:
++        if call[1:3] != ["--context", "desktop-linux"]:
++            issues.append("Docker command is not pinned")
++        if call[3] == "exec" and call[4] != CONTAINER_ID:
++            issues.append("exec used another target")
++        if call[3] == "cp" and not call[-1].startswith(CONTAINER_ID + ":"):
++            issues.append("copy used another target")
++        if call[3] == "stop" and call[4:] != ["--timeout", "10", CONTAINER_ID]:
++            issues.append("cleanup used another target/command")
++    for call in calls:
++        if call[0] == "python" and Path(call[1]).name != "disposable_container.py":
++            if call[2] != CONTAINER_ID or len(call) != 5:
++                issues.append("imported concurrency helper did not receive full ID/token/purpose")
++    if mode == "valid":
++        run = next(call for call in docker_calls if call[3] == "run")
++        if "--rm" not in run or "--network" not in run or run[run.index("--network") + 1] != "none":
++            issues.append("creation isolation is missing")
++        if run[run.index("--tmpfs") + 1] != guard.DATA_DIRECTORY + ":rw,size=536870912":
++            issues.append("native tmpfs creation option changed")
++        if "PGDATA=" + guard.DATA_DIRECTORY not in run:
++            issues.append("creation data directory changed")
++        if not copies or not probes:
++            issues.append("valid scenario did not reach command doubles")
++        # The actual guard runs plain JSON inspect on the exact ID before stop.
++        inspected = [call for call in calls if call[:5] == ["guard-subprocess", "docker", "--context", "desktop-linux", "inspect"]]
++        if len(inspected) != 2 or any(call[5:] != [CONTAINER_ID] for call in inspected):
++            issues.append("target/cleanup inspection did not use plain JSON and exact ID")
++    return {"runner": stem, "case": mode, "passed": not issues, "issues": issues, "exit": result.returncode, "calls": calls, "stdout": result.stdout, "stderr": result.stderr}
++
++
++@unittest.skipUnless(os.name == "nt", "Windows PowerShell is required for mocked runner execution")
++class PowerShellRunnerTests(unittest.TestCase):
++    def test_original_32_and_runtime_regressions(self):
++        with tempfile.TemporaryDirectory(prefix="collegeai-harness-mocks-") as directory:
++            tasks = [(stem, mode, Path(directory)) for stem in RUNNERS for mode in ORIGINAL_CASES + EXTRA_CASES]
++            with ThreadPoolExecutor(max_workers=4) as pool:
++                results = list(pool.map(lambda args: runner_case(*args), tasks))
++        evidence = os.environ.get("COLLEGEAI_HARNESS_EVIDENCE")
++        if evidence:
++            path = Path(evidence)
++            path.mkdir(parents=True, exist_ok=True)
++            (path / "runner_results.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
++        for result in results:
++            with self.subTest(runner=result["runner"], case=result["case"]):
++                self.assertTrue(result["passed"], json.dumps({"issues": result["issues"], "exit": result["exit"], "stderr": result["stderr"][-2500:]}, indent=2))
++        for stem in RUNNERS:
++            values = [value for value in results if value["runner"] == stem]
++            print(f"{stem}: {sum(value['passed'] for value in values)}/{len(values)} mocked scenarios passed", flush=True)
++
++
++if __name__ == "__main__":
++    if sys.argv[1:2] == ["--guard-proxy"]:
++        guard_proxy()
++    else:
++        unittest.main(testRunner=unittest.TextTestRunner(stream=sys.stdout, verbosity=2))
+--- a/scripts/validation/test_runner_worker.ps1
++++ b/scripts/validation/test_runner_worker.ps1
+@@ -0,0 +1,60 @@
++# Test worker: shadow every external Docker/Python entry point before invoking a runner.
++# Only the guard proxy uses real Python, with all its subprocesses mocked.
++$ErrorActionPreference = 'Stop'
++$mode = $env:REVIEW_MODE
++if ($mode -eq 'remote_host') { $env:DOCKER_HOST = 'tcp://example.invalid:2375' }
++if ($mode -eq 'remote_env_context') { $env:DOCKER_CONTEXT = 'remote' }
++function Record-Call([object[]]$values) {
++    $sanitized = @($values | ForEach-Object { if (([string]$_) -like 'POSTGRES_PASSWORD=*') { 'POSTGRES_PASSWORD=<redacted>' } else { [string]$_ } })
++    ConvertTo-Json -InputObject $sanitized -Compress | Add-Content -LiteralPath $env:REVIEW_LOG -Encoding UTF8
++}
++function docker {
++    Record-Call (@('docker') + @($args))
++    if ($args[0] -ne '--context' -or $args[1] -ne 'desktop-linux') { throw 'MOCK: unpinned Docker command' }
++    $operation = $args[2]
++    $global:LASTEXITCODE = 0
++    switch ($operation) {
++        'run' {
++            $token = (@($args | Where-Object { ([string]$_) -like 'collegeai.validation.run=*' })[0] -split '=', 2)[1]
++            $purpose = (@($args | Where-Object { ([string]$_) -like 'collegeai.validation.purpose=*' })[0] -split '=', 2)[1]
++            @{ token=$token; purpose=$purpose } | ConvertTo-Json | Set-Content -LiteralPath $env:REVIEW_METADATA -Encoding UTF8
++            if ($mode -eq 'creation_failed') { $global:LASTEXITCODE = 1; 'a' * 64; return }
++            if ($mode -eq 'persistent_name') { 'supabase_db_CollegeAIChatbot' } else { 'a' * 64 }
++            return
++        }
++        'exec' {
++            if ($args[3] -ne ('a' * 64)) { throw 'MOCK: unexpected target' }
++            if ($args[4] -eq 'pg_isready') { return }
++            if ($args[4] -eq 'cat') { '.postgres'; return }
++            if ($args[4] -ne 'psql') { throw 'MOCK: unexpected exec operation' }
++            # Record only. No SQL binary is invoked and no migration is read/executed.
++            return
++        }
++        'cp' { if ($mode -eq 'migration_copy_failure') { $global:LASTEXITCODE = 1 }; return }
++        'stop' { if ($mode -eq 'stop_failed') { $global:LASTEXITCODE = 1 }; return }
++        default { throw 'MOCK: unexpected Docker operation' }
++    }
++}
++function python {
++    Record-Call (@('python') + @($args))
++    if ((Split-Path -Leaf $args[0]) -ne 'disposable_container.py') {
++        if ($args[1] -ne ('a' * 64)) { throw 'MOCK: helper target changed' }
++        $global:LASTEXITCODE = 0
++        return
++    }
++    if ($args[1] -eq 'validate') {
++        switch ($mode) {
++            'validator_failure' { $global:LASTEXITCODE = 1; return }
++            'validator_empty' { $global:LASTEXITCODE = 0; return }
++            'validator_missing' { & '__collegeai_missing_python_command__'; return }
++            'validator_mismatch' { $global:LASTEXITCODE = 0; 'c' * 64; return }
++        }
++    }
++    if ($args[1] -eq 'cleanup') {
++        if ($mode -eq 'cleanup_empty') { $global:LASTEXITCODE = 0; return }
++        if ($mode -eq 'cleanup_mismatch') { $global:LASTEXITCODE = 0; 'c' * 64; return }
++    }
++    & $env:REVIEW_PYTHON $env:REVIEW_PROXY '--guard-proxy' @args
++}
++& $env:REVIEW_RUNNER -PythonExecutable python
++exit $LASTEXITCODE

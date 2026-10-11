@@ -1,18 +1,28 @@
-"""Exercise scoped teaching-assignment races against the local Supabase database."""
+"""Exercise scoped teaching-assignment races against an isolated disposable PostgreSQL container."""
 
+import argparse
 import json
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-CONTAINER = "supabase_db_CollegeAIChatbot"
-IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.166"
+from disposable_container import docker_arguments, validate_disposable_target
+
+CONTAINER = None
+
+
+def configure_target(container_id, run_token, purpose):
+    global CONTAINER
+    CONTAINER = None
+    CONTAINER = validate_disposable_target(container_id, run_token, purpose)
 
 
 def command(args, **kwargs):
-    return subprocess.run(args, capture_output=True, text=True, timeout=60, **kwargs)
+    return subprocess.run(docker_arguments(*args[1:]), capture_output=True, text=True, timeout=60, **kwargs)
 
 
 def sql(query):
+    if not CONTAINER:
+        raise RuntimeError('Disposable target must be configured before SQL calls')
     return command(
         [
             "docker",
@@ -86,14 +96,15 @@ def wait_for_marker(process, marker):
             raise RuntimeError(f"Lock-holder exited before {marker}: {process.stderr.read()}")
 
 
-def main():
-    context = command(["docker", "context", "show"])
-    if context.returncode or context.stdout.strip() != "desktop-linux":
-        raise RuntimeError("Only Docker Desktop's local Supabase database is allowed")
-    inspected = json.loads(command(["docker", "inspect", CONTAINER], check=True).stdout)[0]
-    bindings = inspected["NetworkSettings"]["Ports"].get("5432/tcp") or []
-    if inspected["Config"]["Image"] != IMAGE or not any(binding.get("HostPort") == "54322" for binding in bindings):
-        raise RuntimeError("Expected the project's local Supabase PostgreSQL container")
+def main(argv=None):
+    global CONTAINER
+    CONTAINER = None
+    parser = argparse.ArgumentParser(description='Run assignment concurrency tests in an isolated disposable container')
+    parser.add_argument('container_id')
+    parser.add_argument('run_token')
+    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
+    args = parser.parse_args(argv)
+    configure_target(args.container_id, args.run_token, args.purpose)
 
     fixture = r"""
 BEGIN;
@@ -250,10 +261,10 @@ COMMIT;
     )
 
     revoke = subprocess.Popen(
-        [
-            "docker", "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
+        docker_arguments(
+            "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
             "-v", "ON_ERROR_STOP=1", "-At",
-        ],
+        ),
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
     )
     revoke.stdin.write(
@@ -321,10 +332,10 @@ COMMIT;
         raise RuntimeError("Update-versus-revoke race has missing or duplicate revoke audit")
 
     revoke_responsibility = subprocess.Popen(
-        [
-            "docker", "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
+        docker_arguments(
+            "exec", "-i", CONTAINER, "psql", "-U", "postgres", "-d", "postgres",
             "-v", "ON_ERROR_STOP=1", "-At",
-        ],
+        ),
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
     )
     revoke_responsibility.stdin.write(

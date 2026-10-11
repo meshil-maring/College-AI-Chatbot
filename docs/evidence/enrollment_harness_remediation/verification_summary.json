@@ -1,0 +1,20 @@
+{
+  "changed_active_files": 13,
+  "modified_active_files": 8,
+  "added_active_files": 5,
+  "python_unit_tests_passed": 27,
+  "powershell_mock_scenarios_passed": 92,
+  "original_mock_scenarios_passed": 32,
+  "powershell_parse_files_passed": 8,
+  "persistent_target_audit_findings": [],
+  "archive_sha256": "fae25fab07a20f6156de9cec20f912a7621df3521761342fceb5652e26fc3fcf",
+  "archive_source_unchanged": true,
+  "git_diff_check_passed": true,
+  "live_validation_performed": false,
+  "database_operations_performed": false,
+  "operational_tools_excluded_from_harness_audit": [
+    "invoke_local_supabase.ps1",
+    "manage_local_super_admin.ps1",
+    "provision_local_demo_users.ps1"
+  ]
+}

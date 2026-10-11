@@ -1,0 +1,380 @@
+{
+  "review_date": "2026-10-11",
+  "scope": "Static text/source review; not PostgreSQL or PL/pgSQL validation",
+  "sql_executed": false,
+  "database_connected": false,
+  "postgresql_parser_used": false,
+  "runtime_tests_run": false,
+  "docker_invoked": false,
+  "checks_passed": [
+    "lexical quote/comment/dollar/delimiter balance",
+    "review stop and final ROLLBACK",
+    "no COMMIT, NOTIFY, obsolete handoff signature or backdated closure argument",
+    "four complete DDL constraint inventories agree with postflight",
+    "eight explicitly named placement CHECKs",
+    "ten routine declarations/signatures/call arities",
+    "bounded source contract probes",
+    "existing source SHA-256 preservation",
+    "fixture JSON loads",
+    "report link targets, when report exists",
+    "SQL trailing whitespace"
+  ],
+  "constraint_inventory": {
+    "student_institution_identifiers": {
+      "checks": 6,
+      "fkeys": 3,
+      "pkeys": 1,
+      "ukeys": 1,
+      "xkeys": 0,
+      "not_null_columns": 7,
+      "check_definitions": [
+        "kind text NOT NULL CHECK ( kind IN ( 'student_number' , 'register_number' , 'university_roll_number' ) )",
+        "display_value text NOT NULL CHECK ( pg_catalog . length ( display_value ) < = 128 )",
+        "evidence_source text NOT NULL CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_source ) ) BETWEEN 1 AND 128 )",
+        "evidence_reference text NOT NULL CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_reference ) ) BETWEEN 1 AND 256 )",
+        "CHECK ( normalized_value < > '' )",
+        "CHECK ( ( verified_at IS NULL ) = ( verified_by IS NULL ) )"
+      ]
+    },
+    "student_enrollments": {
+      "checks": 18,
+      "fkeys": 7,
+      "pkeys": 1,
+      "ukeys": 1,
+      "xkeys": 0,
+      "not_null_columns": 15,
+      "check_definitions": [
+        "admission_kind text NOT NULL CHECK ( admission_kind IN ( 'initial' , 'readmission' , 'transfer_in' , 'program_change' , 'legacy_snapshot' ) )",
+        "approval_status text NOT NULL DEFAULT 'pending' CHECK ( approval_status IN ( 'pending' , 'approved' , 'rejected' ) )",
+        "lifecycle_status text NOT NULL DEFAULT 'pending_admission' CHECK ( lifecycle_status IN ( 'pending_admission' , 'active' , 'on_leave' , 'graduated' , 'withdrawn' , 'transferred_out' , 'cancelled' , 'legacy_unresolved' ) )",
+        "mapping_status text NOT NULL DEFAULT 'verified' CHECK ( mapping_status IN ( 'verified' , 'unresolved' , 'ambiguous' ) )",
+        "version bigint NOT NULL DEFAULT 1 CHECK ( version > 0 )",
+        "evidence_source text NOT NULL CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_source ) ) BETWEEN 1 AND 128 )",
+        "evidence_reference text NOT NULL CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_reference ) ) BETWEEN 1 AND 256 )",
+        "CHECK ( predecessor_enrollment_id IS DISTINCT FROM enrollment_id )",
+        "CHECK ( ( admission_kind IN ( 'readmission' , 'transfer_in' , 'program_change' ) ) = ( predecessor_enrollment_id IS NOT NULL ) )",
+        "CHECK ( approval_status < > 'rejected' OR lifecycle_status = 'cancelled' )",
+        "CHECK ( ( lifecycle_status = 'legacy_unresolved' ) = ( mapping_status < > 'verified' ) )",
+        "CHECK ( mapping_status = 'verified' OR admission_kind = 'legacy_snapshot' )",
+        "CHECK ( lifecycle_status NOT IN ( 'active' , 'on_leave' , 'graduated' , 'withdrawn' , 'transferred_out' ) OR ( approval_status = 'approved' AND program_id IS NOT NULL AND admission_effective_on IS NOT NULL ) )",
+        "CHECK ( lifecycle_status NOT IN ( 'graduated' , 'withdrawn' , 'transferred_out' , 'cancelled' ) OR closed_effective_on IS NOT NULL )",
+        "CHECK ( lifecycle_status IN ( 'graduated' , 'withdrawn' , 'transferred_out' , 'cancelled' ) OR closed_effective_on IS NULL )",
+        "CHECK ( closed_effective_on IS NULL OR admission_effective_on IS NULL OR closed_effective_on > = admission_effective_on )",
+        "CHECK ( expected_graduation_date IS NULL OR admission_effective_on IS NULL OR expected_graduation_date > = admission_effective_on )",
+        "CHECK ( ( admission_effective_on IS NULL OR pg_catalog . isfinite ( admission_effective_on ) ) AND ( closed_effective_on IS NULL OR pg_catalog . isfinite ( closed_effective_on ) ) AND ( expected_graduation_date IS NULL OR pg_catalog . isfinite ( expected_graduation_date ) ) )"
+      ]
+    },
+    "student_academic_placements": {
+      "checks": 8,
+      "fkeys": 3,
+      "pkeys": 1,
+      "ukeys": 1,
+      "xkeys": 1,
+      "not_null_columns": 12,
+      "check_definitions": [
+        "curriculum_semester_number integer NOT NULL CONSTRAINT enrollment_placement_ordinal CHECK ( curriculum_semester_number > 0 )",
+        "attempt_number integer NOT NULL CONSTRAINT enrollment_placement_attempt CHECK ( attempt_number > 0 )",
+        "class_section_code text CONSTRAINT enrollment_placement_section CHECK ( class_section_code IS NULL OR pg_catalog . length ( pg_catalog . btrim ( class_section_code ) ) BETWEEN 1 AND 128 )",
+        "evidence_source text NOT NULL CONSTRAINT enrollment_placement_source CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_source ) ) BETWEEN 1 AND 128 )",
+        "evidence_reference text NOT NULL CONSTRAINT enrollment_placement_reference CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_reference ) ) BETWEEN 1 AND 256 )",
+        "version bigint NOT NULL DEFAULT 1 CONSTRAINT enrollment_placement_version CHECK ( version > 0 )",
+        "CONSTRAINT enrollment_placement_positive_period CHECK ( ends_on > starts_on )",
+        "CONSTRAINT enrollment_placement_finite_period CHECK ( pg_catalog . isfinite ( starts_on ) AND pg_catalog . isfinite ( ends_on ) )"
+      ]
+    },
+    "student_enrollment_events": {
+      "checks": 15,
+      "fkeys": 4,
+      "pkeys": 1,
+      "ukeys": 3,
+      "xkeys": 0,
+      "not_null_columns": 16,
+      "check_definitions": [
+        "event_sequence bigint NOT NULL CHECK ( event_sequence > 0 )",
+        "event_type text NOT NULL CHECK ( event_type IN ( 'created' , 'approved' , 'rejected' , 'cancelled' , 'application_completed' , 'identifier_attached' , 'activated' , 'placement_changed' , 'leave' , 'resumed' , 'graduated' , 'withdrawn' , 'handoff_authorized' , 'handoff_out' , 'handoff_in' , 'correction' , 'legacy_snapshot' ) )",
+        "evidence_source text NOT NULL CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_source ) ) BETWEEN 1 AND 128 )",
+        "evidence_reference text NOT NULL CHECK ( pg_catalog . length ( pg_catalog . btrim ( evidence_reference ) ) BETWEEN 1 AND 256 )",
+        "reason text NOT NULL CHECK ( pg_catalog . length ( pg_catalog . btrim ( reason ) ) BETWEEN 1 AND 2000 )",
+        "request_payload jsonb NOT NULL CHECK ( jsonb_typeof ( request_payload ) = 'object' AND pg_catalog . octet_length ( request_payload : : text ) < = 16384 )",
+        "before_snapshot jsonb NOT NULL CHECK ( jsonb_typeof ( before_snapshot ) = 'object' AND pg_catalog . octet_length ( before_snapshot : : text ) < = 32768 )",
+        "after_snapshot jsonb NOT NULL CHECK ( jsonb_typeof ( after_snapshot ) = 'object' AND pg_catalog . octet_length ( after_snapshot : : text ) < = 32768 )",
+        "result_payload jsonb NOT NULL CHECK ( jsonb_typeof ( result_payload ) = 'object' AND pg_catalog . octet_length ( result_payload : : text ) < = 32768 )",
+        "details jsonb NOT NULL DEFAULT '{}' CHECK ( jsonb_typeof ( details ) = 'object' AND pg_catalog . octet_length ( details : : text ) < = 16384 )",
+        "CHECK ( ( event_type = 'correction' ) = ( corrects_event_id IS NOT NULL ) )",
+        "CHECK ( corrects_event_id IS DISTINCT FROM event_id )",
+        "CHECK ( actor_user_id IS NOT NULL OR event_type = 'legacy_snapshot' )",
+        "CHECK ( effective_on IS NULL OR pg_catalog . isfinite ( effective_on ) )",
+        "CHECK ( effective_on IS NOT NULL OR event_type IN ( 'created' , 'application_completed' , 'identifier_attached' , 'correction' , 'legacy_snapshot' ) )"
+      ]
+    }
+  },
+  "postflight_inventory": {
+    "student_institution_identifiers": {
+      "checks": 6,
+      "fkeys": 3,
+      "pkeys": 1,
+      "ukeys": 1,
+      "xkeys": 0
+    },
+    "student_enrollments": {
+      "checks": 18,
+      "fkeys": 7,
+      "pkeys": 1,
+      "ukeys": 1,
+      "xkeys": 0
+    },
+    "student_academic_placements": {
+      "checks": 8,
+      "fkeys": 3,
+      "pkeys": 1,
+      "ukeys": 1,
+      "xkeys": 1
+    },
+    "student_enrollment_events": {
+      "checks": 15,
+      "fkeys": 4,
+      "pkeys": 1,
+      "ukeys": 3,
+      "xkeys": 0
+    }
+  },
+  "routine_parameter_types": {
+    "enrollment_review_curriculum_compatible": [
+      "uuid",
+      "uuid",
+      "uuid",
+      "integer"
+    ],
+    "enrollment_review_child_guard": [],
+    "enrollment_review_immutable": [],
+    "enrollment_review_event_guard": [],
+    "enrollment_review_event_required": [],
+    "enrollment_review_assert_actor": [
+      "uuid",
+      "uuid",
+      "text"
+    ],
+    "enrollment_review_assert_activation": [
+      "uuid",
+      "date"
+    ],
+    "enrollment_review_append": [
+      "uuid",
+      "uuid",
+      "uuid",
+      "text",
+      "date",
+      "jsonb",
+      "jsonb",
+      "text",
+      "uuid",
+      "uuid",
+      "jsonb",
+      "uuid"
+    ],
+    "enrollment_review_command": [
+      "uuid",
+      "uuid",
+      "uuid",
+      "bigint",
+      "uuid",
+      "text",
+      "jsonb"
+    ],
+    "enrollment_review_handoff": [
+      "uuid",
+      "uuid",
+      "uuid",
+      "uuid",
+      "bigint",
+      "bigint",
+      "uuid",
+      "jsonb"
+    ]
+  },
+  "routine_calls_and_declarations": [
+    {
+      "routine": "enrollment_review_curriculum_compatible",
+      "arguments": 4
+    },
+    {
+      "routine": "enrollment_review_child_guard",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_child_guard",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_child_guard",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_child_guard",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_immutable",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_immutable",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_event_guard",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_event_guard",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_event_required",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_event_required",
+      "arguments": 0
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_activation",
+      "arguments": 2
+    },
+    {
+      "routine": "enrollment_review_append",
+      "arguments": 12
+    },
+    {
+      "routine": "enrollment_review_command",
+      "arguments": 7
+    },
+    {
+      "routine": "enrollment_review_handoff",
+      "arguments": 8
+    },
+    {
+      "routine": "enrollment_review_command",
+      "arguments": 7
+    },
+    {
+      "routine": "enrollment_review_handoff",
+      "arguments": 8
+    },
+    {
+      "routine": "enrollment_review_curriculum_compatible",
+      "arguments": 4
+    },
+    {
+      "routine": "enrollment_review_curriculum_compatible",
+      "arguments": 4
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_activation",
+      "arguments": 2
+    },
+    {
+      "routine": "enrollment_review_assert_activation",
+      "arguments": 2
+    },
+    {
+      "routine": "enrollment_review_append",
+      "arguments": 12
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_actor",
+      "arguments": 3
+    },
+    {
+      "routine": "enrollment_review_assert_activation",
+      "arguments": 2
+    },
+    {
+      "routine": "enrollment_review_append",
+      "arguments": 12
+    },
+    {
+      "routine": "enrollment_review_append",
+      "arguments": 12
+    }
+  ],
+  "preserved_existing_files": 1074,
+  "changed_existing_files": [],
+  "source_migration_sha256": {
+    "20250717000000_reconstructed_pre_phase_3_6_baseline.sql": "7fd1ea5c096eb47667a2ba55cc1bf4a872c959e12300c2110a69a698ca6e6429",
+    "20250718000000_phase_3_6_embeddings.sql": "21230835555e0353b124c8314c72948c97ece834beafccdb7e89f9fe6412f2aa",
+    "20260905000000_phase_3_7_1_vector_search_index.sql": "da5e2f8a7c35c3ebee708bd977b9ebfc048f3666e06d26bf3c9edc7d7729df80",
+    "20260905000001_phase_3_7_2_vector_similarity_search.sql": "c1dc20ecfba849522dba9c26e0393ce9060044c2ce8363d93846d205835240e4",
+    "20260905000002_phase_3_8_metadata_access_filtering.sql": "fa6e41711c7485ee373306ca2cd3a1d37ff5e7489d56ff8d0e24f167e6fd0fa7",
+    "20260909000000_phase_admin_1_admin_student_schema.sql": "0e70348067cf8096adff2bcef47587de70c889e55d55b43907fc9b069091009f",
+    "20260909000001_phase_admin_2_extracted_text_column.sql": "986f739f0506e5b3f1dce55f9b69a41b31a21fe66553bce006b251a51d6008e3",
+    "20260909000002_phase_admin_2_faq_published_column.sql": "9641a4c31bc7a58e4440d2a966b2fe61ea0b1ff9ccd68f5dfa03a3cc007656d4",
+    "20260909000003_phase_admin_2_notice_published_column.sql": "d70ebfc843866f85129944d9630ec52e4f515ed9e528936ed589662c22336e28",
+    "20260912000000_phase_6_2_student_identity_model.sql": "a2b8793d3073bf7130497a828ff2f33c101f6db7788110c5adafe5dd46c67e57",
+    "20260913000000_phase_6_7_attendance.sql": "365de679d8ce9edf278cfe117ae5496b2e2996ce2f0975e0d35c8542f343a423",
+    "20260913010000_phase_6_8_results.sql": "c9b3d84ee8f3cfb8b94943a3eb8f9b8006315f79ffb8c32ef63eceae73925fd9",
+    "20260914000000_phase_6_11_student_notifications.sql": "f105032d0a821755a0c13a79462907d3f58b983797a21e338aa97e6879c07f47",
+    "20260915000000_phase_6_13_organization_institution_tenancy.sql": "e74e4fe768ec9c2cb0dd452bbf5c42617797574ba18daa9a7fcab8fdd633b637",
+    "20260928000000_phase_7_2_public_knowledge_policy.sql": "2a43a3c2c3093a3405c809ccd26a4da8689440c5fbd8eb3264500eccf66600a5",
+    "20260928010000_phase_7_4_public_rag_hardening.sql": "d52fe69d7e1037f7cdecf1af1a2ca4e840164e0042f17afc3250dd1ff4076092",
+    "20260929000000_phase_7_10_legacy_primary_key_convergence.sql": "5be4401f19629449017963db2084e3ac90b2b54dad4c0406b78b828ae6bd3c5c",
+    "20261001000000_phase_7_12_super_admin_identity_authorization.sql": "4aa88e05e5e893ec393a95941ad581fa902e4992aa49a47287a5f1f3676aa27d",
+    "20261001010000_phase_7_13_super_admin_institution_management.sql": "bbc87fb76863894a68744396151c24c1bf8eca64bbfb30955b5693681bf72e7c",
+    "20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql": "1d59c03c1535c8328d153b31c77c082372a65acdaf75bf3f914b8710acecbef8",
+    "20261001030000_phase_7_15_invitation_delivery_email_verification.sql": "27d2aaa03f376748a8f640e6841d9506b8b77a527b425a2864c68c804a244892",
+    "20261002000000_phase_7_17_email_outbox_worker.sql": "0a52abea3da21e8a1763e19e167572549ce3434296afb4654913d71c9394a7f2",
+    "20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql": "77e8b695e3b512907e04b66548fa533d5a76af644b288d4c9249eb713b0e045e",
+    "20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql": "30a51b837e5b988b64b4f41decf15386c0e531e0ee5b3036ee91be16ba3d3f2e",
+    "20261004010000_admin_published_flags_schema_convergence.sql": "92d25a5fa3b1a2658068ed1bd240a78376bdbc64b7aea1fe4952442129fc6c19",
+    "20261004235959_permission_primary_key_convergence.sql": "813d843c8ff0e24f9950b92134a69c75bdd6bcfa465194df100f63f522c0c25b",
+    "20261005000000_phase_8_granular_permissions.sql": "48a16106676dcd225479f3582b5a2036f5da0f736176037fe1cbf043c9a55a42",
+    "20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql": "764489c42aa6542fa08c4a3c415b16be63bc42c6efbe481c3346e12798c4c716",
+    "20261007000000_phase_9_auth_security_events.sql": "fa7747315c474b5684a45fe584a76a7594b36cf81043ec8badd24d8cd6f71270",
+    "20261008000000_phase_9_super_admin_invitations.sql": "88e6b4a9bb314a47fbcf1879d521653c279fb9d3224200d050f271f65ef7f606",
+    "20261009000000_phase_7_24_immediate_staff_faculty_approval.sql": "71a58d4e62dd4902bc0de489f9d9db66cccc6eae563fd50636b6f2465ce2fd2e",
+    "20261010000000_phase_10_faculty_attendance_management.sql": "2f93ece8b89e006b61e46fe25f62ef79fec8c58e81b9fe7a835270069321c49b",
+    "20261011000000_faculty_responsibilities_and_validity.sql": "5938051c99abecc3d582e213341d39e62d4430f5a90655091d42fe59c2f7c94c",
+    "20261012000000_faculty_attendance_workflow.sql": "287e93f20bf6c5d1e91ac49b32c05d3468ea3ece549b84d789a295113402119f",
+    "20261013000000_faculty_tests_examination.sql": "74186837ca7289041ffb88cc80d23d5a7dbc5194369849d8a098a7ba974c231e",
+    "20261014000000_scoped_faculty_teaching_assignment_management.sql": "ff4d27a703c7d572579560f280c99e049be7f35a279c7d616229e513d5b62519",
+    "20261015000000_student_academic_experience_read_indexes.sql": "b5ccc9f28e354303136e665777e531524ae8bd15e62e6fa676440cddbc4ffcea",
+    "20261016000000_academic_master_data_management.sql": "a4d7ca4814b126d4322d66c6ae71fcd7a4d68407223506fe52d82bdc5a07004b",
+    "20261016010000_academic_curriculum_semester_convergence.sql": "3c98b7aa8207176a1c60195ba2bf11ca709afe1a297c0dac71d589fd0d024c33"
+  },
+  "sql_sha256_before_repair": "0ff9b917da73dd0c112e3f540d60849ffffc2db51aeb61965c14b67a08a030b6",
+  "sql_sha256_after_repair": "c04b3b51e8dcff739a2ad85989258bb5f2b1ea4123d6a506349133db1fa41206",
+  "repair_artifact_sha256": {
+    "REVIEW_SUMMARY.md": "0bc8e4ceef8dd50a7fb3bc78acb63d7c3a566f723a0dd7380c391c0211a4aadf",
+    "SQL_REPAIR_REVIEW.md": "64d5b8a62aebb4e4f65db09cf6edda41f9e2b9255f29efe829d2f2d089c5a182",
+    "student_enrollment_schema_review_draft.sql": "c04b3b51e8dcff739a2ad85989258bb5f2b1ea4123d6a506349133db1fa41206",
+    "verify_review_static.py": "e1c0205a5286c707f948533d17765a218db6dccbd69dd90eee0367bd6db1db69"
+  }
+}

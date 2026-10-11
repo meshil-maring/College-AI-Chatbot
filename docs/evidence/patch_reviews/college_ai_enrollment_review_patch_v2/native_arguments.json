@@ -1,0 +1,1 @@
+﻿["--tmpfs", "/var/lib/postgresql/data:rw,size=536870912", "--format", "{{ index .Config.Labels collegeai.validation.run }}"]

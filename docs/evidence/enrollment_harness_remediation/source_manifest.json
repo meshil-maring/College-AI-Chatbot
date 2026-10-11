@@ -1,0 +1,67 @@
+[
+  {
+    "path": "scripts/validation/academic_setup_concurrency.py",
+    "change": "modified",
+    "sha256": "d23514baf15d5d7051c1532a60a3afb9081a3c7212264570a3bb1edc0b34ada1"
+  },
+  {
+    "path": "scripts/validation/faculty_assignment_concurrency.py",
+    "change": "modified",
+    "sha256": "b5020ada6d201b5e92a716c2afbb80786e404b300ff910631bf5d75fad57e058"
+  },
+  {
+    "path": "scripts/validation/faculty_attendance_concurrency.py",
+    "change": "modified",
+    "sha256": "37fa015d6ebf4de17a14029682be4234656010e7600f36182b51b88f2132422c"
+  },
+  {
+    "path": "scripts/validation/faculty_tests_concurrency.py",
+    "change": "modified",
+    "sha256": "daa2c80673ed0ecf0d16e5ee307735f24446b464bca38263fcfe22ec9782dd46"
+  },
+  {
+    "path": "scripts/validation/disposable_container.py",
+    "change": "added",
+    "sha256": "2a7617a5f0771712fe816ff5dfe3b922e7294ab11553f45fc6bac5364bd5fcbe"
+  },
+  {
+    "path": "scripts/validation/verify_academic_setup_database.ps1",
+    "change": "modified",
+    "sha256": "6ef6653918417ce64480c500d08d4e87716d45b998cba8523d4121a762efd91c"
+  },
+  {
+    "path": "scripts/validation/verify_faculty_assignment_database.ps1",
+    "change": "added",
+    "sha256": "77c5dcd02d41e268f70c896075a38f76b6e64c2a329b54cd570db22862fb792b"
+  },
+  {
+    "path": "scripts/validation/verify_faculty_attendance_database.ps1",
+    "change": "modified",
+    "sha256": "3128ae0ec73c7ed962844ca6a30dc6a56b2d76ce22b278b34ff621cadeddc59c"
+  },
+  {
+    "path": "scripts/validation/verify_faculty_tests_database.ps1",
+    "change": "modified",
+    "sha256": "b744a5dd26ed21b0a2e1a960375e6c04e79a6cb5df2b5b60cfcd81ba46ff1081"
+  },
+  {
+    "path": "scripts/validation/verify_supabase_data_reset.py",
+    "change": "modified",
+    "sha256": "4f0746643bc8835c27574e338e0a46c3ab06440834ad0fea579e7137aab33b5f"
+  },
+  {
+    "path": "scripts/validation/test_disposable_container.py",
+    "change": "added",
+    "sha256": "b5707820bf6226e4642750da44ad8acd6eda47d80b9278d680908b7faecdb05c"
+  },
+  {
+    "path": "scripts/validation/test_runner_safety.py",
+    "change": "added",
+    "sha256": "8f73f167c26214ea1e50b017ad2bbfd22abbdb37d0403281c738daf951870a50"
+  },
+  {
+    "path": "scripts/validation/test_runner_worker.ps1",
+    "change": "added",
+    "sha256": "b21c7e19bc58d56291b90c35823794a14362fdd991f0ccfc3642fdff253f1844"
+  }
+]

@@ -1,0 +1,89 @@
+{
+  "archive_sha256": "fae25fab07a20f6156de9cec20f912a7621df3521761342fceb5652e26fc3fcf",
+  "files": [
+    {
+      "path": "PATCH_README.md",
+      "bytes": 1972,
+      "sha256": "2921ea92be4e96ebd158c6d72b83da91138edddf4269c04676d4bc8a7a651c51",
+      "change": "add"
+    },
+    {
+      "path": "docs/architecture/ADR-ENROLLMENT-002.md",
+      "bytes": 8020,
+      "sha256": "af6964411ca9515f06abf509dad5645b624388dc7027ddbae0f85d4f09d0df27",
+      "change": "add"
+    },
+    {
+      "path": "docs/design/STUDENT_ENROLLMENT_SCHEMA_V2.md",
+      "bytes": 9691,
+      "sha256": "9602c0e45503eeeb771525a3965c1d562edca47740bc24586ef81ffd92a4b0f7",
+      "change": "add"
+    },
+    {
+      "path": "docs/validation/STUDENT_ENROLLMENT_VALIDATION_PLAN_V2.md",
+      "bytes": 4874,
+      "sha256": "de24c3c0d73ce5b52aae2b2af416e3321f77090d929785e6f7c5843fd57984c1",
+      "change": "add"
+    },
+    {
+      "path": "scripts/validation/academic_setup_concurrency.py",
+      "bytes": 5050,
+      "sha256": "0095ac6949aefede1020ee82b38fe52ef0bba07be610068a50de3282e53fcb35",
+      "change": "replace"
+    },
+    {
+      "path": "scripts/validation/disposable_container.py",
+      "bytes": 4026,
+      "sha256": "d166d433fbd4dc796d22511e4b5b50bf63a1bf4b07877e9ae24e58688f802354",
+      "change": "add"
+    },
+    {
+      "path": "scripts/validation/faculty_assignment_concurrency.py",
+      "bytes": 17312,
+      "sha256": "dabdc0f53734fb37d046429e2fb903d5277bb8469a1b745aa0c5de383dacbfa2",
+      "change": "replace"
+    },
+    {
+      "path": "scripts/validation/faculty_attendance_concurrency.py",
+      "bytes": 5127,
+      "sha256": "acc2b48eb974531ba4572d145eb960979848f8f439f142a51690ad1999586e16",
+      "change": "replace"
+    },
+    {
+      "path": "scripts/validation/faculty_tests_concurrency.py",
+      "bytes": 6645,
+      "sha256": "bd27480b5ee2e4bb631b231258be1a28c2d24ec3b220ce2bfbdcf8e35dccf30c",
+      "change": "replace"
+    },
+    {
+      "path": "scripts/validation/test_disposable_container.py",
+      "bytes": 3214,
+      "sha256": "01a7a58ada549b22d9ab1632cbd29b91019fe86e1e1fc1a663e00427d2d7f3c0",
+      "change": "add"
+    },
+    {
+      "path": "scripts/validation/verify_academic_setup_database.ps1",
+      "bytes": 4294,
+      "sha256": "aae504d881f7b09650d62770b791ceac617a283e6a881284d2c4658d85641672",
+      "change": "replace"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_assignment_database.ps1",
+      "bytes": 4220,
+      "sha256": "8db4c68d097de65388c12105234565ddce896d4033b292a738727e7d182d7d21",
+      "change": "add"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_attendance_database.ps1",
+      "bytes": 4192,
+      "sha256": "ed71ff1d2222d661a463d1ae339b6e99bfa37971ef6b863848fb351e1acd81ee",
+      "change": "replace"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_tests_database.ps1",
+      "bytes": 4407,
+      "sha256": "00872457a0d45b2740a3dca4f96f1c70b3f9adb7eccf2bdc4eaac424f7ed5429",
+      "change": "replace"
+    }
+  ]
+}

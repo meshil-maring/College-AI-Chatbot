@@ -1,0 +1,30 @@
+﻿[
+    {
+        "File":  "verify_academic_setup_database.ps1",
+        "PowerShell":  "5.1.26100.9549",
+        "Errors":  [
+
+                   ]
+    },
+    {
+        "File":  "verify_faculty_assignment_database.ps1",
+        "PowerShell":  "5.1.26100.9549",
+        "Errors":  [
+
+                   ]
+    },
+    {
+        "File":  "verify_faculty_attendance_database.ps1",
+        "PowerShell":  "5.1.26100.9549",
+        "Errors":  [
+
+                   ]
+    },
+    {
+        "File":  "verify_faculty_tests_database.ps1",
+        "PowerShell":  "5.1.26100.9549",
+        "Errors":  [
+
+                   ]
+    }
+]

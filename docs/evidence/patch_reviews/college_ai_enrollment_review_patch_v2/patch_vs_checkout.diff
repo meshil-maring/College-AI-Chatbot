@@ -1,0 +1,1032 @@
+--- a/PATCH_README.md
++++ b/PATCH_README.md
+@@ -0,0 +1,31 @@
++# College AI Chatbot — Enrollment Design and Validation Harness Patch
++
++This is a review patch for the existing `CollegeAIChatbot` repository. Extract the ZIP **into the repository root** so the paths below merge with existing `scripts/validation` and `docs` folders.
++
++## Contents
++
++- Proposed ADR for stable student identity, enrollment episodes, placement history, identifiers, and event history.
++- Revised schema design proposal (documentation only; no executable enrollment DDL).
++- Validation plan v2.
++- Shared disposable-container target validator.
++- Refactored concurrency helpers and isolated runners for academic setup, faculty attendance, faculty tests, and faculty assignments.
++- Six unit tests for the shared container-target validator.
++
++## Validation performed here
++
++- Python syntax compilation passed for all six Python files.
++- Six mocked unit tests passed for valid isolated target acceptance and rejection of wrong tokens, persistent volumes, published ports, network access, and arbitrary target names.
++- No PowerShell runtime was available, so `.ps1` files were not executed or runtime-parsed.
++- No Docker commands, SQL, migrations, database connections, or remote Supabase operations were run.
++
++## Safety properties
++
++Each runner is designed to create a unique, auto-removed container using the expected Supabase PostgreSQL image, a bounded tmpfs data directory, no host ports, and `--network none`. Helpers require the exact full container ID, run token, and purpose label before issuing SQL. Cleanup checks the run token before stopping the exact created container.
++
++## Before applying
++
++1. Review the patch diff.
++2. Keep a clean Git checkpoint.
++3. Confirm PowerShell parsing on the target Windows machine.
++4. Review the proposed ADR; policy decisions are recommendations, not yet approved.
++5. Do not add or execute enrollment DDL until the exact draft is recovered, security evidence is reconciled, and separate disposable SQL execution is authorized.
+--- a/docs/architecture/ADR-ENROLLMENT-002.md
++++ b/docs/architecture/ADR-ENROLLMENT-002.md
+@@ -0,0 +1,99 @@
++# ADR-ENROLLMENT-002: Student Identity, Enrollment Episodes, and Academic Placement
++
++- **Status:** Proposed; awaiting product/design approval
++- **Date:** 2026-10-11
++- **Scope:** College AI Chatbot student identity, academic membership, placement history, and historical access
++- **Implementation status:** Not implemented. No SQL or database operations were performed to prepare this record.
++
++## Context
++
++The current application uses one `students` row as both the stable account-linked student identity and the source of current institution/program/year context. Registration may create a pending student before program or academic-year details are known. Attendance, results, faculty-roster reconciliation, and result visibility also use the current student row.
++
++A table-only enrollment migration would create a second source of truth. The design must represent readmission, transfers, promotions, semester repeats, historical identifiers, and published records without changing `students.student_id` or silently rewriting history.
++
++## Proposed decisions
++
++### D1. Stable identity
++
++Keep `students` as the stable person/profile record and preserve its one-to-one `user_id` relationship. Admission, readmission, transfer, and program changes do not create a second student identity.
++
++### D2. Enrollment scope
++
++One `student_enrollments` row represents one admission episode at one institution for one verified program. Institution and program are immutable for that episode. A program change creates a new episode linked to its predecessor. Institution transfers close the source episode and create a destination episode.
++
++### D3. Enrollment lifecycle and approval
++
++Keep enrollment approval separate from account/registration approval and from lifecycle status.
++
++Proposed lifecycle values:
++
++- `pending_admission`
++- `active`
++- `on_leave`
++- `graduated`
++- `withdrawn`
++- `transferred_out`
++- `cancelled`
++
++Proposed approval values: `pending`, `approved`, `rejected`.
++
++An episode can become `active` only after the enrollment decision is approved, required identifiers and academic ancestry are verified, and an explicit effective date is supplied. A future effective date does not grant current academic authority before activation. Rejection closes an unactivated application as `cancelled`; reconsideration creates a new episode with provenance.
++
++### D4. Operational cardinality — requires explicit approval
++
++Recommended initial rule: at most one approved enrollment per student may be in `active` or `on_leave` state at a time. Pending applications and terminal historical episodes may coexist. This reduces ambiguity in the existing single-context authentication and frontend contracts. It intentionally does not support concurrent active dual-program enrollments in the first release.
++
++This is a product policy recommendation, not a verified institutional rule. Do not implement the partial unique constraint until approved.
++
++### D5. Academic placement history
++
++Store semester/year placement separately in `student_academic_placements`. An enrollment describes admission; a placement describes an academic period and attempt. Promotion or a repeated semester creates another placement instead of overwriting the previous year/semester. Use half-open effective intervals (`starts_on` inclusive, `ends_on` exclusive).
++
++Do not put `section_id` on a placement as the canonical class identifier: sections in the existing model are subject-offering-specific. Store an optional class/section code as a label if required. Continue using faculty attendance rosters for subject-section membership; a placement must not automatically enroll a student into every subject.
++
++### D6. Institutional identifier ownership
++
++Use `student_institution_identifiers` to preserve institutional identifiers independently of enrollment episodes. Candidate kinds: `student_number`, `register_number`, and `university_roll_number`. An institution/kind/normalized value belongs to one student identity; the same identity can reference the same identifier in a readmission episode. A different student cannot inherit a previously assigned value in the initial release.
++
++Normalize by trimming surrounding whitespace while preserving original display text and leading zeros. Do not case-fold values until the institution's rules are confirmed. Account email is not an institutional identifier. Identifier changes create a new assignment record; events retain the previous and new identifier references.
++
++### D7. Event history
++
++`student_enrollment_events` is append-only from application paths. Events record state transitions, approvals, placements, identifier changes, corrections, transfer correlation, actor, source, reason, effective date (nullable only where the historical date is genuinely unknown), and recorded timestamp. Each event has a per-enrollment sequence and an idempotent operation ID.
++
++State changes, events, security audit entries, and required reconciliation must commit or roll back together. Actor accounts should be retained or anonymized rather than deleted; use restrictive actor foreign-key deletion behavior so FK-driven updates do not conflict with an append-only trigger.
++
++### D8. Historical access
++
++A student may read their own published records from approved historical episodes while the account and institution-access policy permits it. Graduation, withdrawal, transfer, or promotion must not automatically turn published historical results into drafts. Historical access does not confer current roster membership or staff permissions. Faculty/admin access remains scoped to the institution and record they are authorized to manage.
++
++### D9. Legacy compatibility
++
++Preserve `students.student_id` and existing attendance, result, test-result, roster, and notification keys. Add enrollment associations only after deterministic mapping rules are approved. Keep legacy fields and reads during a compatibility period; compare old and new projections before cutover. Never infer an academic admission date from the current registration timestamp.
++
++### D10. Security boundary
++
++No browser role receives direct table writes to the new enrollment objects. RLS and explicit grants must be verified, and write operations should use reviewed, narrowly scoped routines. Backend service-role use still requires server-side tenant, identity, enrollment, resource, and role checks because privileged service access can bypass RLS.
++
++## Required invariants
++
++1. Program ownership is validated through `programs.department_id -> departments.institution_id`.
++2. Academic year and semester ancestry is validated and cannot cross institutions.
++3. Enrollment institution/program are immutable after creation; transfers create new episodes.
++4. Historical record ownership and result publication do not derive solely from the student's current enrollment.
++5. Enrollment/event/identifier/placement writes are atomic and concurrency-safe.
++6. Retries with the same operation ID and same payload are idempotent; reuse with different input fails.
++7. Ambiguous legacy mappings remain unresolved/quarantined; no dates or academic associations are fabricated.
++
++## Open approval gates
++
++- Approve or amend the single operational enrollment rule.
++- Confirm whether `inactive` legacy status means leave, closed enrollment, or another state.
++- Confirm institution-specific identifier case/normalization policy and identifier reuse policy.
++- Confirm historical access when an institution is inactive or archived.
++- Recover and inspect the exact enrollment SQL draft before using it as a basis for a revised migration.
++- Reconcile conflicting historical database ACL snapshots against a named database, revision, role, and collection timestamp.
++
++## Consequences
++
++This model adds `student_enrollments`, `student_academic_placements`, `student_institution_identifiers`, and `student_enrollment_events`. It requires coordinated backend, trigger, frontend-contract, and cache changes. It is not a table-only migration and is not approved for execution by this ADR.
+--- a/docs/design/STUDENT_ENROLLMENT_SCHEMA_V2.md
++++ b/docs/design/STUDENT_ENROLLMENT_SCHEMA_V2.md
+@@ -0,0 +1,131 @@
++# Student Enrollment Schema Proposal v2
++
++- **Status:** Design proposal; not executable DDL
++- **Related decision:** `docs/architecture/ADR-ENROLLMENT-002.md`
++- **Database operations:** None performed
++
++## Design summary
++
++Keep `public.students` as the stable identity/profile. Introduce four additive objects to separate admission episodes, academic placement, institutional identifier ownership, and event history. Do not switch existing application reads/writes to this model until the compatibility and security gates are complete.
++
++## 1. `student_enrollments`
++
++One row is one admission episode at one institution for one program.
++
++Proposed columns:
++
++- `enrollment_id uuid` — primary key, generated by the database.
++- `student_id uuid NOT NULL` — FK to `students.student_id`, restrictive delete behavior.
++- `institution_id uuid NOT NULL` — FK to `institutions.institution_id`, restrictive delete behavior.
++- `program_id uuid NULL` — FK to `programs.program_id`; nullable only while an application is unresolved/pending. Program ownership must be checked through its department.
++- `predecessor_enrollment_id uuid NULL` — self-FK linking readmission, program change, or destination transfer episode to its predecessor.
++- `admission_kind text NOT NULL` — constrained values such as `initial`, `readmission`, `transfer_in`, `program_change`, `legacy_snapshot`.
++- `lifecycle_status text NOT NULL` — constrained to the lifecycle proposed in ADR-ENROLLMENT-002.
++- `approval_status text NOT NULL` — `pending`, `approved`, or `rejected`; distinct from account registration approval.
++- `admission_effective_on date NULL` — evidence-backed academic admission date; may remain unknown for a quarantined legacy snapshot.
++- `closed_effective_on date NULL` — evidence-backed closure date for a terminal transition.
++- `expected_graduation_date date NULL` — cannot precede the effective admission date when both are known.
++- `student_number_identifier_id uuid NULL` — FK to the student's institution identifier record of kind `student_number`.
++- `register_identifier_id uuid NULL` — FK to the student's institution identifier record of kind `register_number`.
++- `university_roll_identifier_id uuid NULL` — FK to the student's institution identifier record of kind `university_roll_number`.
++- `version bigint NOT NULL DEFAULT 1` — optimistic concurrency token.
++- `created_at timestamptz NOT NULL DEFAULT now()` and `updated_at timestamptz NOT NULL DEFAULT now()`.
++
++Required checks/guards:
++
++- Student and institution identity are required and immutable.
++- The selected identifier records must belong to the same student and institution and have the expected kind.
++- Program must belong to the enrollment institution through `programs -> departments`.
++- A transition to `active` requires approval and verified mandatory fields; the database routine must reject an invalid transition.
++- Terminal states require a closure effective date for new operational transitions. Legacy snapshots may preserve unknown dates with explicit provenance rather than inventing them.
++- Do not add the recommended one-operational-enrollment partial unique index until D4 is approved.
++
++## 2. `student_institution_identifiers`
++
++Represents institution-issued identifier ownership independently of enrollment episodes.
++
++Proposed columns:
++
++- `identifier_id uuid` — primary key.
++- `student_id uuid NOT NULL` — FK to `students.student_id`, restrictive deletion.
++- `institution_id uuid NOT NULL` — FK to institution, restrictive deletion.
++- `kind text NOT NULL` — `student_number`, `register_number`, or `university_roll_number`.
++- `display_value text NOT NULL` — original identifier text, preserving leading zeros.
++- `normalized_value text NOT NULL` — initially `trim(display_value)`; no case folding unless policy is confirmed.
++- `verified_at timestamptz NULL`, `verified_by uuid NULL`, `source text NOT NULL`, `created_at timestamptz NOT NULL DEFAULT now()`.
++
++Proposed uniqueness:
++
++- Unique `(institution_id, kind, normalized_value)` to prevent an identifier from being assigned to a different student.
++- Reuse by the same student across readmission episodes is represented by referencing the same identifier row, not by duplicating the assignment.
++- Identifier values are never silently reassigned to another student. Historical identifier records are retained.
++
++Database guards must verify that `verified_by` is an authorized actor and that enrollment references point to an identifier row with the matching student, institution, and kind. The account email is not stored as an institutional identifier.
++
++## 3. `student_academic_placements`
++
++Represents the student's academic position over an effective period, separate from admission.
++
++Proposed columns:
++
++- `placement_id uuid` — primary key.
++- `enrollment_id uuid NOT NULL` — FK to enrollment, restrictive deletion.
++- `academic_year_id uuid NOT NULL` — FK to `academic_years`.
++- `semester_id uuid NOT NULL` — FK to `semesters`; semester must belong to the referenced academic year.
++- `class_section_code text NULL` — optional class label, not a subject-section FK.
++- `attempt_number integer NOT NULL DEFAULT 1` — positive integer for repeated semester/year placement.
++- `starts_on date NOT NULL`, `ends_on date NULL` — half-open interval `[starts_on, ends_on)`.
++- `mapping_source text NOT NULL`, `mapping_status text NOT NULL` — preserve mapping provenance; ambiguous legacy mappings cannot drive operational authorization.
++- `version bigint NOT NULL DEFAULT 1`, `created_at timestamptz NOT NULL DEFAULT now()`, `updated_at timestamptz NOT NULL DEFAULT now()`.
++
++Required guards:
++
++- Academic year and semester must belong to the enrollment institution and semester/year pairing.
++- Ordinary placement intervals for an enrollment must not overlap; implement with an appropriate exclusion constraint or serialized transaction, based on available extensions and the final lifecycle semantics.
++- `attempt_number > 0`; `ends_on IS NULL OR ends_on > starts_on`.
++- Promotions, repeats, and class changes create new rows; they do not overwrite historical placement.
++- Subject section membership remains represented by `faculty_attendance_rosters` and the existing section/course-offering model.
++
++## 4. `student_enrollment_events`
++
++Append-only event ledger for transitions and historical provenance.
++
++Proposed columns:
++
++- `event_id uuid` — primary key.
++- `enrollment_id uuid NOT NULL` — FK to enrollment, restrictive deletion.
++- `placement_id uuid NULL` — FK to placement when relevant.
++- `event_sequence bigint NOT NULL` — monotonically allocated per enrollment under a row lock; unique with `enrollment_id`.
++- `operation_id uuid NOT NULL` — idempotency key; globally unique unless a documented tenant scope is chosen.
++- `event_type text NOT NULL` — constrained vocabulary covering admission creation/approval/rejection/activation, leave/resumption, graduation/withdrawal, transfer, placement creation/promotion/repetition, identifier assignment, correction, and `legacy_snapshot`.
++- `lifecycle_before text NULL`, `lifecycle_after text NULL`, `approval_before text NULL`, `approval_after text NULL`.
++- `effective_on date NULL` — null only where the historical effective date is unknown or not applicable.
++- `recorded_at timestamptz NOT NULL DEFAULT now()`.
++- `actor_user_id uuid NULL` — FK to `users.id` with restrictive deletion; actor accounts should be retained or anonymized.
++- `source text NOT NULL`, `reason text NULL`, `transfer_group_id uuid NULL`, `corrects_event_id uuid NULL`, `details jsonb NULL`.
++
++Required guards:
++
++- Unique `(enrollment_id, event_sequence)` and unique `operation_id`.
++- An operation ID replay with identical input returns the prior result; the same ID with different input fails.
++- State change, event insert, security audit entry, and reconciliation occur in one transaction.
++- Browser roles receive no write grants. An append-only trigger rejects ordinary UPDATE/DELETE; grants and trigger behavior must be tested together.
++- `details` is bounded and must not contain credentials, secrets, or unnecessary personal data.
++
++## Cross-object and migration constraints
++
++1. Do not infer actual admission dates from `students.enrollment_date`; current registration code sets that field at registration time.
++2. Do not update `students.institution_id` to represent a transfer.
++3. Preserve existing `student_attendance`, `student_results`, `student_result_items`, `test_results`, `faculty_attendance_rosters`, and `student_notifications` keys and history.
++4. Before associating an academic record to an enrollment/placement, require a deterministic mapping supported by its institution, program/year/semester, date, roster, and source provenance. Quarantine ambiguity.
++5. Existing result-visibility triggers must be revised so a current placement change does not automatically alter the publication state of historical results.
++6. Tenant validation must run at database boundary and in backend service logic. Service-role use is not a substitute for ownership checks.
++7. New RPCs need explicit ACLs for every overload, qualified object references, and hardened `search_path`. Do not grant direct browser table writes.
++8. Existing security ACL snapshots conflict. Verify current installed catalog state before applying any security or enrollment migration.
++
++## Not included / not yet approved
++
++- Executable SQL migration.
++- Final partial unique indexes for operational enrollment/placement cardinality.
++- Cutover of authentication, student context, attendance, results, roster reconciliation, notifications, AI context, or frontend caches.
++- Data backfill, deployment, or remote Supabase changes.
+--- a/docs/validation/STUDENT_ENROLLMENT_VALIDATION_PLAN_V2.md
++++ b/docs/validation/STUDENT_ENROLLMENT_VALIDATION_PLAN_V2.md
+@@ -0,0 +1,65 @@
++# Student Enrollment Validation Plan v2
++
++- **Status:** Proposed harness changes; static checks only
++- **Safety boundary:** Local Docker Desktop only. No SQL was executed while preparing this package.
++
++## Safety properties in the harness patch
++
++- Each runner creates a unique run token and unique container name.
++- Container is created from the expected Supabase PostgreSQL 17.6.1.166 image.
++- Container uses `--network none`, a bounded 512 MiB tmpfs for `/var/lib/postgresql/data`, `--rm`, and no published host ports, bind mounts, or persistent database volumes.
++- Runner passes the exact 64-character container ID, run token, and purpose to every Python concurrency helper.
++- `disposable_container.py` validates local Docker context/engine, container identity, run token/purpose labels, image, running state, the single allowed tmpfs mount, absence of host ports/bind mounts, auto-removal, and network isolation before SQL helpers run.
++- Helpers refuse to issue SQL until a target is configured and validated.
++- Cleanup targets only the exact container ID created by the runner and requires its run token label to match.
++- Faculty assignment concurrency no longer hard-codes `supabase_db_CollegeAIChatbot` or requires host port 54322.
++
++## Files in this patch
++
++- `scripts/validation/disposable_container.py` — shared fail-closed target validator.
++- `scripts/validation/faculty_attendance_concurrency.py` — accepts container ID, run token, and purpose.
++- `scripts/validation/faculty_tests_concurrency.py` — shares the validated attendance SQL target.
++- `scripts/validation/faculty_assignment_concurrency.py` — requires a validated disposable target instead of the persistent project DB.
++- `scripts/validation/academic_setup_concurrency.py` — uses the shared validator.
++- `scripts/validation/verify_faculty_attendance_database.ps1` — unique, isolated runner.
++- `scripts/validation/verify_faculty_tests_database.ps1` — unique, isolated runner.
++- `scripts/validation/verify_academic_setup_database.ps1` — unique, isolated runner.
++- `scripts/validation/verify_faculty_assignment_database.ps1` — new isolated runner for the assignment concurrency contract.
++
++## Static validation performed
++
++- Python `py_compile` passed for all six Python files in the patch. Six isolated unit tests for the shared target validator passed; these tests mock Docker inspection and do not contact Docker or PostgreSQL.
++- No PowerShell runtime/parser was available in this environment, so the `.ps1` scripts have not been executed or runtime-parsed.
++- No Docker command, database connection, migration, SQL query, test fixture, or remote Supabase operation was executed.
++
++## Required local checks before use
++
++1. Review the patch and confirm that the repository paths and Python interpreter invocation match the Windows checkout.
++2. Inspect the final runner source to verify PowerShell parsing and the exact Docker labels/arguments.
++3. Confirm Docker Desktop's `desktop-linux` context and `docker-desktop` engine.
++4. Run a non-database harness self-test if available; do not point any helper at `supabase_db_CollegeAIChatbot`.
++5. Run one disposable validation suite at a time initially and verify cleanup of the run-owned container.
++6. Rehearse the existing migration chain in the disposable container. A failure is evidence to investigate; do not repair by skipping migrations.
++7. Only after the general harness is trusted, add the final enrollment DDL and synthetic enrollment fixtures to a separate enrollment-specific runner.
++
++## Enrollment-specific validation still required
++
++Once final DDL exists and is approved for disposable execution, test:
++
++- fresh full migration replay;
++- all foreign keys, checks, indexes, trigger bindings, grants, and RLS assertions;
++- same-student readmission with retained identifier ownership;
++- rejection of identifier reuse by a different student;
++- transfer and program change as new episodes;
++- promotion/repeated semester with non-overlapping placements;
++- forged cross-tenant IDs and mismatched identifier kind/student/institution;
++- event append-only behavior, operation retry idempotency, and actor retention;
++- state transition concurrency, stale versions, and atomic rollback when event/audit/reconciliation fails;
++- historical published-result visibility after promotion, withdrawal, or transfer;
++- existing registration, attendance, results, tests, roster, notifications, authentication, and frontend contract suites.
++
++## Go/no-go rules
++
++**Go to disposable enrollment validation only when:** ADR policy decisions are approved, exact candidate DDL is recovered/reviewed, security preflight is reconciled, and the harness passes local safety checks.
++
++**No-go for remote deployment** until populated synthetic backfill tests, current catalog ACL/RLS verification, rollback rehearsal, and explicit separate deployment approval are complete.
+--- a/scripts/validation/academic_setup_concurrency.py
++++ b/scripts/validation/academic_setup_concurrency.py
+@@ -1,5 +1,6 @@
+ """Academic duplicate races, restricted to the disposable verification container."""
+ 
++import argparse
+ import json
+ import subprocess
+ import sys
+@@ -7,12 +8,14 @@
+ from concurrent.futures import ThreadPoolExecutor
+ from uuid import uuid4
+ 
+-container = sys.argv[1]
+-if not container.startswith("codex-academic-setup-"):
+-    raise SystemExit("Only an academic setup verification container is allowed")
+-label = subprocess.run(["docker", "inspect", "--format", '{{ index .Config.Labels "collegeai.academic-setup-verification" }}', container], capture_output=True, text=True, check=True).stdout.strip()
+-if label != "true":
+-    raise SystemExit("Disposable container label required")
++from disposable_container import validate_disposable_target
++
++parser = argparse.ArgumentParser(description="Academic concurrency checks against an isolated disposable container")
++parser.add_argument("container_id")
++parser.add_argument("run_token")
++parser.add_argument("purpose", choices=["academic-setup", "faculty-attendance", "faculty-tests", "faculty-assignment"])
++args = parser.parse_args()
++container = validate_disposable_target(args.container_id, args.run_token, args.purpose)
+ 
+ 
+ def sql(query):
+--- a/scripts/validation/disposable_container.py
++++ b/scripts/validation/disposable_container.py
+@@ -0,0 +1,73 @@
++"""Fail-closed validation for disposable, isolated PostgreSQL test containers.
++
++This module never creates containers or connects to a database. Callers must pass
++an exact container ID and run token emitted by their own local-only runner.
++"""
++from __future__ import annotations
++
++import json
++import os
++import re
++import subprocess
++
++EXPECTED_IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.166"
++ALLOWED_PURPOSES = {"academic-setup", "faculty-attendance", "faculty-tests", "faculty-assignment"}
++
++
++def command(args: list[str], **kwargs):
++    return subprocess.run(args, capture_output=True, text=True, timeout=20, **kwargs)
++
++
++def validate_disposable_target(container_id: str, run_token: str, purpose: str) -> str:
++    """Return container ID only when the target is an isolated run-owned container."""
++    if os.environ.get("DOCKER_HOST"):
++        raise RuntimeError("DOCKER_HOST overrides are prohibited for validation")
++    if not re.fullmatch(r"[a-f0-9]{64}", container_id or ""):
++        raise RuntimeError("Pass the full 64-character container ID emitted by the runner")
++    if not re.fullmatch(r"[a-f0-9]{32}", run_token or ""):
++        raise RuntimeError("Invalid validation run token")
++    if purpose not in ALLOWED_PURPOSES:
++        raise RuntimeError("Unrecognized disposable validation purpose")
++
++    context = command(["docker", "context", "show"])
++    if context.returncode or context.stdout.strip() != "desktop-linux":
++        raise RuntimeError("Only Docker Desktop's local desktop-linux context is allowed")
++    engine = command(["docker", "info", "--format", "{{.Name}}"])
++    if engine.returncode or engine.stdout.strip() != "docker-desktop":
++        raise RuntimeError("Expected the local Docker Desktop engine")
++    inspected = command(["docker", "inspect", container_id])
++    if inspected.returncode:
++        raise RuntimeError("The supplied container ID cannot be inspected")
++    objects = json.loads(inspected.stdout)
++    if len(objects) != 1:
++        raise RuntimeError("Expected exactly one inspected container")
++    container = objects[0]
++    labels = container.get("Config", {}).get("Labels") or {}
++    if container.get("Id") != container_id:
++        raise RuntimeError("Docker returned a different container ID")
++    if container.get("State", {}).get("Running") is not True:
++        raise RuntimeError("Disposable validation container is not running")
++    if container.get("Config", {}).get("Image") != EXPECTED_IMAGE:
++        raise RuntimeError("Unexpected PostgreSQL image")
++    if labels.get("collegeai.validation.disposable") != "true":
++        raise RuntimeError("Disposable validation label is missing")
++    if labels.get("collegeai.validation.run") != run_token:
++        raise RuntimeError("Run token does not match this container")
++    if labels.get("collegeai.validation.purpose") != purpose:
++        raise RuntimeError("Validation purpose does not match this container")
++    host = container.get("HostConfig", {})
++    mounts = container.get("Mounts") or []
++    # The only permitted storage is a bounded in-memory tmpfs over PostgreSQL's
++    # data directory. No named/anonymous volumes or bind mounts are accepted.
++    if len(mounts) != 1 or mounts[0].get("Type") != "tmpfs" or mounts[0].get("Destination") != "/var/lib/postgresql/data":
++        raise RuntimeError("Expected only the PostgreSQL data-directory tmpfs; persistent mounts are prohibited")
++    if host.get("Binds") or set((host.get("Tmpfs") or {}).keys()) != {"/var/lib/postgresql/data"}:
++        raise RuntimeError("Unexpected bind or tmpfs mount configuration")
++    if host.get("AutoRemove") is not True:
++        raise RuntimeError("Disposable containers must be created with --rm")
++    bindings = host.get("PortBindings") or {}
++    if any(values for values in bindings.values()):
++        raise RuntimeError("Database containers with published host ports are prohibited")
++    if host.get("NetworkMode") != "none":
++        raise RuntimeError("Disposable validation containers must use Docker network=none")
++    return container_id
+--- a/scripts/validation/faculty_assignment_concurrency.py
++++ b/scripts/validation/faculty_assignment_concurrency.py
+@@ -1,11 +1,18 @@
+-"""Exercise scoped teaching-assignment races against the local Supabase database."""
+-
++"""Exercise scoped teaching-assignment races against an isolated disposable PostgreSQL container."""
++
++import argparse
+ import json
+ import subprocess
+ from concurrent.futures import ThreadPoolExecutor
+ 
+-CONTAINER = "supabase_db_CollegeAIChatbot"
+-IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.166"
++from disposable_container import validate_disposable_target
++
++CONTAINER = None
++
++
++def configure_target(container_id, run_token, purpose):
++    global CONTAINER
++    CONTAINER = validate_disposable_target(container_id, run_token, purpose)
+ 
+ 
+ def command(args, **kwargs):
+@@ -13,6 +20,8 @@
+ 
+ 
+ def sql(query):
++    if not CONTAINER:
++        raise RuntimeError('Disposable target must be configured before SQL calls')
+     return command(
+         [
+             "docker",
+@@ -86,14 +95,13 @@
+             raise RuntimeError(f"Lock-holder exited before {marker}: {process.stderr.read()}")
+ 
+ 
+-def main():
+-    context = command(["docker", "context", "show"])
+-    if context.returncode or context.stdout.strip() != "desktop-linux":
+-        raise RuntimeError("Only Docker Desktop's local Supabase database is allowed")
+-    inspected = json.loads(command(["docker", "inspect", CONTAINER], check=True).stdout)[0]
+-    bindings = inspected["NetworkSettings"]["Ports"].get("5432/tcp") or []
+-    if inspected["Config"]["Image"] != IMAGE or not any(binding.get("HostPort") == "54322" for binding in bindings):
+-        raise RuntimeError("Expected the project's local Supabase PostgreSQL container")
++def main(argv=None):
++    parser = argparse.ArgumentParser(description='Run assignment concurrency tests in an isolated disposable container')
++    parser.add_argument('container_id')
++    parser.add_argument('run_token')
++    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
++    args = parser.parse_args(argv)
++    configure_target(args.container_id, args.run_token, args.purpose)
+ 
+     fixture = r"""
+ BEGIN;
+--- a/scripts/validation/faculty_attendance_concurrency.py
++++ b/scripts/validation/faculty_attendance_concurrency.py
+@@ -3,12 +3,20 @@
+ Run from the repository root after all migrations. Seeds only that disposable
+ container; never accepts a remote URL, credential, or arbitrary database name.
+ """
++import argparse
+ import json
+ import subprocess
+ from concurrent.futures import ThreadPoolExecutor
+ from pathlib import Path
+ 
+-CONTAINER = 'codex-attendance-verify-20261007'
++from disposable_container import validate_disposable_target
++
++CONTAINER = None
++
++
++def configure_target(container_id, run_token, purpose):
++    global CONTAINER
++    CONTAINER = validate_disposable_target(container_id, run_token, purpose)
+ 
+ 
+ def command(args, **kwargs):
+@@ -16,6 +24,8 @@
+ 
+ 
+ def sql(query):
++    if not CONTAINER:
++        raise RuntimeError('Disposable target must be configured before SQL calls')
+     return command(['docker', 'exec', '-i', CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres',
+                     '-v', 'ON_ERROR_STOP=1', '-At'], input=query)
+ 
+@@ -24,12 +34,13 @@
+     return "'" + str(value).replace("'", "''") + "'"
+ 
+ 
+-def main():
+-    if command(['docker', 'context', 'show']).stdout.strip() != 'desktop-linux':
+-        raise RuntimeError('Only local Docker Desktop is allowed')
+-    container = json.loads(command(['docker', 'inspect', CONTAINER], check=True).stdout)[0]
+-    if container['Config']['Image'] != 'public.ecr.aws/supabase/postgres:17.6.1.166' or container['Mounts'] or container['HostConfig']['PortBindings']:
+-        raise RuntimeError('Expected disposable container without mounts or host ports')
++def main(argv=None):
++    parser = argparse.ArgumentParser(description='Run attendance concurrency tests in an isolated disposable container')
++    parser.add_argument('container_id')
++    parser.add_argument('run_token')
++    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
++    args = parser.parse_args(argv)
++    configure_target(args.container_id, args.run_token, args.purpose)
+     fixture = Path('scripts/validation/faculty_attendance_database.sql').read_text(encoding='utf-8')
+     seed = fixture[:fixture.index('    PERFORM commit_faculty_attendance_import')]
+     seed += """    RAISE NOTICE 'ATTENDANCE_FIXTURE %', jsonb_build_object('tenant',tenant,'actor',faculty_one,
+--- a/scripts/validation/faculty_tests_concurrency.py
++++ b/scripts/validation/faculty_tests_concurrency.py
+@@ -1,11 +1,13 @@
+ """Actual assessment races, restricted to the local disposable verifier."""
+ 
++import argparse
+ import json
+ import subprocess
+ from concurrent.futures import ThreadPoolExecutor
+ from pathlib import Path
+ 
+-from faculty_attendance_concurrency import CONTAINER, command, literal, sql
++import faculty_attendance_concurrency as attendance
++from faculty_attendance_concurrency import command, configure_target, literal, sql
+ 
+ 
+ def checked(query):
+@@ -23,12 +25,13 @@
+     return results
+ 
+ 
+-def main():
+-    if command(['docker', 'context', 'show']).stdout.strip() != 'desktop-linux':
+-        raise RuntimeError('Only local Docker Desktop is allowed')
+-    container = json.loads(command(['docker', 'inspect', CONTAINER], check=True).stdout)[0]
+-    if container['Mounts'] or container['HostConfig']['PortBindings'] or not container['Config']['Labels'].get('collegeai.attendance-verification'):
+-        raise RuntimeError('Expected disposable verification container')
++def main(argv=None):
++    parser = argparse.ArgumentParser(description='Run assessment concurrency tests in an isolated disposable container')
++    parser.add_argument('container_id')
++    parser.add_argument('run_token')
++    parser.add_argument('purpose', choices=['academic-setup', 'faculty-attendance', 'faculty-tests', 'faculty-assignment'])
++    args = parser.parse_args(argv)
++    configure_target(args.container_id, args.run_token, args.purpose)
+     fixture = Path('scripts/validation/faculty_tests_database.sql').read_text()
+     seed = fixture[:fixture.index('    t:=save_faculty_test')]
+     seed += """    RAISE NOTICE 'EXAM_FIXTURE %',jsonb_build_object('actor',faculty_one,'tenant',tenant,'section',section_one,
+@@ -83,7 +86,7 @@
+             f"(SELECT count(*) FROM admin_audit_log WHERE record_id={test2} AND action='test.import.commit')<>1 "
+             "THEN RAISE EXCEPTION 'Duplicate import records/audits'; END IF; END; $$;")
+     # Live authorization is rechecked after waiting on the same roster lock.
+-    holder = subprocess.Popen(['docker', 'exec', '-i', CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'],
++    holder = subprocess.Popen(['docker', 'exec', '-i', attendance.CONTAINER, 'psql', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'],
+                               stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+     holder.stdin.write(f"BEGIN; SELECT pg_advisory_xact_lock(hashtextextended('attendance:'||{tenant}::text,0)); "
+                        f"UPDATE faculty_section_assignments SET revoked_at=now(),revoked_by={literal(ctx['admin'])} WHERE faculty_user_id={actor} AND institution_id={tenant}; "
+--- a/scripts/validation/test_disposable_container.py
++++ b/scripts/validation/test_disposable_container.py
+@@ -0,0 +1,87 @@
++"""Unit tests for fail-closed disposable-target validation; no Docker/DB access."""
++import json
++import unittest
++from unittest.mock import patch
++
++import disposable_container as target
++
++CONTAINER_ID = "a" * 64
++RUN_TOKEN = "b" * 32
++PURPOSE = "faculty-attendance"
++
++
++def inspected_container(**overrides):
++    value = {
++        "Id": CONTAINER_ID,
++        "State": {"Running": True},
++        "Config": {
++            "Image": target.EXPECTED_IMAGE,
++            "Labels": {
++                "collegeai.validation.disposable": "true",
++                "collegeai.validation.run": RUN_TOKEN,
++                "collegeai.validation.purpose": PURPOSE,
++            },
++        },
++        "Mounts": [{"Type": "tmpfs", "Destination": "/var/lib/postgresql/data"}],
++        "HostConfig": {
++            "Binds": [],
++            "Tmpfs": {"/var/lib/postgresql/data": "rw,size=536870912"},
++            "AutoRemove": True,
++            "PortBindings": {},
++            "NetworkMode": "none",
++        },
++    }
++    for key, value_override in overrides.items():
++        value[key] = value_override
++    return value
++
++
++class DisposableTargetTests(unittest.TestCase):
++    def setUp(self):
++        self.env = patch.dict("os.environ", {"DOCKER_HOST": ""})
++        self.env.start()
++        self.addCleanup(self.env.stop)
++
++    def call_with(self, container):
++        responses = [
++            type("Result", (), {"returncode": 0, "stdout": "desktop-linux\n"})(),
++            type("Result", (), {"returncode": 0, "stdout": "docker-desktop\n"})(),
++            type("Result", (), {"returncode": 0, "stdout": json.dumps([container])})(),
++        ]
++        with patch.object(target, "command", side_effect=responses):
++            return target.validate_disposable_target(CONTAINER_ID, RUN_TOKEN, PURPOSE)
++
++    def test_accepts_exact_isolated_run_owned_container(self):
++        self.assertEqual(self.call_with(inspected_container()), CONTAINER_ID)
++
++    def test_rejects_wrong_run_token(self):
++        value = inspected_container()
++        value["Config"]["Labels"]["collegeai.validation.run"] = "c" * 32
++        with self.assertRaisesRegex(RuntimeError, "Run token"):
++            self.call_with(value)
++
++    def test_rejects_persistent_volume(self):
++        value = inspected_container()
++        value["Mounts"] = [{"Type": "volume", "Destination": "/var/lib/postgresql/data"}]
++        with self.assertRaisesRegex(RuntimeError, "tmpfs"):
++            self.call_with(value)
++
++    def test_rejects_published_port(self):
++        value = inspected_container()
++        value["HostConfig"]["PortBindings"] = {"5432/tcp": [{"HostPort": "54322"}]}
++        with self.assertRaisesRegex(RuntimeError, "published host ports"):
++            self.call_with(value)
++
++    def test_rejects_network_access(self):
++        value = inspected_container()
++        value["HostConfig"]["NetworkMode"] = "bridge"
++        with self.assertRaisesRegex(RuntimeError, "network=none"):
++            self.call_with(value)
++
++    def test_rejects_arbitrary_id_before_inspection(self):
++        with self.assertRaisesRegex(RuntimeError, "64-character"):
++            target.validate_disposable_target("supabase_db_CollegeAIChatbot", RUN_TOKEN, PURPOSE)
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- a/scripts/validation/verify_academic_setup_database.ps1
++++ b/scripts/validation/verify_academic_setup_database.ps1
+@@ -1,46 +1,65 @@
+ [CmdletBinding()]
+ param()
+-$ErrorActionPreference = 'Continue'
++$ErrorActionPreference = 'Continue' # PostgreSQL NOTICE output is native stderr, not a failure.
+ $repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+-$containerName = 'codex-academic-setup-' + [guid]::NewGuid().ToString('N').Substring(0, 10)
++$purpose = 'academic-setup'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-academic-setup-' + $runToken.Substring(0, 12)
+ $containerId = $null
+ $verificationExit = 1
+-if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop is permitted' }
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++
++# Refuse remote/overridden Docker targets before creating anything.
++if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop desktop-linux is permitted' }
+ if ((& docker info --format '{{.Name}}').Trim() -ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }
+ try {
+     $fixturePassword = [guid]::NewGuid().ToString('N')
+-    $containerId = (& docker run --rm -d --name $containerName --label 'collegeai.academic-setup-verification=true' -e "POSTGRES_PASSWORD=$fixturePassword" public.ecr.aws/supabase/postgres:17.6.1.166).Trim()
+-    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create disposable database' }
++    $containerId = (& docker run --rm -d --network none --tmpfs /var/lib/postgresql/data:rw,size=536870912 --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" `
++        --label "collegeai.validation.purpose=$purpose" `
++        -e "POSTGRES_PASSWORD=$fixturePassword" $image).Trim()
++    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++
+     $ready = $false
+     for ($attempt = 0; $attempt -lt 100; $attempt++) {
+-        & docker exec $containerName pg_isready -U postgres *> $null
+-        if ($LASTEXITCODE -eq 0 -and ([string](& docker exec $containerName cat /proc/1/comm 2>$null)).Trim() -match '^[.]?postgres') { $ready = $true; break }
++        & docker exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0 -and ([string](& docker exec $containerId cat /proc/1/comm 2>$null)).Trim() -match '^[.]?postgres') { $ready = $true; break }
+         Start-Sleep -Milliseconds 500
+     }
+     if (-not $ready) { throw 'Disposable database did not become ready' }
+-    & docker cp (Join-Path $repository 'supabase\migrations') "${containerName}:/tmp/migrations"
++
++    # Verify the exact run-owned container has only bounded tmpfs storage, no published ports, and no network.
++    $verifiedId = & python -c "import sys; sys.path.insert(0, r'$PSScriptRoot'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))" $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0 -or $verifiedId.Trim() -ne $containerId) { throw 'Disposable container safety validation failed' }
++
++    & docker cp (Join-Path $repository 'supabase\migrations') "${containerId}:/tmp/migrations"
+     if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
+     $migrations = Get-ChildItem -LiteralPath (Join-Path $repository 'supabase\migrations') -Filter '*.sql' | Sort-Object Name
+     foreach ($migration in $migrations) {
+         Write-Output "REPLAY $($migration.Name)"
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
+         if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
+     }
+     foreach ($fixture in @('academic_setup_sql_lint.sql', 'academic_setup_database.sql', 'faculty_responsibilities_database.sql', 'faculty_attendance_database.sql', 'faculty_tests_database.sql')) {
+-        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerName}:/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw 'Could not copy contract fixture' }
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
+         if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
+     }
+-    & (Join-Path $repository 'backend\.venv\Scripts\python.exe') (Join-Path $PSScriptRoot 'academic_setup_concurrency.py') $containerName
++    & python (Join-Path $PSScriptRoot 'academic_setup_concurrency.py') $containerId $runToken $purpose
+     if ($LASTEXITCODE -ne 0) { throw 'Academic concurrency contracts failed' }
+-    Write-Output "DATABASE PASS: $($migrations.Count) migrations; academic, responsibility, attendance and assessment contracts; academic races"
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; academic, responsibility, attendance, assessment, and academic-race contracts passed"
+     $verificationExit = 0
+-} catch { Write-Error $_ }
+-finally {
++} catch {
++    Write-Error $_
++} finally {
+     if ($containerId -match '^[a-f0-9]{64}$') {
+-        & docker stop $containerId | Out-Null
+-        if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
++        $ownedToken = (& docker inspect --format '{{ index .Config.Labels "collegeai.validation.run" }}' $containerId 2>$null).Trim()
++        if ($ownedToken -eq $runToken) {
++            & docker stop $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
++        } else { Write-Warning 'Cleanup refused because container ownership label did not match this run' }
+     }
+ }
+ exit $verificationExit
+--- a/scripts/validation/verify_faculty_assignment_database.ps1
++++ b/scripts/validation/verify_faculty_assignment_database.ps1
+@@ -0,0 +1,65 @@
++[CmdletBinding()]
++param()
++$ErrorActionPreference = 'Continue' # PostgreSQL NOTICE output is native stderr, not a failure.
++$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
++$purpose = 'faculty-assignment'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-faculty-assignment-' + $runToken.Substring(0, 12)
++$containerId = $null
++$verificationExit = 1
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++
++# Refuse remote/overridden Docker targets before creating anything.
++if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop desktop-linux is permitted' }
++if ((& docker info --format '{{.Name}}').Trim() -ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }
++try {
++    $fixturePassword = [guid]::NewGuid().ToString('N')
++    $containerId = (& docker run --rm -d --network none --tmpfs /var/lib/postgresql/data:rw,size=536870912 --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" `
++        --label "collegeai.validation.purpose=$purpose" `
++        -e "POSTGRES_PASSWORD=$fixturePassword" $image).Trim()
++    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++
++    $ready = $false
++    for ($attempt = 0; $attempt -lt 100; $attempt++) {
++        & docker exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0 -and ([string](& docker exec $containerId cat /proc/1/comm 2>$null)).Trim() -match '^[.]?postgres') { $ready = $true; break }
++        Start-Sleep -Milliseconds 500
++    }
++    if (-not $ready) { throw 'Disposable database did not become ready' }
++
++    # Verify the exact run-owned container has only bounded tmpfs storage, no published ports, and no network.
++    $verifiedId = & python -c "import sys; sys.path.insert(0, r'$PSScriptRoot'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))" $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0 -or $verifiedId.Trim() -ne $containerId) { throw 'Disposable container safety validation failed' }
++
++    & docker cp (Join-Path $repository 'supabase\migrations') "${containerId}:/tmp/migrations"
++    if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
++    $migrations = Get-ChildItem -LiteralPath (Join-Path $repository 'supabase\migrations') -Filter '*.sql' | Sort-Object Name
++    foreach ($migration in $migrations) {
++        Write-Output "REPLAY $($migration.Name)"
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
++    }
++    foreach ($fixture in @('faculty_responsibilities_database.sql', 'faculty_attendance_database.sql')) {
++        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
++    }
++    & python (Join-Path $PSScriptRoot 'faculty_assignment_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Faculty assignment concurrency contracts failed' }
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; responsibility, attendance, faculty assignment, and concurrency contracts passed"
++    $verificationExit = 0
++} catch {
++    Write-Error $_
++} finally {
++    if ($containerId -match '^[a-f0-9]{64}$') {
++        $ownedToken = (& docker inspect --format '{{ index .Config.Labels "collegeai.validation.run" }}' $containerId 2>$null).Trim()
++        if ($ownedToken -eq $runToken) {
++            & docker stop $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
++        } else { Write-Warning 'Cleanup refused because container ownership label did not match this run' }
++    }
++}
++exit $verificationExit
+--- a/scripts/validation/verify_faculty_attendance_database.ps1
++++ b/scripts/validation/verify_faculty_attendance_database.ps1
+@@ -2,55 +2,64 @@
+ param()
+ $ErrorActionPreference = 'Continue' # PostgreSQL NOTICE output is native stderr, not a failure.
+ $repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+-$containerName = 'codex-attendance-verify-20261007'
++$purpose = 'faculty-attendance'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-faculty-attendance-' + $runToken.Substring(0, 12)
+ $containerId = $null
+ $verificationExit = 1
+-if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop is permitted' }
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++
++# Refuse remote/overridden Docker targets before creating anything.
++if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop desktop-linux is permitted' }
+ if ((& docker info --format '{{.Name}}').Trim() -ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }
+-if (& docker ps -aq --filter "name=^/$containerName`$") { throw 'Verification container already exists; refusing to reuse it' }
+ try {
+     $fixturePassword = [guid]::NewGuid().ToString('N')
+-    $containerId = (& docker run --rm -d --name $containerName --label 'collegeai.attendance-verification=true' -e "POSTGRES_PASSWORD=$fixturePassword" public.ecr.aws/supabase/postgres:17.6.1.166).Trim()
+-    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create disposable database' }
++    $containerId = (& docker run --rm -d --network none --tmpfs /var/lib/postgresql/data:rw,size=536870912 --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" `
++        --label "collegeai.validation.purpose=$purpose" `
++        -e "POSTGRES_PASSWORD=$fixturePassword" $image).Trim()
++    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++
+     $ready = $false
+     for ($attempt = 0; $attempt -lt 100; $attempt++) {
+-        & docker exec $containerName pg_isready -U postgres *> $null
+-        if ($LASTEXITCODE -eq 0) {
+-            # pg_isready also accepts the temporary server used by image init.
+-            # PID 1 becomes postgres only after bootstrap finishes.
+-            $serverProcess = [string](& docker exec $containerName cat /proc/1/comm 2>$null)
+-            if ($serverProcess.Trim() -match '^[.]?postgres') { $ready = $true; break }
+-        }
++        & docker exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0 -and ([string](& docker exec $containerId cat /proc/1/comm 2>$null)).Trim() -match '^[.]?postgres') { $ready = $true; break }
+         Start-Sleep -Milliseconds 500
+     }
+     if (-not $ready) { throw 'Disposable database did not become ready' }
+-    & docker cp (Join-Path $repository 'supabase\migrations') "${containerName}:/tmp/migrations"
++
++    # Verify the exact run-owned container has only bounded tmpfs storage, no published ports, and no network.
++    $verifiedId = & python -c "import sys; sys.path.insert(0, r'$PSScriptRoot'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))" $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0 -or $verifiedId.Trim() -ne $containerId) { throw 'Disposable container safety validation failed' }
++
++    & docker cp (Join-Path $repository 'supabase\migrations') "${containerId}:/tmp/migrations"
+     if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
+     $migrations = Get-ChildItem -LiteralPath (Join-Path $repository 'supabase\migrations') -Filter '*.sql' | Sort-Object Name
+     foreach ($migration in $migrations) {
+         Write-Output "REPLAY $($migration.Name)"
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
+         if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
+     }
+-    foreach ($fixture in @('faculty_responsibilities_database.sql','faculty_attendance_database.sql')) {
+-        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerName}:/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw 'Could not copy contract fixture' }
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++    foreach ($fixture in @('faculty_responsibilities_database.sql', 'faculty_attendance_database.sql')) {
++        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
+         if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
+     }
+-    Push-Location $repository
+-    try {
+-        & python scripts/validation/faculty_attendance_concurrency.py
+-        if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed' }
+-    } finally { Pop-Location }
+-    Write-Output "DATABASE PASS: $($migrations.Count) migrations replayed; responsibility, attendance and concurrency contracts passed"
++    & python (Join-Path $PSScriptRoot 'faculty_attendance_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Attendance concurrency contracts failed' }
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; responsibility, attendance, and concurrency contracts passed"
+     $verificationExit = 0
+ } catch {
+     Write-Error $_
+ } finally {
+     if ($containerId -match '^[a-f0-9]{64}$') {
+-        & docker stop $containerId | Out-Null
+-        if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
++        $ownedToken = (& docker inspect --format '{{ index .Config.Labels "collegeai.validation.run" }}' $containerId 2>$null).Trim()
++        if ($ownedToken -eq $runToken) {
++            & docker stop $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
++        } else { Write-Warning 'Cleanup refused because container ownership label did not match this run' }
+     }
+ }
+ exit $verificationExit
+--- a/scripts/validation/verify_faculty_tests_database.ps1
++++ b/scripts/validation/verify_faculty_tests_database.ps1
+@@ -2,57 +2,66 @@
+ param()
+ $ErrorActionPreference = 'Continue' # PostgreSQL NOTICE output is native stderr, not a failure.
+ $repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+-$containerName = 'codex-attendance-verify-20261007'
++$purpose = 'faculty-tests'
++$runToken = [guid]::NewGuid().ToString('N')
++$containerName = 'codex-faculty-tests-' + $runToken.Substring(0, 12)
+ $containerId = $null
+ $verificationExit = 1
+-if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop is permitted' }
++$image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
++
++# Refuse remote/overridden Docker targets before creating anything.
++if ($env:DOCKER_HOST -or (& docker context show).Trim() -ne 'desktop-linux') { throw 'Only local Docker Desktop desktop-linux is permitted' }
+ if ((& docker info --format '{{.Name}}').Trim() -ne 'docker-desktop') { throw 'Expected local Docker Desktop engine' }
+-if (& docker ps -aq --filter "name=^/$containerName`$") { throw 'Verification container already exists; refusing to reuse it' }
+ try {
+     $fixturePassword = [guid]::NewGuid().ToString('N')
+-    $containerId = (& docker run --rm -d --name $containerName --label 'collegeai.attendance-verification=true' -e "POSTGRES_PASSWORD=$fixturePassword" public.ecr.aws/supabase/postgres:17.6.1.166).Trim()
+-    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create disposable database' }
++    $containerId = (& docker run --rm -d --network none --tmpfs /var/lib/postgresql/data:rw,size=536870912 --name $containerName `
++        --label 'collegeai.validation.disposable=true' `
++        --label "collegeai.validation.run=$runToken" `
++        --label "collegeai.validation.purpose=$purpose" `
++        -e "POSTGRES_PASSWORD=$fixturePassword" $image).Trim()
++    if ($LASTEXITCODE -ne 0 -or $containerId -notmatch '^[a-f0-9]{64}$') { throw 'Could not create isolated disposable database' }
++
+     $ready = $false
+     for ($attempt = 0; $attempt -lt 100; $attempt++) {
+-        & docker exec $containerName pg_isready -U postgres *> $null
+-        if ($LASTEXITCODE -eq 0) {
+-            # pg_isready also accepts the temporary server used by image init.
+-            # PID 1 becomes postgres only after bootstrap finishes.
+-            $serverProcess = [string](& docker exec $containerName cat /proc/1/comm 2>$null)
+-            if ($serverProcess.Trim() -match '^[.]?postgres') { $ready = $true; break }
+-        }
++        & docker exec $containerId pg_isready -U postgres *> $null
++        if ($LASTEXITCODE -eq 0 -and ([string](& docker exec $containerId cat /proc/1/comm 2>$null)).Trim() -match '^[.]?postgres') { $ready = $true; break }
+         Start-Sleep -Milliseconds 500
+     }
+     if (-not $ready) { throw 'Disposable database did not become ready' }
+-    & docker cp (Join-Path $repository 'supabase\migrations') "${containerName}:/tmp/migrations"
++
++    # Verify the exact run-owned container has only bounded tmpfs storage, no published ports, and no network.
++    $verifiedId = & python -c "import sys; sys.path.insert(0, r'$PSScriptRoot'); from disposable_container import validate_disposable_target; print(validate_disposable_target(sys.argv[1], sys.argv[2], sys.argv[3]))" $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0 -or $verifiedId.Trim() -ne $containerId) { throw 'Disposable container safety validation failed' }
++
++    & docker cp (Join-Path $repository 'supabase\migrations') "${containerId}:/tmp/migrations"
+     if ($LASTEXITCODE -ne 0) { throw 'Could not copy migrations' }
+     $migrations = Get-ChildItem -LiteralPath (Join-Path $repository 'supabase\migrations') -Filter '*.sql' | Sort-Object Name
+     foreach ($migration in $migrations) {
+         Write-Output "REPLAY $($migration.Name)"
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f "/tmp/migrations/$($migration.Name)"
+         if ($LASTEXITCODE -ne 0) { throw "Migration failed: $($migration.Name)" }
+     }
+-    foreach ($fixture in @('faculty_responsibilities_database.sql','faculty_attendance_database.sql','faculty_tests_database.sql')) {
+-        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerName}:/tmp/$fixture"
+-        if ($LASTEXITCODE -ne 0) { throw 'Could not copy contract fixture' }
+-        & docker exec $containerName psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
++    foreach ($fixture in @('faculty_responsibilities_database.sql', 'faculty_attendance_database.sql', 'faculty_tests_database.sql')) {
++        & docker cp (Join-Path $PSScriptRoot $fixture) "${containerId}:/tmp/$fixture"
++        if ($LASTEXITCODE -ne 0) { throw "Could not copy contract fixture: $fixture" }
++        & docker exec $containerId psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f "/tmp/$fixture"
+         if ($LASTEXITCODE -ne 0) { throw "Database contract failed: $fixture" }
+     }
+-    Push-Location $repository
+-    try {
+-        & python scripts/validation/faculty_attendance_concurrency.py
+-        if ($LASTEXITCODE -ne 0) { throw 'Concurrency contracts failed' }
+-    } finally { Pop-Location }
+-    & python scripts/validation/faculty_tests_concurrency.py
++    & python (Join-Path $PSScriptRoot 'faculty_attendance_concurrency.py') $containerId $runToken $purpose
++    if ($LASTEXITCODE -ne 0) { throw 'Attendance concurrency contracts failed' }
++    & python (Join-Path $PSScriptRoot 'faculty_tests_concurrency.py') $containerId $runToken $purpose
+     if ($LASTEXITCODE -ne 0) { throw 'Assessment concurrency contracts failed' }
+-    Write-Output "DATABASE PASS: $($migrations.Count) migrations replayed; responsibility, attendance, assessment and concurrency contracts passed"
++    Write-Output "DATABASE PASS: $($migrations.Count) migrations; responsibility, attendance, assessment, and concurrency contracts passed"
+     $verificationExit = 0
+ } catch {
+     Write-Error $_
+ } finally {
+     if ($containerId -match '^[a-f0-9]{64}$') {
+-        & docker stop $containerId | Out-Null
+-        if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
++        $ownedToken = (& docker inspect --format '{{ index .Config.Labels "collegeai.validation.run" }}' $containerId 2>$null).Trim()
++        if ($ownedToken -eq $runToken) {
++            & docker stop $containerId | Out-Null
++            if ($LASTEXITCODE -ne 0) { Write-Warning 'Disposable verification container cleanup failed' }
++        } else { Write-Warning 'Cleanup refused because container ownership label did not match this run' }
+     }
+ }
+ exit $verificationExit

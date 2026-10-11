@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import time
 from pathlib import Path
 from uuid import uuid4
+
+from disposable_container import (
+    docker_arguments,
+    expected_name,
+    validate_cleanup_target,
+    validate_disposable_target,
+    validate_local_engine,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.166"
@@ -24,7 +31,7 @@ CATALOGS = (
 
 def docker(*args: str, sql: str | None = None, expect_success: bool = True) -> str:
     result = subprocess.run(
-        ["docker", "--context", "desktop-linux", *args],
+        docker_arguments(*args),
         input=sql,
         capture_output=True,
         text=True,
@@ -39,27 +46,12 @@ def docker(*args: str, sql: str | None = None, expect_success: bool = True) -> s
 
 
 def main() -> None:
-    if os.environ.get("DOCKER_HOST"):
-        raise RuntimeError("Refusing an ambiguous DOCKER_HOST")
-    if docker("info", "--format", "{{.Name}} {{.OSType}}") != "docker-desktop linux":
-        raise RuntimeError("Only the local Docker Desktop Linux engine is permitted")
-
-    container_name = f"collegeai-reset-verify-{uuid4().hex[:12]}"
-    container_id = docker(
-        "run",
-        "--pull=never",
-        "--rm",
-        "-d",
-        "--name",
-        container_name,
-        "--label",
-        "collegeai.data-reset-verification=true",
-        "-e",
-        f"POSTGRES_PASSWORD={uuid4().hex}",
-        IMAGE,
-    )
-    if not re.fullmatch(r"[a-f0-9]{64}", container_id):
-        raise RuntimeError("Disposable container creation did not return a valid ID")
+    validate_local_engine()
+    run_token = uuid4().hex
+    purpose = "data-reset"
+    container_name = expected_name(run_token, purpose)
+    container_id = None
+    created = False
 
     def execute(
         sql: str, *, expect_success: bool = True, user: str = "postgres"
@@ -98,22 +90,33 @@ def main() -> None:
         return tuple(map(int, value.split(",")))
 
     try:
+        container_id = docker(
+            "run", "--pull=never", "--rm", "-d", "--network", "none",
+            "--tmpfs", "/var/lib/postgresql/data:rw,size=536870912",
+            "--name", container_name,
+            "--label", "collegeai.validation.disposable=true",
+            "--label", f"collegeai.validation.run={run_token}",
+            "--label", f"collegeai.validation.purpose={purpose}",
+            "-e", "PGDATA=/var/lib/postgresql/data",
+            "-e", f"POSTGRES_PASSWORD={uuid4().hex}", IMAGE,
+        )
+        if not re.fullmatch(r"[a-f0-9]{64}", container_id):
+            raise RuntimeError("Disposable container creation did not return a valid ID")
+        created = True
+        container_id = validate_disposable_target(container_id, run_token, purpose)
         print(
             "Disposable local database created; waiting for initialization", flush=True
         )
         for _ in range(100):
             process = docker("exec", container_id, "cat", "/proc/1/comm")
             readiness = subprocess.run(
-                [
-                    "docker",
-                    "--context",
-                    "desktop-linux",
+                docker_arguments(
                     "exec",
                     container_id,
                     "pg_isready",
                     "-U",
                     "postgres",
-                ],
+                ),
                 capture_output=True,
                 text=True,
                 check=False,
@@ -264,8 +267,11 @@ def main() -> None:
         assert json.loads(execute(inspect))["platform_onboarding"]["status"] == "active"
         print("PASS: missing platform seed is restored", flush=True)
     finally:
-        # Only stop the exact container created above. No mounts, volumes or ports.
-        docker("stop", container_id)
+        if created:
+            # Plain inspection JSON checks the exact ID, name, token, and labels.
+            # A failed bootstrap is still cleaned up; foreign resources are not.
+            owned_id = validate_cleanup_target(container_id, run_token, purpose)
+            docker("stop", "--timeout", "10", owned_id)
 
 
 if __name__ == "__main__":

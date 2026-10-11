@@ -1,0 +1,34 @@
+[
+  {
+    "path": "scripts/validation/academic_setup_concurrency.py",
+    "sha256": "9e696f1765683f28a273d016ed7a9f93e54478f22c25e26c4afb51d929a43deb"
+  },
+  {
+    "path": "scripts/validation/faculty_assignment_concurrency.py",
+    "sha256": "6efefcc48e0cd6eb2ff1ac693f6cdee131ba29d97cadd0b390699651c496377d"
+  },
+  {
+    "path": "scripts/validation/faculty_attendance_concurrency.py",
+    "sha256": "077c3612d8fb1a84668191eddaefe89121cff5006455717d42d1909a6b376e32"
+  },
+  {
+    "path": "scripts/validation/faculty_tests_concurrency.py",
+    "sha256": "4c1d1ccdf0c0e091d254496531de303449fb402305f3b720fd052754e59d7ee5"
+  },
+  {
+    "path": "scripts/validation/verify_academic_setup_database.ps1",
+    "sha256": "f7819fbf9d313d6ffd33872dad529d0d527b76975e0adb933fb70ab1dfdc573b"
+  },
+  {
+    "path": "scripts/validation/verify_faculty_attendance_database.ps1",
+    "sha256": "ee3b93efc4c1e61872ee0e0564eae3dd86695b72a513c4f61a1dcf5da25fa779"
+  },
+  {
+    "path": "scripts/validation/verify_faculty_tests_database.ps1",
+    "sha256": "69a49333f57f29095d2ba727b362a2a3d21a1012db83eb6bff5234441303800b"
+  },
+  {
+    "path": "scripts/validation/verify_supabase_data_reset.py",
+    "sha256": "fdacd583a19f6264a5d9ee6c6ba67337e12ae0226a7e2d8b20dde6296d0bb98d"
+  }
+]

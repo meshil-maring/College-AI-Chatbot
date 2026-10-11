@@ -1,0 +1,1028 @@
+{
+  "format_version": 1,
+  "review_only": true,
+  "executed": false,
+  "date_anchor": {
+    "symbol": "D",
+    "meaning": "authorized disposable validation run date in Asia/Kolkata",
+    "historical_dates": "invented scenario offsets only; never production backfill evidence"
+  },
+  "loader_contract": "Specification only. Apply after explicit approval through full-chain validated fixtures. Resolve references to IDs. Keep constraints and guards enabled. Construct isolated historical versions with corresponding events; do not alter clock or production RPC guards.",
+  "institutions": [
+    {
+      "ref": "A",
+      "institution_id": "00000000-0000-0000-0000-000000000065",
+      "name": "Synthetic Institute A",
+      "code": "SYN-A",
+      "status": "active",
+      "is_active": true
+    },
+    {
+      "ref": "B",
+      "institution_id": "00000000-0000-0000-0000-000000000066",
+      "name": "Synthetic Institute B",
+      "code": "SYN-B",
+      "status": "active",
+      "is_active": true
+    }
+  ],
+  "departments": [
+    {
+      "ref": "DA",
+      "department_id": "00000000-0000-0000-0000-0000000000c9",
+      "institution": "A",
+      "code": "SYN-DA"
+    },
+    {
+      "ref": "DB",
+      "department_id": "00000000-0000-0000-0000-0000000000ca",
+      "institution": "B",
+      "code": "SYN-DB"
+    }
+  ],
+  "programs": [
+    {
+      "ref": "A1",
+      "program_id": "00000000-0000-0000-0000-00000000012d",
+      "department": "DA",
+      "code": "SYN-A1"
+    },
+    {
+      "ref": "A2",
+      "program_id": "00000000-0000-0000-0000-00000000012e",
+      "department": "DA",
+      "code": "SYN-A2"
+    },
+    {
+      "ref": "B1",
+      "program_id": "00000000-0000-0000-0000-00000000012f",
+      "department": "DB",
+      "code": "SYN-B1"
+    }
+  ],
+  "people": [
+    {
+      "ref": "S1",
+      "student_id": "00000000-0000-0000-0000-000000000191",
+      "user_id": "00000000-0000-0000-0000-0000000001f5",
+      "auth_user_id": "00000000-0000-0000-0000-000000000259",
+      "email": "student1@example.invalid",
+      "legacy_institution": "A",
+      "legacy_student_number": "SN001",
+      "legacy_register_number": "R001",
+      "registration_approval": "approved",
+      "user_status": "active",
+      "is_active": true
+    },
+    {
+      "ref": "S2",
+      "student_id": "00000000-0000-0000-0000-000000000192",
+      "user_id": "00000000-0000-0000-0000-0000000001f6",
+      "auth_user_id": "00000000-0000-0000-0000-00000000025a",
+      "email": "student2@example.invalid",
+      "legacy_institution": "A",
+      "legacy_student_number": "SN002",
+      "legacy_register_number": "R002",
+      "registration_approval": "approved",
+      "user_status": "active",
+      "is_active": true
+    }
+  ],
+  "actors": [
+    {
+      "ref": "ADMIN_A",
+      "user_id": "00000000-0000-0000-0000-0000000001ff",
+      "auth_user_id": "00000000-0000-0000-0000-000000000263",
+      "email": "admin-a@example.invalid",
+      "role": "admin",
+      "scope": "A",
+      "permissions": [
+        "students.create",
+        "students.update",
+        "students.approve",
+        "students.reject"
+      ]
+    },
+    {
+      "ref": "ADMIN_B",
+      "user_id": "00000000-0000-0000-0000-000000000200",
+      "auth_user_id": "00000000-0000-0000-0000-000000000264",
+      "email": "admin-b@example.invalid",
+      "role": "admin",
+      "scope": "B",
+      "permissions": [
+        "students.create",
+        "students.update",
+        "students.approve",
+        "students.reject"
+      ]
+    },
+    {
+      "ref": "FACULTY_A",
+      "user_id": "00000000-0000-0000-0000-000000000201",
+      "auth_user_id": "00000000-0000-0000-0000-000000000265",
+      "email": "faculty-a@example.invalid",
+      "role": "faculty",
+      "scope": "A",
+      "permissions": [
+        "attendance.manage",
+        "faculty.assignments.read"
+      ],
+      "assigned_sections": [
+        "SEC_A1"
+      ]
+    }
+  ],
+  "academic_years": [
+    {
+      "ref": "A_OLD_YEAR",
+      "academic_year_id": "00000000-0000-0000-0000-0000000002bd",
+      "institution": "A",
+      "start_date": "D-420",
+      "end_date": "D-56",
+      "is_active": false,
+      "is_current": false
+    },
+    {
+      "ref": "A_YEAR",
+      "academic_year_id": "00000000-0000-0000-0000-0000000002be",
+      "institution": "A",
+      "start_date": "D-55",
+      "end_date": "D+310",
+      "is_active": true,
+      "is_current": true
+    },
+    {
+      "ref": "B_YEAR",
+      "academic_year_id": "00000000-0000-0000-0000-0000000002bf",
+      "institution": "B",
+      "start_date": "D-55",
+      "end_date": "D+310",
+      "is_active": true,
+      "is_current": true
+    }
+  ],
+  "semesters": [
+    {
+      "ref": "A_OLD_S1",
+      "semester_id": "00000000-0000-0000-0000-000000000321",
+      "year": "A_OLD_YEAR",
+      "semester_number": 1,
+      "start_date": "D-420",
+      "end_date": "D-240",
+      "is_active": false,
+      "is_current": false
+    },
+    {
+      "ref": "A_S1",
+      "semester_id": "00000000-0000-0000-0000-000000000322",
+      "year": "A_YEAR",
+      "semester_number": 1,
+      "start_date": "D-55",
+      "end_date": "D-1",
+      "is_active": true,
+      "is_current": false
+    },
+    {
+      "ref": "A_S2",
+      "semester_id": "00000000-0000-0000-0000-000000000323",
+      "year": "A_YEAR",
+      "semester_number": 2,
+      "start_date": "D",
+      "end_date": "D+120",
+      "is_active": true,
+      "is_current": true
+    },
+    {
+      "ref": "B_S2",
+      "semester_id": "00000000-0000-0000-0000-000000000324",
+      "year": "B_YEAR",
+      "semester_number": 2,
+      "start_date": "D",
+      "end_date": "D+120",
+      "is_active": true,
+      "is_current": true
+    }
+  ],
+  "repeat_variant": {
+    "description": "Use only for E14; changes dates of A_S1 and A_S2 in isolated database before placements exist. No second simultaneously active overlapping academic year.",
+    "semester_overrides": {
+      "A_S1": {
+        "start_date": "D",
+        "end_date": "D+120",
+        "is_current": true
+      },
+      "A_S2": {
+        "start_date": "D+121",
+        "end_date": "D+250",
+        "is_current": false
+      }
+    },
+    "past_placement": {
+      "semester": "A_OLD_S1",
+      "curriculum_semester_number": 1,
+      "attempt_number": 1,
+      "starts_on": "D-400",
+      "ends_on": "D-240"
+    },
+    "new_placement": {
+      "semester": "A_S1",
+      "curriculum_semester_number": 1,
+      "attempt_number": 2,
+      "starts_on": "D",
+      "ends_on": "D+121"
+    }
+  },
+  "subjects": [
+    {
+      "ref": "SUB_A",
+      "course_id": "00000000-0000-0000-0000-000000000385",
+      "department": "DA",
+      "code": "SYN-SUB-A"
+    },
+    {
+      "ref": "SUB_B",
+      "course_id": "00000000-0000-0000-0000-000000000386",
+      "department": "DB",
+      "code": "SYN-SUB-B"
+    }
+  ],
+  "offerings": [
+    {
+      "ref": "OFF_A1",
+      "course_offering_id": "00000000-0000-0000-0000-0000000003e9",
+      "course": "SUB_A",
+      "program": "A1",
+      "year": "A_YEAR",
+      "semester": "A_S2",
+      "requires_curriculum_link": true
+    },
+    {
+      "ref": "OFF_A2",
+      "course_offering_id": "00000000-0000-0000-0000-0000000003ea",
+      "course": "SUB_A",
+      "program": "A2",
+      "year": "A_YEAR",
+      "semester": "A_S2",
+      "requires_curriculum_link": true
+    },
+    {
+      "ref": "OFF_B1",
+      "course_offering_id": "00000000-0000-0000-0000-0000000003eb",
+      "course": "SUB_B",
+      "program": "B1",
+      "year": "B_YEAR",
+      "semester": "B_S2",
+      "requires_curriculum_link": true
+    }
+  ],
+  "sections": [
+    {
+      "ref": "SEC_A1",
+      "section_id": "00000000-0000-0000-0000-00000000044d",
+      "offering": "OFF_A1",
+      "code": "SYN-SEC-A1"
+    },
+    {
+      "ref": "SEC_A2",
+      "section_id": "00000000-0000-0000-0000-00000000044e",
+      "offering": "OFF_A2",
+      "code": "SYN-SEC-A2"
+    },
+    {
+      "ref": "SEC_B1",
+      "section_id": "00000000-0000-0000-0000-00000000044f",
+      "offering": "OFF_B1",
+      "code": "SYN-SEC-B1"
+    }
+  ],
+  "identifiers": [
+    {
+      "ref": "I_SN1",
+      "identifier_id": "00000000-0000-0000-0000-0000000004b1",
+      "student": "S1",
+      "institution": "A",
+      "kind": "student_number",
+      "display_value": "SN001",
+      "verified_by": "ADMIN_A",
+      "evidence_reference": "synthetic:issuer-ledger:001"
+    },
+    {
+      "ref": "I_R1",
+      "identifier_id": "00000000-0000-0000-0000-0000000004b2",
+      "student": "S1",
+      "institution": "A",
+      "kind": "register_number",
+      "display_value": " R001\t",
+      "normalized_expected": "R001",
+      "verified_by": "ADMIN_A",
+      "evidence_reference": "synthetic:issuer-ledger:001"
+    },
+    {
+      "ref": "I_B_SN1",
+      "identifier_id": "00000000-0000-0000-0000-0000000004b3",
+      "student": "S1",
+      "institution": "B",
+      "kind": "student_number",
+      "display_value": "BSN001",
+      "verified_by": "ADMIN_B",
+      "evidence_reference": "synthetic:destination-ledger:001"
+    },
+    {
+      "ref": "I_B_R1",
+      "identifier_id": "00000000-0000-0000-0000-0000000004b4",
+      "student": "S1",
+      "institution": "B",
+      "kind": "register_number",
+      "display_value": "BR001",
+      "verified_by": "ADMIN_B",
+      "evidence_reference": "synthetic:destination-ledger:001"
+    }
+  ],
+  "episode_templates": {
+    "INITIAL_PENDING": {
+      "enrollment_id": "00000000-0000-0000-0000-000000000515",
+      "student": "S1",
+      "institution": "A",
+      "program": "A1",
+      "admission_kind": "initial",
+      "approval_status": "pending",
+      "lifecycle_status": "pending_admission",
+      "mapping_status": "verified",
+      "admission_effective_on": null
+    },
+    "SOURCE_ACTIVE": {
+      "enrollment_id": "00000000-0000-0000-0000-000000000516",
+      "student": "S1",
+      "institution": "A",
+      "program": "A1",
+      "admission_kind": "initial",
+      "approval_status": "approved",
+      "lifecycle_status": "active",
+      "mapping_status": "verified",
+      "admission_effective_on": "D-400",
+      "identifiers": [
+        "I_SN1",
+        "I_R1"
+      ]
+    },
+    "TRANSFER_PENDING": {
+      "enrollment_id": "00000000-0000-0000-0000-000000000517",
+      "student": "S1",
+      "institution": "B",
+      "program": "B1",
+      "admission_kind": "transfer_in",
+      "predecessor": "SOURCE_ACTIVE",
+      "approval_status": "approved",
+      "lifecycle_status": "pending_admission",
+      "mapping_status": "verified",
+      "identifiers": [
+        "I_B_SN1",
+        "I_B_R1"
+      ]
+    },
+    "LEGACY_UNRESOLVED": {
+      "enrollment_id": "00000000-0000-0000-0000-000000000518",
+      "student": "S2",
+      "institution": "A",
+      "program": null,
+      "admission_kind": "legacy_snapshot",
+      "approval_status": "pending",
+      "lifecycle_status": "legacy_unresolved",
+      "mapping_status": "unresolved",
+      "admission_effective_on": null,
+      "legacy_snapshot": {
+        "registration_date": "D-50",
+        "status": "inactive",
+        "academic_year_id": null
+      }
+    }
+  },
+  "placement_templates": {
+    "CURRENT_INITIAL": {
+      "placement_id": "00000000-0000-0000-0000-000000000579",
+      "enrollment": "INITIAL_PENDING",
+      "year": "A_YEAR",
+      "semester": "A_S2",
+      "curriculum_semester_number": 2,
+      "attempt_number": 1,
+      "starts_on": "D",
+      "ends_on": "D+121",
+      "evidence_reference": "synthetic:placement-order:001"
+    },
+    "SOURCE_OLD": {
+      "placement_id": "00000000-0000-0000-0000-00000000057a",
+      "enrollment": "SOURCE_ACTIVE",
+      "year": "A_YEAR",
+      "semester": "A_S1",
+      "curriculum_semester_number": 1,
+      "attempt_number": 1,
+      "starts_on": "D-50",
+      "ends_on": "D",
+      "evidence_reference": "synthetic:placement-order:002"
+    },
+    "DESTINATION_CURRENT": {
+      "placement_id": "00000000-0000-0000-0000-00000000057b",
+      "enrollment": "TRANSFER_PENDING",
+      "year": "B_YEAR",
+      "semester": "B_S2",
+      "curriculum_semester_number": 2,
+      "attempt_number": 1,
+      "starts_on": "D",
+      "ends_on": "D+121",
+      "evidence_reference": "synthetic:placement-order:003"
+    }
+  },
+  "history_records": [
+    {
+      "ref": "H_PUBLISHED",
+      "student_result_id": "00000000-0000-0000-0000-0000000005dd",
+      "student": "S1",
+      "institution": "A",
+      "program": "A1",
+      "year": "A_OLD_YEAR",
+      "semester": "A_OLD_S1",
+      "result_type": "semester",
+      "status": "published",
+      "sgpa": 8.25,
+      "source": "synthetic:published-record:001"
+    },
+    {
+      "ref": "H_WITHHELD",
+      "student_result_id": "00000000-0000-0000-0000-0000000005de",
+      "student": "S2",
+      "institution": "A",
+      "program": "A1",
+      "year": "A_OLD_YEAR",
+      "semester": "A_OLD_S1",
+      "result_type": "semester",
+      "status": "withheld",
+      "sgpa": 7.5,
+      "source": "synthetic:withheld-record:002"
+    },
+    {
+      "ref": "N_HISTORY",
+      "notification_id": "00000000-0000-0000-0000-0000000005df",
+      "student": "S1",
+      "institution": "A",
+      "source_type": "student_result",
+      "source_record": "H_PUBLISHED",
+      "is_read": false
+    }
+  ],
+  "unregistered_roster": {
+    "roster_id": "00000000-0000-0000-0000-000000000641",
+    "institution": "A",
+    "section": "SEC_A1",
+    "offering": "OFF_A1",
+    "semester": "A_S2",
+    "register_number": "PRE001",
+    "student_name": "Synthetic Future Student",
+    "linked_student_id": null,
+    "roster_status": "UNREGISTERED",
+    "reconciliation_state": "NONE",
+    "attendance": {
+      "session_date": "D",
+      "status": "present"
+    },
+    "assessment_marks": {
+      "mark_status": "present",
+      "scored_marks": 18,
+      "max_marks": 20
+    }
+  },
+  "operation_ids": {
+    "initial": "00000000-0000-0000-0000-0000000006a5",
+    "activation": "00000000-0000-0000-0000-0000000006a6",
+    "handoff": "00000000-0000-0000-0000-0000000006a7",
+    "same_key_retry": "00000000-0000-0000-0000-0000000006a8",
+    "changed_key_payload": "00000000-0000-0000-0000-0000000006a8"
+  },
+  "scenarios": [
+    {
+      "id": "E01",
+      "operation_id": "00000000-0000-0000-0000-000000000709",
+      "setup": "S1 complete registration in A; verify SN001/R001; create initial episode, approve admission, place on D, activate",
+      "inputs": {
+        "student": "S1",
+        "program": "A1",
+        "placement": "CURRENT_INITIAL",
+        "actor": "ADMIN_A"
+      },
+      "expected": "Stable student/user IDs unchanged; approval is distinct from account approval; one active episode, verified placement, ordered creation/approval/identifier/placement/activation events and audit. No fabricated date; admission explicitly D."
+    },
+    {
+      "id": "E02",
+      "operation_id": "00000000-0000-0000-0000-00000000070a",
+      "setup": "Pending account registration; approve admission/prepare placement then attempt activation",
+      "inputs": {
+        "override": "S1.registration_approval=pending",
+        "action": "activate"
+      },
+      "expected": "23514/controlled validation error; account remains pending, enrollment remains pending_admission, no activation event/audit or version change. No current academic entitlement."
+    },
+    {
+      "id": "E03",
+      "operation_id": "00000000-0000-0000-0000-00000000070b",
+      "setup": "Reject pending admission; retry same operation; try approve rejected episode",
+      "inputs": {
+        "episode": "INITIAL_PENDING",
+        "actions": [
+          "reject",
+          "identical_retry",
+          "approve"
+        ]
+      },
+      "expected": "First reject -> cancelled/rejected with reason/closure D; retry returns original result without second event; later approval fails. Identity/history retained."
+    },
+    {
+      "id": "E04",
+      "operation_id": "00000000-0000-0000-0000-00000000070c",
+      "setup": "Cancel unactivated application without placements",
+      "inputs": {
+        "episode": "INITIAL_PENDING",
+        "action": "cancel",
+        "prepared_placement_variant": "expect refusal"
+      },
+      "expected": "cancelled lifecycle, prior admission decision preserved; no current access. Reconsideration creates new successor rather than rewriting event. A prepared-placement cancellation is deliberately blocked by draft pending a reviewed cancellation adapter; no history deletion."
+    },
+    {
+      "id": "E05",
+      "operation_id": "00000000-0000-0000-0000-00000000070d",
+      "setup": "Program NULL, year/semester missing, or only legacy registration date",
+      "inputs": {
+        "episode": "LEGACY_UNRESOLVED",
+        "variants": [
+          "missing_program",
+          "missing_year",
+          "registration_date_only"
+        ]
+      },
+      "expected": "Pending can persist; approve without program fails; unknown legacy -> legacy_unresolved snapshot and no placement/current access. Legacy date preserved as provenance, not admission date."
+    },
+    {
+      "id": "E06",
+      "operation_id": "00000000-0000-0000-0000-00000000070e",
+      "setup": "Program A2 with claimed B year/semester or semester/year mismatch",
+      "inputs": {
+        "episode": "INITIAL_PENDING",
+        "forged_year": "B_YEAR",
+        "forged_semester": "B_S2"
+      },
+      "expected": "Tenant helper/composite FK rejects (23514 or 23503), no placement/event committed. Correct tenant-local IDs succeed only with valid dates."
+    },
+    {
+      "id": "E07",
+      "operation_id": "00000000-0000-0000-0000-00000000070f",
+      "setup": "S1 closed A episode with R001; readmit to A using existing identifiers",
+      "inputs": {
+        "student": "S1",
+        "predecessor_state": "withdrawn",
+        "kind": "readmission",
+        "reused_identifiers": [
+          "I_SN1",
+          "I_R1"
+        ]
+      },
+      "expected": "New enrollment ID and predecessor; original student/identifier IDs reused; old episode/events/marks untouched; one operational episode after activation."
+    },
+    {
+      "id": "E08",
+      "operation_id": "00000000-0000-0000-0000-000000000710",
+      "setup": "S2 claims S1's normalized R001, including surrounding tabs/spaces",
+      "inputs": {
+        "claimant": "S2",
+        "kind": "register_number",
+        "values": [
+          "R001",
+          " R001\t"
+        ]
+      },
+      "expected": "23505 collision; no identifier reassign, no new episode version/event/audit; submitted unverified claim cannot seize permanent ownership."
+    },
+    {
+      "id": "E09",
+      "operation_id": "00000000-0000-0000-0000-000000000711",
+      "setup": "A and B each issue R001 to different students; `0007` versus `7`, case variation",
+      "inputs": {
+        "values": [
+          "R001",
+          "0007",
+          "7",
+          "Ab01",
+          "ab01"
+        ],
+        "institutions": [
+          "A",
+          "B"
+        ],
+        "kind_collision": "register matches S1, roll matches S2"
+      },
+      "expected": "Different tenant identifiers coexist; leading-zero variants remain distinct; case is preserved by safe default. Same-tenant normalized trim duplicate rejects. Cross-kind untyped-login ambiguity fails closed rather than choosing a person."
+    },
+    {
+      "id": "E10",
+      "operation_id": "00000000-0000-0000-0000-000000000712",
+      "setup": "Transfer A -> B: prepare/approve destination; source authorization names destination final prepared version; execute handoff on D",
+      "inputs": {
+        "source": "SOURCE_ACTIVE",
+        "destination": "TRANSFER_PENDING",
+        "destination_placement": "DESTINATION_CURRENT",
+        "actors": [
+          "ADMIN_A",
+          "ADMIN_B"
+        ],
+        "date": "D"
+      },
+      "expected": "Two institutions' durable decisions and current authority verified; source transferred_out/closed D; destination active/admitted D; two events share one operation/correlation and canonical request; old publication/owners unchanged."
+    },
+    {
+      "id": "E11",
+      "operation_id": "00000000-0000-0000-0000-000000000713",
+      "setup": "Transfer destination pending/rejected, source consent absent/stale, changed destination version, source admin revoked or destination approver revoked",
+      "inputs": {
+        "variants": [
+          "destination_pending",
+          "destination_rejected",
+          "source_consent_missing",
+          "source_version_stale",
+          "destination_version_stale",
+          "source_actor_revoked",
+          "destination_actor_revoked"
+        ]
+      },
+      "expected": "Handoff fails with controlled denial/conflict; source remains operational; no partial closures/new activation/events/audit. Destination failure never strands source. Identical retry after authority revocation is denied."
+    },
+    {
+      "id": "E12",
+      "operation_id": "00000000-0000-0000-0000-000000000714",
+      "setup": "A1 -> A2 program change; approved successor/handoff",
+      "inputs": {
+        "source_program": "A1",
+        "destination_program": "A2",
+        "institution": "A",
+        "kind": "program_change"
+      },
+      "expected": "Same student/institution, new episode/program; prior withdrawn with program-change provenance. Changing known program on existing episode is rejected. Same-program successor rejected."
+    },
+    {
+      "id": "E13",
+      "operation_id": "00000000-0000-0000-0000-000000000715",
+      "setup": "Historical S1 semester-1 placement ends on D; promote to ordinal 2 placement",
+      "inputs": {
+        "prior_placement": "SOURCE_OLD",
+        "new_semester": "A_S2",
+        "boundary": "D",
+        "negative_boundaries": [
+          "D-1",
+          "D-50"
+        ]
+      },
+      "expected": "Adjacent `[start,D)` / `[D,end)` intervals accepted; old placement preserved, new ID and progression event. Overlapping/equal-start replacement rejects; event failure rolls back any old interval closure."
+    },
+    {
+      "id": "E14",
+      "operation_id": "00000000-0000-0000-0000-000000000716",
+      "setup": "Repeat ordinal 1 using different year/semester UUID",
+      "inputs": {
+        "fixture_variant": "repeat_variant",
+        "old_semester": "A_OLD_S1",
+        "new_semester": "A_S1",
+        "attempts": [
+          1,
+          2
+        ],
+        "invalid_attempts": [
+          1,
+          4
+        ]
+      },
+      "expected": "Attempt advances from 1 to 2; concrete semester changed but curriculum ordinal same. Skipping to attempt 4 or reusing attempt 1 outside leave resumption fails. Old attendance/results remain original attempt."
+    },
+    {
+      "id": "E15",
+      "operation_id": "00000000-0000-0000-0000-000000000717",
+      "setup": "Supplementary test conducted after original placement period",
+      "inputs": {
+        "original_attempt": 1,
+        "original_semester": "A_OLD_S1",
+        "supplementary_date": "D",
+        "required_result_types": [
+          "semester",
+          "supplementary"
+        ]
+      },
+      "expected": "Bind to evidenced original assessment/attempt, no fake new placement or automatic promotion. New publication edition/type must coexist after future result-uniqueness migration; current consolidated key blocks this and is a cutover blocker. No overwrite of original result."
+    },
+    {
+      "id": "E16",
+      "operation_id": "00000000-0000-0000-0000-000000000718",
+      "setup": "S1 active placement started before D; leave on D; seed prior leave for isolated resume-on-D test",
+      "inputs": {
+        "leave_start": "D-20",
+        "leave_transition": "D",
+        "resume_scenario": "isolated prior leave D-10 then place/resume D",
+        "same_attempt": 1
+      },
+      "expected": "Leave keeps approved same episode and IDs, closes interval D; blocks current assessments/content entitlement. Resume requires new evidenced placement on D and approved account; same attempt permitted; no second episode."
+    },
+    {
+      "id": "E17",
+      "operation_id": "00000000-0000-0000-0000-000000000719",
+      "setup": "Withdraw or graduate on D; then attempt resume on terminal row",
+      "inputs": {
+        "actions": [
+          "withdraw",
+          "graduate"
+        ],
+        "terminal_resume": "reject",
+        "date": "D"
+      },
+      "expected": "Proper terminal status/closure, placement closed only with nonempty valid interval; resume fails. Published historical records still eligible under approved historical policy. Further admission uses readmission."
+    },
+    {
+      "id": "E18",
+      "operation_id": "00000000-0000-0000-0000-00000000071a",
+      "setup": "Faculty creates UNREGISTERED roster and records attendance/test marks before S1 registration",
+      "inputs": {
+        "roster": "unregistered_roster",
+        "late_identity": "new synthetic PRE001 identity after records"
+      },
+      "expected": "Nullable student links remain valid; no synthetic student/episode; staff/faculty workflows continue. Later verified identity reconciliation links only uniquely supported period/attempt, preserves session/mark keys and unresolved conflict states."
+    },
+    {
+      "id": "E19",
+      "operation_id": "00000000-0000-0000-0000-00000000071b",
+      "setup": "Register and roll resolve to different people; multiple same-person subject rosters",
+      "inputs": {
+        "register_matches": "S1",
+        "roll_matches": "S2",
+        "same_person_rosters": [
+          "SEC_A1",
+          "SEC_A2"
+        ]
+      },
+      "expected": "Conflicting identifiers -> CONFLICT, no link/publication; same-person multiple sections is legitimate and reconciles per subject/date. Pending registration remains PENDING_APPROVAL, not ACTIVE."
+    },
+    {
+      "id": "E20",
+      "operation_id": "00000000-0000-0000-0000-00000000071c",
+      "setup": "Forge identifier of wrong kind/owner/tenant, predecessor of S2, placement of another episode, foreign correction reference",
+      "inputs": {
+        "forgeries": [
+          "identifier_wrong_kind",
+          "identifier_wrong_owner",
+          "identifier_wrong_tenant",
+          "predecessor_S2",
+          "foreign_placement",
+          "foreign_correction"
+        ]
+      },
+      "expected": "Child guards/composite FKs reject; no changed state/event. Public endpoint returns safe error without foreign identifiers/labels; every supplied reference checked."
+    },
+    {
+      "id": "E21",
+      "operation_id": "00000000-0000-0000-0000-00000000071d",
+      "setup": "Transfer/graduate S1 with published result, withheld result, notification and past attendance in A",
+      "inputs": {
+        "history": [
+          "H_PUBLISHED",
+          "H_WITHHELD",
+          "N_HISTORY"
+        ],
+        "mutations": [
+          "transfer",
+          "graduate"
+        ],
+        "snapshot_fields": [
+          "student_id",
+          "institution_id",
+          "program_id",
+          "academic_year_id",
+          "semester_id",
+          "status",
+          "marks"
+        ]
+      },
+      "expected": "Original student/institution/program/year/semester/status/marks unchanged. Own historical published read succeeds if A active/policy permits; withheld/draft and another student's records hidden. Mark-read updates only read fields and preserves A tenant."
+    },
+    {
+      "id": "E22",
+      "operation_id": "00000000-0000-0000-0000-00000000071e",
+      "setup": "Historical context for A with current episode B; resources/notices/AI/upcoming queries",
+      "inputs": {
+        "historical_context": "A",
+        "current_context": "B",
+        "requests": [
+          "published_history",
+          "resources",
+          "notices",
+          "upcoming",
+          "ai"
+        ]
+      },
+      "expected": "Historical academic A data permitted only by historical policy. A history does not confer current A resources, notices or upcoming sections. Current B content remains scoped; safe AI context corresponds to selected permitted records and contains no private event payload."
+    },
+    {
+      "id": "E23",
+      "operation_id": "00000000-0000-0000-0000-00000000071f",
+      "setup": "Inactive/archived A or inactive/deactivated account; only legacy_unresolved episode",
+      "inputs": {
+        "variants": [
+          "A.is_active=false",
+          "S1.user_status=deactivated",
+          "legacy_unresolved_only"
+        ]
+      },
+      "expected": "Default historical/current access denied; no opportunistic selection of another tenant/current semester. Policy exception, if approved later, must be tested separately; does not alter publication."
+    },
+    {
+      "id": "E24",
+      "operation_id": "00000000-0000-0000-0000-000000000720",
+      "setup": "Two sessions issue different lifecycle commands with same expected version",
+      "inputs": {
+        "parallel_actions": [
+          "leave",
+          "withdraw"
+        ],
+        "same_expected_version": true
+      },
+      "expected": "Exactly one successful commit; loser stale version 40001/HTTP409 or serialization retry then stale conflict. One transition event/audit per winner; no duplicate operational episode."
+    },
+    {
+      "id": "E25",
+      "operation_id": "00000000-0000-0000-0000-000000000721",
+      "setup": "Two identical same-key commands concurrently; retry after later successful state change; same key with changed action/args/actor/target",
+      "inputs": {
+        "operation": "same_key_retry",
+        "variants": [
+          "identical_concurrent",
+          "retry_after_later_update",
+          "changed_action",
+          "changed_args",
+          "changed_actor",
+          "changed_target",
+          "handoff_retry"
+        ]
+      },
+      "expected": "Identical requests return same original result/version; no duplicate event/audit. Changed envelope rejects 23514; authentication/authority rechecked before replay. Two-episode handoff retries return both original endpoint responses."
+    },
+    {
+      "id": "E26",
+      "operation_id": "00000000-0000-0000-0000-000000000722",
+      "setup": "Concurrent activation of two approved episodes for S1; concurrent overlapping placement writes; simultaneous identifier claim by S1/S2",
+      "inputs": {
+        "parallel_cases": [
+          "two_activations_same_student",
+          "overlapping_placements",
+          "same_identifier_different_student"
+        ]
+      },
+      "expected": "Student lock/partial unique index permits one operational episode; exclusive interval/expected version permits one valid placement; unique owner key gives one identifier owner. No history truncated to satisfy uniqueness."
+    },
+    {
+      "id": "E27",
+      "operation_id": "00000000-0000-0000-0000-000000000723",
+      "setup": "Inject event INSERT failure, audit INSERT failure, or future reconciliation/notification-intent failure after state update",
+      "inputs": {
+        "failure_points": [
+          "event_insert",
+          "audit_insert",
+          "required_roster_reconciliation",
+          "notification_intent_insert"
+        ],
+        "compare_entire_transaction": true
+      },
+      "expected": "Entire transaction fails; enrollment version/state, identifiers/placement closure/new placement/events/audit/required intent unchanged. No success response or external delivery. Injected failure triggers exist only in approved disposable fixture transaction."
+    },
+    {
+      "id": "E28",
+      "operation_id": "00000000-0000-0000-0000-000000000724",
+      "setup": "Client anon/authenticated reads/writes/truncates new tables or calls every command/helper overload, including legitimate application admin JWT",
+      "inputs": {
+        "roles": [
+          "anon",
+          "authenticated",
+          "service_role"
+        ],
+        "direct_actions": [
+          "SELECT",
+          "INSERT",
+          "UPDATE",
+          "DELETE",
+          "TRUNCATE"
+        ],
+        "rpc_targets": "all overloads and internal helpers"
+      },
+      "expected": "Permission denied 42501 before accessing rows/routine. No column-level/inherited/default/PUBLIC escape. Service direct INSERT/UPDATE/DELETE also denied; sanctioned service RPC succeeds only with active scoped admin + granular permission."
+    },
+    {
+      "id": "E29",
+      "operation_id": "00000000-0000-0000-0000-000000000725",
+      "setup": "Service supplies foreign tenant/admin lacking permission; faculty calls lifecycle RPC; forged role/body fields",
+      "inputs": {
+        "actors": [
+          "FACULTY_A",
+          "ADMIN_B",
+          "admin_without_permission",
+          "platform_super_admin_only"
+        ],
+        "tenant": "A"
+      },
+      "expected": "42501 or safe not-found before mutation. Existing faculty attendance/test APIs still work with their established authority. Super-admin alone is not a tenant enrollment admin."
+    },
+    {
+      "id": "E30",
+      "operation_id": "00000000-0000-0000-0000-000000000726",
+      "setup": "UPDATE/DELETE/TRUNCATE events as service and ordinary owner with triggers enabled; correction annotation; deletion of actor/identity",
+      "inputs": {
+        "event_actions": [
+          "UPDATE",
+          "DELETE",
+          "TRUNCATE",
+          "annotate_correction"
+        ],
+        "delete_targets": [
+          "actor_user",
+          "student_identity"
+        ]
+      },
+      "expected": "Service denied by ACL; ordinary owner event modification/truncate rejected by trigger. Correction appends one event referencing earlier same-episode event; prior bytes unchanged. Actor/identity deletion blocked by restrictive history FKs. Owner disabling guards is maintenance authority, not an asserted impossible action."
+    },
+    {
+      "id": "E31",
+      "operation_id": "00000000-0000-0000-0000-000000000727",
+      "setup": "Tamper a core RLS/policy/grant/index/trigger binding then run approved postflight; old authority table exposed",
+      "inputs": {
+        "tamper": [
+          "disable_rls",
+          "extra_policy",
+          "column_grant",
+          "PUBLIC_execute",
+          "inherited_bypass",
+          "extra_overload",
+          "missing_index",
+          "missing_event_key",
+          "wrong_trigger_binding"
+        ]
+      },
+      "expected": "Assertions raise exception; no successful migration commit. Include column-only grant, PUBLIC routine EXECUTE, inherited bypass role, extra overload/policy and removed sequence/idempotency key."
+    },
+    {
+      "id": "E32",
+      "operation_id": "00000000-0000-0000-0000-000000000728",
+      "setup": "Change master ancestry/calendar while placements exist",
+      "inputs": {
+        "master_edits": [
+          "program_department_reassignment",
+          "semester_year_reassignment",
+          "semester_dates_exclude_placement"
+        ]
+      },
+      "expected": "Existing ancestry-ID updates rejected by master guard. Future approved master-calendar adapter rejects bounds excluding existing placements; unchanged draft lacks that cross-child check, so this acceptance test blocks cutover until adapter implemented. Do not disable master guard."
+    },
+    {
+      "id": "E33",
+      "operation_id": "00000000-0000-0000-0000-000000000729",
+      "setup": "Switch A/B/history context while delayed request resolves; logout/cross-tab account change",
+      "inputs": {
+        "ui_events": [
+          "A_to_B_with_delayed_response",
+          "current_to_history_same_token",
+          "logout",
+          "cross_tab_account_change"
+        ]
+      },
+      "expected": "Old context response discarded, context-scoped caches cleared/rekeyed; no previous account/institution academic data shown. Same token changing context must still rekey."
+    },
+    {
+      "id": "E34",
+      "operation_id": "00000000-0000-0000-0000-00000000072a",
+      "setup": "Legacy fixtures with zero/two matching episode candidates, alternate program_courses schema and unknown inactive meaning",
+      "inputs": {
+        "mapping_variants": [
+          "zero_candidates",
+          "two_candidates",
+          "unknown_inactive",
+          "baseline_curriculum",
+          "legacy_semester_number_curriculum"
+        ]
+      },
+      "expected": "Mapping deterministic or explicitly unresolved; no fabricated dates/program/attempt. Preserve IDs/publication/counts. Both curriculum baseline variants converge through actual migration; no skipped migration to make fixture pass."
+    },
+    {
+      "id": "E35",
+      "operation_id": "00000000-0000-0000-0000-00000000072b",
+      "setup": "Future effective command, backdated RPC, same-day zero-length leave/transfer after placement start, cancellation with prepared placement",
+      "inputs": {
+        "negative_dates": [
+          "D+1",
+          "D-1"
+        ],
+        "same_day_zero_interval": true,
+        "prepared_cancel": true
+      },
+      "expected": "Draft rejects operational unsupported date/empty interval/cleanup case without effects. Schedule by storing pending decision and issuing command on effective day. Institution-approved historical corrections/cancellation cleanup need a separate reviewed routine, not a bypass flag."
+    }
+  ]
+}

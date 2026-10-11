@@ -1,0 +1,1032 @@
+-- REVIEW ONLY, 2026-10-11 IST. NOT AN INSTALLED MIGRATION. NEVER AUTO-DISCOVER.
+-- Newly authored; no earlier enrollment SQL was recovered. PostgreSQL 17 target.
+-- Core objects only; no legacy backfill, student-field sync or academic rewrites.
+-- Repaired static review: see SQL_REPAIR_REVIEW.md. No PostgreSQL validation.
+-- Deliberate unconditional stop AND rollback. A separately approved migration
+-- must remove the stop and choose COMMIT after reviewing the exact file hash.
+BEGIN;
+DO $review_stop$ BEGIN
+    RAISE EXCEPTION 'REVIEW ONLY: execution requires explicit approval and a new reviewed migration';
+END $review_stop$;
+SET LOCAL search_path = pg_catalog, public, extensions;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
+
+-- Preflight never repairs security, installs extensions, or disables guards.
+DO $preflight$
+DECLARE t text; r text; priv text; c record; f record; binding record;
+BEGIN
+    IF current_user <> 'postgres' THEN
+        RAISE EXCEPTION 'Reviewed object-creator/owner postgres required';
+    END IF;
+    FOREACH t IN ARRAY ARRAY['student_institution_identifiers','student_enrollments','student_academic_placements','student_enrollment_events'] LOOP
+        IF pg_catalog.to_regclass('public.'||t) IS NOT NULL THEN
+            RAISE EXCEPTION 'Unexpected existing enrollment object; inspect instead of replacing: %',t;
+        END IF;
+    END LOOP;
+    IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname='public' AND pg_catalog.left(p.proname,18)='enrollment_review_') THEN
+        RAISE EXCEPTION 'Unexpected existing enrollment-review routine; inspect all overloads first';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_extension e
+        JOIN pg_catalog.pg_namespace n ON n.oid=e.extnamespace
+        WHERE e.extname='btree_gist' AND n.nspname='extensions') THEN
+        RAISE EXCEPTION 'Reviewed btree_gist in extensions required';
+    END IF;
+    IF pg_catalog.to_regprocedure('public.phase81_assert_institution_admin(uuid,uuid)') IS NULL
+       OR pg_catalog.to_regprocedure('public.academic_master_tenant(text,uuid)') IS NULL THEN
+        RAISE EXCEPTION 'Existing security/master helper prerequisite missing';
+    END IF;
+    FOR binding IN SELECT * FROM (VALUES
+        ('public.phase81_assert_institution_admin(uuid,uuid)','void'),
+        ('public.academic_master_tenant(text,uuid)','uuid'),
+        ('public.validate_academic_master_record()','trigger'),
+        ('public.manage_academic_master_record(uuid,uuid,text,uuid,jsonb)','jsonb')) x(signature,result_type) LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_proc p
+            WHERE p.oid=pg_catalog.to_regprocedure(binding.signature)
+              AND p.proowner='postgres'::regrole::oid AND p.prosecdef
+              AND p.prorettype=pg_catalog.to_regtype(binding.result_type)
+              AND 'search_path=""'=ANY(COALESCE(p.proconfig,ARRAY[]::text[]))) THEN
+            RAISE EXCEPTION 'Existing helper contract missing/changed: %',binding.signature;
+        END IF;
+    END LOOP;
+    IF pg_catalog.to_regprocedure('auth.role()') IS NULL THEN
+        RAISE EXCEPTION 'Supabase request-role helper missing; service JWT context must be separately validated';
+    END IF;
+    -- Source-defined audit shape; an unexpected linked-database variant fails closed.
+    FOR binding IN SELECT * FROM (VALUES
+        ('actor_user_id','uuid'),('institution_id','uuid'),('action','text'),
+        ('table_name','text'),('record_id','text'),('record_data','jsonb')) x(col,typ) LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_attribute a
+            WHERE a.attrelid=pg_catalog.to_regclass('public.admin_audit_log')
+              AND a.attname=binding.col AND NOT a.attisdropped
+              AND a.atttypid=pg_catalog.to_regtype(binding.typ)) THEN
+            RAISE EXCEPTION 'Audit column missing/changed: %',binding.col;
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger
+        WHERE tgrelid=pg_catalog.to_regclass('public.admin_audit_log')
+          AND tgname='phase81_admin_audit_append_only' AND tgenabled='O' AND tgtype=27
+          AND tgfoid=pg_catalog.to_regprocedure('public.phase81_prevent_audit_mutation()')) THEN
+        RAISE EXCEPTION 'Existing append-only audit guard missing/changed';
+    END IF;
+    FOREACH priv IN ARRAY ARRAY['UPDATE','DELETE','TRUNCATE','TRIGGER','MAINTAIN'] LOOP
+        IF pg_catalog.has_table_privilege('service_role','public.admin_audit_log',priv) THEN
+            RAISE EXCEPTION 'Existing audit mutability privilege requires separate containment: %',priv;
+        END IF;
+    END LOOP;
+    IF pg_catalog.has_any_column_privilege('service_role','public.admin_audit_log','UPDATE') THEN
+        RAISE EXCEPTION 'Existing independent audit column UPDATE requires separate containment';
+    END IF;
+    FOREACH t IN ARRAY ARRAY['departments','programs','courses','academic_years',
+        'semesters','program_courses','course_offerings','sections'] LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger g
+            WHERE g.tgrelid=pg_catalog.to_regclass('public.'||t)
+              AND g.tgname='academic_master_validate' AND g.tgenabled='O'
+              AND g.tgfoid='public.validate_academic_master_record()'::regprocedure) THEN
+            RAISE EXCEPTION 'Existing master ancestry guard missing/changed on %',t;
+        END IF;
+    END LOOP;
+    FOREACH t IN ARRAY ARRAY['students','student_attendance','student_results',
+        'student_result_items','student_notifications','users','user_roles','roles',
+        'role_permissions','permissions','institutions','user_permission_grants','admin_audit_log',
+        'departments','programs','courses','academic_years','semesters','program_courses',
+        'course_offerings','sections'] LOOP
+        IF pg_catalog.to_regclass('public.'||t) IS NULL OR NOT EXISTS (
+            SELECT 1 FROM pg_catalog.pg_class x WHERE x.oid=pg_catalog.to_regclass('public.'||t)
+            AND x.relrowsecurity) THEN
+            RAISE EXCEPTION 'Secure existing authority/academic table prerequisite missing: %',t;
+        END IF;
+        FOREACH r IN ARRAY ARRAY['anon','authenticated'] LOOP
+            FOREACH priv IN ARRAY ARRAY['SELECT','INSERT','UPDATE','DELETE',
+                'TRUNCATE','REFERENCES','TRIGGER','MAINTAIN'] LOOP
+                IF pg_catalog.has_table_privilege(r,'public.'||t,priv) THEN
+                    RAISE EXCEPTION 'Prerequisite client table privilege: %.% %',r,t,priv;
+                END IF;
+            END LOOP;
+            FOR c IN SELECT a.attnum FROM pg_catalog.pg_attribute a
+                WHERE a.attrelid=pg_catalog.to_regclass('public.'||t)
+                AND a.attnum>0 AND NOT a.attisdropped LOOP
+                FOREACH priv IN ARRAY ARRAY['SELECT','INSERT','UPDATE','REFERENCES'] LOOP
+                    IF pg_catalog.has_column_privilege(r,pg_catalog.to_regclass('public.'||t),c.attnum,priv) THEN
+                        RAISE EXCEPTION 'Prerequisite client column privilege: %.% %',r,t,priv;
+                    END IF;
+                END LOOP;
+            END LOOP;
+        END LOOP;
+    END LOOP;
+    FOR f IN SELECT p.oid FROM pg_catalog.pg_proc p
+        JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname='public' AND p.proname IN (
+        'phase717_claim_email_outbox','phase717_complete_email_outbox',
+        'phase717_create_invitation_with_outbox','phase717_resolve_email_outbox_context',
+        'phase717_rotate_invitation_with_outbox','phase718_reconcile_mailgun_event',
+        'phase81_assert_institution_admin','academic_master_tenant','validate_academic_master_record',
+        'manage_academic_master_record','phase81_prevent_audit_mutation') LOOP
+        IF pg_catalog.has_function_privilege('anon',f.oid,'EXECUTE')
+           OR pg_catalog.has_function_privilege('authenticated',f.oid,'EXECUTE')
+           OR EXISTS (SELECT 1 FROM pg_catalog.pg_proc p,
+                LATERAL pg_catalog.aclexplode(COALESCE(p.proacl,pg_catalog.acldefault('f',p.proowner))) a
+                WHERE p.oid=f.oid AND a.grantee=0 AND a.privilege_type='EXECUTE') THEN
+            RAISE EXCEPTION 'Prerequisite backend routine remains client/PUBLIC executable: %',f.oid::regprocedure;
+        END IF;
+    END LOOP;
+    FOREACH r IN ARRAY ARRAY['anon','authenticated'] LOOP
+        IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles x
+            WHERE (pg_catalog.pg_has_role(r,x.oid,'USAGE') OR pg_catalog.pg_has_role(r,x.oid,'SET'))
+            AND (x.rolsuper OR x.rolbypassrls OR x.rolname='service_role')) THEN
+            RAISE EXCEPTION 'Client reaches privileged role: %',r;
+        END IF;
+    END LOOP;
+END $preflight$;
+
+CREATE TABLE public.student_institution_identifiers (
+    identifier_id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
+    student_id uuid NOT NULL REFERENCES public.students(student_id) ON DELETE RESTRICT,
+    institution_id uuid NOT NULL REFERENCES public.institutions(institution_id) ON DELETE RESTRICT,
+    kind text NOT NULL CHECK (kind IN ('student_number','register_number','university_roll_number')),
+    display_value text NOT NULL CHECK (pg_catalog.length(display_value)<=128),
+    normalized_value text COLLATE "C" GENERATED ALWAYS AS
+        (pg_catalog.btrim(display_value,E' \t\n\r\f\013')) STORED,
+    verified_at timestamptz,
+    verified_by uuid REFERENCES public.users(id) ON DELETE RESTRICT,
+    evidence_source text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(evidence_source)) BETWEEN 1 AND 128),
+    evidence_reference text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(evidence_reference)) BETWEEN 1 AND 256),
+    created_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
+    CHECK (normalized_value<>''),
+    CHECK ((verified_at IS NULL)=(verified_by IS NULL)),
+    CONSTRAINT enrollment_identifier_owner_key UNIQUE (institution_id,kind,normalized_value)
+);
+CREATE INDEX enrollment_identifier_student ON public.student_institution_identifiers(student_id,institution_id,kind);
+
+CREATE TABLE public.student_enrollments (
+    enrollment_id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
+    student_id uuid NOT NULL REFERENCES public.students(student_id) ON DELETE RESTRICT,
+    institution_id uuid NOT NULL REFERENCES public.institutions(institution_id) ON DELETE RESTRICT,
+    program_id uuid REFERENCES public.programs(program_id) ON DELETE RESTRICT,
+    predecessor_enrollment_id uuid,
+    admission_kind text NOT NULL CHECK (admission_kind IN ('initial','readmission','transfer_in','program_change','legacy_snapshot')),
+    approval_status text NOT NULL DEFAULT 'pending' CHECK (approval_status IN ('pending','approved','rejected')),
+    lifecycle_status text NOT NULL DEFAULT 'pending_admission' CHECK (lifecycle_status IN (
+        'pending_admission','active','on_leave','graduated','withdrawn','transferred_out','cancelled','legacy_unresolved')),
+    mapping_status text NOT NULL DEFAULT 'verified' CHECK (mapping_status IN ('verified','unresolved','ambiguous')),
+    admission_effective_on date,
+    closed_effective_on date,
+    expected_graduation_date date,
+    student_number_identifier_id uuid REFERENCES public.student_institution_identifiers(identifier_id) ON DELETE RESTRICT,
+    register_identifier_id uuid REFERENCES public.student_institution_identifiers(identifier_id) ON DELETE RESTRICT,
+    university_roll_identifier_id uuid REFERENCES public.student_institution_identifiers(identifier_id) ON DELETE RESTRICT,
+    version bigint NOT NULL DEFAULT 1 CHECK (version>0),
+    evidence_source text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(evidence_source)) BETWEEN 1 AND 128),
+    evidence_reference text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(evidence_reference)) BETWEEN 1 AND 256),
+    created_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
+    updated_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
+    CONSTRAINT enrollment_episode_identity_key UNIQUE (enrollment_id,student_id),
+    FOREIGN KEY (predecessor_enrollment_id,student_id)
+        REFERENCES public.student_enrollments(enrollment_id,student_id) ON DELETE RESTRICT,
+    CHECK (predecessor_enrollment_id IS DISTINCT FROM enrollment_id),
+    CHECK ((admission_kind IN ('readmission','transfer_in','program_change'))=(predecessor_enrollment_id IS NOT NULL)),
+    CHECK (approval_status<>'rejected' OR lifecycle_status='cancelled'),
+    CHECK ((lifecycle_status='legacy_unresolved')=(mapping_status<>'verified')),
+    CHECK (mapping_status='verified' OR admission_kind='legacy_snapshot'),
+    CHECK (lifecycle_status NOT IN ('active','on_leave','graduated','withdrawn','transferred_out')
+        OR (approval_status='approved' AND program_id IS NOT NULL AND admission_effective_on IS NOT NULL)),
+    CHECK (lifecycle_status NOT IN ('graduated','withdrawn','transferred_out','cancelled') OR closed_effective_on IS NOT NULL),
+    CHECK (lifecycle_status IN ('graduated','withdrawn','transferred_out','cancelled') OR closed_effective_on IS NULL),
+    CHECK (closed_effective_on IS NULL OR admission_effective_on IS NULL OR closed_effective_on>=admission_effective_on),
+    CHECK (expected_graduation_date IS NULL OR admission_effective_on IS NULL OR expected_graduation_date>=admission_effective_on),
+    CHECK ((admission_effective_on IS NULL OR pg_catalog.isfinite(admission_effective_on))
+        AND (closed_effective_on IS NULL OR pg_catalog.isfinite(closed_effective_on))
+        AND (expected_graduation_date IS NULL OR pg_catalog.isfinite(expected_graduation_date)))
+);
+-- Recommended initial policy, pending institutional acceptance. Never remove
+-- this alone to implement dual enrollment.
+CREATE UNIQUE INDEX enrollment_one_operational ON public.student_enrollments(student_id)
+    WHERE approval_status='approved' AND lifecycle_status IN ('active','on_leave');
+CREATE INDEX enrollment_student_history ON public.student_enrollments(student_id,created_at DESC);
+CREATE INDEX enrollment_tenant_queue ON public.student_enrollments(institution_id,approval_status,lifecycle_status);
+CREATE INDEX enrollment_predecessor ON public.student_enrollments(predecessor_enrollment_id) WHERE predecessor_enrollment_id IS NOT NULL;
+
+CREATE TABLE public.student_academic_placements (
+    placement_id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
+    enrollment_id uuid NOT NULL REFERENCES public.student_enrollments(enrollment_id) ON DELETE RESTRICT,
+    academic_year_id uuid NOT NULL REFERENCES public.academic_years(academic_year_id) ON DELETE RESTRICT,
+    semester_id uuid NOT NULL,
+    curriculum_semester_number integer NOT NULL CONSTRAINT enrollment_placement_ordinal CHECK (curriculum_semester_number>0),
+    attempt_number integer NOT NULL CONSTRAINT enrollment_placement_attempt CHECK (attempt_number>0),
+    starts_on date NOT NULL,
+    ends_on date NOT NULL,
+    class_section_code text CONSTRAINT enrollment_placement_section CHECK (class_section_code IS NULL OR pg_catalog.length(pg_catalog.btrim(class_section_code)) BETWEEN 1 AND 128),
+    evidence_source text NOT NULL CONSTRAINT enrollment_placement_source CHECK (pg_catalog.length(pg_catalog.btrim(evidence_source)) BETWEEN 1 AND 128),
+    evidence_reference text NOT NULL CONSTRAINT enrollment_placement_reference CHECK (pg_catalog.length(pg_catalog.btrim(evidence_reference)) BETWEEN 1 AND 256),
+    version bigint NOT NULL DEFAULT 1 CONSTRAINT enrollment_placement_version CHECK (version>0),
+    created_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
+    updated_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
+    CONSTRAINT enrollment_placement_identity_key UNIQUE (placement_id,enrollment_id),
+    FOREIGN KEY (semester_id,academic_year_id) REFERENCES public.semesters(semester_id,academic_year_id) ON DELETE RESTRICT,
+    CONSTRAINT enrollment_placement_positive_period CHECK (ends_on>starts_on),
+    CONSTRAINT enrollment_placement_finite_period CHECK (pg_catalog.isfinite(starts_on) AND pg_catalog.isfinite(ends_on)),
+    CONSTRAINT enrollment_placement_no_overlap EXCLUDE USING gist
+        (enrollment_id WITH =, daterange(starts_on,ends_on,'[)') WITH &&)
+);
+CREATE INDEX enrollment_placement_context ON public.student_academic_placements(enrollment_id,academic_year_id,semester_id,attempt_number);
+CREATE INDEX enrollment_placement_period ON public.student_academic_placements(academic_year_id,semester_id);
+
+CREATE TABLE public.student_enrollment_events (
+    event_id uuid PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
+    enrollment_id uuid NOT NULL REFERENCES public.student_enrollments(enrollment_id) ON DELETE RESTRICT,
+    placement_id uuid,
+    event_sequence bigint NOT NULL CHECK (event_sequence>0),
+    operation_id uuid NOT NULL,
+    event_type text NOT NULL CHECK (event_type IN ('created','approved','rejected','cancelled',
+        'application_completed','identifier_attached','activated','placement_changed','leave','resumed',
+        'graduated','withdrawn','handoff_authorized','handoff_out','handoff_in','correction','legacy_snapshot')),
+    effective_on date,
+    recorded_at timestamptz NOT NULL DEFAULT pg_catalog.clock_timestamp(),
+    actor_user_id uuid REFERENCES public.users(id) ON DELETE RESTRICT,
+    evidence_source text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(evidence_source)) BETWEEN 1 AND 128),
+    evidence_reference text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(evidence_reference)) BETWEEN 1 AND 256),
+    reason text NOT NULL CHECK (pg_catalog.length(pg_catalog.btrim(reason)) BETWEEN 1 AND 2000),
+    request_payload jsonb NOT NULL CHECK (jsonb_typeof(request_payload)='object' AND pg_catalog.octet_length(request_payload::text)<=16384),
+    before_snapshot jsonb NOT NULL CHECK (jsonb_typeof(before_snapshot)='object' AND pg_catalog.octet_length(before_snapshot::text)<=32768),
+    after_snapshot jsonb NOT NULL CHECK (jsonb_typeof(after_snapshot)='object' AND pg_catalog.octet_length(after_snapshot::text)<=32768),
+    result_payload jsonb NOT NULL CHECK (jsonb_typeof(result_payload)='object' AND pg_catalog.octet_length(result_payload::text)<=32768),
+    details jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(details)='object' AND pg_catalog.octet_length(details::text)<=16384),
+    corrects_event_id uuid,
+    transfer_group_id uuid,
+    CONSTRAINT enrollment_event_identity_key UNIQUE (event_id,enrollment_id),
+    CONSTRAINT enrollment_event_sequence_key UNIQUE (enrollment_id,event_sequence),
+    CONSTRAINT enrollment_event_operation_key UNIQUE (operation_id,enrollment_id),
+    FOREIGN KEY (placement_id,enrollment_id) REFERENCES public.student_academic_placements(placement_id,enrollment_id) ON DELETE RESTRICT,
+    FOREIGN KEY (corrects_event_id,enrollment_id) REFERENCES public.student_enrollment_events(event_id,enrollment_id) ON DELETE RESTRICT,
+    CHECK ((event_type='correction')=(corrects_event_id IS NOT NULL)),
+    CHECK (corrects_event_id IS DISTINCT FROM event_id),
+    CHECK (actor_user_id IS NOT NULL OR event_type='legacy_snapshot'),
+    CHECK (effective_on IS NULL OR pg_catalog.isfinite(effective_on)),
+    CHECK (effective_on IS NOT NULL OR event_type IN ('created','application_completed','identifier_attached','correction','legacy_snapshot'))
+);
+CREATE INDEX enrollment_event_actor ON public.student_enrollment_events(actor_user_id);
+CREATE INDEX enrollment_event_correction ON public.student_enrollment_events(corrects_event_id) WHERE corrects_event_id IS NOT NULL;
+CREATE INDEX enrollment_event_transfer ON public.student_enrollment_events(transfer_group_id) WHERE transfer_group_id IS NOT NULL;
+
+-- Repository curriculum applicability: optional semester UUID, with preserved
+-- legacy ordinal honored when present. No invented program-semester FK or
+-- duration_years-to-semester formula. This proves a usable link, not a degree plan.
+CREATE FUNCTION public.enrollment_review_curriculum_compatible(p_program uuid,p_tenant uuid,
+    p_semester uuid,p_number integer) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $body$
+    SELECT EXISTS (
+        SELECT 1 FROM public.programs p JOIN public.departments pd ON pd.department_id=p.department_id
+        JOIN public.program_courses pc ON pc.program_id=p.program_id
+        JOIN public.courses c ON c.course_id=pc.course_id
+        JOIN public.departments cd ON cd.department_id=c.department_id
+        JOIN public.semesters s ON s.semester_id=p_semester
+        JOIN public.academic_years y ON y.academic_year_id=s.academic_year_id
+        WHERE p.program_id=p_program AND pd.institution_id=p_tenant AND cd.institution_id=p_tenant
+          AND y.institution_id=p_tenant AND s.semester_number=p_number
+          AND p.is_active AND pd.is_active AND pc.is_active AND c.is_active AND cd.is_active
+          AND s.is_active AND y.is_active AND (pc.semester_id IS NULL OR pc.semester_id=p_semester)
+          AND ((to_jsonb(pc)->>'semester_number') IS NULL
+               OR (to_jsonb(pc)->>'semester_number')::integer=p_number)
+    );
+$body$;
+
+-- No duplication/modification of existing master guards.
+CREATE FUNCTION public.enrollment_review_child_guard() RETURNS trigger
+LANGUAGE plpgsql SET search_path='' AS $body$
+DECLARE e public.student_enrollments; old_e public.student_enrollments;
+    y public.academic_years; s public.semesters; i public.student_institution_identifiers;
+    ident uuid; required_kind text; x record;
+BEGIN
+    IF TG_TABLE_NAME='student_institution_identifiers' THEN
+        IF TG_OP='UPDATE' THEN
+            IF (to_jsonb(NEW)-ARRAY['verified_at','verified_by']) IS DISTINCT FROM
+               (to_jsonb(OLD)-ARRAY['verified_at','verified_by']) OR OLD.verified_at IS NOT NULL
+               OR NEW.verified_at IS NULL THEN
+                RAISE EXCEPTION 'Identifier ownership/value immutable; verification may occur once' USING ERRCODE='23514';
+            END IF;
+        END IF;
+        RETURN NEW;
+    ELSIF TG_TABLE_NAME='student_enrollments' THEN
+        IF TG_OP='INSERT' AND NEW.admission_kind='initial' AND NOT EXISTS (
+            SELECT 1 FROM public.students st WHERE st.student_id=NEW.student_id
+              AND st.institution_id=NEW.institution_id) THEN
+            RAISE EXCEPTION 'Initial admission requires existing student institution membership' USING ERRCODE='23514';
+        END IF;
+        IF TG_OP='INSERT' AND NEW.admission_kind<>'legacy_snapshot' AND
+           (NEW.lifecycle_status<>'pending_admission' OR NEW.approval_status<>'pending'
+            OR NEW.version<>1 OR NEW.admission_effective_on IS NOT NULL OR NEW.closed_effective_on IS NOT NULL) THEN
+            RAISE EXCEPTION 'New application must start pending at version one without admission/closure dates' USING ERRCODE='23514';
+        END IF;
+        IF TG_OP='UPDATE' THEN
+            IF NEW.student_id IS DISTINCT FROM OLD.student_id OR NEW.institution_id IS DISTINCT FROM OLD.institution_id
+               OR NEW.admission_kind IS DISTINCT FROM OLD.admission_kind
+               OR NEW.predecessor_enrollment_id IS DISTINCT FROM OLD.predecessor_enrollment_id
+               OR NEW.created_at IS DISTINCT FROM OLD.created_at
+               OR NEW.mapping_status IS DISTINCT FROM OLD.mapping_status
+               OR (OLD.student_number_identifier_id IS NOT NULL AND NEW.student_number_identifier_id IS DISTINCT FROM OLD.student_number_identifier_id)
+               OR (OLD.register_identifier_id IS NOT NULL AND NEW.register_identifier_id IS DISTINCT FROM OLD.register_identifier_id)
+               OR (OLD.university_roll_identifier_id IS NOT NULL AND NEW.university_roll_identifier_id IS DISTINCT FROM OLD.university_roll_identifier_id)
+               OR (NEW.program_id IS DISTINCT FROM OLD.program_id AND
+                    (OLD.program_id IS NOT NULL OR OLD.lifecycle_status<>'pending_admission'))
+               OR (OLD.admission_effective_on IS NOT NULL AND NEW.admission_effective_on IS DISTINCT FROM OLD.admission_effective_on)
+               OR (OLD.closed_effective_on IS NOT NULL AND NEW.closed_effective_on IS DISTINCT FROM OLD.closed_effective_on)
+               OR NEW.version<>OLD.version+1 THEN
+                RAISE EXCEPTION 'Episode ownership/dates immutable or version invalid' USING ERRCODE='23514';
+            END IF;
+            IF NEW.approval_status IS DISTINCT FROM OLD.approval_status AND
+               NOT (OLD.approval_status='pending' AND OLD.lifecycle_status='pending_admission'
+                    AND NEW.approval_status IN ('approved','rejected')) THEN
+                RAISE EXCEPTION 'Invalid approval transition' USING ERRCODE='23514';
+            END IF;
+            IF NEW.lifecycle_status IS DISTINCT FROM OLD.lifecycle_status AND NOT (
+                (OLD.lifecycle_status='pending_admission' AND NEW.lifecycle_status IN ('active','cancelled'))
+                OR (OLD.lifecycle_status='active' AND NEW.lifecycle_status IN ('on_leave','graduated','withdrawn','transferred_out'))
+                OR (OLD.lifecycle_status='on_leave' AND NEW.lifecycle_status IN ('active','graduated','withdrawn','transferred_out'))) THEN
+                RAISE EXCEPTION 'Invalid lifecycle transition; historical repair needs separate authorization' USING ERRCODE='23514';
+            END IF;
+            NEW.updated_at:=pg_catalog.clock_timestamp();
+        END IF;
+        IF NEW.program_id IS NOT NULL AND public.academic_master_tenant('programs',NEW.program_id) IS DISTINCT FROM NEW.institution_id THEN
+            RAISE EXCEPTION 'Program tenant mismatch' USING ERRCODE='23514';
+        END IF;
+        IF NEW.predecessor_enrollment_id IS NOT NULL THEN
+            SELECT * INTO old_e FROM public.student_enrollments WHERE enrollment_id=NEW.predecessor_enrollment_id;
+            IF old_e.student_id IS DISTINCT FROM NEW.student_id
+              OR (NEW.admission_kind IN ('readmission','program_change') AND old_e.institution_id IS DISTINCT FROM NEW.institution_id)
+              OR (NEW.admission_kind='transfer_in' AND old_e.institution_id=NEW.institution_id)
+              OR (NEW.admission_kind='program_change' AND NEW.program_id IS NOT NULL AND old_e.program_id=NEW.program_id)
+              OR (NEW.admission_kind='readmission' AND old_e.lifecycle_status NOT IN ('graduated','withdrawn','transferred_out','cancelled')) THEN
+                RAISE EXCEPTION 'Invalid predecessor identity/episode kind' USING ERRCODE='23514';
+            END IF;
+        END IF;
+        FOR x IN SELECT * FROM (VALUES
+            (NEW.student_number_identifier_id,'student_number'),
+            (NEW.register_identifier_id,'register_number'),
+            (NEW.university_roll_identifier_id,'university_roll_number')) v(identifier_id,kind) LOOP
+            IF x.identifier_id IS NOT NULL THEN
+                SELECT * INTO i FROM public.student_institution_identifiers WHERE identifier_id=x.identifier_id;
+                IF i.student_id IS DISTINCT FROM NEW.student_id OR i.institution_id IS DISTINCT FROM NEW.institution_id OR i.kind IS DISTINCT FROM x.kind THEN
+                    RAISE EXCEPTION 'Identifier owner, tenant or kind mismatch' USING ERRCODE='23514';
+                END IF;
+                IF NEW.lifecycle_status IN ('active','on_leave') AND i.verified_at IS NULL THEN
+                    RAISE EXCEPTION 'Operational identifier must be verified' USING ERRCODE='23514';
+                END IF;
+            END IF;
+        END LOOP;
+        IF NEW.lifecycle_status IN ('active','on_leave') AND
+          (NEW.student_number_identifier_id IS NULL OR
+           (NEW.register_identifier_id IS NULL AND NEW.university_roll_identifier_id IS NULL)) THEN
+            RAISE EXCEPTION 'Operational enrollment requires verified institutional numbers' USING ERRCODE='23514';
+        END IF;
+        RETURN NEW;
+    ELSE
+        SELECT * INTO e FROM public.student_enrollments WHERE enrollment_id=NEW.enrollment_id FOR UPDATE;
+        SELECT * INTO y FROM public.academic_years WHERE academic_year_id=NEW.academic_year_id;
+        SELECT * INTO s FROM public.semesters WHERE semester_id=NEW.semester_id;
+        IF e.enrollment_id IS NULL OR e.mapping_status<>'verified' OR e.approval_status<>'approved' OR e.program_id IS NULL
+           OR e.lifecycle_status NOT IN ('pending_admission','active','on_leave')
+           OR y.institution_id IS DISTINCT FROM e.institution_id OR s.academic_year_id IS DISTINCT FROM y.academic_year_id
+           OR NEW.curriculum_semester_number IS DISTINCT FROM s.semester_number
+           OR NEW.starts_on<s.start_date OR NEW.starts_on> s.end_date
+           OR (NEW.ends_on IS NOT NULL AND NEW.ends_on>s.end_date+1)
+           OR (e.admission_effective_on IS NOT NULL AND NEW.starts_on<e.admission_effective_on)
+           OR (e.closed_effective_on IS NOT NULL AND (NEW.ends_on IS NULL OR NEW.ends_on>e.closed_effective_on)) THEN
+            RAISE EXCEPTION 'Placement tenant/period/episode mismatch' USING ERRCODE='23514';
+        END IF;
+        IF TG_OP='INSERT' AND NOT public.enrollment_review_curriculum_compatible(
+            e.program_id,e.institution_id,NEW.semester_id,NEW.curriculum_semester_number) THEN
+            RAISE EXCEPTION 'Active program/course curriculum must apply to placement semester' USING ERRCODE='23514';
+        END IF;
+        IF TG_OP='UPDATE' THEN
+            IF (to_jsonb(NEW)-ARRAY['ends_on','version','updated_at']) IS DISTINCT FROM
+               (to_jsonb(OLD)-ARRAY['ends_on','version','updated_at'])
+               OR NEW.ends_on IS NULL OR (OLD.ends_on IS NOT NULL AND NEW.ends_on>=OLD.ends_on)
+               OR NEW.ends_on IS DISTINCT FROM (pg_catalog.clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date
+               OR NEW.version<>OLD.version+1 THEN
+                RAISE EXCEPTION 'Placement closure must be today; historical correction requires a separately authorized workflow' USING ERRCODE='23514';
+            END IF;
+            NEW.updated_at:=pg_catalog.clock_timestamp();
+        END IF;
+        RETURN NEW;
+    END IF;
+END $body$;
+CREATE TRIGGER enrollment_identifier_guard BEFORE INSERT OR UPDATE ON public.student_institution_identifiers
+    FOR EACH ROW EXECUTE FUNCTION public.enrollment_review_child_guard();
+CREATE TRIGGER enrollment_episode_guard BEFORE INSERT OR UPDATE ON public.student_enrollments
+    FOR EACH ROW EXECUTE FUNCTION public.enrollment_review_child_guard();
+CREATE TRIGGER enrollment_placement_guard BEFORE INSERT OR UPDATE ON public.student_academic_placements
+    FOR EACH ROW EXECUTE FUNCTION public.enrollment_review_child_guard();
+
+CREATE FUNCTION public.enrollment_review_immutable() RETURNS trigger
+LANGUAGE plpgsql SET search_path='' AS $body$
+BEGIN RAISE EXCEPTION 'Enrollment history cannot be deleted, updated or truncated on this path' USING ERRCODE='42501'; END $body$;
+CREATE TRIGGER enrollment_event_append_only BEFORE UPDATE OR DELETE ON public.student_enrollment_events
+    FOR EACH ROW EXECUTE FUNCTION public.enrollment_review_immutable();
+DO $protect$
+DECLARE t text;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['student_institution_identifiers','student_enrollments','student_academic_placements','student_enrollment_events'] LOOP
+        EXECUTE pg_catalog.format('CREATE TRIGGER enrollment_no_truncate BEFORE TRUNCATE ON public.%I FOR EACH STATEMENT EXECUTE FUNCTION public.enrollment_review_immutable()',t);
+        IF t<>'student_enrollment_events' THEN
+            EXECUTE pg_catalog.format('CREATE TRIGGER enrollment_no_delete BEFORE DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.enrollment_review_immutable()',t);
+        END IF;
+    END LOOP;
+END $protect$;
+
+CREATE FUNCTION public.enrollment_review_event_guard() RETURNS trigger
+LANGUAGE plpgsql SET search_path='' AS $body$
+DECLARE v bigint; prev bigint;
+BEGIN
+    SELECT version INTO v FROM public.student_enrollments WHERE enrollment_id=NEW.enrollment_id FOR UPDATE;
+    SELECT COALESCE(max(event_sequence),0) INTO prev FROM public.student_enrollment_events WHERE enrollment_id=NEW.enrollment_id;
+    IF NEW.event_sequence IS DISTINCT FROM v OR NEW.event_sequence<>prev+1 THEN
+        RAISE EXCEPTION 'Event sequence must follow locked episode version' USING ERRCODE='23514';
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.student_enrollment_events WHERE operation_id=NEW.operation_id AND request_payload IS DISTINCT FROM NEW.request_payload) THEN
+        RAISE EXCEPTION 'Operation ID reused with different envelope' USING ERRCODE='23514';
+    END IF;
+    IF NEW.event_type IN ('handoff_out','handoff_in') THEN
+        IF NEW.transfer_group_id IS DISTINCT FROM NEW.operation_id
+           OR NEW.actor_user_id IS DISTINCT FROM (NEW.request_payload->>CASE
+               WHEN NEW.event_type='handoff_out' THEN 'source_actor' ELSE 'destination_actor' END)::uuid
+           OR NEW.enrollment_id IS DISTINCT FROM (NEW.request_payload->>CASE
+               WHEN NEW.event_type='handoff_out' THEN 'source' ELSE 'destination' END)::uuid THEN
+            RAISE EXCEPTION 'Transfer event actor/endpoint must match explicit command envelope' USING ERRCODE='23514';
+        END IF;
+    ELSIF NEW.event_type<>'legacy_snapshot' AND
+       (NEW.actor_user_id IS DISTINCT FROM (NEW.request_payload->>'actor')::uuid
+        OR NEW.enrollment_id IS DISTINCT FROM (NEW.request_payload->>'enrollment')::uuid
+        OR NEW.transfer_group_id IS NOT NULL) THEN
+        RAISE EXCEPTION 'Event actor/endpoint must match command envelope' USING ERRCODE='23514';
+    END IF;
+    IF NEW.corrects_event_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM public.student_enrollment_events WHERE event_id=NEW.corrects_event_id
+            AND enrollment_id=NEW.enrollment_id AND event_sequence<NEW.event_sequence) THEN
+        RAISE EXCEPTION 'Correction must reference prior event of this episode' USING ERRCODE='23514';
+    END IF;
+    RETURN NEW;
+END $body$;
+CREATE TRIGGER enrollment_event_sequence BEFORE INSERT ON public.student_enrollment_events
+    FOR EACH ROW EXECUTE FUNCTION public.enrollment_review_event_guard();
+CREATE FUNCTION public.enrollment_review_event_required() RETURNS trigger
+LANGUAGE plpgsql SET search_path='' AS $body$
+DECLARE expected_before jsonb;
+BEGIN
+    expected_before:=CASE WHEN TG_OP='INSERT' THEN '{}'::jsonb ELSE to_jsonb(OLD) END;
+    IF NOT EXISTS (SELECT 1 FROM public.student_enrollment_events
+        WHERE enrollment_id=NEW.enrollment_id AND event_sequence=NEW.version
+          AND before_snapshot=expected_before AND after_snapshot=to_jsonb(NEW)) THEN
+        RAISE EXCEPTION 'Episode change lacks an event with exact before/after snapshots' USING ERRCODE='23514';
+    END IF;
+    IF NEW.admission_effective_on IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.student_academic_placements p WHERE p.enrollment_id=NEW.enrollment_id
+          AND p.starts_on<NEW.admission_effective_on) THEN
+        RAISE EXCEPTION 'Admitted episode retains pre-admission placement; reviewed cleanup required' USING ERRCODE='23514';
+    END IF;
+    IF NEW.closed_effective_on IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.student_academic_placements p WHERE p.enrollment_id=NEW.enrollment_id
+          AND p.ends_on>NEW.closed_effective_on) THEN
+        RAISE EXCEPTION 'Closed episode retains placement beyond closure; reviewed cleanup required' USING ERRCODE='23514';
+    END IF;
+    RETURN NULL;
+END $body$;
+CREATE CONSTRAINT TRIGGER enrollment_event_required AFTER INSERT OR UPDATE ON public.student_enrollments
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION public.enrollment_review_event_required();
+
+CREATE FUNCTION public.enrollment_review_assert_actor(p_actor uuid,p_tenant uuid,p_permission text) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $body$
+BEGIN
+    -- Phase 8.1 direct grants are for eligible Staff. Enrollment stays admin-only
+    -- and uses the existing admin role-permission matrix, not Staff overrides.
+    PERFORM public.phase81_assert_institution_admin(p_actor,p_tenant);
+    IF NOT EXISTS (
+        SELECT 1 FROM public.user_roles ur JOIN public.roles r ON r.id=ur.role_id
+        JOIN public.role_permissions rp ON rp.role_id=r.id JOIN public.permissions p ON p.permission_id=rp.permission_id
+        WHERE ur.user_id=p_actor AND ur.scope_type='institution' AND ur.scope_id=p_tenant
+          AND r.name='admin' AND r.is_active AND p.is_active
+          AND p.code IN (p_permission,'students.*','*'))
+       THEN
+        RAISE EXCEPTION 'Enrollment mutation permission required' USING ERRCODE='42501';
+    END IF;
+END $body$;
+
+CREATE FUNCTION public.enrollment_review_assert_activation(p_id uuid,p_date date) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $body$
+DECLARE e public.student_enrollments; d date:=(pg_catalog.clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date;
+BEGIN
+    SELECT * INTO e FROM public.student_enrollments WHERE enrollment_id=p_id;
+    IF e.enrollment_id IS NULL OR p_date IS DISTINCT FROM d OR e.approval_status<>'approved' OR e.mapping_status<>'verified'
+       OR e.program_id IS NULL OR e.admission_effective_on IS NULL OR e.admission_effective_on>p_date
+       OR NOT EXISTS (SELECT 1 FROM public.students s JOIN public.users u ON u.id=s.user_id
+            WHERE s.student_id=e.student_id AND s.approval_status='approved' AND s.is_active AND u.status='active')
+       OR NOT EXISTS (SELECT 1 FROM public.institutions WHERE institution_id=e.institution_id AND status='active' AND is_active)
+       OR NOT EXISTS (SELECT 1 FROM public.programs p JOIN public.departments dep USING(department_id)
+            WHERE p.program_id=e.program_id AND p.is_active AND dep.is_active AND dep.institution_id=e.institution_id)
+       OR NOT EXISTS (SELECT 1 FROM public.student_academic_placements p
+            JOIN public.semesters s USING(semester_id) JOIN public.academic_years y ON y.academic_year_id=p.academic_year_id
+            WHERE p.enrollment_id=p_id AND p.starts_on<=p_date AND (p.ends_on IS NULL OR p.ends_on>p_date)
+              AND s.is_active AND y.is_active AND s.start_date<=p_date AND s.end_date>=p_date)
+       OR NOT EXISTS (SELECT 1 FROM public.student_academic_placements p WHERE p.enrollment_id=p_id
+            AND p.starts_on<=p_date AND p.ends_on>p_date
+            AND public.enrollment_review_curriculum_compatible(e.program_id,e.institution_id,p.semester_id,p.curriculum_semester_number))
+       OR EXISTS (SELECT 1 FROM public.student_academic_placements p WHERE p.enrollment_id=p_id
+            AND p.starts_on<e.admission_effective_on)
+       OR e.student_number_identifier_id IS NULL OR (e.register_identifier_id IS NULL AND e.university_roll_identifier_id IS NULL)
+       OR EXISTS (SELECT 1 FROM public.student_institution_identifiers i WHERE i.identifier_id IN
+            (e.student_number_identifier_id,e.register_identifier_id,e.university_roll_identifier_id) AND i.verified_at IS NULL) THEN
+        RAISE EXCEPTION 'Activation requires verified current date, account, admission, identifiers and placement' USING ERRCODE='23514';
+    END IF;
+    IF e.predecessor_enrollment_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM public.student_enrollments prev WHERE prev.enrollment_id=e.predecessor_enrollment_id
+          AND prev.closed_effective_on IS NOT NULL AND prev.closed_effective_on<=p_date
+          AND prev.lifecycle_status IN ('graduated','withdrawn','transferred_out','cancelled')) THEN
+        RAISE EXCEPTION 'Successor cannot activate before predecessor closes' USING ERRCODE='23514';
+    END IF;
+END $body$;
+
+CREATE FUNCTION public.enrollment_review_append(p_id uuid,p_actor uuid,p_op uuid,p_type text,p_date date,
+    p_request jsonb,p_before jsonb,p_reason text,p_placement uuid,p_corrects uuid,p_details jsonb,p_transfer uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $body$
+DECLARE e public.student_enrollments; result jsonb; event uuid:=pg_catalog.gen_random_uuid();
+BEGIN
+    SELECT * INTO e FROM public.student_enrollments WHERE enrollment_id=p_id FOR UPDATE;
+    result:=jsonb_build_object('enrollment',to_jsonb(e),'placement_id',p_placement,'version',e.version);
+    INSERT INTO public.student_enrollment_events(event_id,enrollment_id,placement_id,event_sequence,operation_id,event_type,
+        effective_on,actor_user_id,evidence_source,evidence_reference,reason,request_payload,
+        before_snapshot,after_snapshot,result_payload,corrects_event_id,details,transfer_group_id)
+    VALUES(event,p_id,p_placement,e.version,p_op,p_type,p_date,p_actor,'backend_admin',p_request->'args'->>'evidence_reference',
+        p_reason,p_request,p_before,to_jsonb(e),result,p_corrects,p_details,p_transfer);
+    INSERT INTO public.admin_audit_log(actor_user_id,institution_id,action,table_name,record_id,record_data)
+    VALUES(p_actor,e.institution_id,'enrollment.'||p_type,'student_enrollments',p_id::text,
+        jsonb_build_object('event_id',event,'operation_id',p_op,'actor_user_id',p_actor,
+            'request',p_request,'before',p_before,'after',to_jsonb(e)));
+    RETURN result;
+END $body$;
+
+-- Internal admin command envelope; not a browser request schema.
+-- Required for every command: reason and evidence_reference.
+CREATE FUNCTION public.enrollment_review_command(p_actor uuid,p_tenant uuid,p_id uuid,p_expected_version bigint,
+    p_operation_id uuid,p_action text,p_args jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $body$
+DECLARE e public.student_enrollments; previous jsonb; req jsonb; prior public.student_enrollment_events;
+    permission text; effective date; today date:=(pg_catalog.clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date;
+    event_type text; placement uuid; correction uuid; i public.student_institution_identifiers;
+    old_p public.student_academic_placements; new_p public.student_academic_placements;
+    details jsonb:='{}'; allowed text[]; key text; id uuid:=p_id; attempt integer;
+BEGIN
+    permission:=CASE p_action WHEN 'create' THEN 'students.create' WHEN 'approve' THEN 'students.approve'
+        WHEN 'reject' THEN 'students.reject' ELSE 'students.update' END;
+    PERFORM public.enrollment_review_assert_actor(p_actor,p_tenant,permission);
+    IF p_operation_id IS NULL OR p_id IS NULL OR p_expected_version IS NULL OR p_args IS NULL
+       OR jsonb_typeof(p_args)<>'object' OR pg_catalog.octet_length(p_args::text)>8192
+       OR jsonb_typeof(p_args->'reason') IS DISTINCT FROM 'string'
+       OR jsonb_typeof(p_args->'evidence_reference') IS DISTINCT FROM 'string'
+       OR COALESCE(pg_catalog.length(pg_catalog.btrim(p_args->>'reason')),0) NOT BETWEEN 1 AND 2000
+       OR COALESCE(pg_catalog.length(pg_catalog.btrim(p_args->>'evidence_reference')),0) NOT BETWEEN 1 AND 256 THEN
+        RAISE EXCEPTION 'Bounded command, operation, target, version, reason and evidence required' USING ERRCODE='22023';
+    END IF;
+    allowed:=ARRAY['reason','evidence_reference','effective_on'];
+    CASE p_action
+      WHEN 'create' THEN allowed:=allowed||ARRAY['student_id','program_id','admission_kind','predecessor_enrollment_id'];
+      WHEN 'complete_application' THEN allowed:=allowed||ARRAY['program_id'];
+      WHEN 'attach_identifier' THEN allowed:=allowed||ARRAY['kind','display_value'];
+      WHEN 'place' THEN allowed:=allowed||ARRAY['academic_year_id','semester_id','curriculum_semester_number','attempt_number','class_section_code','ends_on'];
+      WHEN 'annotate_correction' THEN allowed:=allowed||ARRAY['corrects_event_id'];
+      WHEN 'authorize_handoff' THEN allowed:=allowed||ARRAY['destination_enrollment_id','destination_version'];
+      WHEN 'approve','reject','cancel','activate','leave','resume','withdraw','graduate' THEN NULL;
+      ELSE RAISE EXCEPTION 'Unsupported enrollment command' USING ERRCODE='22023';
+    END CASE;
+    FOR key IN SELECT jsonb_object_keys(p_args) LOOP
+        IF NOT key=ANY(allowed) THEN RAISE EXCEPTION 'Unsupported field %',key USING ERRCODE='22023'; END IF;
+    END LOOP;
+    req:=jsonb_build_object('actor',p_actor,'tenant',p_tenant,'enrollment',p_id,'expected_version',p_expected_version,
+        'action',p_action,'args',p_args);
+    PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('enrollment-op:'||p_operation_id::text,0));
+    SELECT * INTO prior FROM public.student_enrollment_events WHERE operation_id=p_operation_id ORDER BY enrollment_id LIMIT 1;
+    IF FOUND THEN
+        IF prior.request_payload IS DISTINCT FROM req OR prior.enrollment_id<>p_id THEN
+            RAISE EXCEPTION 'Idempotency key reused with different command' USING ERRCODE='23514';
+        END IF;
+        RETURN prior.result_payload;
+    END IF;
+    -- Retry lookup precedes current-day checks: an exact authorized replay may
+    -- return its original result after midnight, without applying a new change.
+    effective:=(p_args->>'effective_on')::date;
+    IF p_action IN ('approve','reject','cancel','activate','leave','resume','withdraw','graduate','place','authorize_handoff')
+       AND effective IS DISTINCT FROM today THEN
+        RAISE EXCEPTION 'Operational command requires today in IST; no automatic future/backdated transition' USING ERRCODE='22023';
+    END IF;
+    PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('academic-setup:'||p_tenant::text,0));
+    PERFORM public.enrollment_review_assert_actor(p_actor,p_tenant,permission);
+    IF p_action='create' THEN
+        IF p_expected_version<>0 OR COALESCE(p_args->>'admission_kind','initial') NOT IN ('initial','readmission','transfer_in','program_change') THEN
+            RAISE EXCEPTION 'Creation requires version zero and supported admission kind' USING ERRCODE='22023';
+        END IF;
+        PERFORM 1 FROM public.students WHERE student_id=(p_args->>'student_id')::uuid FOR UPDATE;
+        IF NOT FOUND THEN RAISE EXCEPTION 'Student not found' USING ERRCODE='P0002'; END IF;
+        IF COALESCE(p_args->>'admission_kind','initial')='initial' AND NOT EXISTS (
+            SELECT 1 FROM public.students WHERE student_id=(p_args->>'student_id')::uuid AND institution_id=p_tenant) THEN
+            RAISE EXCEPTION 'Initial admission requires student membership in the target institution' USING ERRCODE='23514';
+        END IF;
+        INSERT INTO public.student_enrollments(enrollment_id,student_id,institution_id,program_id,admission_kind,
+            predecessor_enrollment_id,evidence_source,evidence_reference)
+        VALUES(id,(p_args->>'student_id')::uuid,p_tenant,(p_args->>'program_id')::uuid,
+            COALESCE(p_args->>'admission_kind','initial'),(p_args->>'predecessor_enrollment_id')::uuid,
+            'backend_admin',p_args->>'evidence_reference') RETURNING * INTO e;
+        previous:='{}'; event_type:='created';
+    ELSE
+        SELECT * INTO e FROM public.student_enrollments WHERE enrollment_id=p_id AND institution_id=p_tenant;
+        IF NOT FOUND THEN RAISE EXCEPTION 'Enrollment not found' USING ERRCODE='P0002'; END IF;
+        PERFORM 1 FROM public.students WHERE student_id=e.student_id FOR UPDATE;
+        SELECT * INTO e FROM public.student_enrollments WHERE enrollment_id=p_id AND institution_id=p_tenant FOR UPDATE;
+        IF e.version<>p_expected_version THEN RAISE EXCEPTION 'Stale enrollment version' USING ERRCODE='40001'; END IF;
+        IF e.mapping_status<>'verified' THEN RAISE EXCEPTION 'Legacy mapping requires separately reviewed reconciliation' USING ERRCODE='23514'; END IF;
+        previous:=to_jsonb(e);
+        CASE p_action
+          WHEN 'complete_application' THEN
+            IF e.lifecycle_status<>'pending_admission' OR e.program_id IS NOT NULL OR p_args->>'program_id' IS NULL THEN
+                RAISE EXCEPTION 'Only unknown pending program can be completed' USING ERRCODE='23514'; END IF;
+            UPDATE public.student_enrollments SET program_id=(p_args->>'program_id')::uuid,version=version+1 WHERE enrollment_id=id;
+            event_type:='application_completed';
+          WHEN 'approve' THEN
+            IF e.lifecycle_status<>'pending_admission' OR e.approval_status<>'pending' OR e.program_id IS NULL THEN
+                RAISE EXCEPTION 'Pending complete application required for approval' USING ERRCODE='23514'; END IF;
+            UPDATE public.student_enrollments SET approval_status='approved',version=version+1 WHERE enrollment_id=id;
+            event_type:='approved';
+          WHEN 'reject','cancel' THEN
+            IF e.lifecycle_status<>'pending_admission' OR (p_action='reject' AND e.approval_status<>'pending') THEN
+                RAISE EXCEPTION 'Only unactivated applications may be rejected/cancelled' USING ERRCODE='23514'; END IF;
+            IF EXISTS (SELECT 1 FROM public.student_academic_placements WHERE enrollment_id=id) THEN
+                RAISE EXCEPTION 'Prepared placement requires reviewed cancellation cleanup before closure' USING ERRCODE='23514'; END IF;
+            UPDATE public.student_enrollments SET lifecycle_status='cancelled',closed_effective_on=effective,
+                approval_status=CASE WHEN p_action='reject' THEN 'rejected' ELSE approval_status END,version=version+1 WHERE enrollment_id=id;
+            event_type:=CASE WHEN p_action='reject' THEN 'rejected' ELSE 'cancelled' END;
+          WHEN 'attach_identifier' THEN
+            IF e.lifecycle_status NOT IN ('pending_admission','active','on_leave') THEN
+                RAISE EXCEPTION 'Closed episode identifiers cannot be changed' USING ERRCODE='23514'; END IF;
+            INSERT INTO public.student_institution_identifiers(student_id,institution_id,kind,display_value,verified_at,verified_by,evidence_source,evidence_reference)
+            VALUES(e.student_id,p_tenant,p_args->>'kind',p_args->>'display_value',pg_catalog.clock_timestamp(),p_actor,'backend_admin',p_args->>'evidence_reference')
+            ON CONFLICT (institution_id,kind,normalized_value) DO NOTHING;
+            SELECT * INTO i FROM public.student_institution_identifiers WHERE institution_id=p_tenant AND kind=p_args->>'kind'
+                AND normalized_value=pg_catalog.btrim(p_args->>'display_value',E' \t\n\r\f\013') COLLATE "C" FOR UPDATE;
+            IF i.student_id IS DISTINCT FROM e.student_id THEN RAISE EXCEPTION 'Identifier belongs to another identity' USING ERRCODE='23505'; END IF;
+            IF i.verified_at IS NULL THEN
+                UPDATE public.student_institution_identifiers SET verified_at=pg_catalog.clock_timestamp(),verified_by=p_actor
+                    WHERE identifier_id=i.identifier_id RETURNING * INTO i;
+            END IF;
+            IF CASE i.kind
+                WHEN 'student_number' THEN e.student_number_identifier_id
+                WHEN 'register_number' THEN e.register_identifier_id
+                ELSE e.university_roll_identifier_id END IS NOT NULL
+               AND CASE i.kind
+                WHEN 'student_number' THEN e.student_number_identifier_id
+                WHEN 'register_number' THEN e.register_identifier_id
+                ELSE e.university_roll_identifier_id END IS DISTINCT FROM i.identifier_id THEN
+                RAISE EXCEPTION 'Existing identifier replacement requires separately authorized correction' USING ERRCODE='23514';
+            END IF;
+            UPDATE public.student_enrollments SET
+                student_number_identifier_id=CASE WHEN i.kind='student_number' THEN i.identifier_id ELSE student_number_identifier_id END,
+                register_identifier_id=CASE WHEN i.kind='register_number' THEN i.identifier_id ELSE register_identifier_id END,
+                university_roll_identifier_id=CASE WHEN i.kind='university_roll_number' THEN i.identifier_id ELSE university_roll_identifier_id END,
+                version=version+1 WHERE enrollment_id=id;
+            details:=jsonb_build_object('identifier',to_jsonb(i)); event_type:='identifier_attached';
+          WHEN 'place' THEN
+            IF e.approval_status<>'approved' OR e.lifecycle_status NOT IN ('pending_admission','active','on_leave') THEN
+                RAISE EXCEPTION 'Approved live/prepared episode required' USING ERRCODE='23514'; END IF;
+            IF NOT EXISTS (SELECT 1 FROM public.semesters s JOIN public.academic_years y USING(academic_year_id)
+                WHERE s.semester_id=(p_args->>'semester_id')::uuid AND s.academic_year_id=(p_args->>'academic_year_id')::uuid
+                AND s.is_active AND y.is_active AND y.institution_id=p_tenant) THEN
+                RAISE EXCEPTION 'Active tenant-local semester/year required' USING ERRCODE='23514'; END IF;
+            SELECT * INTO old_p FROM public.student_academic_placements WHERE enrollment_id=id
+                AND (ends_on IS NULL OR ends_on>effective) ORDER BY starts_on DESC LIMIT 1 FOR UPDATE;
+            IF FOUND THEN
+                IF effective<=old_p.starts_on THEN
+                    RAISE EXCEPTION 'Current closure must follow placement start; historical correction requires separate authorization' USING ERRCODE='23514'; END IF;
+                UPDATE public.student_academic_placements SET ends_on=effective,version=version+1
+                    WHERE placement_id=old_p.placement_id;
+            END IF;
+            attempt:=(p_args->>'attempt_number')::integer;
+            -- Leave can resume the same attempt; a later repeat is next attempt.
+            IF attempt IS NULL OR attempt<1 OR attempt>1+COALESCE((SELECT max(attempt_number) FROM public.student_academic_placements
+                WHERE enrollment_id=id AND curriculum_semester_number=(p_args->>'curriculum_semester_number')::integer),0)
+               OR attempt<COALESCE((SELECT max(attempt_number) FROM public.student_academic_placements
+                WHERE enrollment_id=id AND curriculum_semester_number=(p_args->>'curriculum_semester_number')::integer),1)
+               OR EXISTS (SELECT 1 FROM public.student_academic_placements p WHERE p.enrollment_id=id
+                AND p.curriculum_semester_number=(p_args->>'curriculum_semester_number')::integer
+                AND p.attempt_number=attempt AND e.lifecycle_status<>'on_leave') THEN
+                RAISE EXCEPTION 'Attempt must start at one, increment for repetition, or resume on leave' USING ERRCODE='23514'; END IF;
+            INSERT INTO public.student_academic_placements(enrollment_id,academic_year_id,semester_id,curriculum_semester_number,
+                attempt_number,starts_on,ends_on,class_section_code,evidence_source,evidence_reference)
+            VALUES(id,(p_args->>'academic_year_id')::uuid,(p_args->>'semester_id')::uuid,
+                (p_args->>'curriculum_semester_number')::integer,attempt,effective,
+                COALESCE((p_args->>'ends_on')::date,(SELECT s.end_date+1 FROM public.semesters s WHERE s.semester_id=(p_args->>'semester_id')::uuid)),
+                p_args->>'class_section_code',
+                'backend_admin',p_args->>'evidence_reference') RETURNING * INTO new_p;
+            placement:=new_p.placement_id;
+            details:=jsonb_build_object('previous_placement',to_jsonb(old_p),'previous_placement_after',
+                (SELECT to_jsonb(p) FROM public.student_academic_placements p WHERE p.placement_id=old_p.placement_id),
+                'new_placement',to_jsonb(new_p));
+            UPDATE public.student_enrollments SET version=version+1 WHERE enrollment_id=id;
+            event_type:='placement_changed';
+          WHEN 'activate' THEN
+            IF e.lifecycle_status<>'pending_admission' OR e.admission_kind IN ('transfer_in','program_change') THEN
+                RAISE EXCEPTION 'Initial/readmission activation only; transfer/program change require handoff' USING ERRCODE='23514'; END IF;
+            UPDATE public.student_enrollments SET admission_effective_on=effective,lifecycle_status='active',version=version+1 WHERE enrollment_id=id;
+            PERFORM public.enrollment_review_assert_activation(id,effective);
+            event_type:='activated';
+          WHEN 'resume' THEN
+            IF e.lifecycle_status<>'on_leave' THEN RAISE EXCEPTION 'On-leave episode required' USING ERRCODE='23514'; END IF;
+            PERFORM public.enrollment_review_assert_activation(id,effective);
+            UPDATE public.student_enrollments SET lifecycle_status='active',version=version+1 WHERE enrollment_id=id;
+            event_type:='resumed';
+          WHEN 'leave','withdraw','graduate' THEN
+            IF e.lifecycle_status NOT IN ('active','on_leave') OR (p_action='leave' AND e.lifecycle_status<>'active') THEN
+                RAISE EXCEPTION 'Invalid lifecycle transition' USING ERRCODE='23514'; END IF;
+            SELECT * INTO old_p FROM public.student_academic_placements WHERE enrollment_id=id AND starts_on<=effective
+                AND (ends_on IS NULL OR ends_on>effective) FOR UPDATE;
+            IF FOUND THEN
+                IF effective<=old_p.starts_on THEN RAISE EXCEPTION 'Closure cannot create empty placement' USING ERRCODE='23514'; END IF;
+                UPDATE public.student_academic_placements SET ends_on=effective,version=version+1 WHERE placement_id=old_p.placement_id;
+            END IF;
+            details:=jsonb_build_object('closed_placement_before',to_jsonb(old_p),'closed_placement_after',
+                (SELECT to_jsonb(p) FROM public.student_academic_placements p WHERE p.placement_id=old_p.placement_id),
+                'closed_on',effective);
+            UPDATE public.student_enrollments SET lifecycle_status=CASE p_action WHEN 'leave' THEN 'on_leave' WHEN 'withdraw' THEN 'withdrawn' ELSE 'graduated' END,
+                closed_effective_on=CASE WHEN p_action='leave' THEN NULL ELSE effective END,version=version+1 WHERE enrollment_id=id;
+            event_type:=CASE p_action WHEN 'leave' THEN 'leave' WHEN 'withdraw' THEN 'withdrawn' ELSE 'graduated' END;
+          WHEN 'authorize_handoff' THEN
+            IF e.lifecycle_status NOT IN ('active','on_leave') OR NOT EXISTS (
+                SELECT 1 FROM public.student_enrollments dst WHERE dst.enrollment_id=(p_args->>'destination_enrollment_id')::uuid
+                  AND dst.predecessor_enrollment_id=id AND dst.student_id=e.student_id AND dst.approval_status='approved'
+                  AND dst.lifecycle_status='pending_admission' AND dst.version=(p_args->>'destination_version')::bigint
+                  AND dst.admission_kind IN ('transfer_in','program_change')) THEN
+                RAISE EXCEPTION 'Approved successor/version required for source authorization' USING ERRCODE='23514'; END IF;
+            UPDATE public.student_enrollments SET version=version+1 WHERE enrollment_id=id;
+            event_type:='handoff_authorized';
+          WHEN 'annotate_correction' THEN
+            correction:=(p_args->>'corrects_event_id')::uuid;
+            IF correction IS NULL THEN RAISE EXCEPTION 'Correction reference required' USING ERRCODE='22023'; END IF;
+            UPDATE public.student_enrollments SET version=version+1 WHERE enrollment_id=id;
+            event_type:='correction';
+          ELSE RAISE EXCEPTION 'Unsupported command' USING ERRCODE='22023';
+        END CASE;
+    END IF;
+    RETURN public.enrollment_review_append(id,p_actor,p_operation_id,event_type,effective,req,previous,
+        p_args->>'reason',placement,correction,details,NULL);
+END $body$;
+
+-- Source authorization must be the most recent source event; destination's
+-- admission approval must have an authorized actor. Any intervening source
+-- change invalidates consent; any destination change after consent invalidates
+-- its version. Backend must authenticate consent submissions separately.
+-- Both actor IDs are server-derived public.users IDs. Destination actor must
+-- match the actor of the recorded approval; each endpoint logs its own actor.
+CREATE FUNCTION public.enrollment_review_handoff(p_source_actor uuid,p_destination_actor uuid,p_source uuid,p_destination uuid,
+    p_source_version bigint,p_destination_version bigint,p_operation_id uuid,p_args jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $body$
+DECLARE src public.student_enrollments; dst public.student_enrollments;
+    consent public.student_enrollment_events; approval public.student_enrollment_events;
+    prior public.student_enrollment_events; req jsonb; effective date; tenant uuid; old_p public.student_academic_placements;
+    before_src jsonb; before_dst jsonb; result_src jsonb; result_dst jsonb;
+BEGIN
+    IF p_source_actor IS NULL OR p_destination_actor IS NULL OR p_source IS NULL OR p_destination IS NULL
+       OR p_source=p_destination OR p_source_version IS NULL OR p_destination_version IS NULL
+       OR p_operation_id IS NULL OR p_args IS NULL OR jsonb_typeof(p_args)<>'object'
+       OR pg_catalog.octet_length(p_args::text)>8192
+       OR jsonb_typeof(p_args->'reason') IS DISTINCT FROM 'string'
+       OR jsonb_typeof(p_args->'evidence_reference') IS DISTINCT FROM 'string'
+       OR COALESCE(pg_catalog.length(pg_catalog.btrim(p_args->>'reason')),0) NOT BETWEEN 1 AND 2000
+       OR COALESCE(pg_catalog.length(pg_catalog.btrim(p_args->>'evidence_reference')),0) NOT BETWEEN 1 AND 256
+       OR EXISTS (SELECT 1 FROM jsonb_object_keys(p_args) k WHERE k NOT IN ('reason','evidence_reference','effective_on')) THEN
+        RAISE EXCEPTION 'Handoff command fields required' USING ERRCODE='22023'; END IF;
+    SELECT * INTO src FROM public.student_enrollments WHERE enrollment_id=p_source;
+    SELECT * INTO dst FROM public.student_enrollments WHERE enrollment_id=p_destination;
+    IF src.enrollment_id IS NULL OR dst.enrollment_id IS NULL OR src.student_id IS DISTINCT FROM dst.student_id
+       OR dst.predecessor_enrollment_id IS DISTINCT FROM src.enrollment_id OR dst.admission_kind NOT IN ('transfer_in','program_change') THEN
+        RAISE EXCEPTION 'Handoff endpoints not found' USING ERRCODE='P0002'; END IF;
+    PERFORM public.enrollment_review_assert_actor(p_source_actor,src.institution_id,'students.update');
+    PERFORM public.enrollment_review_assert_actor(p_destination_actor,dst.institution_id,'students.approve');
+    req:=jsonb_build_object('source_actor',p_source_actor,'destination_actor',p_destination_actor,'source',p_source,'destination',p_destination,
+        'source_version',p_source_version,'destination_version',p_destination_version,'action','handoff','args',p_args);
+    PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('enrollment-op:'||p_operation_id::text,0));
+    SELECT * INTO prior FROM public.student_enrollment_events WHERE operation_id=p_operation_id ORDER BY enrollment_id LIMIT 1;
+    IF FOUND THEN
+        IF prior.request_payload IS DISTINCT FROM req OR (SELECT count(*) FROM public.student_enrollment_events WHERE operation_id=p_operation_id)<>2 THEN
+            RAISE EXCEPTION 'Handoff idempotency conflict' USING ERRCODE='23514'; END IF;
+        SELECT * INTO approval FROM public.student_enrollment_events
+            WHERE operation_id=p_operation_id AND enrollment_id=p_destination AND event_type='handoff_in';
+        IF approval.event_id IS NULL OR approval.actor_user_id IS DISTINCT FROM p_destination_actor
+           OR NOT EXISTS (SELECT 1 FROM public.student_enrollment_events WHERE operation_id=p_operation_id
+               AND enrollment_id=p_source AND event_type='handoff_out' AND actor_user_id=p_source_actor) THEN
+            RAISE EXCEPTION 'Incomplete or inconsistent handoff history' USING ERRCODE='23514'; END IF;
+        RETURN jsonb_build_object('source',(SELECT result_payload FROM public.student_enrollment_events WHERE operation_id=p_operation_id AND enrollment_id=p_source),
+            'destination',(SELECT result_payload FROM public.student_enrollment_events WHERE operation_id=p_operation_id AND enrollment_id=p_destination));
+    END IF;
+    FOR tenant IN SELECT DISTINCT v FROM unnest(ARRAY[src.institution_id,dst.institution_id]) v ORDER BY v LOOP
+        PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('academic-setup:'||tenant::text,0));
+    END LOOP;
+    PERFORM 1 FROM public.students WHERE student_id=src.student_id FOR UPDATE;
+    PERFORM 1 FROM public.student_enrollments WHERE enrollment_id IN (p_source,p_destination) ORDER BY enrollment_id FOR UPDATE;
+    SELECT * INTO src FROM public.student_enrollments WHERE enrollment_id=p_source;
+    SELECT * INTO dst FROM public.student_enrollments WHERE enrollment_id=p_destination;
+    PERFORM public.enrollment_review_assert_actor(p_source_actor,src.institution_id,'students.update');
+    PERFORM public.enrollment_review_assert_actor(p_destination_actor,dst.institution_id,'students.approve');
+    IF src.version IS DISTINCT FROM p_source_version OR dst.version IS DISTINCT FROM p_destination_version THEN
+        RAISE EXCEPTION 'Stale handoff version' USING ERRCODE='40001'; END IF;
+    SELECT * INTO consent FROM public.student_enrollment_events WHERE enrollment_id=p_source
+        AND event_sequence=src.version AND event_type='handoff_authorized';
+    SELECT * INTO approval FROM public.student_enrollment_events WHERE enrollment_id=p_destination
+        AND event_type='approved' ORDER BY event_sequence DESC LIMIT 1;
+    IF consent.event_id IS NULL OR consent.actor_user_id IS DISTINCT FROM p_source_actor OR approval.event_id IS NULL
+       OR approval.actor_user_id IS DISTINCT FROM p_destination_actor
+       OR (consent.request_payload->'args'->>'destination_enrollment_id')::uuid IS DISTINCT FROM p_destination
+       OR (consent.request_payload->'args'->>'destination_version')::bigint IS DISTINCT FROM dst.version
+       OR src.lifecycle_status NOT IN ('active','on_leave') OR dst.lifecycle_status<>'pending_admission'
+       OR dst.approval_status<>'approved' THEN
+        RAISE EXCEPTION 'Fresh source and destination approvals required' USING ERRCODE='23514'; END IF;
+    PERFORM public.enrollment_review_assert_actor(approval.actor_user_id,dst.institution_id,'students.approve');
+    effective:=(p_args->>'effective_on')::date;
+    IF effective IS DISTINCT FROM (pg_catalog.clock_timestamp() AT TIME ZONE 'Asia/Kolkata')::date
+       OR consent.effective_on IS DISTINCT FROM effective THEN
+        RAISE EXCEPTION 'Same-day handoff/source consent required' USING ERRCODE='22023'; END IF;
+    before_src:=to_jsonb(src); before_dst:=to_jsonb(dst);
+    SELECT * INTO old_p FROM public.student_academic_placements WHERE enrollment_id=p_source AND starts_on<=effective
+        AND (ends_on IS NULL OR ends_on>effective) FOR UPDATE;
+    IF FOUND THEN
+        IF effective<=old_p.starts_on THEN RAISE EXCEPTION 'Handoff cannot erase same-day placement' USING ERRCODE='23514'; END IF;
+        UPDATE public.student_academic_placements SET ends_on=effective,version=version+1 WHERE placement_id=old_p.placement_id;
+    END IF;
+    UPDATE public.student_enrollments SET lifecycle_status=CASE WHEN dst.admission_kind='transfer_in' THEN 'transferred_out' ELSE 'withdrawn' END,
+        closed_effective_on=effective,version=version+1 WHERE enrollment_id=p_source;
+    -- One episode UPDATE per command: date/state/version are set together.
+    -- Post-update assertion failure rolls back both endpoints and placements.
+    IF dst.admission_effective_on IS NOT NULL THEN RAISE EXCEPTION 'Destination already admitted' USING ERRCODE='23514'; END IF;
+    UPDATE public.student_enrollments SET admission_effective_on=effective,lifecycle_status='active',version=version+1 WHERE enrollment_id=p_destination;
+    PERFORM public.enrollment_review_assert_activation(p_destination,effective);
+    result_src:=public.enrollment_review_append(p_source,p_source_actor,p_operation_id,'handoff_out',effective,req,before_src,
+        p_args->>'reason',NULL,NULL,jsonb_build_object('consent_event',consent.event_id,'destination_approval',approval.event_id,
+            'closed_placement_before',to_jsonb(old_p),'closed_placement_after',
+            (SELECT to_jsonb(p) FROM public.student_academic_placements p WHERE p.placement_id=old_p.placement_id)),p_operation_id);
+    result_dst:=public.enrollment_review_append(p_destination,p_destination_actor,p_operation_id,'handoff_in',effective,req,before_dst,
+        p_args->>'reason',NULL,NULL,jsonb_build_object('source_consent',consent.event_id,'destination_approval',approval.event_id),p_operation_id);
+    RETURN jsonb_build_object('source',result_src,'destination',result_dst);
+END $body$;
+
+-- Explicit object ACLs override creator defaults without altering defaults or
+-- historical security drafts. No sequence grant needed for explicit versions.
+DO $acl$
+DECLARE t text; f record;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['student_institution_identifiers','student_enrollments','student_academic_placements','student_enrollment_events'] LOOP
+        EXECUTE pg_catalog.format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);
+        EXECUTE pg_catalog.format('REVOKE ALL PRIVILEGES ON TABLE public.%I FROM PUBLIC,anon,authenticated,service_role',t);
+        EXECUTE pg_catalog.format('GRANT SELECT ON TABLE public.%I TO service_role',t);
+        EXECUTE pg_catalog.format('CREATE POLICY enrollment_client_deny ON public.%I AS RESTRICTIVE FOR ALL TO anon,authenticated USING (false) WITH CHECK (false)',t);
+        EXECUTE pg_catalog.format('CREATE POLICY enrollment_backend_read ON public.%I FOR SELECT TO service_role USING (true)',t);
+    END LOOP;
+    FOR f IN SELECT p.oid FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname='public' AND pg_catalog.left(p.proname,18)='enrollment_review_' LOOP
+        EXECUTE pg_catalog.format('REVOKE ALL PRIVILEGES ON FUNCTION %s FROM PUBLIC,anon,authenticated,service_role',f.oid::regprocedure);
+    END LOOP;
+END $acl$;
+GRANT EXECUTE ON FUNCTION public.enrollment_review_command(uuid,uuid,uuid,bigint,uuid,text,jsonb),
+    public.enrollment_review_handoff(uuid,uuid,uuid,uuid,bigint,bigint,uuid,jsonb) TO service_role;
+
+DO $postflight$
+DECLARE t text; r text; priv text; c record; f record; binding record; rel oid;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['student_institution_identifiers','student_enrollments','student_academic_placements','student_enrollment_events'] LOOP
+        rel:=pg_catalog.to_regclass('public.'||t);
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_class WHERE oid=rel AND relrowsecurity
+            AND relowner='postgres'::regrole) THEN RAISE EXCEPTION 'Missing owner/RLS: %',t; END IF;
+        IF (SELECT count(*) FROM pg_catalog.pg_policy WHERE polrelid=rel)<>2
+            OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy WHERE polrelid=rel AND polname='enrollment_client_deny'
+              AND NOT polpermissive AND polcmd='*' AND polroles=ARRAY['anon'::regrole::oid,'authenticated'::regrole::oid]
+              AND pg_catalog.pg_get_expr(polqual,polrelid)='false' AND pg_catalog.pg_get_expr(polwithcheck,polrelid)='false')
+            OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_policy WHERE polrelid=rel AND polname='enrollment_backend_read'
+              AND polpermissive AND polcmd='r' AND polroles=ARRAY['service_role'::regrole::oid]
+              AND pg_catalog.pg_get_expr(polqual,polrelid)='true') THEN
+            RAISE EXCEPTION 'Missing or unexpected policy on %',t; END IF;
+        IF EXISTS (SELECT 1 FROM pg_catalog.pg_class x,
+            LATERAL pg_catalog.aclexplode(COALESCE(x.relacl,pg_catalog.acldefault('r',x.relowner))) a
+            WHERE x.oid=rel AND (a.grantee NOT IN ('postgres'::regrole::oid,'service_role'::regrole::oid)
+            OR (a.grantee='service_role'::regrole::oid AND (a.privilege_type<>'SELECT' OR a.is_grantable)))) THEN
+            RAISE EXCEPTION 'Unexpected object ACL on %',t; END IF;
+        FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role'] LOOP
+            FOREACH priv IN ARRAY ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER','MAINTAIN'] LOOP
+                IF pg_catalog.has_table_privilege(r,rel,priv) IS DISTINCT FROM (r='service_role' AND priv='SELECT') THEN
+                    RAISE EXCEPTION 'Unexpected effective grant %.% %',r,t,priv; END IF;
+            END LOOP;
+            FOR c IN SELECT attnum,attacl FROM pg_catalog.pg_attribute WHERE attrelid=rel AND attnum>0 AND NOT attisdropped LOOP
+                IF c.attacl IS NOT NULL THEN RAISE EXCEPTION 'Unexpected independent column ACL'; END IF;
+                FOREACH priv IN ARRAY ARRAY['SELECT','INSERT','UPDATE','REFERENCES'] LOOP
+                    IF pg_catalog.has_column_privilege(r,rel,c.attnum,priv) IS DISTINCT FROM (r='service_role' AND priv='SELECT') THEN
+                        RAISE EXCEPTION 'Unexpected effective column grant %.% %',r,t,priv; END IF;
+                END LOOP;
+            END LOOP;
+        END LOOP;
+        IF EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=rel AND NOT convalidated) THEN
+            RAISE EXCEPTION 'Unvalidated core constraint'; END IF;
+        IF EXISTS (SELECT 1 FROM pg_catalog.pg_index WHERE indrelid=rel AND (NOT indisvalid OR NOT indisready)) THEN
+            RAISE EXCEPTION 'Invalid/not-ready core index'; END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgrelid=rel AND tgname='enrollment_no_truncate'
+            AND tgenabled='O' AND tgtype=34 AND tgfoid='public.enrollment_review_immutable()'::regprocedure) THEN
+            RAISE EXCEPTION 'Missing truncate protection'; END IF;
+        IF t<>'student_enrollment_events' AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger
+            WHERE tgrelid=rel AND tgname='enrollment_no_delete' AND tgenabled='O' AND tgtype=11
+              AND tgfoid='public.enrollment_review_immutable()'::regprocedure) THEN
+            RAISE EXCEPTION 'Missing retained-history delete protection'; END IF;
+    END LOOP;
+    FOR binding IN SELECT * FROM (VALUES
+        ('student_institution_identifiers','enrollment_identifier_guard','enrollment_review_child_guard',23),
+        ('student_enrollments','enrollment_episode_guard','enrollment_review_child_guard',23),
+        ('student_academic_placements','enrollment_placement_guard','enrollment_review_child_guard',23),
+        ('student_enrollment_events','enrollment_event_append_only','enrollment_review_immutable',27),
+        ('student_enrollment_events','enrollment_event_sequence','enrollment_review_event_guard',7),
+        ('student_enrollments','enrollment_event_required','enrollment_review_event_required',21)) x(tbl,trg,fn,trigger_type) LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgrelid=pg_catalog.to_regclass('public.'||binding.tbl)
+            AND tgname=binding.trg AND tgenabled='O' AND tgtype=binding.trigger_type
+            AND tgfoid=pg_catalog.to_regprocedure('public.'||binding.fn||'()')) THEN
+            RAISE EXCEPTION 'Missing expected trigger binding %',binding.trg; END IF;
+    END LOOP;
+    -- Exact DDL inventory: explicit CHECK/FK/PK/UNIQUE/EXCLUDE constraints.
+    -- NOT NULLs and standalone indexes are separate. Placements have EIGHT
+    -- CHECKs (six column checks plus two period checks), not seven or nine.
+    FOR binding IN SELECT * FROM (VALUES
+        ('student_institution_identifiers',6,3,1,1,0),('student_enrollments',18,7,1,1,0),
+        ('student_academic_placements',8,3,1,1,1),('student_enrollment_events',15,4,1,3,0)) x(tbl,checks,fkeys,pkeys,ukeys,xkeys) LOOP
+        rel:=pg_catalog.to_regclass('public.'||binding.tbl);
+        IF (SELECT count(*) FROM pg_catalog.pg_constraint WHERE conrelid=rel AND contype='c')<>binding.checks
+            OR (SELECT count(*) FROM pg_catalog.pg_constraint WHERE conrelid=rel AND contype='f')<>binding.fkeys
+            OR (SELECT count(*) FROM pg_catalog.pg_constraint WHERE conrelid=rel AND contype='p')<>binding.pkeys
+            OR (SELECT count(*) FROM pg_catalog.pg_constraint WHERE conrelid=rel AND contype='u')<>binding.ukeys
+            OR (SELECT count(*) FROM pg_catalog.pg_constraint WHERE conrelid=rel AND contype='x')<>binding.xkeys
+            OR EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=rel AND contype='f'
+                AND (confdeltype NOT IN ('r','a') OR confupdtype<>'a')) THEN
+            RAISE EXCEPTION 'Missing/changed core checks, FK count or deletion/update behavior on %',binding.tbl; END IF;
+    END LOOP;
+    FOREACH t IN ARRAY ARRAY['ordinal','attempt','section','source','reference','version','positive_period','finite_period'] LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint
+            WHERE conrelid='public.student_academic_placements'::regclass
+              AND conname='enrollment_placement_'||t AND contype='c' AND convalidated) THEN
+            RAISE EXCEPTION 'Missing named placement CHECK: %',t;
+        END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid='public.student_academic_placements'::regclass
+        AND conname='enrollment_placement_no_overlap' AND contype='x')
+       OR NOT EXISTS (SELECT 1 FROM pg_catalog.pg_index WHERE indexrelid='public.enrollment_one_operational'::regclass
+        AND indisunique AND indpred IS NOT NULL AND indnkeyatts=1 AND indnatts=1
+        AND indkey[0]=(SELECT attnum FROM pg_catalog.pg_attribute
+            WHERE attrelid='public.student_enrollments'::regclass AND attname='student_id')) THEN
+        RAISE EXCEPTION 'Missing overlap/cardinality protection or wrong cardinality key'; END IF;
+    FOR binding IN SELECT * FROM (VALUES
+        ('student_institution_identifiers','enrollment_identifier_owner_key','u'),
+        ('student_enrollments','enrollment_episode_identity_key','u'),
+        ('student_academic_placements','enrollment_placement_identity_key','u'),
+        ('student_enrollment_events','enrollment_event_identity_key','u'),
+        ('student_enrollment_events','enrollment_event_sequence_key','u'),
+        ('student_enrollment_events','enrollment_event_operation_key','u')) x(tbl,key_name,key_type) LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid=pg_catalog.to_regclass('public.'||binding.tbl)
+            AND conname=binding.key_name AND contype::text=binding.key_type AND convalidated) THEN
+            RAISE EXCEPTION 'Missing expected identity/sequence/idempotency key %',binding.key_name; END IF;
+    END LOOP;
+    IF pg_catalog.pg_get_expr((SELECT indpred FROM pg_catalog.pg_index WHERE indexrelid='public.enrollment_one_operational'::regclass),
+        'public.student_enrollments'::regclass) NOT LIKE '%on_leave%'
+       OR pg_catalog.pg_get_expr((SELECT indpred FROM pg_catalog.pg_index WHERE indexrelid='public.enrollment_one_operational'::regclass),
+        'public.student_enrollments'::regclass) NOT LIKE '%''active''%'
+       OR pg_catalog.pg_get_expr((SELECT indpred FROM pg_catalog.pg_index WHERE indexrelid='public.enrollment_one_operational'::regclass),
+        'public.student_enrollments'::regclass) NOT LIKE '%approved%' THEN
+        RAISE EXCEPTION 'Operational cardinality predicate incomplete'; END IF;
+    FOR f IN SELECT p.*,n.nspname FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname='public' AND pg_catalog.left(p.proname,18)='enrollment_review_' LOOP
+        IF f.proowner<>'postgres'::regrole::oid OR NOT ('search_path=""'=ANY(COALESCE(f.proconfig,ARRAY[]::text[])))
+           OR pg_catalog.has_function_privilege('anon',f.oid,'EXECUTE') OR pg_catalog.has_function_privilege('authenticated',f.oid,'EXECUTE')
+           OR EXISTS (SELECT 1 FROM pg_catalog.aclexplode(COALESCE(f.proacl,pg_catalog.acldefault('f',f.proowner))) a
+              WHERE a.grantee NOT IN ('postgres'::regrole::oid,'service_role'::regrole::oid) OR a.is_grantable)
+           OR pg_catalog.has_function_privilege('service_role',f.oid,'EXECUTE') IS DISTINCT FROM
+              (f.oid IN ('public.enrollment_review_command(uuid,uuid,uuid,bigint,uuid,text,jsonb)'::regprocedure,
+                'public.enrollment_review_handoff(uuid,uuid,uuid,uuid,bigint,bigint,uuid,jsonb)'::regprocedure)) THEN
+            RAISE EXCEPTION 'Unexpected routine owner/search_path/effective ACL: %',f.oid::regprocedure; END IF;
+    END LOOP;
+    FOR binding IN SELECT * FROM (VALUES
+        ('public.enrollment_review_command(uuid,uuid,uuid,bigint,uuid,text,jsonb)',true,'plpgsql'),
+        ('public.enrollment_review_handoff(uuid,uuid,uuid,uuid,bigint,bigint,uuid,jsonb)',true,'plpgsql'),
+        ('public.enrollment_review_assert_actor(uuid,uuid,text)',true,'plpgsql'),
+        ('public.enrollment_review_assert_activation(uuid,date)',true,'plpgsql'),
+        ('public.enrollment_review_append(uuid,uuid,uuid,text,date,jsonb,jsonb,text,uuid,uuid,jsonb,uuid)',true,'plpgsql'),
+        ('public.enrollment_review_curriculum_compatible(uuid,uuid,uuid,integer)',true,'sql'),
+        ('public.enrollment_review_child_guard()',false,'plpgsql'),
+        ('public.enrollment_review_immutable()',false,'plpgsql'),
+        ('public.enrollment_review_event_guard()',false,'plpgsql'),
+        ('public.enrollment_review_event_required()',false,'plpgsql')) x(signature,definer,language) LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE oid=pg_catalog.to_regprocedure(binding.signature)
+            AND prosecdef=binding.definer AND prolang=(SELECT oid FROM pg_catalog.pg_language WHERE lanname=binding.language)) THEN
+            RAISE EXCEPTION 'Missing/wrong-mode routine %',binding.signature; END IF;
+    END LOOP;
+    IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_trigger WHERE tgrelid='public.student_enrollments'::regclass
+        AND tgname='enrollment_event_required' AND tgdeferrable AND tginitdeferred) THEN
+        RAISE EXCEPTION 'Missing deferred event requirement'; END IF;
+END $postflight$;
+-- No PostgREST reload, migration ledger update, legacy ALTER/UPDATE, or COMMIT.
+ROLLBACK;
