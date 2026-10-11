@@ -15,6 +15,11 @@ from app.services import super_admin_registration as service
 router = APIRouter(prefix="/super-admin-invitations", tags=["super-admin-invitations"])
 
 
+@router.post("/{token}/recover", response_model=SuperAdminRegisteredResponse)
+def recover_super_admin_account(token: str, request: Request):
+    return service.recover_account(token, peer=_peer(request))
+
+
 def _peer(request: Request) -> str:
     return request.client.host if request.client is not None else "unknown"
 

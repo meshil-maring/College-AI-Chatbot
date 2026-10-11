@@ -28,6 +28,7 @@ export interface SuperAdminInviteCreated {
 }
 
 export interface SuperAdminInvitePublicView {
+  account_recovery_available?: boolean
   email: string
   status: string
   expires_at: string | null
@@ -147,4 +148,8 @@ export async function registerSuperAdmin(
   input: SuperAdminRegisterInput,
 ): Promise<SuperAdminRegistered> {
   return request('POST', `${PUBLIC_BASE}/${encodeURIComponent(token)}/register`, { body: input })
+}
+
+export async function recoverSuperAdminAccount(token: string): Promise<SuperAdminRegistered> {
+  return request('POST', `${PUBLIC_BASE}/${encodeURIComponent(token)}/recover`)
 }

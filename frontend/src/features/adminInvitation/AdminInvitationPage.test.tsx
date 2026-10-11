@@ -7,6 +7,10 @@ import { AdminInvitationError } from '../../services/adminInvitationApi.ts'
 
 const inspectSpy = vi.hoisted(() => vi.fn())
 const acceptSpy = vi.hoisted(() => vi.fn())
+const membershipSpy = vi.hoisted(() => vi.fn())
+const recoverSpy = vi.hoisted(() => vi.fn())
+const authState = vi.hoisted(() => ({ status: 'unauthenticated', accessToken: null as string | null, user: null as { email: string } | null }))
+vi.mock('../auth/AuthProvider.tsx', () => ({ useAuth: () => authState }))
 
 vi.mock('../../services/adminInvitationApi.ts', () => ({
   AdminInvitationError: class extends Error {
@@ -25,6 +29,8 @@ vi.mock('../../services/adminInvitationApi.ts', () => ({
   },
   inspectInvitation: inspectSpy,
   acceptInvitation: acceptSpy,
+  acceptMembership: membershipSpy,
+  recoverInvitationAccount: recoverSpy,
 }))
 
 const TOKEN = 'a'.repeat(64)
@@ -49,8 +55,114 @@ const ACCEPTED = {
 
 const PASSWORD = 'correct-horse-battery'
 
+describe('B05 accepted account confirmation recovery', () => {
+  it('recovers after reload without signing in or entering credentials', async () => {
+    inspectSpy.mockResolvedValue({ ...INVITATION, status: 'accepted', account_recovery_available: true })
+    recoverSpy.mockResolvedValue(ACCEPTED)
+    const page = render(<AdminInvitationPage token={TOKEN} />)
+    await screen.findByRole('button', { name: 'Retry account recovery' })
+    page.unmount()
+    render(<AdminInvitationPage token={TOKEN} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Retry account recovery' }))
+    await screen.findByRole('heading', { name: 'Your account is ready' })
+    expect(recoverSpy).toHaveBeenCalledExactlyOnceWith(TOKEN)
+    expect(acceptSpy).not.toHaveBeenCalled()
+    expect(membershipSpy).not.toHaveBeenCalled()
+    expect(screen.queryByLabelText(/^Password$/)).not.toBeInTheDocument()
+  })
+
+  it.each(['timeout', 'confirmation'])('switches to recovery after %s and retries safely', async (failure) => {
+    acceptSpy.mockRejectedValue(failure === 'timeout' ? new Error('response lost')
+      : new AdminInvitationError(502, 'Confirmation uncertain', 'INVITATION_EMAIL_CONFIRMATION_UNCERTAIN'))
+    inspectSpy.mockResolvedValueOnce(INVITATION)
+      .mockResolvedValue({ ...INVITATION, status: 'accepted', account_recovery_available: true })
+    recoverSpy.mockRejectedValueOnce(new AdminInvitationError(502, 'Confirmation uncertain', 'INVITATION_EMAIL_CONFIRMATION_UNCERTAIN'))
+      .mockResolvedValue(ACCEPTED)
+    render(<AdminInvitationPage token={TOKEN} />)
+    await screen.findByLabelText(/^Password$/)
+    await userEvent.type(screen.getByLabelText(/^Password$/), PASSWORD)
+    await userEvent.type(screen.getByLabelText(/Confirm password/), PASSWORD)
+    await userEvent.click(screen.getByRole('button', { name: 'Create my account' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Retry account recovery' }))
+    await screen.findByRole('alert')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Retry account recovery' })).toBeEnabled())
+    await userEvent.click(screen.getByRole('button', { name: 'Retry account recovery' }))
+    await screen.findByRole('heading', { name: 'Your account is ready' })
+    expect(acceptSpy).toHaveBeenCalledTimes(1)
+    expect(recoverSpy).toHaveBeenCalledTimes(2)
+    expect(membershipSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('B05 existing-account membership acceptance', () => {
+  it('requires sign-in and provides a return-to-invitation instruction', async () => {
+    render(<AdminInvitationPage token={TOKEN} />)
+    await screen.findByRole('heading', { name: /Join/ })
+    await userEvent.click(screen.getByRole('button', { name: 'I already have an account' }))
+    expect(screen.getByRole('link', { name: /Sign in, then return/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Accept membership' })).toBeDisabled()
+    expect(screen.queryByLabelText(/^Password$/)).not.toBeInTheDocument()
+  })
+
+  it('uses the authenticated membership endpoint with no password input', async () => {
+    authState.status = 'authenticated'; authState.accessToken = 'verified-session'
+    authState.user = { email: INVITATION.email }
+    membershipSpy.mockResolvedValue(ACCEPTED)
+    render(<AdminInvitationPage token={TOKEN} />)
+    await screen.findByRole('heading', { name: /Join/ })
+    expect(screen.queryByLabelText(/^Password$/)).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Accept membership' }))
+    await screen.findByRole('heading', { name: 'Your account is ready' })
+    expect(membershipSpy).toHaveBeenCalledWith(TOKEN, 'verified-session')
+    expect(acceptSpy).not.toHaveBeenCalled()
+  })
+
+  it('refuses a signed-in recipient mismatch before acceptance', async () => {
+    authState.status = 'authenticated'; authState.accessToken = 'verified-session'
+    authState.user = { email: 'someone@example.test' }
+    render(<AdminInvitationPage token={TOKEN} />)
+    await screen.findByRole('heading', { name: /Join/ })
+    await userEvent.click(screen.getByRole('button', { name: 'Accept membership' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('belongs to another account')
+    expect(membershipSpy).not.toHaveBeenCalled()
+  })
+
+  it('lets the authenticated recipient recover an already-accepted result', async () => {
+    authState.status = 'authenticated'; authState.accessToken = 'verified-session'
+    authState.user = { email: INVITATION.email }
+    inspectSpy.mockResolvedValue({ ...INVITATION, status: 'accepted' })
+    membershipSpy.mockResolvedValue(ACCEPTED)
+    render(<AdminInvitationPage token={TOKEN} />)
+    await screen.findByText(/already been accepted/)
+    await userEvent.click(screen.getByRole('button', { name: 'Accept membership' }))
+    await screen.findByRole('heading', { name: 'Your account is ready' })
+    expect(membershipSpy).toHaveBeenCalledWith(TOKEN, 'verified-session')
+  })
+
+  it.each([
+    [410, 'INVITATION_EXPIRED', 'This invitation has expired'],
+    [409, 'INVITATION_RECONCILIATION_REQUIRED', 'This acceptance requires reconciliation'],
+    [403, 'FORBIDDEN', 'This invitation belongs to another account'],
+    [401, 'AUTH_REQUIRED', 'Sign in with the invited account'],
+  ])('handles HTTP %s %s without creating an account', async (status, code, message) => {
+    authState.status = 'authenticated'; authState.accessToken = 'verified-session'
+    authState.user = { email: INVITATION.email }
+    membershipSpy.mockRejectedValue(new AdminInvitationError(status, message, code))
+    render(<AdminInvitationPage token={TOKEN} />)
+    await screen.findByRole('heading', { name: /Join/ })
+    await userEvent.click(screen.getByRole('button', { name: 'Accept membership' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(message))
+    expect(acceptSpy).not.toHaveBeenCalled()
+    if (code === 'INVITATION_RECONCILIATION_REQUIRED') {
+      expect(screen.queryByRole('button', { name: 'Accept membership' })).not.toBeInTheDocument()
+    }
+  })
+})
+
 beforeEach(() => {
+  authState.status = 'unauthenticated'; authState.accessToken = null; authState.user = null
   inspectSpy.mockResolvedValue(INVITATION)
+  recoverSpy.mockReset()
 })
 
 afterEach(() => {

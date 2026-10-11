@@ -316,9 +316,17 @@ def _accept_patches(
     stack = [
         _invitation_repo_patch(
             get_invitation_by_token_hash=MagicMock(return_value=invitation),
-            claim_invitation=MagicMock(
-                return_value={"invitation_id": INVITATION_ID} if claim else None
+            reserve_invitation=MagicMock(
+                side_effect=lambda *a, **k: ({"reserved": True, "acceptance_id": str(k["acceptance_id"]),
+                    "stage": "reserved", "new_account": True} if claim else None)
             ),
+            claim_invitation=MagicMock(
+                return_value={"accepted": True} if claim else None
+            ),
+            advance_operation=MagicMock(side_effect=lambda *a, **k: {
+                "stage": k["stage"], "auth_user_id": "30000000-0000-0000-0000-000000000001",
+                "user_id": TARGET_USER_ID,
+            }),
             expire_invitation=MagicMock(return_value=True),
             mark_email_verified=MagicMock(return_value=True),
         ),
@@ -333,6 +341,8 @@ def _accept_patches(
             assign_institution_admin=assign if assign is not None else MagicMock(),
             record_institution_audit=audit if audit is not None else MagicMock(),
         ),
+        patch("app.services.platform_admin_invitations.get_admin_client", return_value=MagicMock()),
+        patch("app.services.platform_admin_invitations.tenancy_repo.get_user_by_email", return_value=None),
         patch(
             "app.services.platform_admin_invitations.student_svc._create_auth_account",
             MagicMock(return_value="30000000-0000-0000-0000-000000000001"),
@@ -381,11 +391,10 @@ def test_valid_token_is_accepted_and_grants_institution_scoped_admin() -> None:
     assert body["institution_id"] == INSTITUTION_ID
     assert body["email"] == "dean@unico.example"
     # The grant is the fixed institution-scoped admin, via the existing primitive.
-    assert str(assign.call_args.kwargs["institution_id"]) == INSTITUTION_ID
-    assert str(assign.call_args.kwargs["user_id"]) == TARGET_USER_ID
-    assert "organization_id" in assign.call_args.kwargs
+    # The finalization RPC now owns grant + audit atomically.
+    assign.assert_not_called()
     # Audited.
-    assert "institution_admin_invitation_accepted" in _audit_actions(audit)
+    audit.assert_not_called()  # SQL finalization owns the acceptance audit
     # No token, hash or password is echoed anywhere.
     assert RAW_TOKEN not in response.text
     assert RAW_TOKEN_HASH not in response.text
@@ -415,6 +424,10 @@ def test_unknown_token_and_expired_token_give_distinct_safe_errors() -> None:
             get_invitation_by_token_hash=MagicMock(
                 return_value=_invitation(expires_at=PAST)
             ),
+            advance_operation=MagicMock(side_effect=lambda *a, **k: {
+                "stage": k["stage"], "auth_user_id": "30000000-0000-0000-0000-000000000001",
+                "user_id": TARGET_USER_ID,
+            }),
             expire_invitation=MagicMock(return_value=True),
         ),
         _platform_repo_patch(record_institution_audit=audit),
@@ -426,7 +439,8 @@ def test_unknown_token_and_expired_token_give_distinct_safe_errors() -> None:
     assert expired.status_code == 410
     assert expired.json()["error"]["code"] == "INVITATION_EXPIRED"
     # Expiry is persisted and audited as its own lifecycle event.
-    assert "institution_admin_invitation_expired" in _audit_actions(audit)
+    # Inspection/acceptance expiry checks are read-only; the sweep owns audit.
+    audit.assert_not_called()
     # Neither error leaks internal naming.
     for response in (unknown, expired):
         assert "platform_admin_invitations" not in response.text
@@ -681,7 +695,8 @@ def test_cancelling_makes_the_token_unusable_and_keeps_the_record() -> None:
     assert response.status_code == 200
     assert response.json()["status"] == "cancelled"
     assert response.json()["already_applied"] is False
-    assert audit.call_args.kwargs["action"] == "institution_admin_invitation_cancelled"
+    audit.assert_not_called()  # The lifecycle RPC owns transition and audit.
+    assert str(cancel.call_args.kwargs["actor_user_id"]) == str(ACTOR_USER_ID)
     # The invitation row is transitioned, never deleted.
     assert cancel.call_count == 1
 
@@ -709,7 +724,7 @@ def test_cancelling_another_tenants_invitation_is_a_clean_404() -> None:
     cancel.assert_not_called()
 
 
-def test_cancelling_a_consumed_invitation_reports_already_applied() -> None:
+def test_cancelling_a_consumed_invitation_reports_conflict() -> None:
     app.dependency_overrides[get_current_user] = lambda: _principal("super_admin")
     audit = MagicMock()
     with (
@@ -725,8 +740,8 @@ def test_cancelling_a_consumed_invitation_reports_already_applied() -> None:
     ):
         response = client.post(CANCEL_URL)
 
-    assert response.status_code == 200
-    assert response.json()["already_applied"] is True
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "INVITATION_CANCELLATION_CONFLICT"
     # A lost race is not re-audited as a fresh cancellation.
     audit.assert_not_called()
 
@@ -1016,51 +1031,37 @@ def test_only_the_sha256_digest_is_ever_persisted_or_looked_up() -> None:
     assert "token_hash" not in repo.INVITATION_VIEW_COLUMNS
 
 
-def test_the_claim_statement_rechecks_status_and_expiry_atomically() -> None:
-    """Single-use is enforced by the write itself, not only by a prior read."""
+def test_the_claim_rpc_carries_the_exact_validated_generation_and_reservation() -> None:
     from app.repositories import platform_admin_invitations as repo
 
     db = MagicMock()
-    table = db.table.return_value
-    update = table.update.return_value
-    # Chain exactly as the repository does: update -> eq -> eq -> gt -> execute.
-    # Both .eq() calls land on the SAME `update` object, and .gt() follows the
-    # second one, so the mock must let the second .eq() be observed as such.
-    after_first_eq = MagicMock()
-    gt_stage = MagicMock()
-    after_first_eq.eq.return_value = gt_stage
-    update.eq.side_effect = [after_first_eq, gt_stage]
-    gt_stage.gt.return_value.execute.return_value = MagicMock(
-        data=[{"invitation_id": INVITATION_ID}]
+    db.rpc.return_value.execute.return_value.data = {"accepted": True}
+    claimed = repo.claim_invitation(
+        db, INVITATION_ID, accepted_user_id=TARGET_USER_ID,
+        token_hash=RAW_TOKEN_HASH, acceptance_id=INVITATION_ID,
     )
-
-    claimed = repo.claim_invitation(db, INVITATION_ID, accepted_user_id=TARGET_USER_ID)
-    assert claimed is not None
-    # The single UPDATE is filtered by invitation_id AND status='invited' AND
-    # expires_at > now() — one atomic statement, not a read-then-write.
-    assert [c.args for c in update.eq.call_args_list] == [
-        ("invitation_id", INVITATION_ID),
-    ]
-    after_first_eq.eq.assert_called_once_with("status", "invited")
-    gt = gt_stage.gt
-    gt.assert_called_once()
-    assert gt.call_args.args[0] == "expires_at"
+    assert claimed == {"accepted": True}
+    db.rpc.assert_called_once_with("b05_finalize_invitation", {
+        "p_kind": "institution", "p_invitation_id": INVITATION_ID,
+        "p_target_user_id": TARGET_USER_ID, "p_token_hash": RAW_TOKEN_HASH,
+        "p_acceptance_id": INVITATION_ID,
+    })
+    db.table.assert_not_called()
 
 
-def test_cancel_and_expire_are_also_conditional_on_pending_status() -> None:
+def test_cancel_and_expire_delegate_to_guarded_recovery_rpc() -> None:
     from app.repositories import platform_admin_invitations as repo
-
     db = MagicMock()
-    table = db.table.return_value
-    update = table.update.return_value
-    update.eq.return_value = update
-    update.execute.return_value = MagicMock(data=[{"invitation_id": INVITATION_ID}])
+    db.rpc.return_value.execute.return_value.data = {"closed":True,"audit_persisted":True,"already_applied":False}
+    assert repo.cancel_invitation(db,INVITATION_ID) is True
+    db.rpc.assert_called_with("b05_transition_invitation",{
+        "p_kind":"institution","p_id":INVITATION_ID,"p_status":"cancelled","p_actor":None})
+    assert repo.expire_invitation(db,INVITATION_ID) is True
+    db.rpc.assert_called_with("b05_transition_invitation",{
+        "p_kind":"institution","p_id":INVITATION_ID,"p_status":"expired","p_actor":None})
+    db.rpc.return_value.execute.return_value.data = {"closed":True,"audit_persisted":False}
+    assert repo.cancel_invitation(db,INVITATION_ID) is False
 
-    assert repo.cancel_invitation(db, INVITATION_ID) is True
-    update.eq.assert_any_call("status", "invited")
-
-    assert repo.expire_invitation(db, INVITATION_ID) is True
-    update.eq.assert_any_call("status", "invited")
 
 
 def test_no_frontend_module_can_read_a_service_role_key() -> None:

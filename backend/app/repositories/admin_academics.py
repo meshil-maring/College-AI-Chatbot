@@ -564,3 +564,15 @@ def list_student_attendance(
         query = query.lte("date", date_to)
     response = query.order("date", desc=True).limit(limit).execute()
     return response.data
+
+
+def approve_student_and_provision(client, *, student_id, institution_id, actor_user_id, actor_auth_user_id):
+    result = client.rpc("b05_approve_student", {
+        "p_student_id": str(student_id), "p_institution_id": str(institution_id),
+        "p_actor_user_id": str(actor_user_id), "p_actor_auth_user_id": str(actor_auth_user_id),
+    }).execute().data
+    if isinstance(result, list):
+        result = result[0] if result else None
+    if not isinstance(result, dict):
+        raise RuntimeError("Student approval returned no durable result")
+    return result

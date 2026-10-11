@@ -3,9 +3,12 @@ import { useApiMutation, useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   AdminInvitationError,
   acceptInvitation,
+  acceptMembership,
+  recoverInvitationAccount,
   inspectInvitation,
 } from '../../services/adminInvitationApi.ts'
 import type { AdminInvitationPublicView } from '../../types/platform.ts'
+import { useAuth } from '../auth/AuthProvider.tsx'
 
 type Phase =
   | { readonly kind: 'loading' }
@@ -44,7 +47,13 @@ function formatExpiry(value: string | null): string {
  *   offer no retry, because retrying could never succeed.
  */
 export default function AdminInvitationPage({ token }: { token: string }) {
+  const auth = useAuth()
+  const [existingAccount, setExistingAccount] = useState(false)
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
+  const recoveryMode = (phase.kind === 'ready' || phase.kind === 'submitting')
+    && phase.invitation.account_recovery_available === true
+  const membershipMode = existingAccount || auth.status === 'authenticated'
+    || ((phase.kind === 'ready' || phase.kind === 'submitting') && phase.invitation.status === 'accepted')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -58,7 +67,9 @@ export default function AdminInvitationPage({ token }: { token: string }) {
     Awaited<ReturnType<typeof acceptInvitation>>,
     { password: string; first_name?: string; last_name?: string }
   >({
-    mutationFn: (payload) => acceptInvitation(token, payload),
+    mutationFn: (payload) => recoveryMode ? recoverInvitationAccount(token) : membershipMode && auth.accessToken
+      ? acceptMembership(token, auth.accessToken)
+      : acceptInvitation(token, payload),
   })
 
   useEffect(() => {
@@ -77,11 +88,19 @@ export default function AdminInvitationPage({ token }: { token: string }) {
     event.preventDefault()
     setLocalError(null)
     if (phase.kind !== 'ready') return
-    if (password.length < 8) {
+    if (!recoveryMode && membershipMode && (!auth.accessToken || auth.status !== 'authenticated')) {
+      setLocalError('Sign in with the invited account, then return to this invitation link.')
+      return
+    }
+    if (!recoveryMode && membershipMode && auth.user?.email?.trim().toLowerCase() !== phase.invitation.email.trim().toLowerCase()) {
+      setLocalError('This invitation belongs to another account. Sign in with the invited address.')
+      return
+    }
+    if (!recoveryMode && !membershipMode && password.length < 8) {
       setLocalError('Choose a password of at least 8 characters.')
       return
     }
-    if (password !== confirmPassword) {
+    if (!recoveryMode && !membershipMode && password !== confirmPassword) {
       setLocalError('The two passwords do not match.')
       return
     }
@@ -89,7 +108,7 @@ export default function AdminInvitationPage({ token }: { token: string }) {
     setPhase({ kind: 'submitting', invitation })
     try {
       const result = await acceptMutation.mutateAsync({
-        password,
+        password: recoveryMode || membershipMode ? '' : password,
         ...(firstName.trim() !== '' ? { first_name: firstName.trim() } : {}),
         ...(lastName.trim() !== '' ? { last_name: lastName.trim() } : {}),
       })
@@ -103,8 +122,21 @@ export default function AdminInvitationPage({ token }: { token: string }) {
         role: result.role,
       })
     } catch (err) {
+      // Resolve a possibly committed acceptance before offering any new create.
+      // Recovery works after reload too; no password or receipt is persisted.
+      setPassword('')
+      setConfirmPassword('')
+      try {
+        const latest = await inspectInvitation(token)
+        if (latest.account_recovery_available) {
+          setPhase({ kind: 'ready', invitation: latest })
+          setLocalError('Your invitation was accepted. Retry account recovery to finish sign-in confirmation.')
+          return
+        }
+      } catch { /* Keep the original error when inspection is unavailable. */ }
       // A terminal failure can never succeed on retry, so stop offering the form.
-      if (err instanceof AdminInvitationError && err.isTerminal) {
+      if (err instanceof AdminInvitationError && (err.isTerminal || err.code === 'INVITATION_RECONCILIATION_REQUIRED'
+          || err.code === 'INVITATION_EMAIL_CONFIRMATION_UNCERTAIN')) {
         setPhase({ kind: 'unusable', message: err.message })
         return
       }
@@ -136,7 +168,7 @@ return (
               {phase.message}
             </p>
             <p className="mt-4 text-sm leading-6 text-slate-400">
-              Ask your platform administrator to send a new invitation.
+              Contact your administrator for help with this invitation.
             </p>
             <a
               href="/login/admin"
@@ -172,8 +204,8 @@ return (
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               This invitation is for{' '}
-              <strong className="text-slate-200">{phase.invitation.email}</strong>. Create a
-              password to finish setting up your {phase.invitation.role === 'admin' || phase.invitation.role === undefined ? 'University Admin' : phase.invitation.role} account.
+              <strong className="text-slate-200">{phase.invitation.email}</strong>.
+              {recoveryMode ? ' Finish confirming the account you already created.' : membershipMode ? ' Accept membership using your signed-in account.' : ' Create a password to finish setting up your account.'}
             </p>
             {/* Phase 7.15: the email is INFORMATIONAL. It is rendered from the
                 server's answer, is not an input, and cannot be edited — the
@@ -184,7 +216,7 @@ return (
               data-testid="invite-email-binding"
               className="mt-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300"
             >
-              Your account will be created for{' '}
+              This membership is bound to{' '}
               <strong className="text-slate-100">{phase.invitation.email}</strong>.
               This address cannot be changed during setup.
             </p>
@@ -210,6 +242,22 @@ return (
             ) : null}
 
             <form className="mt-6 space-y-4" onSubmit={(event) => { void submit(event) }}>
+              {phase.invitation.status === 'accepted' ? <p role="status">This invitation has already been accepted. {recoveryMode ? 'Retry confirmation without signing in.' : 'Sign in to recover your acceptance result.'}</p> : null}
+              {recoveryMode ? (
+                <button type="submit" disabled={phase.kind === 'submitting'}>Retry account recovery</button>
+              ) : (
+                <>
+              <button type="button" onClick={() => { setExistingAccount(true); setPassword(''); setConfirmPassword('') }}>
+                I already have an account
+              </button>
+              {membershipMode ? (
+                <>
+                  <p>Your existing credentials will be preserved.</p>
+                  {auth.status !== 'authenticated' ? <a href={`/login/${phase.invitation.role ?? 'admin'}`}>Sign in, then return to this invitation</a> : null}
+                  <button type="submit" disabled={phase.kind === 'submitting' || auth.status !== 'authenticated'}>Accept membership</button>
+                </>
+              ) : (
+                <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className={labelClass} htmlFor="invite-first-name">
@@ -275,6 +323,10 @@ return (
               >
                 {phase.kind === 'submitting' ? 'Setting up your account…' : 'Create my account'}
               </button>
+                </>
+              )}
+                </>
+              )}
             </form>
           </>
         ) : null}

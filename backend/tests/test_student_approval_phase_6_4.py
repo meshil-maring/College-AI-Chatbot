@@ -159,8 +159,8 @@ def test_admin_can_approve():
     assert resp.json()["approval_status"] == "approved"
     assert str(m.call_args.args[0]) == STUDENT_A
     assert str(m.call_args.args[1]) == TENANT_A
-    assert audit.call_count == 1
-    assert audit.call_args.args[1] == "student.approve"
+    assert m.call_args.kwargs["actor"]["auth_user_id"]
+    # Durable audit ownership is positively checked through the real service below.
 
 
 def test_staff_can_approve_and_reject():
@@ -236,7 +236,7 @@ def test_client_own_institution_query_is_accepted():
 def test_admin_cannot_approve_other_tenant_student():
     _as(_user(TENANT_A, roles=("admin",)))
 
-    def _deny(student_id, tenant):
+    def _deny(student_id, tenant, **kwargs):
         raise AppError(
             "This resource belongs to a different institution",
             status_code=403,
@@ -255,7 +255,7 @@ def test_admin_cannot_approve_other_tenant_student():
 def test_admin_cannot_reject_other_tenant_student():
     _as(_user(TENANT_A, roles=("admin",)))
 
-    def _deny(student_id, tenant):
+    def _deny(student_id, tenant, **kwargs):
         raise AppError(
             "This resource belongs to a different institution",
             status_code=403,
@@ -282,7 +282,7 @@ def test_service_enforces_tenant_before_state():
     ):
         for fn in (svc.approve_student, svc.reject_student):
             try:
-                fn(STUDENT_B, TENANT_A)
+                fn(STUDENT_B, TENANT_A, **({"actor": _user(TENANT_A)} if fn is svc.approve_student else {}))
                 raise AssertionError("expected TENANT_MISMATCH")
             except AppError as exc:
                 assert exc.status_code == 403
@@ -299,7 +299,7 @@ def test_service_cross_tenant_pending_rejected():
         ),
     ):
         try:
-            svc.approve_student(STUDENT_B, TENANT_A)
+            svc.approve_student(STUDENT_B, TENANT_A, actor=_user(TENANT_A))
             raise AssertionError("expected TENANT_MISMATCH")
         except AppError as exc:
             assert exc.code == "TENANT_MISMATCH"
@@ -321,17 +321,19 @@ def test_pending_list_queries_pending_only_in_tenant():
 
 def test_approve_pending_to_approved_db_state():
     db = MagicMock()
-    with (
-        patch.object(svc, "get_admin_client", return_value=db),
-        patch.object(repo, "get_student_for_approval", return_value=_pending_row()),
-        patch.object(
-            repo, "set_student_approval_status",
-            return_value=_pending_row(approval_status="approved"),
-        ) as m,
-    ):
-        out = svc.approve_student(STUDENT_A, TENANT_A)
-    assert out["approval_status"] == "approved"
-    assert m.call_args.args[1:] == (STUDENT_A, TENANT_A, "approved")
+    actor = _user(TENANT_A)
+    row = _pending_row(approval_status="approved")
+    with patch.object(svc,"get_admin_client",return_value=db), patch.object(
+        repo,"get_student_for_approval",return_value=_pending_row()
+    ), patch.object(repo,"approve_student_and_provision",return_value={
+        "student":row,"role_granted":True,"audit_persisted":True
+    }) as provision:
+        assert svc.approve_student(STUDENT_A,TENANT_A,actor=actor) == row
+    assert provision.call_args.kwargs == {
+        "student_id":STUDENT_A,"institution_id":TENANT_A,
+        "actor_user_id":actor["user_id"],"actor_auth_user_id":actor["auth_user_id"]
+    }
+
 
 
 def test_reject_pending_to_rejected_preserved():
@@ -356,7 +358,7 @@ def test_approve_unknown_student_404():
         patch.object(repo, "get_student_for_approval", return_value=None),
     ):
         try:
-            svc.approve_student(STUDENT_A, TENANT_A)
+            svc.approve_student(STUDENT_A, TENANT_A, actor=_user(TENANT_A))
             raise AssertionError("expected 404")
         except AppError as exc:
             assert exc.status_code == 404
@@ -377,7 +379,6 @@ def test_conditional_write_targets_pending_only():
 
 def test_invalid_transitions_rejected():
     cases = [
-        ("approved", "approve"),
         ("approved", "reject"),
         ("rejected", "approve"),
         ("rejected", "reject"),
@@ -393,7 +394,7 @@ def test_invalid_transitions_rejected():
             ),
         ):
             try:
-                fn(STUDENT_A, TENANT_A)
+                fn(STUDENT_A, TENANT_A, **({"actor": _user(TENANT_A)} if fn is svc.approve_student else {}))
                 raise AssertionError(f"expected 409 for {current}->{op}")
             except AppError as exc:
                 assert exc.status_code == 409, (current, op)
@@ -403,7 +404,7 @@ def test_invalid_transitions_rejected():
 def test_api_surfaces_not_pending_as_409():
     _as(_user(TENANT_A, roles=("admin",)))
 
-    def _stale(student_id, tenant):
+    def _stale(student_id, tenant, **kwargs):
         raise AppError(
             "Student is not pending approval (current: approved)",
             status_code=409,
@@ -461,33 +462,27 @@ def test_reject_body_tampering_inert():
 
 
 def test_stale_approve_after_reject_maps_to_409():
-    db = MagicMock()
-    with (
-        patch.object(svc, "get_admin_client", return_value=db),
-        patch.object(repo, "get_student_for_approval",
-                     side_effect=[_pending_row(), _pending_row(approval_status="rejected")]),
-        patch.object(repo, "set_student_approval_status", return_value=None),
-    ):
-        try:
-            svc.approve_student(STUDENT_A, TENANT_A)
-            raise AssertionError("expected 409 stale")
-        except AppError as exc:
-            assert exc.status_code == 409
-            assert exc.code == "STUDENT_NOT_PENDING"
+    with patch.object(svc,"get_admin_client",return_value=MagicMock()), patch.object(
+        repo,"get_student_for_approval",return_value=_pending_row()
+    ), patch.object(repo,"approve_student_and_provision",return_value={"conflict":True}):
+        with pytest.raises(AppError) as caught:
+            svc.approve_student(STUDENT_A,TENANT_A,actor=_user(TENANT_A))
+    assert caught.value.code == "STUDENT_NOT_PENDING"
 
 
-def test_double_approve_second_rejected_as_not_pending():
-    db = MagicMock()
-    with (
-        patch.object(svc, "get_admin_client", return_value=db),
-        patch.object(repo, "get_student_for_approval",
-                     return_value=_pending_row(approval_status="approved")),
-    ):
-        try:
-            svc.approve_student(STUDENT_A, TENANT_A)
-            raise AssertionError("expected 409")
-        except AppError as exc:
-            assert exc.code == "STUDENT_NOT_PENDING"
+
+def test_double_approve_recovers_provisioning_and_audit():
+    row = _pending_row(approval_status="approved")
+    with patch.object(svc,"get_admin_client",return_value=MagicMock()), patch.object(
+        repo,"get_student_for_approval",return_value=row
+    ), patch.object(repo,"approve_student_and_provision",return_value={
+        "student":row,"role_granted":True,"audit_persisted":True
+    }) as provision:
+        actor = _user(TENANT_A)
+        assert svc.approve_student(STUDENT_A,TENANT_A,actor=actor) == row
+        assert svc.approve_student(STUDENT_A,TENANT_A,actor=actor) == row
+    assert provision.call_count == 2  # Every retry reaches durable grant/audit verification.
+
 
 
 def test_approve_and_reject_write_audit_log():
@@ -499,8 +494,7 @@ def test_approve_and_reject_write_audit_log():
             patch("app.api.admin._record_audit") as audit,
         ):
             client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
-            assert audit.call_args.args[1] == "student.approve"
-            assert audit.call_args.args[2] == "students"
+            assert not audit.mock_calls  # Atomic RPC audit contract covered by service and failure tests.
         with (
             patch("app.api.admin.admin_academics.reject_student",
                   return_value=_pending_row(approval_status="rejected")),
@@ -541,7 +535,7 @@ def test_approval_response_leaks_no_secrets():
 def test_institution_staff_cannot_approve_other_tenant_student():
     _as(_user(TENANT_A, roles=("staff",)))
 
-    def _deny(student_id, tenant):
+    def _deny(student_id, tenant, **kwargs):
         raise AppError(
             "This resource belongs to a different institution",
             status_code=403,
@@ -560,7 +554,7 @@ def test_institution_staff_cannot_approve_other_tenant_student():
 def test_institution_staff_cannot_reject_other_tenant_student():
     _as(_user(TENANT_A, roles=("staff",)))
 
-    def _deny(student_id, tenant):
+    def _deny(student_id, tenant, **kwargs):
         raise AppError(
             "This resource belongs to a different institution",
             status_code=403,
@@ -576,19 +570,76 @@ def test_institution_staff_cannot_reject_other_tenant_student():
     assert resp.json()["error"]["code"] == "TENANT_MISMATCH"
 
 
-def test_platform_admin_can_approve_college_a_student():
-    """Platform admin (tenant None) approves via the target's institution."""
+def test_student_approval_requires_institution_scope_even_for_platform_admin():
+    with pytest.raises(AppError) as caught:
+        svc.approve_student(STUDENT_A,None,actor=_user(None))
+    assert caught.value.code == "FORBIDDEN"
+
+
+@pytest.mark.parametrize("actor", [None, {}, {"user_id": "actor"},
+    {"user_id": "actor", "auth_user_id": "auth", "roles": ["faculty"]},
+    {"user_id": "actor", "auth_user_id": "auth", "roles": ["student"]}])
+def test_student_provisioning_requires_verified_supported_actor(actor):
+    with patch.object(repo,"approve_student_and_provision") as provision:
+        with pytest.raises(AppError) as caught:
+            svc.approve_student(STUDENT_A,TENANT_A,actor=actor)
+    assert caught.value.code == "FORBIDDEN"
+    provision.assert_not_called()
+
+
+@pytest.mark.parametrize("result", [
+    {"role_granted":False,"audit_persisted":True},
+    {"role_granted":True,"audit_persisted":False},
+    {"role_granted":True,"audit_persisted":True},
+    {"student":{"approval_status":"pending"},"role_granted":True,"audit_persisted":True},
+])
+def test_student_approval_never_reports_success_on_incomplete_provisioning(result):
+    with patch.object(svc,"get_admin_client",return_value=MagicMock()), patch.object(
+        repo,"get_student_for_approval",return_value=_pending_row()
+    ), patch.object(repo,"approve_student_and_provision",return_value=result) as provision:
+        with pytest.raises(AppError) as caught:
+            svc.approve_student(STUDENT_A,TENANT_A,actor=_user(TENANT_A))
+    assert caught.value.code == "STUDENT_PROVISIONING_UNCERTAIN"
+    provision.assert_called_once()
+
+
+@pytest.mark.parametrize("boundary", ["grant", "audit", "lost_commit_response"])
+def test_student_transaction_failure_is_recoverable_by_same_command(boundary):
+    row = _pending_row(approval_status="approved")
+    with patch.object(svc,"get_admin_client",return_value=MagicMock()), patch.object(
+        repo,"get_student_for_approval",return_value=_pending_row()
+    ), patch.object(repo,"approve_student_and_provision",side_effect=[
+        RuntimeError(boundary), {"student":row,"role_granted":True,"audit_persisted":True}
+    ]) as provision:
+        actor = _user(TENANT_A)
+        with pytest.raises(AppError) as caught:
+            svc.approve_student(STUDENT_A,TENANT_A,actor=actor)
+        assert caught.value.code == "STUDENT_PROVISIONING_UNCERTAIN"
+        assert svc.approve_student(STUDENT_A,TENANT_A,actor=actor) == row
+    assert provision.call_count == 2
+    assert provision.call_args_list[0] == provision.call_args_list[1]
+
+
+def test_student_http_flow_delegates_approval_grant_and_audit_to_one_rpc():
+    actor = _user(TENANT_A)
     db = MagicMock()
-    with (
-        patch.object(svc, "get_admin_client", return_value=db),
-        patch.object(repo, "get_student_for_approval",
-                     return_value=_pending_row(STUDENT_A, TENANT_A)),
-        patch.object(repo, "set_student_approval_status",
-                     return_value=_pending_row(STUDENT_A, TENANT_A, approval_status="approved")) as m,
-    ):
-        out = svc.approve_student(STUDENT_A, None)
-    assert out["approval_status"] == "approved"
-    assert m.call_args.args[1:] == (STUDENT_A, TENANT_A, "approved")
+    row = _pending_row(approval_status="approved")
+    db.rpc.return_value.execute.return_value.data = {
+        "student":row,"role_granted":True,"audit_persisted":True}
+    _as(actor)
+    try:
+        with patch.object(svc,"get_admin_client",return_value=db), patch.object(
+            repo,"get_student_for_approval",return_value=_pending_row()
+        ):
+            response = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
+    finally:
+        _clear()
+    assert response.status_code == 200
+    db.rpc.assert_called_once_with("b05_approve_student",{
+        "p_student_id":STUDENT_A,"p_institution_id":TENANT_A,
+        "p_actor_user_id":actor["user_id"],"p_actor_auth_user_id":actor["auth_user_id"]})
+    assert response.json()["approval_status"] == "approved"
+
 
 
 def test_platform_admin_can_reject_college_b_student():

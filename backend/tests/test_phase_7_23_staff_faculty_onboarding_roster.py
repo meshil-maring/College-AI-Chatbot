@@ -11,7 +11,6 @@ from app.core.security import get_current_user
 from app.main import app
 from app.services import admin_memberships as service
 from app.services import platform_admin_invitations as invitation_service
-from app.schemas.admin_invitations import AdminInvitationAcceptRequest
 from supabase_auth.errors import AuthApiError
 
 INST_A = UUID("40000000-0000-0000-0000-000000000001")
@@ -112,7 +111,7 @@ def test_foreign_request_id_fails_without_granting_access() -> None:
 
 def test_approval_grants_requested_server_owned_role_immediately() -> None:
     row = _request(requested_role="faculty")
-    approve = MagicMock(return_value={"already_applied": False, "role_granted": True})
+    approve = MagicMock(return_value={"already_applied": False, "role_granted": True, "audit_persisted": True})
     client = MagicMock()
     with patch.object(service, "get_admin_client", return_value=client), patch.object(
         service.repo, "get_request_for_institution", return_value=row
@@ -131,11 +130,9 @@ def test_approval_grants_requested_server_owned_role_immediately() -> None:
     assert "can now sign in" in result.message
     approve.assert_called_once()
     assert approve.call_args.kwargs["institution_id"] == INST_A
-    assert audit.call_args.args[4] == {
-        "role": "faculty",
-        "status": "approved",
-        "access_granted": True,
-    }
+    assert approve.return_value["audit_persisted"] is True
+    assert approve.call_args.kwargs["request_id"] == REQUEST_A
+    assert approve.call_args.kwargs["decided_by_user_id"] == _actor()["user_id"]
     client.auth.admin.update_user_by_id.assert_called_once_with(
         "70000000-0000-0000-0000-000000000001",
         {"email_confirm": True},
@@ -152,7 +149,7 @@ def test_repeat_approval_confirms_email_for_already_approved_applicant() -> None
         "auth_user_id": "70000000-0000-0000-0000-000000000001",
         "email": "staff@a.example",
         "status": "active",
-    }), patch.object(service.repo, "approve_and_grant_role") as grant:
+    }), patch.object(service.repo, "approve_and_grant_role", return_value={"already_applied": True, "role_granted": True, "audit_persisted": True}) as grant:
         result = service.decide_request(
             _actor(), INST_A, REQUEST_A, approve=True, reason=None
         )
@@ -161,15 +158,15 @@ def test_repeat_approval_confirms_email_for_already_approved_applicant() -> None
         "70000000-0000-0000-0000-000000000001",
         {"email_confirm": True},
     )
-    grant.assert_not_called()
+    grant.assert_called_once()
 
 
-def test_email_confirmation_failure_does_not_grant_membership_role() -> None:
+def test_email_confirmation_failure_follows_durable_membership_grant() -> None:
     client = MagicMock()
     client.auth.admin.update_user_by_id.side_effect = AuthApiError(
         "Auth Admin API unavailable", 503, "server_error"
     )
-    grant = MagicMock()
+    grant = MagicMock(return_value={"role_granted": True, "audit_persisted": True})
     with patch.object(service, "get_admin_client", return_value=client), patch.object(
         service.repo, "get_request_for_institution", return_value=_request()
     ), patch.object(service.repo, "get_user", return_value={
@@ -183,7 +180,7 @@ def test_email_confirmation_failure_does_not_grant_membership_role() -> None:
                 _actor(), INST_A, REQUEST_A, approve=True, reason=None
             )
     assert caught.value.code == "MEMBERSHIP_EMAIL_CONFIRMATION_FAILED"
-    grant.assert_not_called()
+    grant.assert_called_once()
 
 
 def test_rejection_assigns_no_role_and_sends_no_invitation() -> None:
@@ -191,7 +188,7 @@ def test_rejection_assigns_no_role_and_sends_no_invitation() -> None:
     with patch.object(service, "get_admin_client", return_value=object()), patch.object(
         service.repo, "get_request_for_institution", return_value=_request()
     ), patch.object(
-        service.repo, "decide_pending_request", return_value=_request(status="rejected")
+        service.repo, "decide_pending_request", return_value={**_request(status="rejected"), "audit_persisted": True}
     ), patch.object(service.repo, "approve_and_grant_role", grant), patch.object(
         service, "_audit"
     ):
@@ -227,6 +224,8 @@ def test_repeat_same_decision_is_idempotent() -> None:
         "auth_user_id": "70000000-0000-0000-0000-000000000001",
         "email": "staff@a.example",
         "status": "active",
+    }), patch.object(service.repo, "approve_and_grant_role", return_value={
+        "already_applied": True, "role_granted": True, "audit_persisted": True,
     }), patch.object(service.repo, "decide_pending_request") as decide:
         result = service.decide_request(
             _actor(), INST_A, REQUEST_A, approve=True, reason=None
@@ -378,8 +377,14 @@ def test_staff_invitation_acceptance_links_existing_identity_and_grants_stored_s
         },
     ), patch.object(
         invitation_service.invite_repo,
+        "reserve_invitation",
+        return_value={"acceptance_id":"60000000-0000-0000-0000-000000000001",
+                      "stage":"user_created","new_account":False,"user_id":str(USER_A),
+                      "auth_user_id":"70000000-0000-0000-0000-000000000001"},
+    ), patch.object(
+        invitation_service.invite_repo,
         "claim_invitation",
-        return_value={**invitation, "status": "accepted"},
+        return_value={"accepted":True},
     ), patch.object(
         invitation_service.invite_repo, "mark_email_verified"
     ), patch.object(
@@ -387,16 +392,11 @@ def test_staff_invitation_acceptance_links_existing_identity_and_grants_stored_s
     ):
         result = invitation_service.accept_invitation(
             "a" * 64,
-            AdminInvitationAcceptRequest(password="safe-password"),
+            actor={"user_id": str(USER_A),
+                   "auth_user_id": "70000000-0000-0000-0000-000000000001",
+                   "email": "staff@a.example"},
             peer="test",
         )
     assert result.role == "staff"
-    client.auth.admin.update_user_by_id.assert_called_once()
-    assign.assert_called_once_with(
-        client,
-        actor_user_id=str(USER_A),
-        user_id=str(USER_A),
-        role_name="staff",
-        institution_id=INST_A,
-        organization_id="50000000-0000-0000-0000-000000000001",
-    )
+    client.auth.admin.update_user_by_id.assert_not_called()
+    assign.assert_not_called()  # The finalization RPC owns grant + audit.

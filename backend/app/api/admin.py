@@ -928,14 +928,7 @@ def list_pending_students(
 def approve_student(student_id: UUID, current_user: dict = Depends(_APPROVAL)) -> dict:
     """Approve a pending student (pending -> approved)."""
     tenant, _is_platform_admin = _approval_scope(current_user)
-    approved = admin_academics.approve_student(student_id, tenant)
-    _record_audit(
-        current_user,
-        "student.approve",
-        "students",
-        str(student_id),
-        {"approval_status": "approved"},
-    )
+    approved = admin_academics.approve_student(student_id, tenant, actor=current_user)
     return approved
 
 

@@ -281,9 +281,12 @@ def assign_university_admin(
         client, user["id"], institution_id
     )
     if not already_assigned:
+        if not actor.get("auth_user_id"):
+            raise AppError("Verified actor identity required", 403, "FORBIDDEN")
         platform_repo.assign_institution_admin(
             client,
             actor_user_id=actor_user_id,
+            actor_auth_user_id=actor["auth_user_id"],
             user_id=user["id"],
             institution_id=institution_id,
         )

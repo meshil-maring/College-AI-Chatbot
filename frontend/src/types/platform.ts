@@ -170,6 +170,7 @@ export interface AdminInvitationExpirySweep {
  * no invitation id, no user record, no audit data, no other tenant's data.
  */
 export interface AdminInvitationPublicView {
+  readonly account_recovery_available?: boolean
   readonly status: AdminInvitationStatus
   readonly institution_name: string
   readonly institution_code: string

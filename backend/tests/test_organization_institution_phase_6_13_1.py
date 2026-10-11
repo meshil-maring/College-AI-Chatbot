@@ -289,23 +289,14 @@ def test_insert_institution_carries_exactly_one_owning_organization() -> None:
     assert payload["is_active"] is False
 
 
-def test_remove_membership_on_reject_uses_the_existing_scope_columns() -> None:
-    """Regression: user_roles stores scope_type/scope_id — never institution_id."""
+def test_reject_cleanup_preserves_all_existing_memberships() -> None:
+    """Pending requests grant nothing; rejecting one cannot revoke another grant."""
     client = MagicMock()
     tenancy_repo.remove_membership_on_reject(
         client, user_id=USER_ID, institution_id=INST_A1
     )
-    client.table.assert_called_once_with("user_roles")
-    node = client.table.return_value.delete.return_value.eq
-    filters = []
-    for _ in range(3):
-        filters.extend(args for args, _kwargs in node.call_args_list)
-        node = node.return_value.eq
-    assert filters == [
-        ("user_id", USER_ID),
-        ("scope_type", "institution"),
-        ("scope_id", INST_A1),
-    ]
+    client.table.assert_not_called()
+    client.rpc.assert_not_called()
 
 
 def test_resolve_authorization_context_links_user_to_organization_and_institution() -> None:

@@ -53,6 +53,7 @@ class SuperAdminInvitePublicView(BaseModel):
     email: str
     status: str
     expires_at: datetime | None = None
+    account_recovery_available: bool = False
 
 
 class SuperAdminRegisterRequest(BaseModel):

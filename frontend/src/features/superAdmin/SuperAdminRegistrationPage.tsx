@@ -3,6 +3,7 @@ import {
   SuperAdminInvitationError,
   inspectSuperAdminInvitation,
   registerSuperAdmin,
+  recoverSuperAdminAccount,
   type SuperAdminInvitePublicView,
 } from '../../services/superAdminInvitationApi.ts'
 
@@ -24,6 +25,8 @@ const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide tex
  */
 export default function SuperAdminRegistrationPage({ token }: { token: string }) {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
+  const recoveryMode = (phase.kind === 'ready' || phase.kind === 'submitting')
+    && phase.invitation.account_recovery_available === true
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
@@ -52,22 +55,22 @@ export default function SuperAdminRegistrationPage({ token }: { token: string })
     event.preventDefault()
     setError(null)
     if (phase.kind !== 'ready') return
-    if (firstName.trim() === '' || lastName.trim() === '') {
+    if (!recoveryMode && (firstName.trim() === '' || lastName.trim() === '')) {
       setError('Enter your first and last name.')
       return
     }
-    if (password.length < 8) {
+    if (!recoveryMode && password.length < 8) {
       setError('Choose a password of at least 8 characters.')
       return
     }
-    if (password !== confirmPassword) {
+    if (!recoveryMode && password !== confirmPassword) {
       setError('The two passwords do not match.')
       return
     }
     const invitation = phase.invitation
     setPhase({ kind: 'submitting', invitation })
     try {
-      const result = await registerSuperAdmin(token, {
+      const result = recoveryMode ? await recoverSuperAdminAccount(token) : await registerSuperAdmin(token, {
         password,
         confirm_password: confirmPassword,
         first_name: firstName.trim(),
@@ -77,6 +80,16 @@ export default function SuperAdminRegistrationPage({ token }: { token: string })
       setConfirmPassword('')
       setPhase({ kind: 'done', message: result.message })
     } catch (err) {
+      setPassword('')
+      setConfirmPassword('')
+      try {
+        const latest = await inspectSuperAdminInvitation(token)
+        if (latest.account_recovery_available) {
+          setPhase({ kind: 'ready', invitation: latest })
+          setError('Your invitation was accepted. Retry account recovery to finish sign-in confirmation.')
+          return
+        }
+      } catch { /* Preserve the original failure. */ }
       if (err instanceof SuperAdminInvitationError && err.isTerminal) {
         setPhase({ kind: 'unusable', message: err.message })
         return
@@ -116,6 +129,7 @@ export default function SuperAdminRegistrationPage({ token }: { token: string })
             <p className="text-sm text-slate-300">
               Registering <strong>{phase.invitation.email}</strong>
             </p>
+            {recoveryMode ? <p>Retry confirmation of your accepted account without signing in.</p> : <>
             <div>
               <label htmlFor="sa-first" className={labelClass}>First name</label>
               <input id="sa-first" className={inputClass} value={firstName} maxLength={200} onChange={(e) => { setFirstName(e.target.value) }} autoComplete="given-name" />
@@ -132,9 +146,10 @@ export default function SuperAdminRegistrationPage({ token }: { token: string })
               <label htmlFor="sa-confirm" className={labelClass}>Confirm password</label>
               <input id="sa-confirm" type="password" className={inputClass} value={confirmPassword} maxLength={200} onChange={(e) => { setConfirmPassword(e.target.value) }} autoComplete="new-password" />
             </div>
+            </>}
             {error !== null ? <p role="alert" className="text-sm text-red-400">{error}</p> : null}
             <button type="submit" disabled={phase.kind === 'submitting'} className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-60">
-              {phase.kind === 'submitting' ? 'Creating account…' : 'Create account'}
+              {phase.kind === 'submitting' ? 'Finishing account setup…' : recoveryMode ? 'Retry account recovery' : 'Create account'}
             </button>
           </form>
         ) : null}

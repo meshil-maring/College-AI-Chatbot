@@ -346,8 +346,7 @@ function App() {
   if (route.kind === 'institution-entry') return <InstitutionEntryPage />
   if (route.kind === 'institution') return <InstitutionGatewayPage institutionCode={route.institutionCode} />
   if (route.kind === 'not-found') return <NotFoundPage />
-  // Rendered outside <AuthProvider>: the invited person has no session yet.
-  if (route.kind === 'admin-invitation') return <AdminInvitationPage token={route.token} />
+  if (route.kind === 'admin-invitation') return <AuthProvider><AdminInvitationPage token={route.token} /></AuthProvider>
   if (route.kind === 'super-admin-register') return <SuperAdminRegisterEntryPage />
   if (route.kind === 'super-admin-invitation') {
     return <SuperAdminRegistrationPage token={route.token} />

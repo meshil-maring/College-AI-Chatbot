@@ -678,32 +678,23 @@ def decide_membership_request(
     # institution must still be ACTIVE (pending/rejected/suspended tenants
     # fail closed) and the resolved scope must be internally consistent.
     assert_active_tenant_context(db, current_user, authorization_context)
-    if req.get("status") != PENDING:
+    row_status = {"approve": "approved", "reject": "rejected"}[decision.decision]
+    if req.get("status") not in (PENDING, row_status):
         raise AppError(
             "This onboarding request has already been decided",
             status_code=422,
             code="MEMBERSHIP_REQUEST_NOT_PENDING",
         )
-    tenancy_repo.update_membership_request_status(
-        db,
-        str(req["request_id"]),
-        decision.decision,
+    if decision.decision == "approve" and not current_user.get("auth_user_id"):
+        raise AppError("Verified actor identity required", 403, "FORBIDDEN")
+    result = tenancy_repo.decide_membership_atomically(
+        db, req["request_id"], status=row_status,
+        actor_user_id=current_user["user_id"],
+        actor_auth_user_id=current_user.get("auth_user_id"), reason=decision.reason,
     )
-    if decision.decision == "approve":
-        tenancy_repo.assign_membership_role(
-            db,
-            actor_user_id=current_user["user_id"],
-            user_id=req["user_id"],
-            role_name=req["requested_role"],
-            institution_id=req["institution_id"],
-            organization_id=req["organization_id"],
-        )
-    else:
-        tenancy_repo.remove_membership_on_reject(
-            db,
-            user_id=req["user_id"],
-            institution_id=req["institution_id"],
-        )
+    if not result or not result.get("decided") or not result.get("audit_persisted"):
+        raise AppError("Membership decision conflicts with recorded state", 409,
+                       "MEMBERSHIP_DECISION_CONFLICT")
     return DecisionResponse(
         message=(
             "Membership request decided. "

@@ -440,66 +440,37 @@ def _conditional_approval_write(
     )
 
 
-def approve_student(
-    student_id: UUID | str,
-    institution_id: UUID | str | None,
-) -> dict:
-    """Transition pending -> approved. Grant the "student" role on approval.
+def approve_student(student_id, institution_id, *, actor=None) -> dict:
+    """Approve, provision the student grant and persist decision audit atomically.
 
-    ``institution_id`` is the acting approver's tenant (institution-bound
-    admin/staff) or None for a platform-level ADMIN — the OPTION A global
-    authority, consistent with the Phase 6.1 platform-account convention and
-    the existing unrestricted admin student CRUD (a platform admin could
-    already set approval_status via PATCH /students/{id}). The API layer
-    guarantees None is only ever passed by a platform-level admin; platform
-    staff are rejected upstream with 403.
-
-    On successful approval, the "student" role is granted to the user
-    (server-side, Phase 6.4 contract: approval grants the student role).
+    Same authorization as the current API: institution-scoped admin or staff.
+    Existing approved rows are repairable through the same authorized command.
     """
+    if (not actor or not actor.get("user_id") or not actor.get("auth_user_id")
+            or institution_id is None or not set(actor.get("roles", [])) & {"admin", "staff"}):
+        raise AppError("Verified student approver required", 403, "FORBIDDEN")
     target = _resolve_approval_target(student_id, institution_id)
-    if target.get("approval_status") != "pending":
-        raise AppError(
-            f"Student is not pending approval (current: {target.get('approval_status')})",
-            status_code=409,
-            code="STUDENT_NOT_PENDING",
+    if target.get("approval_status") not in ("pending", "approved"):
+        raise AppError("Student has a different decision", 409, "STUDENT_NOT_PENDING")
+    try:
+        result = academics_repo.approve_student_and_provision(
+            get_admin_client(), student_id=student_id, institution_id=institution_id,
+            actor_user_id=actor["user_id"], actor_auth_user_id=actor["auth_user_id"],
         )
-    # Platform-admin passthrough: write within the TARGET's institution.
-    tenant = institution_id if institution_id is not None else target.get("institution_id")
-    updated = _conditional_approval_write(student_id, tenant, "approved")
-
-    # Phase 6.4 contract: approval grants the "student" role.
-    # Grant the role server-side via the existing tenancy repository.
-    user_id = updated.get("user_id")
-    if user_id:
-        try:
-            # Resolve the institution's real organization_id (the student row
-            # carries institution_id but not organization_id; the DB trigger
-            # trg_phase613_user_roles_scope validates institution ⊂ organization).
-            org_id: UUID | str | None = tenant
-            if tenant is not None:
-                inst_row = tenancy_repo.get_institution_by_id(
-                    get_admin_client(), tenant
-                )
-                if inst_row is not None:
-                    org_id = inst_row.get("organization_id") or tenant
-            tenancy_repo.assign_membership_role(
-                get_admin_client(),
-                user_id=user_id,
-                role_name="student",
-                institution_id=tenant,
-                organization_id=org_id,
-            )
-        except Exception:
-            # Role grant is best-effort; the approval itself succeeded.
-            # Log but don't fail the approval flow.
-            logger.warning(
-                "Failed to grant student role for user_id=%s after approval",
-                user_id,
-                exc_info=True,
-            )
-
-    return updated
+    except AppError:
+        raise
+    except Exception as exc:
+        raise AppError("Student approval requires retry or reconciliation", 409,
+                       "STUDENT_PROVISIONING_UNCERTAIN") from exc
+    if result.get("not_found"):
+        raise AppError("Student not found", 404, "STUDENT_NOT_FOUND")
+    if result.get("conflict"):
+        raise AppError("Student has a different decision", 409, "STUDENT_NOT_PENDING")
+    if not (result.get("role_granted") and result.get("audit_persisted")
+            and isinstance(result.get("student"), dict)
+            and result["student"].get("approval_status") == "approved"):
+        raise AppError("Student provisioning did not complete", 409, "STUDENT_PROVISIONING_UNCERTAIN")
+    return result["student"]
 
 
 def reject_student(

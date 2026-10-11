@@ -87,10 +87,12 @@ async function request<T>(
   method: 'GET' | 'POST',
   endpoint: string,
   body?: unknown,
+  accessToken?: string,
 ): Promise<T> {
   let response: Response
   try {
     const headers: Record<string, string> = {}
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`
     if (body !== undefined) headers['Content-Type'] = 'application/json'
     response = await fetch(endpoint, {
       method,
@@ -136,4 +138,16 @@ export async function acceptInvitation(
     `${INVITATION_BASE}/${encodeURIComponent(token)}/accept`,
     input,
   )
+}
+
+/** Authenticated membership acceptance never carries a password or body. */
+export async function acceptMembership(token: string, accessToken: string): Promise<AdminInvitationAcceptance> {
+  return request<AdminInvitationAcceptance>(
+    'POST', `${INVITATION_BASE}/${encodeURIComponent(token)}/accept-membership`, undefined, accessToken,
+  )
+}
+
+/** Confirmation recovery sends neither a password nor a sign-in session. */
+export async function recoverInvitationAccount(token: string): Promise<AdminInvitationAcceptance> {
+  return request<AdminInvitationAcceptance>('POST', `${INVITATION_BASE}/${encodeURIComponent(token)}/recover`)
 }

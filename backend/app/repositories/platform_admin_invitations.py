@@ -17,13 +17,9 @@ lookup is by digest the database never sees the credential itself.
 
 Single-use enforcement
 ----------------------
-``claim_invitation`` performs a CONDITIONAL update
-``... WHERE status = 'invited' AND expires_at > now()``. Two concurrent
-acceptance requests for the same token therefore produce exactly one winner:
-Postgres takes a row lock and the loser's ``RETURNING`` set is empty. Combined
-with the Phase 7.14 migration's terminal-state trigger (a consumed invitation
-can never return to ``invited``) this makes replay structurally impossible
-rather than a matter of application timing.
+Reservation locks the invitation and compares the exact token digest using
+post-lock database time. Finalization commits acceptance, the grant and audit
+in one RPC. Reserved attempts never reopen automatically on provider failure.
 """
 
 from __future__ import annotations
@@ -62,7 +58,7 @@ TERMINAL_STATUSES = frozenset({STATUS_ACCEPTED, STATUS_CANCELLED, STATUS_EXPIRED
 INVITATION_VIEW_COLUMNS = (
     "invitation_id, institution_id, email, role_name, status, expires_at, "
     "accepted_at, cancelled_at, accepted_user_id, created_by, created_at, "
-    "updated_at, email_verified_at, email_delivery_status, email_delivery_at, "
+    "updated_at, acceptance_id, acceptance_user_id, acceptance_auth_user_id, email_verified_at, email_delivery_status, email_delivery_at, "
     "email_delivery_attempts, resend_count, last_sent_at"
 )
 
@@ -182,68 +178,91 @@ def list_invitations(
     return _rows(response)
 
 
-def cancel_invitation(client: Client, invitation_id: UUID | str) -> bool:
-    """Cancel a still-pending invitation. Returns True when this call cancelled it.
+def transition_invitation(client, invitation_id, *, status, kind="institution", actor_user_id=None):
+    response = client.rpc("b05_transition_invitation", {
+        "p_kind": kind, "p_id": str(invitation_id), "p_status": status,
+        "p_actor": str(actor_user_id) if actor_user_id else None,
+    }).execute()
+    result = response.data
+    if not isinstance(result, dict) or not result.get("closed") or not result.get("audit_persisted"):
+        return None
+    return result
 
-    The update is CONDITIONAL on ``status = 'invited'``, so an invitation that
-    was accepted or expired in the meantime is never overwritten — the cancel
-    loses the race instead of destroying an audit-relevant transition.
+
+def cancel_invitation(client: Client, invitation_id: UUID | str, *, actor_user_id=None) -> bool:
+    """Close pending/unstarted work under the invitation and operation locks.
+
+    True confirms durable cancellation; false requires state inspection.
     """
-    now = datetime.now(timezone.utc).isoformat()
-    response = (
-        client.table("platform_admin_invitations")
-        .update({"status": STATUS_CANCELLED, "cancelled_at": now})
-        .eq("invitation_id", str(invitation_id))
-        .eq("status", STATUS_INVITED)
-        .execute()
-    )
-    return bool(_rows(response))
+    return transition_invitation(client, invitation_id, status=STATUS_CANCELLED,
+                                 actor_user_id=actor_user_id) is not None
+
 
 
 def expire_invitation(client: Client, invitation_id: UUID | str) -> bool:
     """Mark a pending invitation EXPIRED. Returns True when this call expired it.
 
     Used when acceptance observes an elapsed ``expires_at``. The transition is
-    persisted (and separately audited) so the roster reflects reality instead of
+    persisted with its audit in one transaction so the roster reflects reality instead of
     showing a permanently "invited" row.
     """
-    response = (
-        client.table("platform_admin_invitations")
-        .update({"status": STATUS_EXPIRED})
-        .eq("invitation_id", str(invitation_id))
-        .eq("status", STATUS_INVITED)
-        .execute()
-    )
-    return bool(_rows(response))
+    result = transition_invitation(client, invitation_id, status=STATUS_EXPIRED)
+    return bool(result and not result["already_applied"])
+
+
+
+def reserve_invitation(
+    client: Client,
+    invitation_id: UUID | str,
+    *,
+    token_hash: str,
+    acceptance_id: UUID | str,
+    kind: str = "institution",
+    existing_user_id: UUID | str | None = None,
+    existing_auth_user_id: UUID | str | None = None,
+) -> dict[str, Any] | None:
+    """Reserve the exact token under a DB row lock before any provider I/O.
+
+    Reservations do not expire or reopen automatically: uncertain provider
+    outcomes require reconciliation rather than another account creation.
+    """
+    response = client.rpc(
+        "b05_reserve_invitation",
+        {
+            "p_kind": kind,
+            "p_invitation_id": str(invitation_id),
+            "p_token_hash": token_hash,
+            "p_acceptance_id": str(acceptance_id),
+            "p_existing_user_id": str(existing_user_id) if existing_user_id else None,
+            "p_existing_auth_user_id": (
+                str(existing_auth_user_id) if existing_auth_user_id else None
+            ),
+        },
+    ).execute()
+    rows = _rows(response)
+    return rows[0] if rows else None
 
 
 def claim_invitation(
-    client: Client, invitation_id: UUID | str, *, accepted_user_id: UUID | str
+    client: Client,
+    invitation_id: UUID | str,
+    *,
+    token_hash: str,
+    acceptance_id: UUID | str,
+    accepted_user_id: UUID | str,
+    kind: str = "institution",
 ) -> dict[str, Any] | None:
-    """Atomically consume an invitation, or return None when it was not claimable.
-
-    The single conditional statement
-    ``UPDATE ... WHERE invitation_id = ? AND status = 'invited' AND expires_at > now()``
-    is the ONLY place an invitation becomes consumed. Because the same statement
-    re-checks status and expiry, expiry is enforced by the database at the exact
-    moment of consumption and not merely by an earlier read: a token that expires
-    between the read and this write cannot be accepted.
-    """
-    now = datetime.now(timezone.utc).isoformat()
-    response = (
-        client.table("platform_admin_invitations")
-        .update(
-            {
-                "status": STATUS_ACCEPTED,
-                "accepted_at": now,
-                "accepted_user_id": str(accepted_user_id),
-            }
-        )
-        .eq("invitation_id", str(invitation_id))
-        .eq("status", STATUS_INVITED)
-        .gt("expires_at", now)
-        .execute()
-    )
+    """Finalize a reservation, membership grant and audit in one transaction."""
+    response = client.rpc(
+        "b05_finalize_invitation",
+        {
+            "p_kind": kind,
+            "p_invitation_id": str(invitation_id),
+            "p_token_hash": token_hash,
+            "p_acceptance_id": str(acceptance_id),
+            "p_target_user_id": str(accepted_user_id),
+        },
+    ).execute()
     rows = _rows(response)
     return rows[0] if rows else None
 def insert_invitation(
@@ -452,21 +471,38 @@ def mark_email_verified(client: Client, invitation_id: UUID | str) -> bool:
 def list_expiring_pending_invitations(
     client: Client, *, limit: int = SWEEP_PAGE_MAX
 ) -> list[dict[str, Any]]:
-    """Return pending invitations whose ``expires_at`` has elapsed.
+    """Return elapsed pending invitations and expired rows missing an audit.
 
     This is only ever a CLEANUP query. The acceptance transaction remains
-    authoritative: ``claim_invitation`` re-checks ``expires_at > now()`` in the
-    same conditional statement that consumes the token, so an invitation the
+    authoritative: ``claim_invitation`` re-checks expiry using database decision time in the
+    same transaction that consumes the token, so an invitation the
     sweep has not reached yet is still refused at acceptance time.
     """
-    now = datetime.now(timezone.utc).isoformat()
-    response = (
-        client.table("platform_admin_invitations")
-        .select(INVITATION_VIEW_COLUMNS)
-        .eq("status", STATUS_INVITED)
-        .lte("expires_at", now)
-        .order("expires_at")
-        .limit(max(1, min(int(limit), SWEEP_PAGE_MAX)))
-        .execute()
-    )
+    response = client.rpc("b05_expiry_candidates", {
+        "p_limit": max(1, min(int(limit), SWEEP_PAGE_MAX)),
+    }).execute()
     return _rows(response)
+
+
+def advance_operation(client, acceptance_id, *, expected_stage, stage, auth_user_id=None, user_id=None, first_name=None, last_name=None):
+    response = client.rpc("b05_advance_invitation_operation", {
+        "p_acceptance_id": str(acceptance_id), "p_expected_stage": expected_stage,
+        "p_stage": stage, "p_auth_user_id": auth_user_id, "p_user_id": user_id,
+        "p_first_name": first_name, "p_last_name": last_name,
+    }).execute()
+    rows = _rows(response)
+    return rows[0] if rows else None
+
+
+def get_operation(client, acceptance_id):
+    response = client.table("b05_invitation_operations").select("*").eq(
+        "acceptance_id", str(acceptance_id)
+    ).maybe_single().execute()
+    return response.data if response is not None else None
+
+
+def recover_accepted_operation(client, invitation_id, token_hash, *, kind="institution"):
+    response = client.rpc("b05_recover_accepted_invitation", {
+        "p_kind": kind, "p_id": str(invitation_id), "p_digest": token_hash,
+    }).execute()
+    return response.data if isinstance(response.data, dict) else None

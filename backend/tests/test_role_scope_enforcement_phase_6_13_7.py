@@ -1044,12 +1044,13 @@ def test_03b_institution_admin_membership_decision_lifecycle():
     """Institution admin: ACTIVE institution allows, PENDING denies (service)."""
     from app.schemas.tenancy import ApprovalDecisionRequest
 
-    current_user = {"user_id": INST_ADMIN, "institution_id": None}
+    current_user = {"user_id": INST_ADMIN, "auth_user_id": INST_ADMIN, "institution_id": None}
     ctx = _inst_ctx()
 
     # ACTIVE institution: membership approval succeeds and grants the role.
     state = _base_state(inst_status="active", inst_active=True)
     db = _db(state)
+    db.rpc.return_value.execute.return_value.data = {"decided":True,"audit_persisted":True,"already_applied":False}
     with patch.object(tenancy_svc, "get_admin_client", return_value=db):
         response = tenancy_svc.decide_membership_request(
             current_user,
@@ -1058,14 +1059,14 @@ def test_03b_institution_admin_membership_decision_lifecycle():
             ApprovalDecisionRequest(decision="approve"),
         )
     assert response.status == "approve"
-    assert state["institution_membership_requests"][MR_A]["status"] == "approve"
+    # A service test does not execute SQL; the row stays pending in this fake.
+    assert state["institution_membership_requests"][MR_A]["status"] == "pending"
     db.rpc.assert_called_once_with(
-        "phase81_assign_institution_role_audited",
+        "b05_decide_legacy_membership",
         {
+            "p_request_id": MR_A, "p_status": "approved", "p_reason": None,
             "p_actor_user_id": INST_ADMIN,
-            "p_target_user_id": state["institution_membership_requests"][MR_A]["user_id"],
-            "p_institution_id": INST_A,
-            "p_role_name": "staff",
+            "p_actor_auth_user_id": INST_ADMIN,
         },
     )
 

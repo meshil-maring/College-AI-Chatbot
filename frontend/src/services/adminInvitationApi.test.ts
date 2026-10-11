@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   AdminInvitationError,
   acceptInvitation,
+  acceptMembership,
+  recoverInvitationAccount,
   inspectInvitation,
 } from './adminInvitationApi.ts'
 
@@ -23,6 +25,24 @@ function errorResponse(status: number, code: string, message: string): Response 
 afterEach(() => vi.unstubAllGlobals())
 
 describe('admin invitation API client', () => {
+  it('recovers confirmation with no password, body or session', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ role: 'admin' }))
+    vi.stubGlobal('fetch', fetchMock)
+    await recoverInvitationAccount(TOKEN)
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(`${BASE}/${TOKEN}/recover`, {
+      method: 'POST', headers: {}, body: undefined,
+    })
+  })
+  it('sends the verified session and no body or password for membership acceptance', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ role: 'staff' }, 201))
+    vi.stubGlobal('fetch', fetchMock)
+    await acceptMembership(TOKEN, 'session-jwt')
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${BASE}/${TOKEN}/accept-membership`)
+    expect(init.method).toBe('POST')
+    expect(init.headers).toEqual({ Authorization: 'Bearer session-jwt' })
+    expect(init.body).toBeUndefined()
+  })
   it('sends NO authorization header, because the invited person has no session', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
       status: 'invited',

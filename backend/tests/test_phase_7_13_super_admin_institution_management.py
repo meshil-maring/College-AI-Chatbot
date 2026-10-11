@@ -566,6 +566,8 @@ def test_super_admin_can_assign_existing_account_as_university_admin() -> None:
     # The grant is structurally institution-scoped.
     assign.assert_called_once()
     assert str(assign.call_args.kwargs["institution_id"]) == INSTITUTION_ID
+    assert assign.call_args.kwargs["actor_user_id"] == _principal("super_admin")["user_id"]
+    assert assign.call_args.kwargs["actor_auth_user_id"] == _principal("super_admin")["auth_user_id"]
     assert audit.call_args.kwargs["action"] == "admin_assigned"
     assert audit.call_args.kwargs["target_user_id"] == TARGET_USER_ID
 

@@ -60,24 +60,14 @@ def decide_pending_request(
     decided_by_user_id: UUID | str,
     reason: str | None,
 ) -> dict[str, Any] | None:
-    """Atomic pending-only transition; concurrent losers receive no row."""
-    response = (
-        client.table("institution_membership_requests")
-        .update(
-            {
-                "status": status,
-                "decided_by_user_id": str(decided_by_user_id),
-                "decided_at": datetime.now(timezone.utc).isoformat(),
-                "decision_reason": reason,
-            }
-        )
-        .eq("request_id", str(request_id))
-        .eq("institution_id", str(institution_id))
-        .eq("status", "pending")
-        .execute()
-    )
+    """Decision and uniquely correlated audit commit in one RPC."""
+    response = client.rpc("b05_reject_membership", {
+        "p_request_id": str(request_id), "p_institution_id": str(institution_id),
+        "p_decided_by": str(decided_by_user_id), "p_reason": reason,
+    }).execute()
     rows = _rows(response)
     return rows[0] if rows else None
+
 
 
 def approve_and_grant_role(

@@ -4,8 +4,6 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from supabase_auth.errors import AuthApiError
-
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import admin_memberships as repo
@@ -82,9 +80,9 @@ def _confirm_approved_applicant_email(client, applicant: dict[str, Any]) -> None
             str(applicant["auth_user_id"]),
             {"email_confirm": True},
         )
-    except AuthApiError as exc:
+    except Exception as exc:
         raise AppError(
-            "The account could not be enabled for sign-in. Please try again.",
+            "Membership is approved, but sign-in confirmation failed. Contact your administrator.",
             502,
             "MEMBERSHIP_EMAIL_CONFIRMATION_FAILED",
         ) from exc
@@ -122,6 +120,8 @@ def decide_request(
     approve: bool,
     reason: str | None,
 ) -> MembershipDecisionResult:
+    if not actor.get("user_id"):
+        raise AppError("Verified actor required", 403, "FORBIDDEN")
     client = get_admin_client()
     row = repo.get_request_for_institution(client, request_id, institution_id)
     if row is None:
@@ -129,25 +129,13 @@ def decide_request(
     role = _role(str(row.get("requested_role")))
     desired = "approved" if approve else "rejected"
     current = str(row.get("status"))
-    if current == desired:
-        if approve:
-            applicant = _approved_applicant(client, row)
-            _confirm_approved_applicant_email(client, applicant)
-        return MembershipDecisionResult(
-            request_id=request_id,
-            status=desired,
-            already_applied=True,
-            message=f"Membership request is already {desired}.",
-        )
-    if current != "pending":
+    if current != "pending" and current != desired:
         raise AppError(
             "Membership request has already received a different decision",
-            409,
-            "MEMBERSHIP_REQUEST_ALREADY_DECIDED",
+            409, "MEMBERSHIP_REQUEST_ALREADY_DECIDED",
         )
     if approve:
         applicant = _approved_applicant(client, row)
-        _confirm_approved_applicant_email(client, applicant)
         decided = repo.approve_and_grant_role(
             client,
             request_id=request_id,
@@ -155,13 +143,6 @@ def decide_request(
             decided_by_user_id=actor["user_id"],
             reason=reason,
         )
-        if decided.get("already_applied"):
-            return MembershipDecisionResult(
-                request_id=request_id,
-                status="approved",
-                already_applied=True,
-                message="Membership request is already approved.",
-            )
         if decided.get("not_found"):
             raise AppError("Membership request not found", 404, "MEMBERSHIP_REQUEST_NOT_FOUND")
         if decided.get("invalid_role"):
@@ -182,6 +163,16 @@ def decide_request(
                 500,
                 "MEMBERSHIP_ROLE_GRANT_FAILED",
             )
+        if not decided.get("audit_persisted"):
+            raise AppError("Membership decision audit needs reconciliation", 409, "MEMBERSHIP_AUDIT_UNCERTAIN")
+        # Authorization, approval and the grant have committed before Auth I/O.
+        # Repeat approvals also pass through the durable authorization check.
+        _confirm_approved_applicant_email(client, applicant)
+        if decided.get("already_applied"):
+            return MembershipDecisionResult(
+                request_id=request_id, status="approved", already_applied=True,
+                message="Membership request is already approved.",
+            )
     else:
         decided = repo.decide_pending_request(
             client,
@@ -192,34 +183,18 @@ def decide_request(
             reason=reason,
         )
     if decided is None:
-        latest = repo.get_request_for_institution(client, request_id, institution_id)
-        if latest is not None and latest.get("status") == desired:
-            return MembershipDecisionResult(
-                request_id=request_id,
-                status=desired,
-                already_applied=True,
-                message=f"Membership request is already {desired}.",
-            )
         raise AppError(
             "Membership request was decided concurrently",
             409,
             "MEMBERSHIP_REQUEST_CONFLICT",
         )
 
-    if approve:
-        action = "membership_request_approved"
-    else:
-        action = "membership_request_rejected"
-    _audit(
-        actor,
-        institution_id,
-        action,
-        str(request_id),
-        {"role": role, "status": desired, "access_granted": approve},
-    )
+    if not approve and not decided.get("audit_persisted"):
+        raise AppError("Membership decision audit needs reconciliation", 409, "MEMBERSHIP_AUDIT_UNCERTAIN")
     return MembershipDecisionResult(
         request_id=request_id,
         status=desired,
+        already_applied=current == desired,
         message=(
             f"Membership request approved. The {role} account can now sign in."
             if approve

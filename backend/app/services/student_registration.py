@@ -288,6 +288,7 @@ def _create_auth_account(
     password: str,
     *,
     email_confirm: bool = False,
+    invitation_only: bool = False,
 ) -> str:
     """Create the Supabase Auth account via the existing signup mechanism.
 
@@ -298,16 +299,17 @@ def _create_auth_account(
     ``email_confirm=True`` is reserved for server-approved onboarding flows
     that must be usable immediately. It uses the service-role Admin API so the
     result does not depend on the Supabase project's public email-confirmation
-    setting. Ordinary self-service registrations retain public sign-up and its
-    configured confirmation policy.
+    setting. ``invitation_only=True`` uses admin creation with confirmation
+    disabled so duplicate Auth identities are rejected without public signup's
+    duplicate-account ambiguity. Ordinary registrations retain public signup.
     """
     try:
-        if email_confirm:
+        if email_confirm or invitation_only:
             response = get_admin_client().auth.admin.create_user(
                 {
                     "email": email,
                     "password": password,
-                    "email_confirm": True,
+                    "email_confirm": email_confirm,
                 }
             )
         else:
@@ -328,6 +330,12 @@ def _create_auth_account(
                 status_code=409,
                 code="EMAIL_ALREADY_REGISTERED",
             ) from exc
+        if invitation_only:
+            raise AppError(
+                "Account creation could not be confirmed. Contact your administrator "
+                "to reconcile the invitation before retrying.",
+                status_code=502, code="INVITATION_PROVIDER_UNCERTAIN",
+            ) from exc
         raise AppError(
             str(getattr(exc, "message", "") or "Authentication failed"),
             status_code=status,
@@ -340,6 +348,18 @@ def _create_auth_account(
             code="AUTH_ACCOUNT_UNAVAILABLE",
         )
     return str(response.user.id)
+
+
+def _confirm_invited_auth_account(client, auth_user_id: str) -> None:
+    """Called only after invitation acceptance and its grant durably commit."""
+    try:
+        client.auth.admin.update_user_by_id(auth_user_id, {"email_confirm": True})
+    except Exception as exc:  # preserve accepted state on uncertainty
+        raise AppError(
+            "Invitation accepted, but sign-in confirmation could not be confirmed. "
+            "Return to this invitation link and retry account recovery.",
+            status_code=502, code="INVITATION_EMAIL_CONFIRMATION_UNCERTAIN",
+        ) from exc
 
 
 def _create_public_user(

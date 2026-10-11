@@ -335,6 +335,7 @@ def assign_institution_admin(
     client: Client,
     *,
     actor_user_id: UUID | str,
+    actor_auth_user_id: UUID | str,
     user_id: UUID | str,
     institution_id: UUID | str,
     organization_id: UUID | str | None = None,
@@ -343,12 +344,13 @@ def assign_institution_admin(
 
     The database operation is atomic with its institution-scoped audit event.
     The function derives the organization from the institution and independently
-    validates platform authority or invitation acceptance.
+    validates the verified actor linkage and active platform authority.
     """
     response = client.rpc(
         "phase81_assign_institution_role_audited",
         {
             "p_actor_user_id": str(actor_user_id),
+            "p_actor_auth_user_id": str(actor_auth_user_id),
             "p_target_user_id": str(user_id),
             "p_institution_id": str(institution_id),
             "p_role_name": 'admin',

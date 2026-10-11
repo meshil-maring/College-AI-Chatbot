@@ -248,6 +248,7 @@ class AdminInvitationPublicView(BaseModel):
     role: Literal["admin", "staff", "faculty"] = "admin"
     expires_at: str | None
     email_verified: bool = False
+    account_recovery_available: bool = False
 
 
 class AdminRosterEntry(BaseModel):

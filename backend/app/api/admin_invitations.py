@@ -35,16 +35,24 @@ before any work happens. The peer address is the DIRECT ASGI client address —
 this repository has no trusted-proxy configuration.
 """
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, Request, status
 
+from app.core.security import get_current_user
 from app.schemas.admin_invitations import (
-    AdminInvitationAcceptRequest,
     AdminInvitationAcceptanceResponse,
+    AdminInvitationAcceptRequest,
     AdminInvitationPublicView,
 )
 from app.services import platform_admin_invitations as service
 
 router = APIRouter(prefix="/admin-invitations", tags=["admin-invitations"])
+_AUTHENTICATED_USER = Depends(get_current_user)
+
+
+@router.post("/{token}/recover", response_model=AdminInvitationAcceptanceResponse)
+def recover_admin_account(token: str, request: Request) -> AdminInvitationAcceptanceResponse:
+    """Retry confirmation of the token's recorded new account without sign-in."""
+    return service.recover_account(token, peer=_peer(request))
 
 # Base64url tokens are variable length by design; this bound only rejects
 # absurd input before it reaches the hashing/lookup step.
@@ -90,18 +98,32 @@ def accept_admin_invitation(
 ) -> AdminInvitationAcceptanceResponse:
     """Consume the invitation and provision the institution-scoped admin.
 
-    The server validates the token, verifies expiry and status, resolves the
-    institution FROM THE INVITATION, creates the Auth account through the
-    existing GoTrue signup path with THAT SAME server-derived address, atomically
-    consumes the token, grants the fixed institution-scoped ``admin`` role and
-    audits the result.
+    The server reserves the validated token generation before account creation.
+    Finalization commits acceptance, the server-issued institution role and
+    its audit together. Existing identities use the authenticated membership
+    endpoint and retain their credentials.
 
-    The request body carries no email field at all, so the invited address
-    cannot be swapped during acceptance. The invitation is one-time: a second
-    acceptance with the same token fails, even if the two requests race.
+    The body carries no email field. Retries resolve the original durable
+    operation and recover its recorded progress; uncertain provider creation
+    requires reconciliation. Accepted operations return their original result.
 
     Rate limited per token (5 / 300 s) and per peer address (20 / 300 s) by
     default, which bounds automated password/registration attempts and token
     replay without making legitimate acceptance unreliable.
     """
     return service.accept_invitation(token, body, peer=_peer(request))
+
+
+@router.post(
+    "/{token}/accept-membership",
+    response_model=AdminInvitationAcceptanceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Accept invited membership using an authenticated existing account",
+)
+def accept_existing_membership(
+    token: str,
+    request: Request,
+    actor: dict = _AUTHENTICATED_USER,
+) -> AdminInvitationAcceptanceResponse:
+    """The verified principal must match the invitation's canonical account."""
+    return service.accept_invitation(token, actor=actor, peer=_peer(request))

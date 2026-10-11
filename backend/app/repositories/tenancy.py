@@ -806,6 +806,7 @@ def assign_membership_role(
     client: Client,
     *,
     actor_user_id: UUID | str,
+    actor_auth_user_id: UUID | str,
     user_id: UUID | str,
     role_name: str,
     institution_id: UUID | str,
@@ -815,6 +816,7 @@ def assign_membership_role(
     return assign_membership_role_audited(
         client,
         actor_user_id=actor_user_id,
+        actor_auth_user_id=actor_auth_user_id,
         user_id=user_id,
         role_name=role_name,
         institution_id=institution_id,
@@ -826,18 +828,20 @@ def assign_membership_role_audited(
     client: Client,
     *,
     actor_user_id: UUID | str,
+    actor_auth_user_id: UUID | str,
     user_id: UUID | str,
     role_name: str,
     institution_id: UUID | str,
     organization_id: UUID | str | None = None,
 ) -> dict:
-    """Atomically apply an invitation role and its tenant audit event."""
+    """Apply an authorized approved membership; invitation finalization is separate."""
     if role_name not in {"staff", "faculty"}:
         raise ValueError("audited membership assignment only accepts staff/faculty")
     response = client.rpc(
         "phase81_assign_institution_role_audited",
         {
             "p_actor_user_id": str(actor_user_id),
+            "p_actor_auth_user_id": str(actor_auth_user_id),
             "p_target_user_id": str(user_id),
             "p_institution_id": str(institution_id),
             "p_role_name": role_name,
@@ -852,23 +856,22 @@ def remove_membership_on_reject(
     user_id: UUID | str,
     institution_id: UUID | str,
 ) -> None:
-    """Best-effort cleanup when a request is rejected.
+    """Preserve existing grants: pending requests have granted no membership.
 
-    The institution-scoped grant lives in the EXISTING ``user_roles`` scope
-    columns (``scope_type`` / ``scope_id``) — ``user_roles`` has no
-    ``institution_id`` column — so the delete is scoped with the Phase 6.13
-    vocabulary that the approval path writes.
-
-    The repository intentionally keeps this simple and fails silently-ish so
-    that a reject never blocks the approval flow with a non-critical cleanup
-    error. The primary accountability trail is the request row itself.
+    A rejection is not a revocation command. There is no grant provenance tying
+    any existing role to this request, so cleanup cannot safely delete one.
+    Retain this callable for compatibility with older service consumers.
     """
-    response = (
-        client.table("user_roles")
-        .delete()
-        .eq("user_id", str(user_id))
-        .eq("scope_type", "institution")
-        .eq("scope_id", str(institution_id))
-        .execute()
-    )
     return None
+
+
+def decide_membership_atomically(client, request_id, *, status, actor_user_id,
+                                 actor_auth_user_id, reason):
+    """Keep the legacy assignment authorization inside the decision transaction."""
+    response = client.rpc("b05_decide_legacy_membership", {
+        "p_request_id": str(request_id), "p_status": status,
+        "p_actor_user_id": str(actor_user_id),
+        "p_actor_auth_user_id": str(actor_auth_user_id) if actor_auth_user_id else None,
+        "p_reason": reason,
+    }).execute()
+    return response.data if isinstance(response.data, dict) else None

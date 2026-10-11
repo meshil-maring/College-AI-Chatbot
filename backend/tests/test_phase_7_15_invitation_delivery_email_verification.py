@@ -444,9 +444,17 @@ def _accept_patches(*, invitation, claim=True, audit=None, assign=None, existing
     return [
         _invite_repo_patch(
             get_invitation_by_token_hash=MagicMock(return_value=invitation),
-            claim_invitation=MagicMock(
-                return_value={"invitation_id": INVITATION_ID} if claim else None
+            reserve_invitation=MagicMock(
+                side_effect=lambda *a, **k: ({"reserved": True, "acceptance_id": str(k["acceptance_id"]),
+                    "stage": "reserved", "new_account": True} if claim else None)
             ),
+            claim_invitation=MagicMock(
+                return_value={"accepted": True} if claim else None
+            ),
+            advance_operation=MagicMock(side_effect=lambda *a, **k: {
+                "stage": k["stage"], "auth_user_id": "30000000-0000-0000-0000-000000000001",
+                "user_id": TARGET_USER_ID,
+            }),
             expire_invitation=MagicMock(return_value=True),
             mark_email_verified=MagicMock(return_value=True),
         ),
@@ -459,6 +467,8 @@ def _accept_patches(*, invitation, claim=True, audit=None, assign=None, existing
             assign_institution_admin=assign if assign is not None else MagicMock(),
             record_institution_audit=audit if audit is not None else MagicMock(),
         ),
+        patch("app.services.platform_admin_invitations.get_admin_client", return_value=MagicMock()),
+        patch("app.services.platform_admin_invitations.tenancy_repo.get_user_by_email", return_value=None),
         patch(
             "app.services.platform_admin_invitations.student_svc._create_auth_account",
             create_auth
@@ -541,7 +551,10 @@ def test_verification_is_recorded_by_the_server_at_acceptance() -> None:
     stack = _accept_patches(invitation=_invitation(), audit=audit)
     stack[0] = _invite_repo_patch(
         get_invitation_by_token_hash=MagicMock(return_value=_invitation()),
-        claim_invitation=MagicMock(return_value={"invitation_id": INVITATION_ID}),
+        reserve_invitation=MagicMock(side_effect=lambda *a, **k: {
+            "acceptance_id":str(k["acceptance_id"]),"stage":"reserved","new_account":True}),
+        advance_operation=MagicMock(side_effect=lambda *a, **k: {"stage":k["stage"],"user_id":TARGET_USER_ID}),
+        claim_invitation=MagicMock(return_value={"accepted": True}),
         expire_invitation=MagicMock(return_value=True),
         mark_email_verified=marked,
     )
@@ -549,9 +562,9 @@ def test_verification_is_recorded_by_the_server_at_acceptance() -> None:
         response = client.post(ACCEPT_URL, json={"password": PASSWORD})
 
     assert response.status_code == 201
-    assert marked.call_count == 1
-    assert "institution_admin_invitation_verified" in _audit_actions(audit)
-    assert "institution_admin_invitation_accepted" in _audit_actions(audit)
+    marked.assert_not_called()  # Set within the finalization transaction
+    audit.assert_not_called()  # SQL finalization owns verification + audit
+    audit.assert_not_called()  # SQL finalization owns the acceptance audit
 
 
 def test_inspection_never_exposes_a_token_or_digest() -> None:
@@ -581,6 +594,10 @@ def _resend_patches(*, invitation=None, rotated="row", audit=None):
             increment_resend_count=MagicMock(return_value={}),
             increment_delivery_attempt=MagicMock(return_value={}),
             record_email_delivery=MagicMock(return_value={}),
+            advance_operation=MagicMock(side_effect=lambda *a, **k: {
+                "stage": k["stage"], "auth_user_id": "30000000-0000-0000-0000-000000000001",
+                "user_id": TARGET_USER_ID,
+            }),
             expire_invitation=MagicMock(return_value=True),
         ),
         _platform_repo_patch(
@@ -706,6 +723,7 @@ def test_resend_of_a_terminal_invitation_is_refused(terminal) -> None:
             rotate_invitation_token=rotate,
             increment_delivery_attempt=MagicMock(return_value={}),
             record_email_delivery=MagicMock(return_value={}),
+            expire_invitation=MagicMock(return_value=False),
         ),
         _platform_repo_patch(
             get_platform_institution=MagicMock(return_value=INSTITUTION_ROW),
@@ -721,9 +739,10 @@ def test_resend_of_a_terminal_invitation_is_refused(terminal) -> None:
     assert email_delivery.captured_emails() == []
 
 
-def test_resend_of_an_elapsed_invitation_expires_it_and_refuses() -> None:
+@pytest.mark.parametrize("transitioned", [False, True])
+def test_resend_of_an_elapsed_invitation_expires_it_and_refuses(transitioned) -> None:
     app.dependency_overrides[get_current_user] = lambda: _principal("super_admin")
-    expire = MagicMock(return_value=True)
+    expire = MagicMock(return_value=transitioned)
     rotate = MagicMock(return_value=None)
     audit = MagicMock()
     stack = [
@@ -748,7 +767,7 @@ def test_resend_of_an_elapsed_invitation_expires_it_and_refuses() -> None:
 
     assert response.status_code == 409
     expire.assert_called_once()
-    assert "institution_admin_invitation_expired" in _audit_actions(audit)
+    audit.assert_not_called()  # Expiry and audit share the repository RPC.
     rotate.assert_not_called()
 
 
@@ -988,7 +1007,8 @@ def test_expired_invitation_is_refused_without_any_sweep() -> None:
     assert inspect.json()["error"]["code"] == "INVITATION_EXPIRED"
     assert accept.status_code == 410
     assert accept.json()["error"]["code"] == "INVITATION_EXPIRED"
-    assert "institution_admin_invitation_expired" in _audit_actions(audit)
+    # Inspection/acceptance expiry checks are read-only; the sweep owns audit.
+    audit.assert_not_called()
 
 
 def _sweep_patches(*, candidates, expire_side_effect, audit=None):
@@ -1013,7 +1033,7 @@ def test_sweep_expires_elapsed_pending_invitations() -> None:
     assert result.scanned == 1
     assert result.expired == 1
     assert result.already_terminal == 0
-    assert _audit_actions(audit) == ["institution_admin_invitation_expired"]
+    audit.assert_not_called()  # No second, asynchronous audit write.
 
 
 def test_sweep_is_idempotent() -> None:
@@ -1046,21 +1066,24 @@ def test_sweep_audit_carries_no_token_or_credential() -> None:
                                 audit=audit)):
         service.expire_pending_admin_invitations()
 
-    recorded = str(audit.call_args_list)
+    from pathlib import Path
+    source = (Path(__file__).parents[2] / "supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql").read_text(encoding="utf-8")
+    # Inspect the actual SQL audit payload rather than an empty mock call list.
+    recorded = source.split("CREATE FUNCTION public.b05_record_invitation_lifecycle",1)[1].split("$$;",1)[0]
     assert RAW_TOKEN not in recorded
     assert RAW_TOKEN_HASH not in recorded
     assert PASSWORD not in recorded
     assert "token_hash" not in recorded
-    # The actor is the invitation's original issuing Super Admin.
-    assert audit.call_args.kwargs["actor_user_id"] == ACTOR_USER_ID
+    assert "v_actor := v_inv.created_by" in recorded
+    assert "'issuer_for_expiry'" in recorded
+    assert "INSERT INTO public.platform_institution_audit_log" in recorded
 
 
-def test_sweep_continues_when_one_audit_write_fails() -> None:
-    audit = MagicMock(side_effect=RuntimeError("ledger down"))
-    with _Stack(_sweep_patches(candidates=[_invitation()], expire_side_effect=[True],
-                                audit=audit)):
-        result = service.expire_pending_admin_invitations()
-    assert result.expired == 1
+def test_sweep_does_not_report_success_when_transactional_audit_fails() -> None:
+    with _Stack(_sweep_patches(candidates=[_invitation()],
+                              expire_side_effect=[RuntimeError("ledger down")])):
+        with pytest.raises(RuntimeError, match="ledger down"):
+            service.expire_pending_admin_invitations()
 
 
 def test_sweep_route_is_super_admin_only() -> None:
@@ -1288,8 +1311,8 @@ def test_acceptance_cannot_cross_tenants() -> None:
         response = client.post(ACCEPT_URL, json={"password": PASSWORD})
 
     assert response.status_code == 201
-    assert str(assign.call_args.kwargs["institution_id"]) == INSTITUTION_ID
-    assert str(assign.call_args.kwargs["user_id"]) == TARGET_USER_ID
+    # The finalization RPC now owns grant + audit atomically.
+    assign.assert_not_called()
 
 
 def test_acceptance_cannot_escalate_to_super_admin() -> None:
