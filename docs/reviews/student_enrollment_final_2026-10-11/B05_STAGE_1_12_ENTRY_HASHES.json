@@ -1,0 +1,597 @@
+{
+  "stage": "1.12 entry baseline",
+  "runtime_status": "NOT RUN",
+  "manifest_pins_match": 52,
+  "files": [
+    {
+      "path": "backend/app/repositories/tenancy.py",
+      "sha256": "c35bfa19064802f1c772280188d8381ca439937d2b227de156e03b1cb2da1dad",
+      "bytes": 31783
+    },
+    {
+      "path": "backend/app/services/tenancy.py",
+      "sha256": "ea58c253685cc0b56b11b0ad8d3a9995d1d37752dffe0c4872c848709858a249",
+      "bytes": 27952
+    },
+    {
+      "path": "backend/tests/B05_RECOVERY_CONTRACT.md",
+      "sha256": "2b4260f0e8a1e472a6a005495859b6bff6d07db041b705b518f0d8859b2e2d03",
+      "bytes": 9622
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/ADR-ENROLLMENT-003.md",
+      "sha256": "278cdc388af6491d874c0706aacd242a0d4bee19eba6fae5c857d47e2b9fb741",
+      "bytes": 7664
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_BLOCKER_REMEDIATION_REPORT.md",
+      "sha256": "59863d25d04e8ec1b277a55a2c0b3dd5625b3c3744c08a6ebbe011b755135d33",
+      "bytes": 16737
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_ENTRY_HASHES.json",
+      "sha256": "4eb955ccfc7acda8cbfd607c4e27ad9ce55abbad493bf861d3d82ca8f10bc24a",
+      "bytes": 16503
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_HASH_EVIDENCE.json",
+      "sha256": "2b8362bc097c7f49e41ef0a36f5f2f58f6278925b8faffc85e33eb3c39a9eb49",
+      "bytes": 36431
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_READINESS_REVIEW.md",
+      "sha256": "fdd94200b9b7863d3a154b1f3a33ac31d53b7ac05ab1fa3e7da550bbdd007e68",
+      "bytes": 10785
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_OFFLINE_HASH_EVIDENCE.json",
+      "sha256": "7a3c4660ee2c3497bfca68d7ab95108958f5acad07c29f2cfe01eae95981d91b",
+      "bytes": 35844
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_INDEPENDENT_READINESS_REVIEW.md",
+      "sha256": "5ab9c78d0c1dce4137e65d5b6807a5cceded1129d65b2a740d2092d4976d4d84",
+      "bytes": 37684
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_OFFLINE_HASH_EVIDENCE.json",
+      "sha256": "517426ac49f2b885f4c818b6e9a7e54f059709c7b0c9dcdc72639f68873cbe52",
+      "bytes": 23438
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/REVIEW_SUMMARY.md",
+      "sha256": "0bc8e4ceef8dd50a7fb3bc78acb63d7c3a566f723a0dd7380c391c0211a4aadf",
+      "bytes": 12688
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_B05_REMEDIATION_DESIGN.md",
+      "sha256": "a5846632243ee52eb28b8d02c34a9d5530a54376619f59ebefa32612a3900c27",
+      "bytes": 74723
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_B05_ROUTINE_SECURITY_REVIEW.md",
+      "sha256": "dfc8767ab3d3d7e78f08b8b5689e092b99865beeb740cbe45b9f8b26acfbfcfd",
+      "bytes": 70307
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_BLOCKER_EVIDENCE_MATRIX.md",
+      "sha256": "fab90b17a703c75ec17f0017bb8164183020107babcec12edc6a6275373cc1be",
+      "bytes": 46136
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_CANDIDATE_RESULTS.json",
+      "sha256": "42e4678c417b0b0c73fc85107323802a3746b3ce134f4a5fb937cbe0d2e2ca5a",
+      "bytes": 292092
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_CHANGE_PLAN.md",
+      "sha256": "073543f966608d247e1d09427bc78cea8d8dfdb800bf846b7c5ba4ca234f8fe8",
+      "bytes": 17135
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "sha256": "c31f7c7f672eb846d45b642a21af5a22d1611a0f5efa1763a9db550b3f9b48cb",
+      "bytes": 76172
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_INDEPENDENT_REVIEW.md",
+      "sha256": "6f9f3e99f151cc81db938966c6b24730bb46f16eef2b6c303395a5b823391bb4",
+      "bytes": 19086
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_CANDIDATE.sql",
+      "sha256": "897a4c786adc487bce04462690f8a4bbcab215f2e3e53841f84a82f40c1a63c7",
+      "bytes": 49694
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_REVIEW.md",
+      "sha256": "43bd8294163c4a1cc1158e85979873dbece914d065f83f003df63324016d50d8",
+      "bytes": 64477
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "sha256": "a733cf6a92f5d00a41123606941bebca454194d89ada239e8651ffc89fc3ec30",
+      "bytes": 56819
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+      "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37",
+      "bytes": 51805
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "sha256": "a9af4cab04cb134fa581d688eb75f94e3ffd0a8ced3a33548793702877cb1231",
+      "bytes": 73355
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_REVIEW.md",
+      "sha256": "99849afbfe9c11a12565c50761a9cb5466cf724cbb21832dc31641c9145e38a5",
+      "bytes": 41567
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_ROUTINE_INVENTORY.md",
+      "sha256": "2f1b2eb1dc7e09711a22a177d2ce259a9175189b371a4a8c29e6f1cd6c43f1cf",
+      "bytes": 20229
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_SOURCE_EVIDENCE.json",
+      "sha256": "2aee432277ad5fb794fa179e22ea34148c7d8232277c47967d77861163c8f75a",
+      "bytes": 373727
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_STATIC_RESULTS.json",
+      "sha256": "9e292d77bf6f391be59d51a21ebb09dec7da374b3e15a38f7ecdd783ed400c16",
+      "bytes": 521790
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SOURCE_EVIDENCE.json",
+      "sha256": "6f4cd69ce31673d2388555080a945cd21486a097d70790d0dbe693948f3381e8",
+      "bytes": 152768
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SQL_REPAIR_REVIEW.md",
+      "sha256": "64d5b8a62aebb4e4f65db09cf6edda41f9e2b9255f29efe829d2f2d089c5a182",
+      "bytes": 25696
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STATIC_REVIEW_RESULTS.json",
+      "sha256": "d00b4ba740f81ab350f95ccbf39feb034570fe0e212f8e8061c0601078ac3b64",
+      "bytes": 18606
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STATIC_REVIEW_RESULTS.json.before_repair",
+      "sha256": "ff7964e3e2e6d31f126850d838395d8745dde728ea100c3ed652caa7107d9d2e",
+      "bytes": 4063
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_MIGRATION_PLAN.md",
+      "sha256": "292a9c4b15af7db214f03672435a36dd1f96e4a09b2f8b07ca496fc059284210",
+      "bytes": 20417
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_SCHEMA_FINAL_REVIEW.md",
+      "sha256": "a375b9a4eeca9aac1594c80d30923297fd97746e5273005ee35199cf2844ae01",
+      "bytes": 15131
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_SECURITY_REVIEW.md",
+      "sha256": "7fe2ff0f36d813ae334e28f99c3cede5f089b3f517fd6ed4d6e9cc1f719336ea",
+      "bytes": 11790
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_TEST_PLAN.md",
+      "sha256": "086cfc5e37973c782c6d9c8cf1b16c37f77d2fdbfbf198bd8459c25de5c29399",
+      "bytes": 16879
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/build_security_containment_source_evidence.py",
+      "sha256": "3709807a2392bec77f91cd51b57e9c66cdc552d9a3bbe4488812a8a2acdb7b9f",
+      "bytes": 17071
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/student_enrollment_schema_review_draft.sql",
+      "sha256": "c04b3b51e8dcff739a2ad85989258bb5f2b1ea4123d6a506349133db1fa41206",
+      "bytes": 81515
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/student_enrollment_schema_review_draft.sql.before_repair",
+      "sha256": "0ff9b917da73dd0c112e3f540d60849ffffc2db51aeb61965c14b67a08a030b6",
+      "bytes": 67127
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/synthetic_fixtures.json",
+      "sha256": "14b028e8283719a86cc7ae6411ca8e0ad9603e72947fb1b48124f1e4fee3878c",
+      "bytes": 38003
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_10_offline.py",
+      "sha256": "7ed3cbae37203664af2ada41940273cc53b3457f0456db74f8b45ef991111530",
+      "bytes": 13103
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_review_static.py",
+      "sha256": "e1c0205a5286c707f948533d17765a218db6dccbd69dd90eee0367bd6db1db69",
+      "bytes": 10366
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_security_containment_static.py",
+      "sha256": "03ace9d1ec1a2c1eda94e737c96748b21d616c995853a2d5a0c3464a46b98298",
+      "bytes": 17249
+    },
+    {
+      "path": "scripts/maintenance/reset_supabase_data.sql",
+      "sha256": "910e276f35fc4fe4d05c1307d2d926c95b7b1e691ec630d52b59d7b1acdf2008",
+      "bytes": 6405
+    },
+    {
+      "path": "scripts/validation/academic_setup_concurrency.py",
+      "sha256": "d23514baf15d5d7051c1532a60a3afb9081a3c7212264570a3bb1edc0b34ada1",
+      "bytes": 5509
+    },
+    {
+      "path": "scripts/validation/academic_setup_database.sql",
+      "sha256": "c933e69c2a791a1aa07c2438e9c2b14be230c7e2106893cf3a776d1052efffb8",
+      "bytes": 12466
+    },
+    {
+      "path": "scripts/validation/academic_setup_sql_lint.sql",
+      "sha256": "4730066e772e1820fa8fa11b078c16e4b526da522583ae6864b18b8e483ba757",
+      "bytes": 1408
+    },
+    {
+      "path": "scripts/validation/b05_containment/README.md",
+      "sha256": "69a4be6e7d94d49f6765dbf0fe4901ab63d45bef108c674a1eea3650a56ad952",
+      "bytes": 27419
+    },
+    {
+      "path": "scripts/validation/b05_containment/bootstrap.sql",
+      "sha256": "18d1370e7339281b1ba1072aa439582364e582931aebcb8a7453008053392c38",
+      "bytes": 3496
+    },
+    {
+      "path": "scripts/validation/b05_containment/containment_successor.validation.sql",
+      "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37",
+      "bytes": 51805
+    },
+    {
+      "path": "scripts/validation/b05_containment/fixtures_post_b05.sql",
+      "sha256": "a7870e1b46396c4b93fdaec60ccd44226193ca7cf55d06e4b79ec3dd2becfbb8",
+      "bytes": 3506
+    },
+    {
+      "path": "scripts/validation/b05_containment/fixtures_pre_b05.sql",
+      "sha256": "b6ccf7960d3448d5938ec38e1cb1d180a5a803d0c76fe116375662573f3c61ed",
+      "bytes": 8759
+    },
+    {
+      "path": "scripts/validation/b05_containment/migration_manifest.json",
+      "sha256": "76abfbb8679f31c7cbb8907a3262eb1141325cd88490c6d8240237dfea746bde",
+      "bytes": 25314
+    },
+    {
+      "path": "scripts/validation/b05_containment/prepare.py",
+      "sha256": "3bf5a6589becad59b7336b18de0f75b51ed1aba497fb0a416a24ddc246f0deee",
+      "bytes": 7340
+    },
+    {
+      "path": "scripts/validation/b05_containment/runner_contract.json",
+      "sha256": "c18b23a093e21aea584e8f100fe733feffe690784db19741c245387523a3a278",
+      "bytes": 17754
+    },
+    {
+      "path": "scripts/validation/b05_containment/test_matrix.md",
+      "sha256": "df11a19fc8f18c3b3fecfd61930657be52a06ed510c435f36b64ee05e474e4aa",
+      "bytes": 84107
+    },
+    {
+      "path": "scripts/validation/b05_containment/test_preparation_safety.py",
+      "sha256": "230a3ecf3abb0713d3b3afce7221430b93a945e7d8631d0bd93e1803748c737f",
+      "bytes": 7876
+    },
+    {
+      "path": "scripts/validation/build_academic_curriculum_convergence_contract.py",
+      "sha256": "1e062890d57ccc08eb9eb9eaccca6dca52fb6332a3f4c0c1b29eb63fcedace49",
+      "bytes": 4507
+    },
+    {
+      "path": "scripts/validation/disposable_container.py",
+      "sha256": "2a7617a5f0771712fe816ff5dfe3b922e7294ab11553f45fc6bac5364bd5fcbe",
+      "bytes": 8322
+    },
+    {
+      "path": "scripts/validation/faculty_assignment_concurrency.py",
+      "sha256": "b5020ada6d201b5e92a716c2afbb80786e404b300ff910631bf5d75fad57e058",
+      "bytes": 17815
+    },
+    {
+      "path": "scripts/validation/faculty_attendance_concurrency.py",
+      "sha256": "37fa015d6ebf4de17a14029682be4234656010e7600f36182b51b88f2132422c",
+      "bytes": 5336
+    },
+    {
+      "path": "scripts/validation/faculty_attendance_database.sql",
+      "sha256": "ffbbd227cb9192c4ec3b999e7d4261f39b92ffc19a7c1e231f00ba948882cec1",
+      "bytes": 15583
+    },
+    {
+      "path": "scripts/validation/faculty_responsibilities_database.sql",
+      "sha256": "08e0c56067864554d86f4405e86c20561482254d7bf92dea35257c4d051b7c6b",
+      "bytes": 10061
+    },
+    {
+      "path": "scripts/validation/faculty_tests_concurrency.py",
+      "sha256": "daa2c80673ed0ecf0d16e5ee307735f24446b464bca38263fcfe22ec9782dd46",
+      "bytes": 6870
+    },
+    {
+      "path": "scripts/validation/faculty_tests_database.sql",
+      "sha256": "e3f8a5e14c5968c5549e15f1a799d5c95473efbefd746d641675d89c4d07dd59",
+      "bytes": 19296
+    },
+    {
+      "path": "scripts/validation/invoke_local_supabase.ps1",
+      "sha256": "e3644cd03807939337ab611d0439bc44062540e761380b777aaecd94aad268dd",
+      "bytes": 3002
+    },
+    {
+      "path": "scripts/validation/manage_local_super_admin.ps1",
+      "sha256": "140ce3a3df0e68c7ba80be18417b6cfa060cdaffee12f3f2784c8a52666d0188",
+      "bytes": 2750
+    },
+    {
+      "path": "scripts/validation/phase717_local_outbox.sql",
+      "sha256": "fa2665dfbbcb7cd83b2d6369f0e6506f70f4131067dffa6c684b4f3bb648c23f",
+      "bytes": 4462
+    },
+    {
+      "path": "scripts/validation/phase718_local_mailgun_webhooks.sql",
+      "sha256": "e71b7be7876247706baf6794579358ae40f0585c2b550735165680a58775b980",
+      "bytes": 6238
+    },
+    {
+      "path": "scripts/validation/provision_local_demo_users.ps1",
+      "sha256": "2e0818015a1dca6db07587e20e06c3a599912e924e18ef1157dd5419d4f81844",
+      "bytes": 4796
+    },
+    {
+      "path": "scripts/validation/test_disposable_container.py",
+      "sha256": "b5707820bf6226e4642750da44ad8acd6eda47d80b9278d680908b7faecdb05c",
+      "bytes": 19471
+    },
+    {
+      "path": "scripts/validation/test_runner_safety.py",
+      "sha256": "8f73f167c26214ea1e50b017ad2bbfd22abbdb37d0403281c738daf951870a50",
+      "bytes": 8364
+    },
+    {
+      "path": "scripts/validation/test_runner_worker.ps1",
+      "sha256": "b21c7e19bc58d56291b90c35823794a14362fdd991f0ccfc3642fdff253f1844",
+      "bytes": 3161
+    },
+    {
+      "path": "scripts/validation/verify_academic_setup_database.ps1",
+      "sha256": "6ef6653918417ce64480c500d08d4e87716d45b998cba8523d4121a762efd91c",
+      "bytes": 5260
+    },
+    {
+      "path": "scripts/validation/verify_faculty_assignment_database.ps1",
+      "sha256": "77c5dcd02d41e268f70c896075a38f76b6e64c2a329b54cd570db22862fb792b",
+      "bytes": 5180
+    },
+    {
+      "path": "scripts/validation/verify_faculty_attendance_database.ps1",
+      "sha256": "3128ae0ec73c7ed962844ca6a30dc6a56b2d76ce22b278b34ff621cadeddc59c",
+      "bytes": 5180
+    },
+    {
+      "path": "scripts/validation/verify_faculty_tests_database.ps1",
+      "sha256": "b744a5dd26ed21b0a2e1a960375e6c04e79a6cb5df2b5b60cfcd81ba46ff1081",
+      "bytes": 5420
+    },
+    {
+      "path": "scripts/validation/verify_supabase_data_reset.py",
+      "sha256": "4f0746643bc8835c27574e338e0a46c3ab06440834ad0fea579e7137aab33b5f",
+      "bytes": 10843
+    },
+    {
+      "path": "supabase/migrations/20250717000000_reconstructed_pre_phase_3_6_baseline.sql",
+      "sha256": "7fd1ea5c096eb47667a2ba55cc1bf4a872c959e12300c2110a69a698ca6e6429",
+      "bytes": 40228
+    },
+    {
+      "path": "supabase/migrations/20250718000000_phase_3_6_embeddings.sql",
+      "sha256": "21230835555e0353b124c8314c72948c97ece834beafccdb7e89f9fe6412f2aa",
+      "bytes": 2939
+    },
+    {
+      "path": "supabase/migrations/20260905000000_phase_3_7_1_vector_search_index.sql",
+      "sha256": "da5e2f8a7c35c3ebee708bd977b9ebfc048f3666e06d26bf3c9edc7d7729df80",
+      "bytes": 683
+    },
+    {
+      "path": "supabase/migrations/20260905000001_phase_3_7_2_vector_similarity_search.sql",
+      "sha256": "c1dc20ecfba849522dba9c26e0393ce9060044c2ce8363d93846d205835240e4",
+      "bytes": 1781
+    },
+    {
+      "path": "supabase/migrations/20260905000002_phase_3_8_metadata_access_filtering.sql",
+      "sha256": "fa6e41711c7485ee373306ca2cd3a1d37ff5e7489d56ff8d0e24f167e6fd0fa7",
+      "bytes": 3173
+    },
+    {
+      "path": "supabase/migrations/20260909000000_phase_admin_1_admin_student_schema.sql",
+      "sha256": "0e70348067cf8096adff2bcef47587de70c889e55d55b43907fc9b069091009f",
+      "bytes": 26864
+    },
+    {
+      "path": "supabase/migrations/20260909000001_phase_admin_2_extracted_text_column.sql",
+      "sha256": "986f739f0506e5b3f1dce55f9b69a41b31a21fe66553bce006b251a51d6008e3",
+      "bytes": 312
+    },
+    {
+      "path": "supabase/migrations/20260909000002_phase_admin_2_faq_published_column.sql",
+      "sha256": "9641a4c31bc7a58e4440d2a966b2fe61ea0b1ff9ccd68f5dfa03a3cc007656d4",
+      "bytes": 342
+    },
+    {
+      "path": "supabase/migrations/20260909000003_phase_admin_2_notice_published_column.sql",
+      "sha256": "d70ebfc843866f85129944d9630ec52e4f515ed9e528936ed589662c22336e28",
+      "bytes": 358
+    },
+    {
+      "path": "supabase/migrations/20260912000000_phase_6_2_student_identity_model.sql",
+      "sha256": "a2b8793d3073bf7130497a828ff2f33c101f6db7788110c5adafe5dd46c67e57",
+      "bytes": 9311
+    },
+    {
+      "path": "supabase/migrations/20260913000000_phase_6_7_attendance.sql",
+      "sha256": "365de679d8ce9edf278cfe117ae5496b2e2996ce2f0975e0d35c8542f343a423",
+      "bytes": 9473
+    },
+    {
+      "path": "supabase/migrations/20260913010000_phase_6_8_results.sql",
+      "sha256": "c9b3d84ee8f3cfb8b94943a3eb8f9b8006315f79ffb8c32ef63eceae73925fd9",
+      "bytes": 18299
+    },
+    {
+      "path": "supabase/migrations/20260914000000_phase_6_11_student_notifications.sql",
+      "sha256": "f105032d0a821755a0c13a79462907d3f58b983797a21e338aa97e6879c07f47",
+      "bytes": 5831
+    },
+    {
+      "path": "supabase/migrations/20260915000000_phase_6_13_organization_institution_tenancy.sql",
+      "sha256": "e74e4fe768ec9c2cb0dd452bbf5c42617797574ba18daa9a7fcab8fdd633b637",
+      "bytes": 33925
+    },
+    {
+      "path": "supabase/migrations/20260928000000_phase_7_2_public_knowledge_policy.sql",
+      "sha256": "2a43a3c2c3093a3405c809ccd26a4da8689440c5fbd8eb3264500eccf66600a5",
+      "bytes": 4021
+    },
+    {
+      "path": "supabase/migrations/20260928010000_phase_7_4_public_rag_hardening.sql",
+      "sha256": "d52fe69d7e1037f7cdecf1af1a2ca4e840164e0042f17afc3250dd1ff4076092",
+      "bytes": 2923
+    },
+    {
+      "path": "supabase/migrations/20260929000000_phase_7_10_legacy_primary_key_convergence.sql",
+      "sha256": "5be4401f19629449017963db2084e3ac90b2b54dad4c0406b78b828ae6bd3c5c",
+      "bytes": 2153
+    },
+    {
+      "path": "supabase/migrations/20261001000000_phase_7_12_super_admin_identity_authorization.sql",
+      "sha256": "4aa88e05e5e893ec393a95941ad581fa902e4992aa49a47287a5f1f3676aa27d",
+      "bytes": 9678
+    },
+    {
+      "path": "supabase/migrations/20261001010000_phase_7_13_super_admin_institution_management.sql",
+      "sha256": "bbc87fb76863894a68744396151c24c1bf8eca64bbfb30955b5693681bf72e7c",
+      "bytes": 8245
+    },
+    {
+      "path": "supabase/migrations/20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql",
+      "sha256": "1d59c03c1535c8328d153b31c77c082372a65acdaf75bf3f914b8710acecbef8",
+      "bytes": 11166
+    },
+    {
+      "path": "supabase/migrations/20261001030000_phase_7_15_invitation_delivery_email_verification.sql",
+      "sha256": "27d2aaa03f376748a8f640e6841d9506b8b77a527b425a2864c68c804a244892",
+      "bytes": 13057
+    },
+    {
+      "path": "supabase/migrations/20261002000000_phase_7_17_email_outbox_worker.sql",
+      "sha256": "0a52abea3da21e8a1763e19e167572549ce3434296afb4654913d71c9394a7f2",
+      "bytes": 20309
+    },
+    {
+      "path": "supabase/migrations/20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql",
+      "sha256": "77e8b695e3b512907e04b66548fa533d5a76af644b288d4c9249eb713b0e045e",
+      "bytes": 8121
+    },
+    {
+      "path": "supabase/migrations/20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql",
+      "sha256": "30a51b837e5b988b64b4f41decf15386c0e531e0ee5b3036ee91be16ba3d3f2e",
+      "bytes": 6810
+    },
+    {
+      "path": "supabase/migrations/20261004010000_admin_published_flags_schema_convergence.sql",
+      "sha256": "92d25a5fa3b1a2658068ed1bd240a78376bdbc64b7aea1fe4952442129fc6c19",
+      "bytes": 598
+    },
+    {
+      "path": "supabase/migrations/20261004235959_permission_primary_key_convergence.sql",
+      "sha256": "813d843c8ff0e24f9950b92134a69c75bdd6bcfa465194df100f63f522c0c25b",
+      "bytes": 1121
+    },
+    {
+      "path": "supabase/migrations/20261005000000_phase_8_granular_permissions.sql",
+      "sha256": "48a16106676dcd225479f3582b5a2036f5da0f736176037fe1cbf043c9a55a42",
+      "bytes": 9582
+    },
+    {
+      "path": "supabase/migrations/20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql",
+      "sha256": "764489c42aa6542fa08c4a3c415b16be63bc42c6efbe481c3346e12798c4c716",
+      "bytes": 24077
+    },
+    {
+      "path": "supabase/migrations/20261007000000_phase_9_auth_security_events.sql",
+      "sha256": "fa7747315c474b5684a45fe584a76a7594b36cf81043ec8badd24d8cd6f71270",
+      "bytes": 3934
+    },
+    {
+      "path": "supabase/migrations/20261008000000_phase_9_super_admin_invitations.sql",
+      "sha256": "88e6b4a9bb314a47fbcf1879d521653c279fb9d3224200d050f271f65ef7f606",
+      "bytes": 2328
+    },
+    {
+      "path": "supabase/migrations/20261009000000_phase_7_24_immediate_staff_faculty_approval.sql",
+      "sha256": "71a58d4e62dd4902bc0de489f9d9db66cccc6eae563fd50636b6f2465ce2fd2e",
+      "bytes": 8460
+    },
+    {
+      "path": "supabase/migrations/20261010000000_phase_10_faculty_attendance_management.sql",
+      "sha256": "2f93ece8b89e006b61e46fe25f62ef79fec8c58e81b9fe7a835270069321c49b",
+      "bytes": 13253
+    },
+    {
+      "path": "supabase/migrations/20261011000000_faculty_responsibilities_and_validity.sql",
+      "sha256": "5938051c99abecc3d582e213341d39e62d4430f5a90655091d42fe59c2f7c94c",
+      "bytes": 23484
+    },
+    {
+      "path": "supabase/migrations/20261012000000_faculty_attendance_workflow.sql",
+      "sha256": "287e93f20bf6c5d1e91ac49b32c05d3468ea3ece549b84d789a295113402119f",
+      "bytes": 26738
+    },
+    {
+      "path": "supabase/migrations/20261013000000_faculty_tests_examination.sql",
+      "sha256": "74186837ca7289041ffb88cc80d23d5a7dbc5194369849d8a098a7ba974c231e",
+      "bytes": 41259
+    },
+    {
+      "path": "supabase/migrations/20261014000000_scoped_faculty_teaching_assignment_management.sql",
+      "sha256": "ff4d27a703c7d572579560f280c99e049be7f35a279c7d616229e513d5b62519",
+      "bytes": 10064
+    },
+    {
+      "path": "supabase/migrations/20261015000000_student_academic_experience_read_indexes.sql",
+      "sha256": "b5ccc9f28e354303136e665777e531524ae8bd15e62e6fa676440cddbc4ffcea",
+      "bytes": 1598
+    },
+    {
+      "path": "supabase/migrations/20261016000000_academic_master_data_management.sql",
+      "sha256": "a4d7ca4814b126d4322d66c6ae71fcd7a4d68407223506fe52d82bdc5a07004b",
+      "bytes": 17665
+    },
+    {
+      "path": "supabase/migrations/20261016010000_academic_curriculum_semester_convergence.sql",
+      "sha256": "3c98b7aa8207176a1c60195ba2bf11ca709afe1a297c0dac71d589fd0d024c33",
+      "bytes": 1227
+    },
+    {
+      "path": "supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql",
+      "sha256": "581146602e75d94342777b81ee70b9ab423fb0117b2fda8b871d4b750249bc1e",
+      "bytes": 53941
+    }
+  ]
+}

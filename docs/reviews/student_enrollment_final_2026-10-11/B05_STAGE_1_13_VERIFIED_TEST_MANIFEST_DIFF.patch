@@ -1,0 +1,135 @@
+--- stage1.10/scripts/validation/b05_containment/test_preparation_safety.py
++++ stage1.12/scripts/validation/b05_containment/test_preparation_safety.py
+@@ -134,5 +134,95 @@
+             self.assertEqual(set(domains), {"example.invalid"})
+ 
+ 
++class TargetedOracleSourceTests(unittest.TestCase):
++    """Stage 1.12 source consistency only; never execute SQL or a runtime case."""
++
++    @classmethod
++    def setUpClass(cls):
++        cls.package = Path(__file__).parent
++        cls.root = cls.package.parents[2]
++        cls.matrix = (cls.package / "test_matrix.md").read_text(encoding="utf-8")
++        cls.migrations = cls.root / "supabase/migrations"
++
++    def source(self, filename):
++        return (self.migrations / filename).read_text(encoding="utf-8")
++
++    def test_outbox_projection_matches_schema_and_terminal_write_set(self):
++        # Worker:7-51/112-128 and webhook:6-10 define actual fields/effects.
++        worker = self.source("20261002000000_phase_7_17_email_outbox_worker.sql")
++        webhook = self.source("20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql")
++        schema = worker.split('CREATE TABLE IF NOT EXISTS "public"."email_outbox" (', 1)[1]
++        schema = schema.split('    CONSTRAINT ', 1)[0]
++        fields = re.findall(r'^    "([a-z_]+)" ', schema, re.M)
++        fields += re.findall(r'ADD COLUMN IF NOT EXISTS "([a-z_]+)"', webhook.split("CREATE UNIQUE INDEX", 1)[0])
++        documented = re.search(r'`(id, message_type, aggregate_type, aggregate_id, [^`]+)`', self.matrix).group(1)
++        self.assertEqual(documented.split(", "), fields)
++        self.assertNotIn("version", fields)
++        trigger = worker.split('CREATE OR REPLACE FUNCTION "public"."phase717_cancel_terminal_invitation_email"()', 1)[1]
++        trigger = trigger.split("END;", 1)[0]
++        assignments = trigger.split("SET ", 1)[1].split("WHERE ", 1)[0]
++        self.assertEqual(set(re.findall(r'"([a-z_]+)"\s*=', assignments)),
++                         {"status", "locked_at", "protected_token", "updated_at", "last_error_category"})
++        self.assertIn('AND "status" = \'pending\'::text', trigger)
++        self.assertIn("INVITATION_TERMINAL", trigger)
++        oracle = self.matrix.split("**OB12-T:", 1)[1].split("**OB12-C:", 1)[0]
++        self.assertIn("attempt_count", oracle)
++        self.assertIn("delivery_sequence", oracle)
++        self.assertIn("processing row and its attempt intact", oracle)
++        self.assertIn("historical terminal", oracle)
++        self.assertIn("zero row-count delta alone", self.matrix)
++        register = self.matrix.split("**OB12 affected-case register.**", 1)[1].split("## Stage 1.12 C12", 1)[0]
++        rows = [line for line in register.splitlines() if re.match(r'^\| OB12/M\d{2} \|', line)]
++        self.assertEqual([line.split("|")[1].strip().split("/")[1] for line in rows], [f"M{i:02}" for i in range(1, 22)])
++        self.assertTrue(all(line.endswith("| NOT RUN |") for line in rows))
++
++    def test_cancellation_timestamp_contract_tracks_kind_specific_constraints(self):
++        # Institution CHECK:66-91; platform schema:8-29 has no such CHECK.
++        institution = self.source("20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql")
++        platform = self.source("20261008000000_phase_9_super_admin_invitations.sql")
++        b05 = self.source("20261017000000_b05_invitation_acceptance_security.sql")
++        check = institution.split('CONSTRAINT "platform_admin_invitations_terminal_state_check"', 1)[1].split("\n);", 1)[0]
++        self.assertIn('"cancelled_at" IS NOT NULL', check)
++        self.assertIn('"accepted_at" IS NULL', check)
++        self.assertNotIn("terminal_state_check", platform)
++        routing = b05.split("CREATE FUNCTION public.b05_guard_invitation_acceptance()", 1)[1].split("END;", 1)[0]
++        terminal_fields = routing.split("IF OLD.status <> 'invited'", 1)[1].split("THEN", 1)[0]
++        self.assertNotIn("cancelled_at", terminal_fields)
++        lifecycle = b05.split("CREATE FUNCTION public.b05_transition_invitation(", 1)[1].split("END;", 1)[0]
++        self.assertIn("cancelled_at = CASE WHEN p_status = 'cancelled' THEN clock_timestamp()", lifecycle)
++        self.assertLess(lifecycle.index("IF NOT v_repeat THEN"), lifecycle.index("cancelled_at = CASE"))
++        contract = self.matrix.split("## Stage 1.12 C12", 1)[1].split("## Stage 1.12 T19", 1)[0]
++        for statement in ("cancelled_at=Tcancel", "validated fixture_anchor", "platform_admin_invitations_terminal_state_check",
++                          "platform schema has no equivalent timestamp CHECK", "preserves the exact returned timestamp",
++                          "does not prohibit changing cancelled_at alone", "institution updated_at unchanged"):
++            self.assertIn(statement, contract)
++        additions = self.source("20261001030000_phase_7_15_invitation_delivery_email_verification.sql")
++        self.assertIn('ADD COLUMN IF NOT EXISTS "last_sent_at"', additions)
++        self.assertIn("email_delivery_at/last_sent_at NULL", contract)
++
++    def test_wrong_tenant_controls_bind_valid_actor_and_distinct_resource_scope(self):
++        # Fixture grants + phase81 guard ordering distinguish scope from claim denial.
++        fixture = (self.package / "fixtures_pre_b05.sql").read_text(encoding="utf-8")
++        for grant in ("(2,'admin','institution',1)", "(3,'admin','institution',2)", "(6,'staff','institution',2)"):
++            self.assertIn(grant, fixture)
++        self.assertIn("(4,6,'staff','pending')", fixture)
++        phase81 = self.source("20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql")
++        guard = phase81.split('CREATE OR REPLACE FUNCTION "public"."phase81_assert_institution_admin"(', 1)[1].split("END;", 1)[0]
++        self.assertIn('"ur"."scope_id" = "p_institution_id"', guard)
++        self.assertIn("Phase 8.1: active institution administrator required", guard)
++        self.assertFalse(re.search(r'\b(INSERT|UPDATE|DELETE)\b', guard))
++        b05 = self.source("20261017000000_b05_invitation_acceptance_security.sql")
++        for start in ('CREATE OR REPLACE FUNCTION "public"."phase723_approve_membership_and_grant_role"(',
++                      'CREATE FUNCTION public.b05_reject_membership('):
++            body = b05.split(start, 1)[1].split("END;", 1)[0]
++            self.assertLess(body.index("phase81_assert_institution_admin"), body.index("SELECT * INTO"))
++        contract = self.matrix.split("## Stage 1.12 T19", 1)[1]
++        for statement in ("RB=R(4)", "from A/OA to B/OB", "exactly the active 'admin'",
++                          "immediate(RB,B,U(2),reason)", "reject(RB,B,U(2),reason)",
++                          "Both expect42501", "auth_security_events delta0",
++                          "immediate(R(1),B,U(3),reason)", "reject(R(1),B,U(3),reason)"):
++            self.assertIn(statement, contract)
++
++
+ if __name__ == "__main__":
+     unittest.main()
+--- stage1.10/scripts/validation/b05_containment/migration_manifest.json
++++ stage1.12/scripts/validation/b05_containment/migration_manifest.json
+@@ -461,13 +461,13 @@
+         },
+         {
+             "path": "scripts/validation/b05_containment/test_matrix.md",
+-            "sha256": "df11a19fc8f18c3b3fecfd61930657be52a06ed510c435f36b64ee05e474e4aa",
+-            "bytes": 84107
++            "sha256": "a654bf895a26acd8d5f19edb2535185925c36b532c79d26ecc54e6b50324a13d",
++            "bytes": 106301
+         },
+         {
+             "path": "scripts/validation/b05_containment/test_preparation_safety.py",
+-            "sha256": "230a3ecf3abb0713d3b3afce7221430b93a945e7d8631d0bd93e1803748c737f",
+-            "bytes": 7876
++            "sha256": "2e8a7f5ae269a1c056451e0587362063d527b7374e23964e40cfc05916fe4982",
++            "bytes": 14464
+         }
+     ],
+     "successor_source": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+@@ -522,5 +522,15 @@
+         }
+     ],
+     "stage": "1.10",
+-    "approval_status": "UNAPPROVED_CONSISTENCY_ONLY_RE_REVIEW_REQUIRED"
++    "approval_status": "UNAPPROVED_CONSISTENCY_ONLY_RE_REVIEW_REQUIRED",
++    "targeted_oracle_revision": {
++        "stage": "1.12",
++        "scope": [
++            "terminal_outbox_oracles",
++            "M12_cancellation_timestamp_setup",
++            "M19_wrong_tenant_actor_setup"
++        ],
++        "execution_contract_stage": "1.10 unchanged",
++        "approval_status": "UNAPPROVED_CONSISTENCY_ONLY_INDEPENDENT_RE_REVIEW_REQUIRED"
++    }
+ }

@@ -1,0 +1,3554 @@
+{
+  "stage": "1.18",
+  "review_date": "2026-10-12",
+  "timezone": "Asia/Calcutta",
+  "scope": "Owner intake and independent-review preparation; separate agent source-based documentation cross-check and standard-library offline verification only",
+  "verdict": "INTAKE PREPARATION AND SOURCE-BASED DOCUMENTATION REVIEW PASS; ACTUAL OWNER DECISIONS AND HUMAN INDEPENDENT REVIEW PENDING",
+  "intake_preparation": "PASS",
+  "documentation_cross_check": "PASS",
+  "human_independent_review": "PENDING / NOT PERFORMED",
+  "review_independence_limit": "Separate pass by the authoring agent; no organizationally independent human identity/authority/disposition established",
+  "security_readiness_claimed": false,
+  "production_readiness_claimed": false,
+  "execution_authorized": false,
+  "runtime_adapter": null,
+  "runner_mode": "file_only_preparation",
+  "owner_identity": null,
+  "approvals": null,
+  "collection_authority": "PENDING / NOT APPROVED",
+  "owner_contact_performed": false,
+  "owner_decisions_obtained": false,
+  "new_findings": [],
+  "unresolved_documentation_findings": [],
+  "unresolved_failed_checks": [],
+  "decisions": {
+    "B01": "OPEN",
+    "B02": "OPEN",
+    "B03": "OPEN",
+    "B04": "OPEN",
+    "B05": "OPEN",
+    "B06": "OPEN",
+    "B07": "OPEN"
+  },
+  "runtime_cases": {
+    "M01": "NOT RUN",
+    "M02": "NOT RUN",
+    "M03": "NOT RUN",
+    "M04": "NOT RUN",
+    "M05": "NOT RUN",
+    "M06": "NOT RUN",
+    "M07": "NOT RUN",
+    "M08": "NOT RUN",
+    "M09": "NOT RUN",
+    "M10": "NOT RUN",
+    "M11": "NOT RUN",
+    "M12": "NOT RUN",
+    "M13": "NOT RUN",
+    "M14": "NOT RUN",
+    "M15": "NOT RUN",
+    "M16": "NOT RUN",
+    "M17": "NOT RUN",
+    "M18": "NOT RUN",
+    "M19": "NOT RUN",
+    "M20": "NOT RUN",
+    "M21": "NOT RUN"
+  },
+  "broader_runtime_cases": {
+    "T01": "NOT RUN",
+    "T02": "NOT RUN",
+    "T03": "NOT RUN",
+    "T04": "NOT RUN",
+    "T05": "NOT RUN",
+    "T06": "NOT RUN",
+    "T07": "NOT RUN",
+    "T08": "NOT RUN",
+    "T09": "NOT RUN",
+    "T10": "NOT RUN",
+    "T11": "NOT RUN",
+    "T12": "NOT RUN",
+    "T13": "NOT RUN",
+    "T14": "NOT RUN"
+  },
+  "T13": "Conditional; unpassed if deferred",
+  "prior_documentation_findings": {
+    "D01": "ADDRESSED BY STAGE 1.16; NOT REOPENED",
+    "D02": "ADDRESSED BY STAGE 1.16; NOT REOPENED",
+    "D03": "ADDRESSED BY STAGE 1.16; NOT REOPENED",
+    "D04": "ADDRESSED BY STAGE 1.16; NOT REOPENED",
+    "D05": "ADDRESSED BY STAGE 1.16; NOT REOPENED"
+  },
+  "base_coverage": {
+    "denominator": 35,
+    "covered": 0,
+    "blocked": 35,
+    "deferred": 0,
+    "excluded": 0,
+    "criterion_ids": [
+      "C01.1",
+      "C01.2",
+      "C01.3",
+      "C01.4",
+      "C01.5",
+      "C02.1",
+      "C02.2",
+      "C02.3",
+      "C02.4",
+      "C02.5",
+      "C03.1",
+      "C03.2",
+      "C03.3",
+      "C03.4",
+      "C03.5",
+      "C04.1",
+      "C04.2",
+      "C04.3",
+      "C04.4",
+      "C04.5",
+      "C05.1",
+      "C05.2",
+      "C05.3",
+      "C05.4",
+      "C05.5",
+      "C06.1",
+      "C06.2",
+      "C06.3",
+      "C06.4",
+      "C06.5",
+      "C07.1",
+      "C07.2",
+      "C07.3",
+      "C07.4",
+      "C07.5"
+    ]
+  },
+  "future_subcase_requirements": {
+    "M19-LR-01": "NOT RUN; required fixtures/authority/policy/bytes unavailable",
+    "M20-CR-01": "NOT RUN; required fixtures/authority/policy/bytes unavailable",
+    "M20-FN-01": "NOT RUN; required fixtures/authority/policy/bytes unavailable",
+    "M20-PR-01": "NOT RUN; required fixtures/authority/policy/bytes unavailable",
+    "M20-AG-01": "NOT RUN; required fixtures/authority/policy/bytes unavailable"
+  },
+  "manifest_identity": {
+    "path": "scripts/validation/b05_containment/migration_manifest.json",
+    "bytes": 25694,
+    "sha256": "52d1bfc38db7f1466b884cf8c971c75c44b44ebb77df1b54b08d5d49b0720208"
+  },
+  "preserved_entry_file_count": 141,
+  "preserved_entry_files": [
+    {
+      "path": "backend/app/core/security.py",
+      "bytes": 18142,
+      "sha256": "78c74d4996e311153fee7b0412642abccb8add9232639a5d6fe2f0dd95f2f6eb"
+    },
+    {
+      "path": "backend/app/db/supabase.py",
+      "bytes": 9574,
+      "sha256": "c5c36679afd0c071e494083617da48f0bbab8c2e469139411799f2428a40fbe6"
+    },
+    {
+      "path": "backend/app/repositories/tenancy.py",
+      "bytes": 31783,
+      "sha256": "c35bfa19064802f1c772280188d8381ca439937d2b227de156e03b1cb2da1dad"
+    },
+    {
+      "path": "backend/app/services/tenancy.py",
+      "bytes": 27952,
+      "sha256": "ea58c253685cc0b56b11b0ad8d3a9995d1d37752dffe0c4872c848709858a249"
+    },
+    {
+      "path": "backend/tests/B05_RECOVERY_CONTRACT.md",
+      "bytes": 9622,
+      "sha256": "2b4260f0e8a1e472a6a005495859b6bff6d07db041b705b518f0d8859b2e2d03"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/ADR-ENROLLMENT-003.md",
+      "bytes": 7664,
+      "sha256": "278cdc388af6491d874c0706aacd242a0d4bee19eba6fae5c857d47e2b9fb741"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_BLOCKER_REMEDIATION_REPORT.md",
+      "bytes": 16737,
+      "sha256": "59863d25d04e8ec1b277a55a2c0b3dd5625b3c3744c08a6ebbe011b755135d33"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_ENTRY_HASHES.json",
+      "bytes": 16503,
+      "sha256": "4eb955ccfc7acda8cbfd607c4e27ad9ce55abbad493bf861d3d82ca8f10bc24a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_HASH_EVIDENCE.json",
+      "bytes": 36431,
+      "sha256": "2b8362bc097c7f49e41ef0a36f5f2f58f6278925b8faffc85e33eb3c39a9eb49"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_READINESS_REVIEW.md",
+      "bytes": 10785,
+      "sha256": "fdd94200b9b7863d3a154b1f3a33ac31d53b7ac05ab1fa3e7da550bbdd007e68"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_OFFLINE_HASH_EVIDENCE.json",
+      "bytes": 35844,
+      "sha256": "7a3c4660ee2c3497bfca68d7ab95108958f5acad07c29f2cfe01eae95981d91b"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_TEST_MATRIX_RECOVERED.md",
+      "bytes": 84107,
+      "sha256": "df11a19fc8f18c3b3fecfd61930657be52a06ed510c435f36b64ee05e474e4aa"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_ENTRY_HASHES.json",
+      "bytes": 25080,
+      "sha256": "41792b415ac35e8dd1e7abdb3ff5b7471eccb3cf111169f777df9a0a70bca134"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_OFFLINE_HASH_EVIDENCE.json",
+      "bytes": 43998,
+      "sha256": "e8118c9d3896902be1903141115fdf355b748c8b605d4c29fe4379e13f893bfc"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_TARGETED_ORACLE_REMEDIATION_REPORT.md",
+      "bytes": 12804,
+      "sha256": "ead3a9ce59a48f924764507ba0c3aaa91d4fc29c354a9a83adaa3a80119fab15"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_HASH_EVIDENCE.json",
+      "bytes": 27087,
+      "sha256": "ff508a6777aa1397a87073e5a611808f7bce9f03c75555237372ebcba085d1af"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_TARGETED_RE_REVIEW.md",
+      "bytes": 19998,
+      "sha256": "303489df763361e0ed41ec34881e8ee5ff0ab76e0e5eb7ef8353d8d49321a8dd"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_BASELINE_RECOVERY_ADDENDUM.md",
+      "bytes": 9269,
+      "sha256": "cb07f0954a64b6671d3f34e96ca8866277f32306a635d8bfe205a6de3fc181eb"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_RECOVERY_EVIDENCE.json",
+      "bytes": 36580,
+      "sha256": "85dcb46eac86e943b76482d89af0c3bdf816eff744d77ed93711f1a6b9b26e96"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_MATRIX_DIFF.patch",
+      "bytes": 26606,
+      "sha256": "7660eb87c6b08d2fa9872828b786c33f5b85c4dfbdd8b588272c9fdd7dda1572"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_TEST_MANIFEST_DIFF.patch",
+      "bytes": 8554,
+      "sha256": "12949cf6d8d2ca18cde0e56c38d34ea3671c3568a6b001286f6eebbc0939425f"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "bytes": 72805,
+      "sha256": "22b3c0dda941de271d0a039b7358afdfb5b15013d1e7b895eb69ef4ddf2f08e5"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+      "bytes": 29111,
+      "sha256": "f32a7530d83a8f49c051c87bb8056a4fb7de3dff635b0a8b01eea72ed422a6ff"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_OFFLINE_EVIDENCE.json",
+      "bytes": 73907,
+      "sha256": "d068d1ed5d2b80493a81452ffa77f781cac232d353e07199f786f1aafa645217"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_INDEPENDENT_DECISION_REVIEW.md",
+      "bytes": 37280,
+      "sha256": "d4aeef70d3aecfa2fe3dbf880d7d11c2ce4fc24dce045e947c0184d81f8ee7ea"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_OFFLINE_EVIDENCE.json",
+      "bytes": 109909,
+      "sha256": "533f59dfc2b45e17e6f33c85de14da8dba1548c5b2d804483a00b58f2f30d623"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_DOCUMENTATION_REPAIR.md",
+      "bytes": 13838,
+      "sha256": "62016dd03bb1a9d5b02b2d34fbcd37d0b374242f8ad0cf91136837f22391fd83"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_OFFLINE_EVIDENCE.json",
+      "bytes": 305610,
+      "sha256": "65902308a0a3094e5fb99498b5ca53a0008e7867a658edae609e0eaa114a440a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_INDEPENDENT_READINESS_REVIEW.md",
+      "bytes": 37684,
+      "sha256": "5ab9c78d0c1dce4137e65d5b6807a5cceded1129d65b2a740d2092d4976d4d84"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_OFFLINE_HASH_EVIDENCE.json",
+      "bytes": 23438,
+      "sha256": "517426ac49f2b885f4c818b6e9a7e54f059709c7b0c9dcdc72639f68873cbe52"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/REVIEW_SUMMARY.md",
+      "bytes": 12688,
+      "sha256": "0bc8e4ceef8dd50a7fb3bc78acb63d7c3a566f723a0dd7380c391c0211a4aadf"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_B05_REMEDIATION_DESIGN.md",
+      "bytes": 74723,
+      "sha256": "a5846632243ee52eb28b8d02c34a9d5530a54376619f59ebefa32612a3900c27"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_B05_ROUTINE_SECURITY_REVIEW.md",
+      "bytes": 70307,
+      "sha256": "dfc8767ab3d3d7e78f08b8b5689e092b99865beeb740cbe45b9f8b26acfbfcfd"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_BLOCKER_EVIDENCE_MATRIX.md",
+      "bytes": 46136,
+      "sha256": "fab90b17a703c75ec17f0017bb8164183020107babcec12edc6a6275373cc1be"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_CANDIDATE_RESULTS.json",
+      "bytes": 292092,
+      "sha256": "42e4678c417b0b0c73fc85107323802a3746b3ce134f4a5fb937cbe0d2e2ca5a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_CHANGE_PLAN.md",
+      "bytes": 17135,
+      "sha256": "073543f966608d247e1d09427bc78cea8d8dfdb800bf846b7c5ba4ca234f8fe8"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "bytes": 76172,
+      "sha256": "c31f7c7f672eb846d45b642a21af5a22d1611a0f5efa1763a9db550b3f9b48cb"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_INDEPENDENT_REVIEW.md",
+      "bytes": 19086,
+      "sha256": "6f9f3e99f151cc81db938966c6b24730bb46f16eef2b6c303395a5b823391bb4"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_CANDIDATE.sql",
+      "bytes": 49694,
+      "sha256": "897a4c786adc487bce04462690f8a4bbcab215f2e3e53841f84a82f40c1a63c7"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_REVIEW.md",
+      "bytes": 64477,
+      "sha256": "43bd8294163c4a1cc1158e85979873dbece914d065f83f003df63324016d50d8"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "bytes": 56819,
+      "sha256": "a733cf6a92f5d00a41123606941bebca454194d89ada239e8651ffc89fc3ec30"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+      "bytes": 51805,
+      "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "bytes": 73355,
+      "sha256": "a9af4cab04cb134fa581d688eb75f94e3ffd0a8ced3a33548793702877cb1231"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_REVIEW.md",
+      "bytes": 41567,
+      "sha256": "99849afbfe9c11a12565c50761a9cb5466cf724cbb21832dc31641c9145e38a5"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_ROUTINE_INVENTORY.md",
+      "bytes": 20229,
+      "sha256": "2f1b2eb1dc7e09711a22a177d2ce259a9175189b371a4a8c29e6f1cd6c43f1cf"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_SOURCE_EVIDENCE.json",
+      "bytes": 373727,
+      "sha256": "2aee432277ad5fb794fa179e22ea34148c7d8232277c47967d77861163c8f75a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_STATIC_RESULTS.json",
+      "bytes": 521790,
+      "sha256": "9e292d77bf6f391be59d51a21ebb09dec7da374b3e15a38f7ecdd783ed400c16"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SOURCE_EVIDENCE.json",
+      "bytes": 152768,
+      "sha256": "6f4cd69ce31673d2388555080a945cd21486a097d70790d0dbe693948f3381e8"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SQL_REPAIR_REVIEW.md",
+      "bytes": 25696,
+      "sha256": "64d5b8a62aebb4e4f65db09cf6edda41f9e2b9255f29efe829d2f2d089c5a182"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STATIC_REVIEW_RESULTS.json",
+      "bytes": 18606,
+      "sha256": "d00b4ba740f81ab350f95ccbf39feb034570fe0e212f8e8061c0601078ac3b64"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STATIC_REVIEW_RESULTS.json.before_repair",
+      "bytes": 4063,
+      "sha256": "ff7964e3e2e6d31f126850d838395d8745dde728ea100c3ed652caa7107d9d2e"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_MIGRATION_PLAN.md",
+      "bytes": 20417,
+      "sha256": "292a9c4b15af7db214f03672435a36dd1f96e4a09b2f8b07ca496fc059284210"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_SCHEMA_FINAL_REVIEW.md",
+      "bytes": 15131,
+      "sha256": "a375b9a4eeca9aac1594c80d30923297fd97746e5273005ee35199cf2844ae01"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_SECURITY_REVIEW.md",
+      "bytes": 11790,
+      "sha256": "7fe2ff0f36d813ae334e28f99c3cede5f089b3f517fd6ed4d6e9cc1f719336ea"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_TEST_PLAN.md",
+      "bytes": 16879,
+      "sha256": "086cfc5e37973c782c6d9c8cf1b16c37f77d2fdbfbf198bd8459c25de5c29399"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/build_security_containment_source_evidence.py",
+      "bytes": 17071,
+      "sha256": "3709807a2392bec77f91cd51b57e9c66cdc552d9a3bbe4488812a8a2acdb7b9f"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/student_enrollment_schema_review_draft.sql",
+      "bytes": 81515,
+      "sha256": "c04b3b51e8dcff739a2ad85989258bb5f2b1ea4123d6a506349133db1fa41206"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/student_enrollment_schema_review_draft.sql.before_repair",
+      "bytes": 67127,
+      "sha256": "0ff9b917da73dd0c112e3f540d60849ffffc2db51aeb61965c14b67a08a030b6"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/synthetic_fixtures.json",
+      "bytes": 38003,
+      "sha256": "14b028e8283719a86cc7ae6411ca8e0ad9603e72947fb1b48124f1e4fee3878c"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_10_offline.py",
+      "bytes": 13103,
+      "sha256": "7ed3cbae37203664af2ada41940273cc53b3457f0456db74f8b45ef991111530"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_12_offline.py",
+      "bytes": 8667,
+      "sha256": "44f26551f359321357af7a26541bc0beb0c88f3751caa67d915c1fda35214c39"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_13_offline.py",
+      "bytes": 6341,
+      "sha256": "a7323322ad01dc31d60f2ba9fde94568da2d0b79b8e701510ee2126c5d2f1225"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_review_static.py",
+      "bytes": 10366,
+      "sha256": "e1c0205a5286c707f948533d17765a218db6dccbd69dd90eee0367bd6db1db69"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_security_containment_static.py",
+      "bytes": 17249,
+      "sha256": "03ace9d1ec1a2c1eda94e737c96748b21d616c995853a2d5a0c3464a46b98298"
+    },
+    {
+      "path": "scripts/maintenance/reset_supabase_data.sql",
+      "bytes": 6405,
+      "sha256": "910e276f35fc4fe4d05c1307d2d926c95b7b1e691ec630d52b59d7b1acdf2008"
+    },
+    {
+      "path": "scripts/validation/academic_setup_concurrency.py",
+      "bytes": 5509,
+      "sha256": "d23514baf15d5d7051c1532a60a3afb9081a3c7212264570a3bb1edc0b34ada1"
+    },
+    {
+      "path": "scripts/validation/academic_setup_database.sql",
+      "bytes": 12466,
+      "sha256": "c933e69c2a791a1aa07c2438e9c2b14be230c7e2106893cf3a776d1052efffb8"
+    },
+    {
+      "path": "scripts/validation/academic_setup_sql_lint.sql",
+      "bytes": 1408,
+      "sha256": "4730066e772e1820fa8fa11b078c16e4b526da522583ae6864b18b8e483ba757"
+    },
+    {
+      "path": "scripts/validation/b05_containment/README.md",
+      "bytes": 27419,
+      "sha256": "69a4be6e7d94d49f6765dbf0fe4901ab63d45bef108c674a1eea3650a56ad952"
+    },
+    {
+      "path": "scripts/validation/b05_containment/bootstrap.sql",
+      "bytes": 3496,
+      "sha256": "18d1370e7339281b1ba1072aa439582364e582931aebcb8a7453008053392c38"
+    },
+    {
+      "path": "scripts/validation/b05_containment/containment_successor.validation.sql",
+      "bytes": 51805,
+      "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37"
+    },
+    {
+      "path": "scripts/validation/b05_containment/fixtures_post_b05.sql",
+      "bytes": 3506,
+      "sha256": "a7870e1b46396c4b93fdaec60ccd44226193ca7cf55d06e4b79ec3dd2becfbb8"
+    },
+    {
+      "path": "scripts/validation/b05_containment/fixtures_pre_b05.sql",
+      "bytes": 8759,
+      "sha256": "b6ccf7960d3448d5938ec38e1cb1d180a5a803d0c76fe116375662573f3c61ed"
+    },
+    {
+      "path": "scripts/validation/b05_containment/migration_manifest.json",
+      "bytes": 25694,
+      "sha256": "52d1bfc38db7f1466b884cf8c971c75c44b44ebb77df1b54b08d5d49b0720208"
+    },
+    {
+      "path": "scripts/validation/b05_containment/prepare.py",
+      "bytes": 7340,
+      "sha256": "3bf5a6589becad59b7336b18de0f75b51ed1aba497fb0a416a24ddc246f0deee"
+    },
+    {
+      "path": "scripts/validation/b05_containment/runner_contract.json",
+      "bytes": 17754,
+      "sha256": "c18b23a093e21aea584e8f100fe733feffe690784db19741c245387523a3a278"
+    },
+    {
+      "path": "scripts/validation/b05_containment/test_matrix.md",
+      "bytes": 106301,
+      "sha256": "a654bf895a26acd8d5f19edb2535185925c36b532c79d26ecc54e6b50324a13d"
+    },
+    {
+      "path": "scripts/validation/b05_containment/test_preparation_safety.py",
+      "bytes": 14464,
+      "sha256": "2e8a7f5ae269a1c056451e0587362063d527b7374e23964e40cfc05916fe4982"
+    },
+    {
+      "path": "scripts/validation/build_academic_curriculum_convergence_contract.py",
+      "bytes": 4507,
+      "sha256": "1e062890d57ccc08eb9eb9eaccca6dca52fb6332a3f4c0c1b29eb63fcedace49"
+    },
+    {
+      "path": "scripts/validation/disposable_container.py",
+      "bytes": 8322,
+      "sha256": "2a7617a5f0771712fe816ff5dfe3b922e7294ab11553f45fc6bac5364bd5fcbe"
+    },
+    {
+      "path": "scripts/validation/faculty_assignment_concurrency.py",
+      "bytes": 17815,
+      "sha256": "b5020ada6d201b5e92a716c2afbb80786e404b300ff910631bf5d75fad57e058"
+    },
+    {
+      "path": "scripts/validation/faculty_attendance_concurrency.py",
+      "bytes": 5336,
+      "sha256": "37fa015d6ebf4de17a14029682be4234656010e7600f36182b51b88f2132422c"
+    },
+    {
+      "path": "scripts/validation/faculty_attendance_database.sql",
+      "bytes": 15583,
+      "sha256": "ffbbd227cb9192c4ec3b999e7d4261f39b92ffc19a7c1e231f00ba948882cec1"
+    },
+    {
+      "path": "scripts/validation/faculty_responsibilities_database.sql",
+      "bytes": 10061,
+      "sha256": "08e0c56067864554d86f4405e86c20561482254d7bf92dea35257c4d051b7c6b"
+    },
+    {
+      "path": "scripts/validation/faculty_tests_concurrency.py",
+      "bytes": 6870,
+      "sha256": "daa2c80673ed0ecf0d16e5ee307735f24446b464bca38263fcfe22ec9782dd46"
+    },
+    {
+      "path": "scripts/validation/faculty_tests_database.sql",
+      "bytes": 19296,
+      "sha256": "e3f8a5e14c5968c5549e15f1a799d5c95473efbefd746d641675d89c4d07dd59"
+    },
+    {
+      "path": "scripts/validation/invoke_local_supabase.ps1",
+      "bytes": 3002,
+      "sha256": "e3644cd03807939337ab611d0439bc44062540e761380b777aaecd94aad268dd"
+    },
+    {
+      "path": "scripts/validation/manage_local_super_admin.ps1",
+      "bytes": 2750,
+      "sha256": "140ce3a3df0e68c7ba80be18417b6cfa060cdaffee12f3f2784c8a52666d0188"
+    },
+    {
+      "path": "scripts/validation/phase717_local_outbox.sql",
+      "bytes": 4462,
+      "sha256": "fa2665dfbbcb7cd83b2d6369f0e6506f70f4131067dffa6c684b4f3bb648c23f"
+    },
+    {
+      "path": "scripts/validation/phase718_local_mailgun_webhooks.sql",
+      "bytes": 6238,
+      "sha256": "e71b7be7876247706baf6794579358ae40f0585c2b550735165680a58775b980"
+    },
+    {
+      "path": "scripts/validation/provision_local_demo_users.ps1",
+      "bytes": 4796,
+      "sha256": "2e0818015a1dca6db07587e20e06c3a599912e924e18ef1157dd5419d4f81844"
+    },
+    {
+      "path": "scripts/validation/test_disposable_container.py",
+      "bytes": 19471,
+      "sha256": "b5707820bf6226e4642750da44ad8acd6eda47d80b9278d680908b7faecdb05c"
+    },
+    {
+      "path": "scripts/validation/test_runner_safety.py",
+      "bytes": 8364,
+      "sha256": "8f73f167c26214ea1e50b017ad2bbfd22abbdb37d0403281c738daf951870a50"
+    },
+    {
+      "path": "scripts/validation/test_runner_worker.ps1",
+      "bytes": 3161,
+      "sha256": "b21c7e19bc58d56291b90c35823794a14362fdd991f0ccfc3642fdff253f1844"
+    },
+    {
+      "path": "scripts/validation/verify_academic_setup_database.ps1",
+      "bytes": 5260,
+      "sha256": "6ef6653918417ce64480c500d08d4e87716d45b998cba8523d4121a762efd91c"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_assignment_database.ps1",
+      "bytes": 5180,
+      "sha256": "77c5dcd02d41e268f70c896075a38f76b6e64c2a329b54cd570db22862fb792b"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_attendance_database.ps1",
+      "bytes": 5180,
+      "sha256": "3128ae0ec73c7ed962844ca6a30dc6a56b2d76ce22b278b34ff621cadeddc59c"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_tests_database.ps1",
+      "bytes": 5420,
+      "sha256": "b744a5dd26ed21b0a2e1a960375e6c04e79a6cb5df2b5b60cfcd81ba46ff1081"
+    },
+    {
+      "path": "scripts/validation/verify_supabase_data_reset.py",
+      "bytes": 10843,
+      "sha256": "4f0746643bc8835c27574e338e0a46c3ab06440834ad0fea579e7137aab33b5f"
+    },
+    {
+      "path": "supabase/migrations/20250717000000_reconstructed_pre_phase_3_6_baseline.sql",
+      "bytes": 40228,
+      "sha256": "7fd1ea5c096eb47667a2ba55cc1bf4a872c959e12300c2110a69a698ca6e6429"
+    },
+    {
+      "path": "supabase/migrations/20250718000000_phase_3_6_embeddings.sql",
+      "bytes": 2939,
+      "sha256": "21230835555e0353b124c8314c72948c97ece834beafccdb7e89f9fe6412f2aa"
+    },
+    {
+      "path": "supabase/migrations/20260905000000_phase_3_7_1_vector_search_index.sql",
+      "bytes": 683,
+      "sha256": "da5e2f8a7c35c3ebee708bd977b9ebfc048f3666e06d26bf3c9edc7d7729df80"
+    },
+    {
+      "path": "supabase/migrations/20260905000001_phase_3_7_2_vector_similarity_search.sql",
+      "bytes": 1781,
+      "sha256": "c1dc20ecfba849522dba9c26e0393ce9060044c2ce8363d93846d205835240e4"
+    },
+    {
+      "path": "supabase/migrations/20260905000002_phase_3_8_metadata_access_filtering.sql",
+      "bytes": 3173,
+      "sha256": "fa6e41711c7485ee373306ca2cd3a1d37ff5e7489d56ff8d0e24f167e6fd0fa7"
+    },
+    {
+      "path": "supabase/migrations/20260909000000_phase_admin_1_admin_student_schema.sql",
+      "bytes": 26864,
+      "sha256": "0e70348067cf8096adff2bcef47587de70c889e55d55b43907fc9b069091009f"
+    },
+    {
+      "path": "supabase/migrations/20260909000001_phase_admin_2_extracted_text_column.sql",
+      "bytes": 312,
+      "sha256": "986f739f0506e5b3f1dce55f9b69a41b31a21fe66553bce006b251a51d6008e3"
+    },
+    {
+      "path": "supabase/migrations/20260909000002_phase_admin_2_faq_published_column.sql",
+      "bytes": 342,
+      "sha256": "9641a4c31bc7a58e4440d2a966b2fe61ea0b1ff9ccd68f5dfa03a3cc007656d4"
+    },
+    {
+      "path": "supabase/migrations/20260909000003_phase_admin_2_notice_published_column.sql",
+      "bytes": 358,
+      "sha256": "d70ebfc843866f85129944d9630ec52e4f515ed9e528936ed589662c22336e28"
+    },
+    {
+      "path": "supabase/migrations/20260912000000_phase_6_2_student_identity_model.sql",
+      "bytes": 9311,
+      "sha256": "a2b8793d3073bf7130497a828ff2f33c101f6db7788110c5adafe5dd46c67e57"
+    },
+    {
+      "path": "supabase/migrations/20260913000000_phase_6_7_attendance.sql",
+      "bytes": 9473,
+      "sha256": "365de679d8ce9edf278cfe117ae5496b2e2996ce2f0975e0d35c8542f343a423"
+    },
+    {
+      "path": "supabase/migrations/20260913010000_phase_6_8_results.sql",
+      "bytes": 18299,
+      "sha256": "c9b3d84ee8f3cfb8b94943a3eb8f9b8006315f79ffb8c32ef63eceae73925fd9"
+    },
+    {
+      "path": "supabase/migrations/20260914000000_phase_6_11_student_notifications.sql",
+      "bytes": 5831,
+      "sha256": "f105032d0a821755a0c13a79462907d3f58b983797a21e338aa97e6879c07f47"
+    },
+    {
+      "path": "supabase/migrations/20260915000000_phase_6_13_organization_institution_tenancy.sql",
+      "bytes": 33925,
+      "sha256": "e74e4fe768ec9c2cb0dd452bbf5c42617797574ba18daa9a7fcab8fdd633b637"
+    },
+    {
+      "path": "supabase/migrations/20260928000000_phase_7_2_public_knowledge_policy.sql",
+      "bytes": 4021,
+      "sha256": "2a43a3c2c3093a3405c809ccd26a4da8689440c5fbd8eb3264500eccf66600a5"
+    },
+    {
+      "path": "supabase/migrations/20260928010000_phase_7_4_public_rag_hardening.sql",
+      "bytes": 2923,
+      "sha256": "d52fe69d7e1037f7cdecf1af1a2ca4e840164e0042f17afc3250dd1ff4076092"
+    },
+    {
+      "path": "supabase/migrations/20260929000000_phase_7_10_legacy_primary_key_convergence.sql",
+      "bytes": 2153,
+      "sha256": "5be4401f19629449017963db2084e3ac90b2b54dad4c0406b78b828ae6bd3c5c"
+    },
+    {
+      "path": "supabase/migrations/20261001000000_phase_7_12_super_admin_identity_authorization.sql",
+      "bytes": 9678,
+      "sha256": "4aa88e05e5e893ec393a95941ad581fa902e4992aa49a47287a5f1f3676aa27d"
+    },
+    {
+      "path": "supabase/migrations/20261001010000_phase_7_13_super_admin_institution_management.sql",
+      "bytes": 8245,
+      "sha256": "bbc87fb76863894a68744396151c24c1bf8eca64bbfb30955b5693681bf72e7c"
+    },
+    {
+      "path": "supabase/migrations/20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql",
+      "bytes": 11166,
+      "sha256": "1d59c03c1535c8328d153b31c77c082372a65acdaf75bf3f914b8710acecbef8"
+    },
+    {
+      "path": "supabase/migrations/20261001030000_phase_7_15_invitation_delivery_email_verification.sql",
+      "bytes": 13057,
+      "sha256": "27d2aaa03f376748a8f640e6841d9506b8b77a527b425a2864c68c804a244892"
+    },
+    {
+      "path": "supabase/migrations/20261002000000_phase_7_17_email_outbox_worker.sql",
+      "bytes": 20309,
+      "sha256": "0a52abea3da21e8a1763e19e167572549ce3434296afb4654913d71c9394a7f2"
+    },
+    {
+      "path": "supabase/migrations/20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql",
+      "bytes": 8121,
+      "sha256": "77e8b695e3b512907e04b66548fa533d5a76af644b288d4c9249eb713b0e045e"
+    },
+    {
+      "path": "supabase/migrations/20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql",
+      "bytes": 6810,
+      "sha256": "30a51b837e5b988b64b4f41decf15386c0e531e0ee5b3036ee91be16ba3d3f2e"
+    },
+    {
+      "path": "supabase/migrations/20261004010000_admin_published_flags_schema_convergence.sql",
+      "bytes": 598,
+      "sha256": "92d25a5fa3b1a2658068ed1bd240a78376bdbc64b7aea1fe4952442129fc6c19"
+    },
+    {
+      "path": "supabase/migrations/20261004235959_permission_primary_key_convergence.sql",
+      "bytes": 1121,
+      "sha256": "813d843c8ff0e24f9950b92134a69c75bdd6bcfa465194df100f63f522c0c25b"
+    },
+    {
+      "path": "supabase/migrations/20261005000000_phase_8_granular_permissions.sql",
+      "bytes": 9582,
+      "sha256": "48a16106676dcd225479f3582b5a2036f5da0f736176037fe1cbf043c9a55a42"
+    },
+    {
+      "path": "supabase/migrations/20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql",
+      "bytes": 24077,
+      "sha256": "764489c42aa6542fa08c4a3c415b16be63bc42c6efbe481c3346e12798c4c716"
+    },
+    {
+      "path": "supabase/migrations/20261007000000_phase_9_auth_security_events.sql",
+      "bytes": 3934,
+      "sha256": "fa7747315c474b5684a45fe584a76a7594b36cf81043ec8badd24d8cd6f71270"
+    },
+    {
+      "path": "supabase/migrations/20261008000000_phase_9_super_admin_invitations.sql",
+      "bytes": 2328,
+      "sha256": "88e6b4a9bb314a47fbcf1879d521653c279fb9d3224200d050f271f65ef7f606"
+    },
+    {
+      "path": "supabase/migrations/20261009000000_phase_7_24_immediate_staff_faculty_approval.sql",
+      "bytes": 8460,
+      "sha256": "71a58d4e62dd4902bc0de489f9d9db66cccc6eae563fd50636b6f2465ce2fd2e"
+    },
+    {
+      "path": "supabase/migrations/20261010000000_phase_10_faculty_attendance_management.sql",
+      "bytes": 13253,
+      "sha256": "2f93ece8b89e006b61e46fe25f62ef79fec8c58e81b9fe7a835270069321c49b"
+    },
+    {
+      "path": "supabase/migrations/20261011000000_faculty_responsibilities_and_validity.sql",
+      "bytes": 23484,
+      "sha256": "5938051c99abecc3d582e213341d39e62d4430f5a90655091d42fe59c2f7c94c"
+    },
+    {
+      "path": "supabase/migrations/20261012000000_faculty_attendance_workflow.sql",
+      "bytes": 26738,
+      "sha256": "287e93f20bf6c5d1e91ac49b32c05d3468ea3ece549b84d789a295113402119f"
+    },
+    {
+      "path": "supabase/migrations/20261013000000_faculty_tests_examination.sql",
+      "bytes": 41259,
+      "sha256": "74186837ca7289041ffb88cc80d23d5a7dbc5194369849d8a098a7ba974c231e"
+    },
+    {
+      "path": "supabase/migrations/20261014000000_scoped_faculty_teaching_assignment_management.sql",
+      "bytes": 10064,
+      "sha256": "ff4d27a703c7d572579560f280c99e049be7f35a279c7d616229e513d5b62519"
+    },
+    {
+      "path": "supabase/migrations/20261015000000_student_academic_experience_read_indexes.sql",
+      "bytes": 1598,
+      "sha256": "b5ccc9f28e354303136e665777e531524ae8bd15e62e6fa676440cddbc4ffcea"
+    },
+    {
+      "path": "supabase/migrations/20261016000000_academic_master_data_management.sql",
+      "bytes": 17665,
+      "sha256": "a4d7ca4814b126d4322d66c6ae71fcd7a4d68407223506fe52d82bdc5a07004b"
+    },
+    {
+      "path": "supabase/migrations/20261016010000_academic_curriculum_semester_convergence.sql",
+      "bytes": 1227,
+      "sha256": "3c98b7aa8207176a1c60195ba2bf11ca709afe1a297c0dac71d589fd0d024c33"
+    },
+    {
+      "path": "supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql",
+      "bytes": 53941,
+      "sha256": "581146602e75d94342777b81ee70b9ab423fb0117b2fda8b871d4b750249bc1e"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "bytes": 142045,
+      "sha256": "a298967d5d8f5fb188f29dbe395bd40628b4f7ffca525b322a4dac39c19e3e86"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+      "bytes": 225727,
+      "sha256": "d478304c248b486c4cef18116260b0dc5d734f118394583de1234eb484432d5b"
+    }
+  ],
+  "starting_artifact_identities": [
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "bytes": 72805,
+      "sha256": "22b3c0dda941de271d0a039b7358afdfb5b15013d1e7b895eb69ef4ddf2f08e5"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+      "bytes": 29111,
+      "sha256": "f32a7530d83a8f49c051c87bb8056a4fb7de3dff635b0a8b01eea72ed422a6ff"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "bytes": 76172,
+      "sha256": "c31f7c7f672eb846d45b642a21af5a22d1611a0f5efa1763a9db550b3f9b48cb"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "bytes": 56819,
+      "sha256": "a733cf6a92f5d00a41123606941bebca454194d89ada239e8651ffc89fc3ec30"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "bytes": 73355,
+      "sha256": "a9af4cab04cb134fa581d688eb75f94e3ffd0a8ced3a33548793702877cb1231"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "bytes": 142045,
+      "sha256": "a298967d5d8f5fb188f29dbe395bd40628b4f7ffca525b322a4dac39c19e3e86"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+      "bytes": 225727,
+      "sha256": "d478304c248b486c4cef18116260b0dc5d734f118394583de1234eb484432d5b"
+    }
+  ],
+  "question_count": 45,
+  "question_ids": [
+    "DR01.01",
+    "DR01.02",
+    "DR01.03",
+    "DR01.04",
+    "DR01.05",
+    "DR01.06",
+    "DR02.01",
+    "DR02.02",
+    "DR02.03",
+    "DR02.04",
+    "DR02.05",
+    "DR02.06",
+    "DR03.01",
+    "DR03.02",
+    "DR03.03",
+    "DR03.04",
+    "DR03.05",
+    "DR04.01",
+    "DR04.02",
+    "DR04.03",
+    "DR04.04",
+    "DR04.05",
+    "DR05.01",
+    "DR05.02",
+    "DR05.03",
+    "DR05.04",
+    "DR05.05",
+    "DR05.06",
+    "DR05.07",
+    "DR05.08",
+    "DR06.01",
+    "DR06.02",
+    "DR06.03",
+    "DR06.04",
+    "DR06.05",
+    "DR06.06",
+    "DR06.07",
+    "DR06.08",
+    "DR06.09",
+    "DR07.01",
+    "DR07.02",
+    "DR07.03",
+    "DR07.04",
+    "DR07.05",
+    "DR07.06"
+  ],
+  "question_intake_records": [
+    {
+      "question_id": "DR01.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L147",
+      "evidence_decision_lineage": "E01–E03; OD02/17; B01 source facts",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR01.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L148",
+      "evidence_decision_lineage": "E01/E02; OD02/06/07",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR01.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L149",
+      "evidence_decision_lineage": "E03; OD17/20",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR01.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L150",
+      "evidence_decision_lineage": "E01–E03; OD06/07/17",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR01.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L151",
+      "evidence_decision_lineage": "E01/E02; OD06/07; M19-LR-01 below",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR01.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L152",
+      "evidence_decision_lineage": "E01/E02/E17/E19; OD01/02/05",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR02.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L153",
+      "evidence_decision_lineage": "E04–E06; OD06/09/17",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR02.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L154",
+      "evidence_decision_lineage": "E05/E06/E15; OD09/15",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR02.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L155",
+      "evidence_decision_lineage": "E05/E06/E14; OD06/17",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR02.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L156",
+      "evidence_decision_lineage": "E03/E06/E15; OD06/17",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR02.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L157",
+      "evidence_decision_lineage": "E04–E09; OD17; DR03",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR02.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L158",
+      "evidence_decision_lineage": "E04/E15/E20; OD09/10/15/18",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR03.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L159",
+      "evidence_decision_lineage": "E07–E09; OD17",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR03.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L160",
+      "evidence_decision_lineage": "E07–E09; OD17/19",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR03.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L161",
+      "evidence_decision_lineage": "E07–E09; OD17",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR03.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L162",
+      "evidence_decision_lineage": "E07–E09; OD17; M20 subcases below",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR03.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L163",
+      "evidence_decision_lineage": "E08/E09/E15; OD17/19",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR04.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L164",
+      "evidence_decision_lineage": "E10–E12/E23; OD20",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR04.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L165",
+      "evidence_decision_lineage": "E10–E12; OD18/19",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR04.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L166",
+      "evidence_decision_lineage": "E10/E12; OD18/20",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR04.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L167",
+      "evidence_decision_lineage": "E11/E12; K01–K10; OD17/19",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR04.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L168",
+      "evidence_decision_lineage": "E15/E21; OD18",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L169",
+      "evidence_decision_lineage": "E12–E15; OD06/09/18",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L170",
+      "evidence_decision_lineage": "E12–E15/E20; OD06/09/15/18",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L171",
+      "evidence_decision_lineage": "E12–E15/E20; OD06/09/15/18",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L172",
+      "evidence_decision_lineage": "E13/E15; OD06/09/18; B05 source facts",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L173",
+      "evidence_decision_lineage": "E13–E15; OD06/07/10",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L174",
+      "evidence_decision_lineage": "E13/E15/E19; OD06–OD08/10",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.07",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L175",
+      "evidence_decision_lineage": "E13/E15; OD06/07/09; M19-LR-01",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR05.08",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L176",
+      "evidence_decision_lineage": "E12/E14/E18; OD19",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L177",
+      "evidence_decision_lineage": "E22; OD16; maintenance M01–M04",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L178",
+      "evidence_decision_lineage": "E18/E22; OD14/16",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L179",
+      "evidence_decision_lineage": "E18; OD14/19",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L180",
+      "evidence_decision_lineage": "E13/E19; OD03–OD05/07/08",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L181",
+      "evidence_decision_lineage": "E17/E19; OD05/08/12/13/16; B06 source facts",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L182",
+      "evidence_decision_lineage": "E13/E19; OD07/08/10/18",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.07",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L183",
+      "evidence_decision_lineage": "E16/E17/E19; OD12/13",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.08",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L184",
+      "evidence_decision_lineage": "E15/E20; OD04/15",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR06.09",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L185",
+      "evidence_decision_lineage": "E15/E20–E22; OD15/18",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR07.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L186",
+      "evidence_decision_lineage": "E23–E26; OD20",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR07.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L187",
+      "evidence_decision_lineage": "E23; OD20; DR04.01",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR07.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L188",
+      "evidence_decision_lineage": "E24/E25; OD20",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR07.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L189",
+      "evidence_decision_lineage": "E24–E26; OD20; current runner contract",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR07.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L190",
+      "evidence_decision_lineage": "E24–E26; OD20; no approval supplied",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "question_id": "DR07.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L191",
+      "evidence_decision_lineage": "E24–E26; OD18–OD20",
+      "owner": null,
+      "reviewer": null,
+      "identity_verified": false,
+      "authority_verified": false,
+      "independence_verified": false,
+      "selected_outcome": null,
+      "approval_date": null,
+      "approval_record": null,
+      "independent_disposition": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    }
+  ],
+  "expanded_coverage_denominator": null,
+  "expanded_coverage_freeze": "BLOCKED / UNFILLED; unknown target/creator/consumer/fixture inventories",
+  "e23_readiness": {
+    "PF01": "PENDING / NOT PERFORMED",
+    "PF02": "PENDING / NOT PERFORMED",
+    "PF03": "PENDING / NOT PERFORMED",
+    "PF04": "PENDING / NOT PERFORMED",
+    "PF05": "PENDING / NOT PERFORMED",
+    "PF06": "PENDING / NOT PERFORMED",
+    "PF07": "PENDING / NOT PERFORMED",
+    "PF08": "PENDING / NOT PERFORMED",
+    "PF09": "PENDING / NOT PERFORMED",
+    "PF10": "PENDING / NOT PERFORMED",
+    "PF11": "PENDING / NOT PERFORMED",
+    "PF12": "PENDING / NOT PERFORMED",
+    "PF13": "PENDING / NOT PERFORMED"
+  },
+  "manifest_pins_verified": 52,
+  "migration_count": 40,
+  "pinned_input_count": 12,
+  "successor_copy_byte_identical": true,
+  "new_review_artifacts": [
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "bytes": 51864,
+      "sha256": "76140efa2c780932fe0c07c29bda0921e073417c830a66d3ea540f9ce55d0f32"
+    }
+  ],
+  "checks": [
+    {
+      "check": "141 entry files raw-byte unchanged; all 140 Stage 1.17 declared identities match",
+      "result": "PASS",
+      "records": 141,
+      "prior_declared_identities": 140
+    },
+    {
+      "check": "Stage 1.16 current repairs and D01-D05 retained; 264 historical matches/four scoped supersessions; Stage 1.13 recovery preserved",
+      "result": "PASS",
+      "new_reopenings": 0
+    },
+    {
+      "check": "52 manifest pins and exact ordered 40-migration set/path/version/name; declared transaction markers lexical only",
+      "result": "PASS",
+      "migrations": 40,
+      "inputs": 12
+    },
+    {
+      "check": "Both unconditional stops and final ROLLBACK in all three artifacts; 39/40 ledger arrays and successor/copy equality",
+      "result": "PASS",
+      "artifacts": 3
+    },
+    {
+      "check": "Unapproved file-only/null runner and AST purpose guard; all B OPEN, E23 pending, M/T NOT RUN retained",
+      "result": "PASS"
+    },
+    {
+      "check": "45 intake IDs exactly once, canonical anchors/unchanged lineage and seven dependency paragraphs; 35 criterion and five future-subcase references",
+      "result": "PASS",
+      "question_count": 45,
+      "criterion_count": 35,
+      "future_subcases": 5
+    },
+    {
+      "check": "PF01-PF13 exact anchors/pending status; blank identity/decision records, separate authority boundaries and eight human handoff actions",
+      "result": "PASS"
+    },
+    {
+      "check": "Seven starting identities displayed correctly; all report and 251 matrix local references/line bounds; table widths/continuity and whitespace",
+      "result": "PASS",
+      "report_links": 134,
+      "prior_matrix_links": 251
+    },
+    {
+      "check": "Expanded Git status entry preserved with only two outputs and enumerated temporary files; tracked diff whitespace",
+      "result": "PASS",
+      "final_temporary_files_absent": true
+    }
+  ],
+  "report_references": [
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L141",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          141,
+          141
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L19",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          19,
+          19
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L29",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          29,
+          29
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_18_OFFLINE_EVIDENCE.json",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OFFLINE_EVIDENCE.json",
+      "checked_line_bounds": [],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md#L13",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "checked_line_bounds": [
+        [
+          13,
+          13
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L22",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          22,
+          22
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L40",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          40,
+          40
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L108",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          108,
+          108
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L147",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          147,
+          147
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L148",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          148,
+          148
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L149",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          149,
+          149
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L150",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          150,
+          150
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L151",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          151,
+          151
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L152",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          152,
+          152
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L52",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          52,
+          52
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L157",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          157,
+          157
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L153",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          153,
+          153
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L154",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          154,
+          154
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L155",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          155,
+          155
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L156",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          156,
+          156
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L157",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          157,
+          157
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L158",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          158,
+          158
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L64",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          64,
+          64
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L206",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          206,
+          206
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L159",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          159,
+          159
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L160",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          160,
+          160
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L161",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          161,
+          161
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L162",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          162,
+          162
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L163",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          163,
+          163
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L76",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          76,
+          76
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L254",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          254,
+          254
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L164",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          164,
+          164
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L165",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          165,
+          165
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L166",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          166,
+          166
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L167",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          167,
+          167
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L168",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          168,
+          168
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L90",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          90,
+          90
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L302",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          302,
+          302
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L169",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          169,
+          169
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L170",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          170,
+          170
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L171",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          171,
+          171
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L172",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          172,
+          172
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L173",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          173,
+          173
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L174",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          174,
+          174
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L175",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          175,
+          175
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L176",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          176,
+          176
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L104",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          104,
+          104
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L355",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          355,
+          355
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L177",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          177,
+          177
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L178",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          178,
+          178
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L179",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          179,
+          179
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L180",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          180,
+          180
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L181",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          181,
+          181
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L182",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          182,
+          182
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L183",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          183,
+          183
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L184",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          184,
+          184
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L185",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          185,
+          185
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L116",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          116,
+          116
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L409",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          409,
+          409
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L186",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          186,
+          186
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L187",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          187,
+          187
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L188",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          188,
+          188
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L189",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          189,
+          189
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L190",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          190,
+          190
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L191",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          191,
+          191
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L143",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          143,
+          143
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L316",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          316,
+          316
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L395",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "checked_line_bounds": [
+        [
+          395,
+          395
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L320",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          320,
+          320
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L321",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          321,
+          321
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L322",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          322,
+          322
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L323",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          323,
+          323
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L324",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          324,
+          324
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L325",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          325,
+          325
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L326",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          326,
+          326
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L327",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          327,
+          327
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L328",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          328,
+          328
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L329",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          329,
+          329
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L330",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          330,
+          330
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L331",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          331,
+          331
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L332",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          332,
+          332
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L283",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "checked_line_bounds": [
+        [
+          283,
+          283
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md#L17",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+      "checked_line_bounds": [
+        [
+          17,
+          17
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L33",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          33,
+          33
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L203",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          203,
+          203
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L204",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          204,
+          204
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L205",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          205,
+          205
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L206",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          206,
+          206
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L207",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          207,
+          207
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L208",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          208,
+          208
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L209",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          209,
+          209
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L210",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          210,
+          210
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L211",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          211,
+          211
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L212",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          212,
+          212
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L213",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          213,
+          213
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L214",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          214,
+          214
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L215",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          215,
+          215
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L216",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          216,
+          216
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L217",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          217,
+          217
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L218",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          218,
+          218
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L219",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          219,
+          219
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L220",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          220,
+          220
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L221",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          221,
+          221
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L222",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          222,
+          222
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L223",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          223,
+          223
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L224",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          224,
+          224
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L225",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          225,
+          225
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L226",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          226,
+          226
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L227",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          227,
+          227
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L228",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          228,
+          228
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L229",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          229,
+          229
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L230",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          230,
+          230
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L231",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          231,
+          231
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L232",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          232,
+          232
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L233",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          233,
+          233
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L234",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          234,
+          234
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L235",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          235,
+          235
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L236",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          236,
+          236
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L237",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          237,
+          237
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md#L78",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "checked_line_bounds": [
+        [
+          78,
+          78
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md#L111",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+      "checked_line_bounds": [
+        [
+          111,
+          111
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md#L52",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "checked_line_bounds": [
+        [
+          52,
+          52
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L245",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          245,
+          245
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L246",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          246,
+          246
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L247",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          247,
+          247
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L248",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          248,
+          248
+        ]
+      ],
+      "result": "PASS"
+    },
+    {
+      "source": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "target": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L249",
+      "resolved_path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "checked_line_bounds": [
+        [
+          249,
+          249
+        ]
+      ],
+      "result": "PASS"
+    }
+  ],
+  "prior_matrix_reference_count": 251,
+  "stops_and_rollbacks": [
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_CANDIDATE.sql",
+      "unconditional_stop_lines": [
+        28,
+        31
+      ],
+      "final_rollback_line": 443,
+      "declared_ledger_versions": 39
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+      "unconditional_stop_lines": [
+        42,
+        45
+      ],
+      "final_rollback_line": 475,
+      "declared_ledger_versions": 40
+    },
+    {
+      "path": "scripts/validation/b05_containment/containment_successor.validation.sql",
+      "unconditional_stop_lines": [
+        42,
+        45
+      ],
+      "final_rollback_line": 475,
+      "declared_ledger_versions": 40
+    }
+  ],
+  "git_entry_status": [
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_BLOCKER_REMEDIATION_REPORT.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_ENTRY_HASHES.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_READINESS_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_TEST_MATRIX_RECOVERED.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_ENTRY_HASHES.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_TARGETED_ORACLE_REMEDIATION_REPORT.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_TARGETED_RE_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_BASELINE_RECOVERY_ADDENDUM.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_RECOVERY_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_MATRIX_DIFF.patch",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_TEST_MANIFEST_DIFF.patch",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_INDEPENDENT_DECISION_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_DOCUMENTATION_REPAIR.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_INDEPENDENT_READINESS_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_10_offline.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_12_offline.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_13_offline.py",
+    "?? scripts/validation/b05_containment/README.md",
+    "?? scripts/validation/b05_containment/bootstrap.sql",
+    "?? scripts/validation/b05_containment/containment_successor.validation.sql",
+    "?? scripts/validation/b05_containment/fixtures_post_b05.sql",
+    "?? scripts/validation/b05_containment/fixtures_pre_b05.sql",
+    "?? scripts/validation/b05_containment/migration_manifest.json",
+    "?? scripts/validation/b05_containment/prepare.py",
+    "?? scripts/validation/b05_containment/runner_contract.json",
+    "?? scripts/validation/b05_containment/test_matrix.md",
+    "?? scripts/validation/b05_containment/test_preparation_safety.py"
+  ],
+  "git_entry_warnings": "warning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\nwarning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\n",
+  "git_precleanup_status": [
+    "?? docs/reviews/student_enrollment_final_2026-10-11/.stage18_build.tmp.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/.stage18_check.tmp.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/.stage18_entry.tmp.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_BLOCKER_REMEDIATION_REPORT.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_ENTRY_HASHES.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_READINESS_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_TEST_MATRIX_RECOVERED.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_ENTRY_HASHES.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_TARGETED_ORACLE_REMEDIATION_REPORT.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_TARGETED_RE_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_BASELINE_RECOVERY_ADDENDUM.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_RECOVERY_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_MATRIX_DIFF.patch",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_TEST_MANIFEST_DIFF.patch",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_INDEPENDENT_DECISION_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_DOCUMENTATION_REPAIR.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_INDEPENDENT_READINESS_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_10_offline.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_12_offline.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_13_offline.py",
+    "?? scripts/validation/b05_containment/README.md",
+    "?? scripts/validation/b05_containment/bootstrap.sql",
+    "?? scripts/validation/b05_containment/containment_successor.validation.sql",
+    "?? scripts/validation/b05_containment/fixtures_post_b05.sql",
+    "?? scripts/validation/b05_containment/fixtures_pre_b05.sql",
+    "?? scripts/validation/b05_containment/migration_manifest.json",
+    "?? scripts/validation/b05_containment/prepare.py",
+    "?? scripts/validation/b05_containment/runner_contract.json",
+    "?? scripts/validation/b05_containment/test_matrix.md",
+    "?? scripts/validation/b05_containment/test_preparation_safety.py"
+  ],
+  "git_precleanup_warnings": "warning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\nwarning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\n",
+  "git_diff_check": {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "temporary_verification_files_removed": true,
+  "evidence_requests": {
+    "E01": "NOT COLLECTED / NOT ACCEPTED",
+    "E02": "NOT COLLECTED / NOT ACCEPTED",
+    "E03": "NOT COLLECTED / NOT ACCEPTED",
+    "E04": "NOT COLLECTED / NOT ACCEPTED",
+    "E05": "NOT COLLECTED / NOT ACCEPTED",
+    "E06": "NOT COLLECTED / NOT ACCEPTED",
+    "E07": "NOT COLLECTED / NOT ACCEPTED",
+    "E08": "NOT COLLECTED / NOT ACCEPTED",
+    "E09": "NOT COLLECTED / NOT ACCEPTED",
+    "E10": "NOT COLLECTED / NOT ACCEPTED",
+    "E11": "NOT COLLECTED / NOT ACCEPTED",
+    "E12": "NOT COLLECTED / NOT ACCEPTED",
+    "E13": "DERIVED CONTRACT/ASSESSMENT NOT ACCEPTED; R NOT RUN",
+    "E14": "DERIVED CONTRACT/ASSESSMENT NOT ACCEPTED; R NOT RUN",
+    "E15": "NOT COLLECTED / NOT ACCEPTED",
+    "E16": "NOT COLLECTED / NOT ACCEPTED",
+    "E17": "NOT COLLECTED / NOT ACCEPTED",
+    "E18": "NOT COLLECTED / NOT ACCEPTED",
+    "E19": "NOT COLLECTED / NOT ACCEPTED",
+    "E20": "NOT COLLECTED / NOT ACCEPTED",
+    "E21": "NOT COLLECTED / NOT ACCEPTED",
+    "E22": "NOT COLLECTED / NOT ACCEPTED",
+    "E23": "PENDING / NOT APPROVED",
+    "E24": "REVIEW/DESIGN REQUEST ONLY; COMPONENTS/APPROVALS MISSING; R NOT RUN",
+    "E25": "REVIEW/DESIGN REQUEST ONLY; COMPONENTS/APPROVALS MISSING; R NOT RUN",
+    "E26": "REVIEW/DESIGN REQUEST ONLY; COMPONENTS/APPROVALS MISSING; R NOT RUN"
+  },
+  "temporary_files_justification": {
+    ".stage18_entry.tmp.json": "141-file entry identity and expanded Git status capture before preparation",
+    ".stage18_build.tmp.py": "Deterministic transcription of existing IDs/lineage/dependencies and unsigned handoff guide; not rerunnable over an existing report",
+    ".stage18_check.tmp.py": "Separate read-only source/byte/lexical/AST/reference cross-check; source retained for inspection and final read-only recheck"
+  },
+  "verification_source": "\"\"\"Stage 1.18 read-only verifier: standard library; subprocess restricted to Git reads.\nInspect before execution. Run from the repository root. Never execute older embedded code.\n--final additionally requires absent temporary files and recorded report identity.\n--json prints results without writing files. This verifier has no file-write operation.\n\"\"\"\nimport ast\nimport hashlib\nimport json\nimport re\nimport subprocess\nimport sys\nfrom pathlib import Path\n\nreview = Path('docs/reviews/student_enrollment_final_2026-10-11')\npackage = Path('scripts/validation/b05_containment')\nreport_path = review / 'B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md'\nevidence_path = review / 'B05_STAGE_1_18_OFFLINE_EVIDENCE.json'\nfinal = '--final' in sys.argv\npayload = json.loads(evidence_path.read_bytes()) if evidence_path.exists() else json.loads((review / '.stage18_entry.tmp.json').read_bytes())\nentries = payload.get('preserved_entry_files', payload.get('files'))\nentry_status = payload.get('git_entry_status', payload.get('git_status'))\nchecks = []\n\ndef identity(path):\n    p = Path(path)\n    raw = p.read_bytes()\n    return dict(path=p.as_posix(), bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())\n\ndef verify(rows):\n    for row in rows:\n        assert identity(row['path']) == {k: row[k] for k in ('path', 'bytes', 'sha256')}, row['path']\n\ndef passed(name, **details):\n    checks.append(dict(check=name, result='PASS', **details))\n\ndef read(name):\n    return (review / name).read_text(encoding='utf-8')\n\nassert len(entries) == len({r['path'] for r in entries}) == 141\nverify(entries)\ns17 = json.loads((review / 'B05_STAGE_1_17_OFFLINE_EVIDENCE.json').read_bytes())\nverify(s17['preserved_entry_files'] + s17['new_review_artifacts'])\nassert s17['preserved_entry_file_count'] == 139\nassert s17['unresolved_failed_checks'] == [] and s17['unresolved_documentation_defects'] == []\nassert s17['final_artifact_validation']['result'] == 'PASS'\nassert s17['checks'] and all(x['result'] == 'PASS' for x in s17['checks'])\nassert s17['final_artifact_validation']['matrix_identity'] == identity(review / 'B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md')\npassed('141 entry files raw-byte unchanged; all 140 Stage 1.17 declared identities match', records=141, prior_declared_identities=140)\n\ns16 = json.loads((review / 'B05_STAGE_1_16_OFFLINE_EVIDENCE.json').read_bytes())\nverify(s16['protected_unchanged_files'])\nverify([r['after'] for r in s16['changed_existing_files']])\nverify(s16['new_review_artifacts'])\nassert s16['unresolved_documentation_findings'] == []\nassert s17['prior_documentation_findings'] == {f'D{i:02}': 'ADDRESSED BY STAGE 1.16; NOT REOPENED' for i in range(1, 6)}\nbefore = {r['path']: r['before'] for r in s16['changed_existing_files']}\nhistorical = []\nfor stage in (14, 15):\n    prior = json.loads((review / f'B05_STAGE_1_{stage}_OFFLINE_EVIDENCE.json').read_bytes())\n    historical.extend(prior['preserved_entry_files'] + prior['new_review_artifacts'])\nsuperseded = []\nfor row in historical:\n    if identity(row['path']) != {k: row[k] for k in ('path', 'bytes', 'sha256')}:\n        assert row['path'] in before and row == before[row['path']], row['path']\n        superseded.append(row)\nassert len(historical) == 268 and len(superseded) == 4 and len({x['path'] for x in superseded}) == 2\nh13 = json.loads((review / 'B05_STAGE_1_13_MATRIX_RECOVERY_EVIDENCE.json').read_bytes())\nverify(h13['recovery_entry_files'] + h13['artifacts'])\npassed('Stage 1.16 current repairs and D01-D05 retained; 264 historical matches/four scoped supersessions; Stage 1.13 recovery preserved', new_reopenings=0)\n\nmanifest = json.loads((package / 'migration_manifest.json').read_bytes())\nassert len(manifest['migrations']) == 40 and len(manifest['pinned_inputs']) == 12\nverify(manifest['migrations'] + manifest['pinned_inputs'])\nassert sorted(p.name for p in Path('supabase/migrations').glob('*.sql')) == [r['filename'] for r in manifest['migrations']]\nversions = []\nfor order, row in enumerate(manifest['migrations'], 1):\n    assert row['order'] == order\n    assert row['path'] == 'supabase/migrations/' + row['filename']\n    assert row['version'] == row['filename'][:14] and row['migration_name'] == row['filename'][15:-4]\n    lines = Path(row['path']).read_text(encoding='utf-8').splitlines()\n    assert bool(any(l.strip().upper() == 'BEGIN;' for l in lines) and any(l.strip().upper() == 'COMMIT;' for l in lines)) == row['file_transaction']\n    versions.append(row['version'])\nassert versions == sorted(set(versions)) and versions[-1] == '20261017000000'\npassed('52 manifest pins and exact ordered 40-migration set/path/version/name; declared transaction markers lexical only', migrations=40, inputs=12)\n\nstops = []\nfor path, a, b, last, ledger in [\n    (review / 'SECURITY_CONTAINMENT_MIGRATION_CANDIDATE.sql', 28, 31, 443, versions[:-1]),\n    (review / 'SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql', 42, 45, 475, versions),\n    (package / 'containment_successor.validation.sql', 42, 45, 475, versions),\n]:\n    content = path.read_text(encoding='utf-8')\n    lines = content.splitlines()\n    for n, tag in ((a, 'review_stop'), (b, 'dependency_stop')):\n        assert lines[n-1].startswith('DO $' + tag + '$ BEGIN RAISE EXCEPTION ')\n        assert lines[n-1].endswith('END $' + tag + '$;') and 'IF ' not in lines[n-1]\n    assert lines[last-1] == 'ROLLBACK;'\n    assert [l.strip() for l in lines if l.strip() and not l.lstrip().startswith('--')][-1] == 'ROLLBACK;'\n    match = re.search(r'FROM supabase_migrations\\.schema_migrations\\) IS DISTINCT FROM ARRAY\\[(.*?)\\]::text\\[\\]', content)\n    assert match and re.findall(r\"'(\\d{14})'\", match.group(1)) == ledger\n    stops.append(dict(path=path.as_posix(), unconditional_stop_lines=[a,b], final_rollback_line=last, declared_ledger_versions=len(ledger)))\nassert Path(manifest['successor_source']).read_bytes() == Path(manifest['successor_validation_copy']).read_bytes()\npassed('Both unconditional stops and final ROLLBACK in all three artifacts; 39/40 ledger arrays and successor/copy equality', artifacts=3)\n\nbids = [f'B{i:02}' for i in range(1,8)]\nmids = [f'M{i:02}' for i in range(1,22)]\ntids = [f'T{i:02}' for i in range(1,15)]\ncontract = json.loads((package / 'runner_contract.json').read_bytes())\nassert contract['runner_mode'] == 'file_only_preparation'\nassert contract['execution_authorized'] is False and contract['runtime_adapter'] is None and contract['generic_purpose_registration'] is False\nassert contract['decision_register']['owner_identity'] is None and contract['decision_register']['approvals'] is None\nassert contract['decision_register']['status'] == {k: 'OPEN_OWNER_DECISION_UNRESOLVED' for k in bids}\nfor k in ('approved_repository_digest', 'approved_content_image_id'):\n    assert contract['image_requirements'][k] is None\nfor k in ('reviewed_wrapper_artifact', 'reviewed_rollback_successor_derivative', 'reviewed_commit_successor_derivative'):\n    assert contract['expected_error_handling'][k] is None\nexceptions = {'status','specification','version_selection','postgres_toolchain_requirement','extension_requirement','image_verification','cli_verification','engine_verification','effective_verification'}\nassert all(v is None for k, v in contract['runtime_prerequisite_identities'].items() if k not in exceptions)\nassert contract['runtime_prerequisite_identities']['postgres_toolchain_requirement']['approved_paths_hashes_lengths_builds_and_dependencies'] is None\nassert contract['runtime_prerequisite_identities']['extension_requirement']['approved_control_sql_library_hashes_lengths_and_dependencies'] is None\ntree = ast.parse(Path('scripts/validation/disposable_container.py').read_text(encoding='utf-8'))\nassignment = next(n for n in tree.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'ALLOWED_PURPOSES' for t in n.targets))\nassert not any('b05' in x.lower() or 'containment' in x.lower() for x in ast.literal_eval(assignment.value))\nassert s17['decisions'] == {k:'OPEN' for k in bids}\nassert s17['runtime_cases'] == {k:'NOT RUN' for k in mids}\nassert s17['broader_runtime_cases'] == {k:'NOT RUN' for k in tids}\nassert s17['collection_authority'] == 'PENDING / NOT APPROVED'\nassert s17['owner_identity'] is None and s17['approvals'] is None\nassert s17['execution_authorized'] is False and s17['runtime_adapter'] is None\ntmatrix = (package / 'test_matrix.md').read_text(encoding='utf-8')\nassert re.findall(r'^\\| (M\\d{2}) \\|.*\\| NOT RUN \\|$', tmatrix, re.M) == mids\nassert re.findall(r'^### (M\\d{2}) — NOT RUN$', tmatrix, re.M) == mids\nmatrix = read('B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md')\nassert re.findall(r'^\\| (M\\d{2}) \\| NOT RUN \\|$', matrix, re.M) == mids\nassert re.findall(r'^\\| (T\\d{2}) \\| NOT RUN', matrix, re.M) == tids\npassed('Unapproved file-only/null runner and AST purpose guard; all B OPEN, E23 pending, M/T NOT RUN retained')\n\nregister = read('B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md')\nreg_lines = register.splitlines()\nreport = report_path.read_text(encoding='utf-8')\ndef cells(line):\n    return line.strip('| ').split(' | ')\nqrows = [(i,cells(l)) for i,l in enumerate(reg_lines,1) if re.match(r'^\\| DR\\d{2}\\.\\d{2} \\|',l)]\ncrows = [(i,cells(l)) for i,l in enumerate(reg_lines,1) if re.match(r'^\\| C\\d{2}\\.\\d \\|',l)]\nexpected_ids = [c[0] for i,c in qrows]\nintake = [cells(l) for l in report.splitlines() if re.match(r'^\\| DR\\d{2}\\.\\d{2} \\|', l)]\nassert len(qrows) == len(intake) == 45 and [c[0] for c in intake] == expected_ids == s17['question_ids']\nfor new,(line,canonical) in zip(intake,qrows):\n    assert len(new) == 3 and new[1].startswith('[ ] ')\n    assert new[2] == canonical[2], canonical[0]\n    assert new[1].endswith(f'[Exact question/alternatives](B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L{line})')\n    assert re.search(r'^\\| '+re.escape(canonical[0])+r' \\(.*?\\| '+re.escape(canonical[1])+r' \\| '+re.escape(canonical[2])+r' \\|', matrix, re.M),canonical[0]\nassert [c[0] for i,c in crows] == s17['base_coverage']['criterion_ids'] and len(crows) == 35\ncriterion_refs = re.findall(r'\\[(C\\d{2}\\.\\d)\\]\\(B05_STAGE_1_14_B01_B07_DECISION_REGISTER\\.md#L(\\d+)\\)', report)\nassert criterion_refs == [(c[0], str(i)) for i,c in crows]\ndeps = [l.split('**Dependencies/consequences.** ',1)[1] for l in reg_lines if l.startswith('8. **Dependencies/consequences.**')]\nassert len(deps) == 7\nfor d in deps:\n    assert 'Dependencies (unchanged): '+d in report and '**Dependencies:** '+d in matrix\nassert re.findall(r'^### (B\\d{2}) — owner and reviewer UNASSIGNED; decision PENDING$',report,re.M) == bids\nfuture = [(i,cells(l)[0]) for i,l in enumerate(reg_lines,1) if re.match(r'^\\| M(?:19|20)-[A-Z]{2}-01 \\|',l)]\nassert len(future) == 5 and [sid for i,sid in future] == list(s17['future_subcase_requirements'])\nassert re.findall(r'^\\| (M(?:19|20)-[A-Z]{2}-01) \\|',report,re.M) == [sid for i,sid in future]\nfor i,sid in future:\n    row = next(l for l in report.splitlines() if l.startswith('| '+sid+' |'))\n    assert f'#L{i})' in row and 'NOT RUN; authority/fixtures/policy/bytes unavailable' in row\nassert s17['question_count'] == 45 and s17['base_coverage'] == dict(denominator=35,covered=0,blocked=35,deferred=0,excluded=0,criterion_ids=[c[0] for i,c in crows])\nassert s17['expanded_coverage_denominator'] is None\npassed('45 intake IDs exactly once, canonical anchors/unchanged lineage and seven dependency paragraphs; 35 criterion and five future-subcase references', question_count=45, criterion_count=35, future_subcases=5)\n\npfrows = [cells(l) for l in report.splitlines() if re.match(r'^\\| PF\\d{2} \\|',l)]\nassert [x[0] for x in pfrows] == [f'PF{i:02}' for i in range(1,14)]\nannex = read('SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md')\nfor row in pfrows:\n    line = next(i for i,l in enumerate(annex.splitlines(),1) if l.startswith('- [ ] **'+row[0]+' '))\n    assert row[2] == 'PENDING / NOT PERFORMED'\n    assert f'[Canonical check](SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L{line})' in row[1]\nassert 'Authorization disposition | **PENDING / NOT APPROVED**' in annex\nassert 'PF01–PF13' in matrix and 'PENDING / NOT APPROVED' in matrix\nfor heading in ['Minimum records for people and authority','Owner-intake checklist','Reusable decision record','E23 readiness checklist','Distinct decisions and activities','Reconciliation with Stage 1.17','Actionable handoff','Separate documentation review']:\n    assert heading in report,heading\nfor marker in ['Identity','Authority','Domain scope','Independence and competence','Authentic decision and review','Responsibility schedule','Exact question','Dependencies and criteria','Alternatives','Rationale and rejection','Evidence references','Target and source identities','Resulting artifact scope','Compatibility and residual risks','Owner proof','Owner decision and approval date','Independent disposition','Change and follow-up']:\n    assert '| '+marker+' |' in report,marker\nfor boundary in ['actual owner decisions and human independent review PENDING','not an organizationally independent human review','No owner or reviewer has been contacted','E23 PENDING / NOT APPROVED','EXECUTION NOT AUTHORIZED','Expanded coverage denominator N remains UNFILLED and freeze BLOCKED','0 covered, 0 deferred and 0 excluded','T13 remains conditional; unpassed if deferred','E13 is a source/owner all-writer contract','E14 is a per-command source/security/lookup assessment','verbal status summary','D01–D05 remain ADDRESSED BY STAGE 1.16; NOT REOPENED']:\n    assert boundary in report,boundary\nassert len(re.findall(r'^\\d\\. \\[ \\] \\*\\*',report,re.M)) == 8\nassert not re.search(r'\\[x\\]',report,re.I)\nassert 'NO-GO' in report and 'separate later' in report\npassed('PF01-PF13 exact anchors/pending status; blank identity/decision records, separate authority boundaries and eight human handoff actions')\n\ndef links_in(path):\n    text = path.read_text(encoding='utf-8')\n    matches = list(re.finditer(r'\\[([^\\]]+)\\]\\(([^)]+)\\)',text))\n    records = []\n    for ix, match in enumerate(matches):\n        label,target = match.groups()\n        path_part,sep,fragment = target.partition('#')\n        assert not re.match(r'[a-z]+://',path_part), target\n        resolved = (path.parent/path_part).resolve()\n        assert resolved.is_relative_to(Path.cwd().resolve()) and resolved.is_file(),target\n        count = len(resolved.read_text(encoding='utf-8').splitlines())\n        bounds = []\n        if fragment:\n            assert re.fullmatch(r'L\\d+',fragment),target\n            anchor = int(fragment[1:]); assert 1 <= anchor <= count,target\n            bounds.append([anchor,anchor])\n            suffix = text[match.end():matches[ix+1].start() if ix+1<len(matches) else len(text)]\n            adjacent = re.match(r', lines ([\\d–/]+)',suffix)\n            if adjacent:\n                spec = adjacent.group(1)\n                ranges = [list(map(int,spec.split('–')))] if '–' in spec else [[int(n),int(n)] for n in spec.split('/')]\n                for a,b in ranges:\n                    assert 1 <= a <= b <= count,(target,spec)\n                    bounds.append([a,b])\n        records.append(dict(source=path.as_posix(),target=target,resolved_path=resolved.relative_to(Path.cwd().resolve()).as_posix(),checked_line_bounds=bounds,result='PASS'))\n    return records\n\n# Before initial evidence creation its report link is checked for the declared exact\n# new path only; final mode verifies that the real file parses and exists.\nif not evidence_path.exists():\n    assert not final\n    # No fabricated PASS for a nonexistent artifact: caller creates JSON before links.\n    raise AssertionError('Create the Stage 1.18 evidence skeleton before reference verification')\nreferences = links_in(report_path)\nmatrix_refs = links_in(review / 'B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md')\nassert len(matrix_refs) == s17['final_artifact_validation']['link_count'] == 251\nstarting_names = ['B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md','B05_STAGE_1_17_OFFLINE_EVIDENCE.json','B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md','B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md','SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md','SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md','SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md']\nfor name in starting_names:\n    row = next(l for l in report.splitlines() if l.startswith('| ['+name+']('))\n    actual = identity(review/name)\n    assert f\" | {actual['bytes']} | `{actual['sha256']}` |\" in row\nassert report.endswith('\\n') and all(l == l.rstrip() for l in report.splitlines())\nassert not re.search(r'(?m)^\\|[^\\n]*\\n\\n\\|',report),'Separated adjacent table rows'\nwidth = None\nfor line in report.splitlines():\n    if line.startswith('|'):\n        assert line.endswith('|')\n        n = len(cells(line))\n        if width is None: width = n\n        assert n == width,line\n    else: width = None\npassed('Seven starting identities displayed correctly; all report and 251 matrix local references/line bounds; table widths/continuity and whitespace', report_links=len(references), prior_matrix_links=len(matrix_refs))\n\nallowed_temps = {'.stage18_entry.tmp.json','.stage18_build.tmp.py','.stage18_check.tmp.py'}\noutputs = {report_path.as_posix(),evidence_path.as_posix()}\ngit = subprocess.run(['git','status','--short','--untracked-files=all'],capture_output=True,text=True)\nassert git.returncode == 0\ntemps = {'?? '+(review/n).as_posix() for n in allowed_temps if (review/n).exists()}\nnew = {'?? '+p for p in outputs if Path(p).exists()}\nassert set(git.stdout.splitlines()) == set(entry_status)|new|temps, dict(extra=sorted(set(git.stdout.splitlines())-set(entry_status)-new-temps),missing=sorted(set(entry_status)-set(git.stdout.splitlines())))\ndiff = subprocess.run(['git','diff','--check'],capture_output=True,text=True)\nassert diff.returncode == 0 and diff.stdout == ''\nif final:\n    assert not temps\n    assert new == {'?? '+p for p in outputs}\n    verify(payload['new_review_artifacts'])\n    assert payload['decisions'] == {k:'OPEN' for k in bids}\n    assert payload['runtime_cases'] == {k:'NOT RUN' for k in mids} and payload['broader_runtime_cases'] == {k:'NOT RUN' for k in tids}\n    assert payload['execution_authorized'] is False and payload['runtime_adapter'] is None and payload['approvals'] is None and payload['owner_identity'] is None\n    assert payload['collection_authority'] == 'PENDING / NOT APPROVED' and payload['human_independent_review'] == 'PENDING / NOT PERFORMED'\n    assert payload['new_findings'] == [] and payload['unresolved_failed_checks'] == []\n    assert payload['security_readiness_claimed'] is False and payload['production_readiness_claimed'] is False\n    assert payload['owner_contact_performed'] is False and payload['owner_decisions_obtained'] is False\n    assert payload['question_count'] == 45 and payload['question_ids'] == expected_ids\n    assert len(payload['question_intake_records']) == 45\n    for record, (line, canonical) in zip(payload['question_intake_records'], qrows):\n        assert record['question_id'] == canonical[0] and record['evidence_decision_lineage'] == canonical[2]\n        assert record['canonical_reference'] == f'B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L{line}'\n        assert all(record[k] is None for k in ('owner','reviewer','selected_outcome','approval_date','approval_record','independent_disposition'))\n        assert all(record[k] is False for k in ('identity_verified','authority_verified','independence_verified'))\n        assert record['status'] == 'UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW'\n    assert payload['base_coverage'] == s17['base_coverage'] and payload['expanded_coverage_denominator'] is None\n    assert payload['future_subcase_requirements'] == s17['future_subcase_requirements']\n    assert payload['e23_readiness'] == {f'PF{i:02}':'PENDING / NOT PERFORMED' for i in range(1,14)}\n    assert payload['prior_documentation_findings'] == s17['prior_documentation_findings']\n    assert payload['starting_artifact_identities'] == [r for r in entries if Path(r['path']).name in starting_names]\n    assert payload['manifest_identity'] == identity(package/'migration_manifest.json')\n    assert payload['manifest_pins_verified'] == 52 and payload['migration_count'] == 40 and payload['pinned_input_count'] == 12\npassed('Expanded Git status entry preserved with only two outputs and enumerated temporary files; tracked diff whitespace', final_temporary_files_absent=final)\nresult = dict(checks=checks, report_identity=identity(report_path), report_references=references, prior_matrix_reference_count=len(matrix_refs), stops_and_rollbacks=stops, git_status=git.stdout.splitlines(), git_warnings=git.stderr, git_diff_check=dict(command='git diff --check',exit_code=diff.returncode,stdout=diff.stdout,stderr=diff.stderr), final=final)\nif '--json' in sys.argv:\n    print(json.dumps(result,ensure_ascii=True))\nelse:\n    for item in checks:\n        print('PASS:',item['check'])\n    print('PASS: Stage 1.18 offline documentation checks; owner/human review and execution remain unapproved')\n",
+  "reverification_instructions": "Inspect verification_source first. From repository root load this JSON in memory, set sys.argv=[stage18-recheck,--final], then exec(compile(d[verification_source],<stage18-recheck>,exec)). The retained Stage 1.18 code only reads local non-secret files and invokes Git status/diff; no file write or engine/network/application call. --json prints structured results. Never execute prior-stage embedded code or rerun a builder. Independently compute a detached identity for this evidence before reliance; no self-hash/signature exists.",
+  "verification_commands": [
+    "rg --files -g AGENTS.md -g !node_modules -g !venv -g !.git (exit 1: no matching guidance)",
+    "git status --short --untracked-files=all",
+    "python -B - (standard-library entry fingerprint/status capture and source excerpts)",
+    "python -B docs/reviews/student_enrollment_final_2026-10-11/.stage18_build.tmp.py",
+    "python -B docs/reviews/student_enrollment_final_2026-10-11/.stage18_check.tmp.py",
+    "python -B docs/reviews/student_enrollment_final_2026-10-11/.stage18_check.tmp.py --json",
+    "git diff --check",
+    "python -B - (inspect/load retained Stage 1.18 verification_source; argv=[stage18-final,--final,--json]; read-only final checks; outer standard-library wrapper updates only Stage 1.18 evidence)"
+  ],
+  "failed_attempts": [
+    {
+      "operation": "Local source excerpt display",
+      "initial_result": "FAIL: cp1252 console could not encode a Unicode arrow",
+      "correction": "Configured UTF-8 output and reran relevant excerpts; source unchanged",
+      "final_result": "PASS"
+    },
+    {
+      "operation": "Initial temporary criterion-ID assertion",
+      "initial_result": "FAIL: extracted tuple line number instead of criterion cells",
+      "correction": "Unpacked (line,cells) tuples; full verifier rerun passed",
+      "final_result": "PASS"
+    },
+    {
+      "operation": "Initial evidence assembly command",
+      "initial_result": "FAIL: mismatched delimiter caused SyntaxError before any execution/write",
+      "correction": "Corrected delimiter and assembled evidence successfully",
+      "final_result": "PASS"
+    }
+  ],
+  "manual_documentation_review": [
+    {
+      "area": "45 intake prompts",
+      "result": "PASS",
+      "basis": "Cross-read concise prompts against exact linked canonical questions/alternatives; unchanged lineage/dependencies; no selection"
+    },
+    {
+      "area": "Identity and answer records",
+      "result": "PASS",
+      "basis": "Controlled verifiable identity/delegation/domain/conflict/competence/access and authentic owner/reviewer records required; template includes all exact question/option/rationale/rejection/evidence/target/artifact/risk/date/disposition fields"
+    },
+    {
+      "area": "E23 and sequence",
+      "result": "PASS",
+      "basis": "PF01-PF13 matched annex sections 1-13 and package sections 1-3/6-7/10; distinct collection/authoring/availability/prerequisite/execution/behavior/acceptance/deployment gates"
+    },
+    {
+      "area": "Reconciliation",
+      "result": "PASS",
+      "basis": "35 criteria, five future subcases, E01-E26, unknown N, E13/E14 lineage, B02/B03 and B05/B06 feedback, legacy rejection non-acceptance and deferred T13 retained"
+    }
+  ],
+  "unresolved_inputs": [
+    "All owner/collector/supplier/approver/reviewer assignments and verified identity/authority/domain/independence/access records",
+    "All 45 atomic answers and inventory-scoped instances with genuine dated owner outcome and independent disposition",
+    "Completed exact E23 target/method/permission/scope/output/handling/retention/window/revocation/contact/abort packet and separate detached human decision",
+    "Uncollected/unaccepted caller/target/creator/default/access/applied-byte/consumer/provider/policy/audit/retention/recovery/cutover evidence and E-by-E acceptance",
+    "Complete expanded N/revision/bytes/hash and wider/legacy/creator/probe fixtures; five M19/M20 requirements unrun",
+    "E24-E26 immutable component/purpose/derivative/fixture/observer identities and distinct authoring/availability/prerequisite/execution authorizations",
+    "All M/T behavioral/restoration/concurrency/cleanup and whole-blocker acceptance; separate later deployment decision"
+  ],
+  "limits": [
+    "Agent documentation cross-check does not establish organizational human independence or approval",
+    "141-file bounded inventory excludes unrelated/ignored files/secrets; Git user-level ignore access warnings retained",
+    "Local hashes establish raw-byte identity only; not authenticity, deployed equality or consumer absence",
+    "Lexical/AST/reference checks do not establish SQL grammar or effective roles/RLS/access/defaults/engine/provider behavior",
+    "No target/secret/credential/availability inspected; no live catalog/deployment/provider/consumer/attestation collected",
+    "No self-hash/signature: future reliance requires detached identity and authorized independent review",
+    "Activity record describes session operations; not a forensic process/network audit"
+  ],
+  "prohibited_runtime_activity": {
+    "performed": false,
+    "basis": "Observed operations: local document/source reads, new report/evidence/temporary writes, standard-library checks and Git reads only; no secret/SQL/engine/provider/application entry point",
+    "limit": "Session statement, not forensic audit"
+  },
+  "git_final_status": [
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_BLOCKER_REMEDIATION_REPORT.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_ENTRY_HASHES.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_READINESS_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_TEST_MATRIX_RECOVERED.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_ENTRY_HASHES.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_TARGETED_ORACLE_REMEDIATION_REPORT.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_TARGETED_RE_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_BASELINE_RECOVERY_ADDENDUM.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_RECOVERY_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_MATRIX_DIFF.patch",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_TEST_MANIFEST_DIFF.patch",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_INDEPENDENT_DECISION_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_DOCUMENTATION_REPAIR.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OFFLINE_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_INDEPENDENT_READINESS_REVIEW.md",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_OFFLINE_HASH_EVIDENCE.json",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_10_offline.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_12_offline.py",
+    "?? docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_13_offline.py",
+    "?? scripts/validation/b05_containment/README.md",
+    "?? scripts/validation/b05_containment/bootstrap.sql",
+    "?? scripts/validation/b05_containment/containment_successor.validation.sql",
+    "?? scripts/validation/b05_containment/fixtures_post_b05.sql",
+    "?? scripts/validation/b05_containment/fixtures_pre_b05.sql",
+    "?? scripts/validation/b05_containment/migration_manifest.json",
+    "?? scripts/validation/b05_containment/prepare.py",
+    "?? scripts/validation/b05_containment/runner_contract.json",
+    "?? scripts/validation/b05_containment/test_matrix.md",
+    "?? scripts/validation/b05_containment/test_preparation_safety.py"
+  ],
+  "git_final_warnings": "warning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\nwarning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\n",
+  "final_artifact_validation": {
+    "result": "PASS",
+    "protected_entry_files": 141,
+    "report_identity": {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "bytes": 51864,
+      "sha256": "76140efa2c780932fe0c07c29bda0921e073417c830a66d3ea540f9ce55d0f32"
+    },
+    "report_links": 134,
+    "prior_matrix_links": 251,
+    "all_local_references_exist": true,
+    "only_two_new_artifacts": true,
+    "no_temporary_files": true,
+    "evidence_parse": "PASS",
+    "all_45_machine_records_unapproved": true
+  },
+  "read_only_reverification": {
+    "command": "python -B - (load retained Stage 1.18 verification_source; argv=[stage18-recheck,--final]; exec in memory without writes)",
+    "result": "PASS"
+  }
+}

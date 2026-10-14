@@ -1,0 +1,536 @@
+{
+    "manifest_version": 2,
+    "prepared_date": "2026-10-12",
+    "timezone": "Asia/Calcutta",
+    "purpose": "b05-containment-validation",
+    "status": "PREPARED_ONLY_NOT_RUN",
+    "hash_algorithm": "SHA-256 raw file bytes",
+    "intended_order": "ascending exact migration filename; no glob expansion at execution time",
+    "migrations": [
+        {
+            "order": 1,
+            "filename": "20250717000000_reconstructed_pre_phase_3_6_baseline.sql",
+            "version": "20250717000000",
+            "migration_name": "reconstructed_pre_phase_3_6_baseline",
+            "path": "supabase/migrations/20250717000000_reconstructed_pre_phase_3_6_baseline.sql",
+            "sha256": "7fd1ea5c096eb47667a2ba55cc1bf4a872c959e12300c2110a69a698ca6e6429",
+            "bytes": 40228,
+            "file_transaction": false
+        },
+        {
+            "order": 2,
+            "filename": "20250718000000_phase_3_6_embeddings.sql",
+            "version": "20250718000000",
+            "migration_name": "phase_3_6_embeddings",
+            "path": "supabase/migrations/20250718000000_phase_3_6_embeddings.sql",
+            "sha256": "21230835555e0353b124c8314c72948c97ece834beafccdb7e89f9fe6412f2aa",
+            "bytes": 2939,
+            "file_transaction": false
+        },
+        {
+            "order": 3,
+            "filename": "20260905000000_phase_3_7_1_vector_search_index.sql",
+            "version": "20260905000000",
+            "migration_name": "phase_3_7_1_vector_search_index",
+            "path": "supabase/migrations/20260905000000_phase_3_7_1_vector_search_index.sql",
+            "sha256": "da5e2f8a7c35c3ebee708bd977b9ebfc048f3666e06d26bf3c9edc7d7729df80",
+            "bytes": 683,
+            "file_transaction": false
+        },
+        {
+            "order": 4,
+            "filename": "20260905000001_phase_3_7_2_vector_similarity_search.sql",
+            "version": "20260905000001",
+            "migration_name": "phase_3_7_2_vector_similarity_search",
+            "path": "supabase/migrations/20260905000001_phase_3_7_2_vector_similarity_search.sql",
+            "sha256": "c1dc20ecfba849522dba9c26e0393ce9060044c2ce8363d93846d205835240e4",
+            "bytes": 1781,
+            "file_transaction": false
+        },
+        {
+            "order": 5,
+            "filename": "20260905000002_phase_3_8_metadata_access_filtering.sql",
+            "version": "20260905000002",
+            "migration_name": "phase_3_8_metadata_access_filtering",
+            "path": "supabase/migrations/20260905000002_phase_3_8_metadata_access_filtering.sql",
+            "sha256": "fa6e41711c7485ee373306ca2cd3a1d37ff5e7489d56ff8d0e24f167e6fd0fa7",
+            "bytes": 3173,
+            "file_transaction": false
+        },
+        {
+            "order": 6,
+            "filename": "20260909000000_phase_admin_1_admin_student_schema.sql",
+            "version": "20260909000000",
+            "migration_name": "phase_admin_1_admin_student_schema",
+            "path": "supabase/migrations/20260909000000_phase_admin_1_admin_student_schema.sql",
+            "sha256": "0e70348067cf8096adff2bcef47587de70c889e55d55b43907fc9b069091009f",
+            "bytes": 26864,
+            "file_transaction": false
+        },
+        {
+            "order": 7,
+            "filename": "20260909000001_phase_admin_2_extracted_text_column.sql",
+            "version": "20260909000001",
+            "migration_name": "phase_admin_2_extracted_text_column",
+            "path": "supabase/migrations/20260909000001_phase_admin_2_extracted_text_column.sql",
+            "sha256": "986f739f0506e5b3f1dce55f9b69a41b31a21fe66553bce006b251a51d6008e3",
+            "bytes": 312,
+            "file_transaction": false
+        },
+        {
+            "order": 8,
+            "filename": "20260909000002_phase_admin_2_faq_published_column.sql",
+            "version": "20260909000002",
+            "migration_name": "phase_admin_2_faq_published_column",
+            "path": "supabase/migrations/20260909000002_phase_admin_2_faq_published_column.sql",
+            "sha256": "9641a4c31bc7a58e4440d2a966b2fe61ea0b1ff9ccd68f5dfa03a3cc007656d4",
+            "bytes": 342,
+            "file_transaction": false
+        },
+        {
+            "order": 9,
+            "filename": "20260909000003_phase_admin_2_notice_published_column.sql",
+            "version": "20260909000003",
+            "migration_name": "phase_admin_2_notice_published_column",
+            "path": "supabase/migrations/20260909000003_phase_admin_2_notice_published_column.sql",
+            "sha256": "d70ebfc843866f85129944d9630ec52e4f515ed9e528936ed589662c22336e28",
+            "bytes": 358,
+            "file_transaction": false
+        },
+        {
+            "order": 10,
+            "filename": "20260912000000_phase_6_2_student_identity_model.sql",
+            "version": "20260912000000",
+            "migration_name": "phase_6_2_student_identity_model",
+            "path": "supabase/migrations/20260912000000_phase_6_2_student_identity_model.sql",
+            "sha256": "a2b8793d3073bf7130497a828ff2f33c101f6db7788110c5adafe5dd46c67e57",
+            "bytes": 9311,
+            "file_transaction": false
+        },
+        {
+            "order": 11,
+            "filename": "20260913000000_phase_6_7_attendance.sql",
+            "version": "20260913000000",
+            "migration_name": "phase_6_7_attendance",
+            "path": "supabase/migrations/20260913000000_phase_6_7_attendance.sql",
+            "sha256": "365de679d8ce9edf278cfe117ae5496b2e2996ce2f0975e0d35c8542f343a423",
+            "bytes": 9473,
+            "file_transaction": false
+        },
+        {
+            "order": 12,
+            "filename": "20260913010000_phase_6_8_results.sql",
+            "version": "20260913010000",
+            "migration_name": "phase_6_8_results",
+            "path": "supabase/migrations/20260913010000_phase_6_8_results.sql",
+            "sha256": "c9b3d84ee8f3cfb8b94943a3eb8f9b8006315f79ffb8c32ef63eceae73925fd9",
+            "bytes": 18299,
+            "file_transaction": false
+        },
+        {
+            "order": 13,
+            "filename": "20260914000000_phase_6_11_student_notifications.sql",
+            "version": "20260914000000",
+            "migration_name": "phase_6_11_student_notifications",
+            "path": "supabase/migrations/20260914000000_phase_6_11_student_notifications.sql",
+            "sha256": "f105032d0a821755a0c13a79462907d3f58b983797a21e338aa97e6879c07f47",
+            "bytes": 5831,
+            "file_transaction": false
+        },
+        {
+            "order": 14,
+            "filename": "20260915000000_phase_6_13_organization_institution_tenancy.sql",
+            "version": "20260915000000",
+            "migration_name": "phase_6_13_organization_institution_tenancy",
+            "path": "supabase/migrations/20260915000000_phase_6_13_organization_institution_tenancy.sql",
+            "sha256": "e74e4fe768ec9c2cb0dd452bbf5c42617797574ba18daa9a7fcab8fdd633b637",
+            "bytes": 33925,
+            "file_transaction": false
+        },
+        {
+            "order": 15,
+            "filename": "20260928000000_phase_7_2_public_knowledge_policy.sql",
+            "version": "20260928000000",
+            "migration_name": "phase_7_2_public_knowledge_policy",
+            "path": "supabase/migrations/20260928000000_phase_7_2_public_knowledge_policy.sql",
+            "sha256": "2a43a3c2c3093a3405c809ccd26a4da8689440c5fbd8eb3264500eccf66600a5",
+            "bytes": 4021,
+            "file_transaction": false
+        },
+        {
+            "order": 16,
+            "filename": "20260928010000_phase_7_4_public_rag_hardening.sql",
+            "version": "20260928010000",
+            "migration_name": "phase_7_4_public_rag_hardening",
+            "path": "supabase/migrations/20260928010000_phase_7_4_public_rag_hardening.sql",
+            "sha256": "d52fe69d7e1037f7cdecf1af1a2ca4e840164e0042f17afc3250dd1ff4076092",
+            "bytes": 2923,
+            "file_transaction": false
+        },
+        {
+            "order": 17,
+            "filename": "20260929000000_phase_7_10_legacy_primary_key_convergence.sql",
+            "version": "20260929000000",
+            "migration_name": "phase_7_10_legacy_primary_key_convergence",
+            "path": "supabase/migrations/20260929000000_phase_7_10_legacy_primary_key_convergence.sql",
+            "sha256": "5be4401f19629449017963db2084e3ac90b2b54dad4c0406b78b828ae6bd3c5c",
+            "bytes": 2153,
+            "file_transaction": false
+        },
+        {
+            "order": 18,
+            "filename": "20261001000000_phase_7_12_super_admin_identity_authorization.sql",
+            "version": "20261001000000",
+            "migration_name": "phase_7_12_super_admin_identity_authorization",
+            "path": "supabase/migrations/20261001000000_phase_7_12_super_admin_identity_authorization.sql",
+            "sha256": "4aa88e05e5e893ec393a95941ad581fa902e4992aa49a47287a5f1f3676aa27d",
+            "bytes": 9678,
+            "file_transaction": false
+        },
+        {
+            "order": 19,
+            "filename": "20261001010000_phase_7_13_super_admin_institution_management.sql",
+            "version": "20261001010000",
+            "migration_name": "phase_7_13_super_admin_institution_management",
+            "path": "supabase/migrations/20261001010000_phase_7_13_super_admin_institution_management.sql",
+            "sha256": "bbc87fb76863894a68744396151c24c1bf8eca64bbfb30955b5693681bf72e7c",
+            "bytes": 8245,
+            "file_transaction": false
+        },
+        {
+            "order": 20,
+            "filename": "20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql",
+            "version": "20261001020000",
+            "migration_name": "phase_7_14_super_admin_university_admin_lifecycle",
+            "path": "supabase/migrations/20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql",
+            "sha256": "1d59c03c1535c8328d153b31c77c082372a65acdaf75bf3f914b8710acecbef8",
+            "bytes": 11166,
+            "file_transaction": false
+        },
+        {
+            "order": 21,
+            "filename": "20261001030000_phase_7_15_invitation_delivery_email_verification.sql",
+            "version": "20261001030000",
+            "migration_name": "phase_7_15_invitation_delivery_email_verification",
+            "path": "supabase/migrations/20261001030000_phase_7_15_invitation_delivery_email_verification.sql",
+            "sha256": "27d2aaa03f376748a8f640e6841d9506b8b77a527b425a2864c68c804a244892",
+            "bytes": 13057,
+            "file_transaction": false
+        },
+        {
+            "order": 22,
+            "filename": "20261002000000_phase_7_17_email_outbox_worker.sql",
+            "version": "20261002000000",
+            "migration_name": "phase_7_17_email_outbox_worker",
+            "path": "supabase/migrations/20261002000000_phase_7_17_email_outbox_worker.sql",
+            "sha256": "0a52abea3da21e8a1763e19e167572549ce3434296afb4654913d71c9394a7f2",
+            "bytes": 20309,
+            "file_transaction": false
+        },
+        {
+            "order": 23,
+            "filename": "20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql",
+            "version": "20261002010000",
+            "migration_name": "phase_7_18_mailgun_webhook_reconciliation",
+            "path": "supabase/migrations/20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql",
+            "sha256": "77e8b695e3b512907e04b66548fa533d5a76af644b288d4c9249eb713b0e045e",
+            "bytes": 8121,
+            "file_transaction": false
+        },
+        {
+            "order": 24,
+            "filename": "20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql",
+            "version": "20261004000000",
+            "migration_name": "phase_7_23_staff_faculty_onboarding_roster",
+            "path": "supabase/migrations/20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql",
+            "sha256": "30a51b837e5b988b64b4f41decf15386c0e531e0ee5b3036ee91be16ba3d3f2e",
+            "bytes": 6810,
+            "file_transaction": false
+        },
+        {
+            "order": 25,
+            "filename": "20261004010000_admin_published_flags_schema_convergence.sql",
+            "version": "20261004010000",
+            "migration_name": "admin_published_flags_schema_convergence",
+            "path": "supabase/migrations/20261004010000_admin_published_flags_schema_convergence.sql",
+            "sha256": "92d25a5fa3b1a2658068ed1bd240a78376bdbc64b7aea1fe4952442129fc6c19",
+            "bytes": 598,
+            "file_transaction": false
+        },
+        {
+            "order": 26,
+            "filename": "20261004235959_permission_primary_key_convergence.sql",
+            "version": "20261004235959",
+            "migration_name": "permission_primary_key_convergence",
+            "path": "supabase/migrations/20261004235959_permission_primary_key_convergence.sql",
+            "sha256": "813d843c8ff0e24f9950b92134a69c75bdd6bcfa465194df100f63f522c0c25b",
+            "bytes": 1121,
+            "file_transaction": false
+        },
+        {
+            "order": 27,
+            "filename": "20261005000000_phase_8_granular_permissions.sql",
+            "version": "20261005000000",
+            "migration_name": "phase_8_granular_permissions",
+            "path": "supabase/migrations/20261005000000_phase_8_granular_permissions.sql",
+            "sha256": "48a16106676dcd225479f3582b5a2036f5da0f736176037fe1cbf043c9a55a42",
+            "bytes": 9582,
+            "file_transaction": false
+        },
+        {
+            "order": 28,
+            "filename": "20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql",
+            "version": "20261006000000",
+            "migration_name": "phase_8_1_scoped_rbac_and_faculty_assignments",
+            "path": "supabase/migrations/20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql",
+            "sha256": "764489c42aa6542fa08c4a3c415b16be63bc42c6efbe481c3346e12798c4c716",
+            "bytes": 24077,
+            "file_transaction": false
+        },
+        {
+            "order": 29,
+            "filename": "20261007000000_phase_9_auth_security_events.sql",
+            "version": "20261007000000",
+            "migration_name": "phase_9_auth_security_events",
+            "path": "supabase/migrations/20261007000000_phase_9_auth_security_events.sql",
+            "sha256": "fa7747315c474b5684a45fe584a76a7594b36cf81043ec8badd24d8cd6f71270",
+            "bytes": 3934,
+            "file_transaction": false
+        },
+        {
+            "order": 30,
+            "filename": "20261008000000_phase_9_super_admin_invitations.sql",
+            "version": "20261008000000",
+            "migration_name": "phase_9_super_admin_invitations",
+            "path": "supabase/migrations/20261008000000_phase_9_super_admin_invitations.sql",
+            "sha256": "88e6b4a9bb314a47fbcf1879d521653c279fb9d3224200d050f271f65ef7f606",
+            "bytes": 2328,
+            "file_transaction": false
+        },
+        {
+            "order": 31,
+            "filename": "20261009000000_phase_7_24_immediate_staff_faculty_approval.sql",
+            "version": "20261009000000",
+            "migration_name": "phase_7_24_immediate_staff_faculty_approval",
+            "path": "supabase/migrations/20261009000000_phase_7_24_immediate_staff_faculty_approval.sql",
+            "sha256": "71a58d4e62dd4902bc0de489f9d9db66cccc6eae563fd50636b6f2465ce2fd2e",
+            "bytes": 8460,
+            "file_transaction": false
+        },
+        {
+            "order": 32,
+            "filename": "20261010000000_phase_10_faculty_attendance_management.sql",
+            "version": "20261010000000",
+            "migration_name": "phase_10_faculty_attendance_management",
+            "path": "supabase/migrations/20261010000000_phase_10_faculty_attendance_management.sql",
+            "sha256": "2f93ece8b89e006b61e46fe25f62ef79fec8c58e81b9fe7a835270069321c49b",
+            "bytes": 13253,
+            "file_transaction": false
+        },
+        {
+            "order": 33,
+            "filename": "20261011000000_faculty_responsibilities_and_validity.sql",
+            "version": "20261011000000",
+            "migration_name": "faculty_responsibilities_and_validity",
+            "path": "supabase/migrations/20261011000000_faculty_responsibilities_and_validity.sql",
+            "sha256": "5938051c99abecc3d582e213341d39e62d4430f5a90655091d42fe59c2f7c94c",
+            "bytes": 23484,
+            "file_transaction": true
+        },
+        {
+            "order": 34,
+            "filename": "20261012000000_faculty_attendance_workflow.sql",
+            "version": "20261012000000",
+            "migration_name": "faculty_attendance_workflow",
+            "path": "supabase/migrations/20261012000000_faculty_attendance_workflow.sql",
+            "sha256": "287e93f20bf6c5d1e91ac49b32c05d3468ea3ece549b84d789a295113402119f",
+            "bytes": 26738,
+            "file_transaction": false
+        },
+        {
+            "order": 35,
+            "filename": "20261013000000_faculty_tests_examination.sql",
+            "version": "20261013000000",
+            "migration_name": "faculty_tests_examination",
+            "path": "supabase/migrations/20261013000000_faculty_tests_examination.sql",
+            "sha256": "74186837ca7289041ffb88cc80d23d5a7dbc5194369849d8a098a7ba974c231e",
+            "bytes": 41259,
+            "file_transaction": false
+        },
+        {
+            "order": 36,
+            "filename": "20261014000000_scoped_faculty_teaching_assignment_management.sql",
+            "version": "20261014000000",
+            "migration_name": "scoped_faculty_teaching_assignment_management",
+            "path": "supabase/migrations/20261014000000_scoped_faculty_teaching_assignment_management.sql",
+            "sha256": "ff4d27a703c7d572579560f280c99e049be7f35a279c7d616229e513d5b62519",
+            "bytes": 10064,
+            "file_transaction": true
+        },
+        {
+            "order": 37,
+            "filename": "20261015000000_student_academic_experience_read_indexes.sql",
+            "version": "20261015000000",
+            "migration_name": "student_academic_experience_read_indexes",
+            "path": "supabase/migrations/20261015000000_student_academic_experience_read_indexes.sql",
+            "sha256": "b5ccc9f28e354303136e665777e531524ae8bd15e62e6fa676440cddbc4ffcea",
+            "bytes": 1598,
+            "file_transaction": false
+        },
+        {
+            "order": 38,
+            "filename": "20261016000000_academic_master_data_management.sql",
+            "version": "20261016000000",
+            "migration_name": "academic_master_data_management",
+            "path": "supabase/migrations/20261016000000_academic_master_data_management.sql",
+            "sha256": "a4d7ca4814b126d4322d66c6ae71fcd7a4d68407223506fe52d82bdc5a07004b",
+            "bytes": 17665,
+            "file_transaction": true
+        },
+        {
+            "order": 39,
+            "filename": "20261016010000_academic_curriculum_semester_convergence.sql",
+            "version": "20261016010000",
+            "migration_name": "academic_curriculum_semester_convergence",
+            "path": "supabase/migrations/20261016010000_academic_curriculum_semester_convergence.sql",
+            "sha256": "3c98b7aa8207176a1c60195ba2bf11ca709afe1a297c0dac71d589fd0d024c33",
+            "bytes": 1227,
+            "file_transaction": true
+        },
+        {
+            "order": 40,
+            "filename": "20261017000000_b05_invitation_acceptance_security.sql",
+            "version": "20261017000000",
+            "migration_name": "b05_invitation_acceptance_security",
+            "path": "supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql",
+            "sha256": "581146602e75d94342777b81ee70b9ab423fb0117b2fda8b871d4b750249bc1e",
+            "bytes": 53941,
+            "file_transaction": true
+        }
+    ],
+    "pinned_inputs": [
+        {
+            "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_CANDIDATE.sql",
+            "sha256": "897a4c786adc487bce04462690f8a4bbcab215f2e3e53841f84a82f40c1a63c7",
+            "bytes": 49694
+        },
+        {
+            "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+            "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37",
+            "bytes": 51805
+        },
+        {
+            "path": "scripts/validation/disposable_container.py",
+            "sha256": "2a7617a5f0771712fe816ff5dfe3b922e7294ab11553f45fc6bac5364bd5fcbe",
+            "bytes": 8322
+        },
+        {
+            "path": "scripts/validation/b05_containment/bootstrap.sql",
+            "sha256": "18d1370e7339281b1ba1072aa439582364e582931aebcb8a7453008053392c38",
+            "bytes": 3496
+        },
+        {
+            "path": "scripts/validation/b05_containment/containment_successor.validation.sql",
+            "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37",
+            "bytes": 51805
+        },
+        {
+            "path": "scripts/validation/b05_containment/fixtures_post_b05.sql",
+            "sha256": "a7870e1b46396c4b93fdaec60ccd44226193ca7cf55d06e4b79ec3dd2becfbb8",
+            "bytes": 3506
+        },
+        {
+            "path": "scripts/validation/b05_containment/fixtures_pre_b05.sql",
+            "sha256": "b6ccf7960d3448d5938ec38e1cb1d180a5a803d0c76fe116375662573f3c61ed",
+            "bytes": 8759
+        },
+        {
+            "path": "scripts/validation/b05_containment/prepare.py",
+            "sha256": "3bf5a6589becad59b7336b18de0f75b51ed1aba497fb0a416a24ddc246f0deee",
+            "bytes": 7340
+        },
+        {
+            "path": "scripts/validation/b05_containment/README.md",
+            "sha256": "69a4be6e7d94d49f6765dbf0fe4901ab63d45bef108c674a1eea3650a56ad952",
+            "bytes": 27419
+        },
+        {
+            "path": "scripts/validation/b05_containment/runner_contract.json",
+            "sha256": "c18b23a093e21aea584e8f100fe733feffe690784db19741c245387523a3a278",
+            "bytes": 17754
+        },
+        {
+            "path": "scripts/validation/b05_containment/test_matrix.md",
+            "sha256": "a654bf895a26acd8d5f19edb2535185925c36b532c79d26ecc54e6b50324a13d",
+            "bytes": 106301
+        },
+        {
+            "path": "scripts/validation/b05_containment/test_preparation_safety.py",
+            "sha256": "2e8a7f5ae269a1c056451e0587362063d527b7374e23964e40cfc05916fe4982",
+            "bytes": 14464
+        }
+    ],
+    "successor_source": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+    "successor_validation_copy": "scripts/validation/b05_containment/containment_successor.validation.sql",
+    "successor_transform": "none: byte-identical stopped copy; both unconditional stops and final ROLLBACK retained",
+    "successor_ledger_version": null,
+    "intended_lanes": [
+        {
+            "name": "fresh",
+            "sequence": [
+                "bootstrap.sql",
+                "migrations 1-40",
+                "fixtures_pre_b05.sql",
+                "fixtures_post_b05.sql",
+                "catalog and approved matrix rows"
+            ],
+            "execution_authorized": false
+        },
+        {
+            "name": "legacy_upgrade",
+            "sequence": [
+                "bootstrap.sql",
+                "migrations 1-39",
+                "fixtures_pre_b05.sql",
+                "migration 40",
+                "fixtures_post_b05.sql",
+                "catalog and approved matrix rows"
+            ],
+            "execution_authorized": false
+        },
+        {
+            "name": "stopped_successor_refusal",
+            "sequence": [
+                "fresh or legacy_upgrade baseline",
+                "containment_successor.validation.sql: first stop must reject and rollback"
+            ],
+            "execution_authorized": false
+        },
+        {
+            "name": "successor_body",
+            "sequence": [
+                "review and separately authorize new exact-byte executable derivative",
+                "approved baseline",
+                "approved transactional probes and final rollback or separately approved commit lane"
+            ],
+            "execution_authorized": false,
+            "blocked_by": [
+                "retained review stops",
+                "B01-B07 and owner compatibility dependencies",
+                "runtime adapter absent"
+            ]
+        }
+    ],
+    "stage": "1.10",
+    "approval_status": "UNAPPROVED_CONSISTENCY_ONLY_RE_REVIEW_REQUIRED",
+    "targeted_oracle_revision": {
+        "stage": "1.12",
+        "scope": [
+            "terminal_outbox_oracles",
+            "M12_cancellation_timestamp_setup",
+            "M19_wrong_tenant_actor_setup"
+        ],
+        "execution_contract_stage": "1.10 unchanged",
+        "approval_status": "UNAPPROVED_CONSISTENCY_ONLY_INDEPENDENT_RE_REVIEW_REQUIRED"
+    }
+}

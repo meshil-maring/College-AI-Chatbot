@@ -1,0 +1,339 @@
+--- stage1.10/scripts/validation/b05_containment/test_matrix.md
++++ stage1.12/scripts/validation/b05_containment/test_matrix.md
+@@ -1,4 +1,4 @@
+-# Stage 1.10 planned validation matrix — every row NOT RUN
++# Stage 1.10 planned validation matrix — Stage 1.12 targeted oracles — every row NOT RUN
+ 
+ Execute only under later explicit authorization. No PASS/availability claim is
+ made here. F = fresh 40-file empty-chain lane; U = upgrade lane with pre-fixtures
+@@ -320,7 +320,10 @@
+ first/last='Synthetic'/'Variant', reason='stage110 synthetic decision', unless
+ a variant explicitly changes one. These are data descriptions, not executable SQL.
+ For each positive RPC require full JSON/boolean result fields from its source,
+-not merely a truthy response. All unlisted row/permission-grant/audit deltas are zero.
++not merely a truthy response. Stage 1.12 OB12 below explicitly lists terminal
++outbox updates, creation and rotation before the zero-change rule is applied.
++All other unlisted row-content/permission-grant/audit changes are forbidden;
++zero row-count delta alone does not establish unchanged existing row contents.
+ 
+ ### M01 — NOT RUN
+ 
+@@ -476,7 +479,8 @@
+ function invocation/body validation. Proper nested positive calls demonstrate
+ owner use separately; no direct helper grant may be added to make them pass.
+ Close_unstarted(uuid,text) and expiry_candidates(integer) are service entries:
+-close I(2),'cancelled' => true with lifecycle event; expiry_candidates(200) includes
++close I(2),'cancelled' => true with lifecycle event and OB12-T on outbox suffix 2;
++expiry_candidates(200) includes
+ I(3) missing event, excludes P(3) (institution-only source), omits digest and
+ changes no rows. Invalid service claims expect 42501 on each entry's own check.
+ 
+@@ -581,16 +585,19 @@
+ fields. New acceptance_id without matching routing setting=>42501 Reservation
+ RPC required. Reserved digest/expiry/Q/recipient ID change=>55P03 reconciliation.
+ Expired unreserved digest rotation=>23514; future invited status='expired'=>23514
+-has not expired. Direct invited->cancelled unreserved succeeds with lifecycle
+-event per M14; repeated same terminal status repairs at most one event.
++has not expired. Direct invited->cancelled unreserved uses the complete C12
++state/action/timestamp contract below; success has OB12-T plus lifecycle event
++per M14. C12 distinguishes RPC retry, direct same-status UPDATE and historical
++already-cancelled repair; these are not interchangeable timestamp oracles.
+ 
+ Forged GUC variant must explicitly record the trust limitation: matching
+ b05.acceptance_id on trusted direct service writes can pass the reservation
+ routing check; matching b05.recovery_id can permit reserved cancellation without
+ the RPC's provider-stage eligibility test. Synthetic service setting is NOT
+ authentication. Use reserved provider_started V(12,k,80) with forged recovery
+-setting and direct cancellation: source guard permits it, lifecycle event may
+-be emitted, operation remains provider_started. Record this exposure, not a
++setting and C12's complete direct cancellation: source guard permits it,
++lifecycle and institution projection follow C12, operation remains provider_started.
++Record this exposure, not a
+ denial PASS. Wrong GUC yields55P03. Client table ACL denial remains42501 regardless
+ of GUC. No new privilege, trigger disabling or source fix is authorized by this
+ probe; B01/B06 must decide direct-write authority.
+@@ -797,8 +804,9 @@
+ exactly one student:<ST> event, no staff/faculty invitation added. Wrong actor/auth
+ =>42501; inactive student recipient/missing role=>23514; existing student grant
+ B/OB=>42501 scope conflict. Repeat returns student/grant/audit true, original event
+-bytes/+0. Injected admin INSERT fault uses M14 P0001/full rollback. Wrong request
+-tenant=>immediate not_found, reject NULL; invalid requested role=>immediate
++bytes/+0. Injected admin INSERT fault uses M14 P0001/full rollback. The T19
++contract below separates tenant-boundary 42501 from authorized lookup-miss
++not_found/NULL; each binds its request, supplied tenant and actor. Invalid requested role=>immediate
+ invalid_role; invalid_state fields yield exact JSON with no grants. No provider
+ confirmation/HTTP readiness claim. T1/T3/C/A.
+ 
+@@ -880,6 +888,272 @@
+   public.users Auth FK reconstructed baseline, and maintenance reset predicate38–44
+   must be compared to their complete pinned source bodies before future probe review.
+ 
++## Stage 1.12 OB12 outbox state contract — NOT RUN
++
++This section resolves only the three Stage 1.10 independent-review findings.
++It refines the existing cases without adding an executable fixture, wrapper,
++runner, worker or provider call. Every operation still inherits T1/T2/T3/C/A.
++OB12, C12 and T19 are mandatory source-derived expectations, NOT observations.
++
++**OB12-S: finite source fields and baseline.** Capture full rows of
++public.email_outbox, public.email_delivery_attempts and public.email_delivery_events
++before/after, including unrelated rows and existing provider-correlation fields.
++Compare by primary key, not counts alone. The outbox observation columns are:
++
++`id, message_type, aggregate_type, aggregate_id, protected_token, status, attempt_count, available_at, locked_at, sent_at, failed_at, delivery_updated_at, provider_name, provider_message_id, last_error_category, created_at, updated_at, delivery_sequence`.
++
++Source: [worker schema:7–51](../../../supabase/migrations/20261002000000_phase_7_17_email_outbox_worker.sql#L7)
++and [delivery_sequence:6–10](../../../supabase/migrations/20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql#L6).
++There is **no outbox version column**. delivery_sequence is a generated identity
++for delivery ordering, not an update version or invitation generation. Existing
++id/delivery_sequence and attempt_count remain unchanged on terminal updates;
++capture new returned IDs/sequences on inserts, without predicting contiguous
++identity values or sequence rollback. Invitation generation is its stored
++token_hash/expires_at; rotation additionally changes invitation resend_count.
++No delivery-attempt/event rows or provider calls are produced by terminalization.
++
++Base pending row: bind its actual id and aggregate_id to the institution
++invitation; message_type='admin_invitation', aggregate_type='platform_admin_invitation',
++status='pending', attempt_count=0, locked_at/sent_at/failed_at/delivery_updated_at/
++provider_name/provider_message_id/last_error_category NULL, protected_token equal
++the synthetic marker, available_at/created_at/updated_at equal captured fixture
++anchor. Record generated delivery_sequence. For fixture I(1/2/6/7), IDs are
++63000000 suffix 1/2/6/7 exactly
++([pre-fixture:101–111](../../../scripts/validation/b05_containment/fixtures_pre_b05.sql#L101)).
++Dynamic institution variants in M11–M16 must specify one owner-staged pending
++row O(m,n) = <93000000+m>-0000-0000-0000-<n padded to 12>, aggregate_id=V(m,1,n),
++with the same valid fields and recorded sequence, before the operation baseline.
++These are collision-checked, future-reviewed setup descriptions only. Additional
++control rows use distinct n and are bound explicitly to the tested aggregate
++or an unrelated institution invite. No email_outbox row may refer to a platform
++invitation: its aggregate_id FK references platform_admin_invitations only.
++
++**OB12-T: required terminal change.** Before: institution invitation status
++invited with P matching pending outbox IDs, including the base pending row.
++After a successful invited->accepted/cancelled/expired transition: every one of
++those same P IDs has status='cancelled', protected_token=NULL, locked_at=NULL,
++last_error_category='INVITATION_TERMINAL', updated_at equal the operation
++transaction's observed now() (Tsql). All other outbox columns, including
++attempt_count, available_at, sent_at, failed_at, delivery_updated_at, provider
++correlation, created_at, aggregate_id and delivery_sequence, are unchanged.
++Total row count, IDs and attempt/event histories are unchanged. P=0 is a separate
++no-pending-row variant; it cannot satisfy a positive pending-row assertion.
++Source: [terminal trigger:112–128](../../../supabase/migrations/20261002000000_phase_7_17_email_outbox_worker.sql#L112).
++
++**OB12-N: forbidden change.** Non-pending rows of the same aggregate and all
++unrelated rows remain identical in every field under OB12-T. Include separately
++reviewed processing control (non-NULL locked_at, synthetic protected_token,
++attempt_count=1 and a matching existing attempt), and cancelled/sent controls
++(NULL protected_token/locked_at), with distinct IDs/sequences and valid checks.
++The trigger's pending predicate leaves a processing row and its attempt intact;
++do not assert processing-token clearance or delivery cancellation. This is a
++source limitation within open B06, not an approved worker/provider guarantee.
++No worker, webhook or lease-recovery routine is invoked in these terminal probes.
++Denied/NULL/invalid-state operations, reserve/advance/recover and SQL rollback
++leave the appropriate pre-operation outbox baseline unchanged unless OB12-C/R
++below explicitly lists another mutation.
++
++**OB12-I: idempotent retry.** Already-accepted finalize, same-terminal lifecycle
++RPC, close retry and historical repair do not perform an invited->terminal
++transition, so every outbox/attempt/event row remains identical to its immediate
++retry baseline. Deliberately owner-staged pending rows on historical terminal
++invites also stay pending: repair is not a cleanup sweep. No fabricated worker
++call may make them disappear. Lifecycle repair may add its one missing audit
++event under the existing audit oracle, without changing outbox. Accepted resolver,
++recovery and confirmed-stage advance preserve the terminal outbox snapshot.
++Source: [accepted early return:353–358](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L353),
++[lifecycle repeat:907–930](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L907).
++All platform variants preserve the entire institution outbox independently of
++their platform grant/lifecycle result; there is no platform outbox implementation
++or invented platform terminal-email trigger in this chain.
++
++**OB12-C: creation.** For create6/create7/invite_approve7 positive controls,
++require no pre-existing invited row with the same tenant/lower(email), so their
++housekeeping UPDATE touches nothing. Returned email_outbox_id identifies exactly
++one new pending row whose aggregate_id is the returned institution invitation ID;
++assert marker, attempt_count=0, defaults and NULL fields from OB12-S. available_at,
++created_at and updated_at equal Tsql; record generated delivery_sequence. Prior
++outbox/attempt/event rows are unchanged. Identical invite_approve7 retry has no
++new invitation or outbox row; assert original IDs and OB12-I. Standalone create
++is not promised idempotent. If a separately reviewed same-email expired setup
++is ever used, its housekeeping terminalization needs OB12-T and existing B05
++eligibility checks; do not borrow the no-housekeeping baseline.
++Source: [create6:152–177](../../../supabase/migrations/20261002000000_phase_7_17_email_outbox_worker.sql#L152),
++[create7:37–60](../../../supabase/migrations/20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql#L37),
++[legacy retry:103–168](../../../supabase/migrations/20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql#L103).
++
++**OB12-R: existing pending-only rotation.** Stage matching pending row(s), no
++processing row or lease recovery, invited/unreserved/unexpired invitation and
++captured expected_updated_at. Successful rotate cancels all old matching pending
++IDs with the OB12-T field changes except last_error_category='INVITATION_SUPERSEDED';
++inserts exactly one new pending row with returned email_outbox_id, same aggregate,
++marker/attempt_count=0/defaults/Tsql and independently recorded delivery_sequence.
++Existing sequence/attempt fields are unchanged; new sequence is distinct, not an
++incremented version of the old row. Invitation digest/expiry/resend_count(+1),
++email_delivery_status='pending', email_delivery_at=NULL and updated_at=Tsql are
++asserted separately. Reserve-first, stale expected_updated_at or expired RPC
++refusal returns NULL before rotation mutations; OB12-N. Reusing the OLD expected
++timestamp after a successful rotation is a NULL/no-change retry only when the
++observed timestamp actually differs; otherwise do not infer a conflict from
++time passage. No general rotation idempotence is asserted.
++Source: [B05 rotate:452–514](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L452).
++
++**OB12 affected-case register.** Each row inherits full OB12-S snapshots and
++compares after the operation, before T1 restoration, then after rollback/commit.
++On any fault/denial, all terminal/rotation/creation mutations roll back with the
++command. Row IDs/contents restore; consumed identity sequence values need not.
++
++| Case | Operation-specific outbox oracle | Status |
++| --- | --- | --- |
++| OB12/M01 | Empty-chain replay: no fixture rows; outbox/attempt/event catalog and source replay baseline recorded, no invented queue. | NOT RUN |
++| OB12/M02 | Pre-fixtures insert suffix 1/2/6/7 pending rows as OB12-S. B05 and post-fixtures preserve those rows/IDs/attempts/sequences exactly. | NOT RUN |
++| OB12/M03 | Before-COMMIT B05 failure restores all pre-B05 outbox/attempt/event rows. | NOT RUN |
++| OB12/M04 | Denied pre/post-publication calls and failed reapply cannot mutate outbox. | NOT RUN |
++| OB12/M05 | Both stopped-copy refusals preserve all outbox rows/history. | NOT RUN |
++| OB12/M06 | Each contained probe follows its OB12 mode; T1 restoration and final S rollback restore original outbox contents. | NOT RUN |
++| OB12/M07 | Hash refusal reaches no SQL; catalog/tail refusal restores already-tampered outbox baseline without new queue work. | NOT RUN |
++| OB12/M08 | ACL/bridge denials leave outbox/history unchanged; no worker positive control is implied. | NOT RUN |
++| OB12/M09 | close I(2) requires OB12-T on suffix 2; client/claim refusals OB12-N; expiry_candidates read only; creators/legacy invitation approve OB12-C, identical legacy retry OB12-I. | NOT RUN |
++| OB12/M10 | reserve and identity/issuer/scope failures OB12-N; valid institution finalize OB12-T including suffix 1/6/7 when used, accepted retry OB12-I; platform has no outbox changes. | NOT RUN |
++| OB12/M11 | Rotation OB12-R, reserve/refusals OB12-N. Decision-clock 23514 restores pending row and marker, no terminal cancellation; successful finalization control OB12-T. | NOT RUN |
++| OB12/M12 | Complete C12 direct cancellation OB12-T; forged recovery cancellation also OB12-T if eligible checks pass. Guard/CHECK denials OB12-N; same-terminal retries OB12-I. | NOT RUN |
++| OB12/M13 | Institution acceptance/cancel/expiry winner OB12-T; retries/losers OB12-I/N; rotation winner OB12-R; cross-tenant winning invite cancels its own pending queue only, scope-denied loser preserves its queue; legacy create/retry OB12-C/I. | NOT RUN |
++| OB12/M14 | Unfaulted controls OB12-T/C/R as applicable; reached audit INSERT fault restores all pending/attempt/event rows and marker even if a trigger updated them before the fault. | NOT RUN |
++| OB12/M15 | Fresh cancel/expiry OB12-T; historical repair/repeat OB12-I including any intentionally staged pending historical row; audit mutation/reset-predicate probes OB12-N. | NOT RUN |
++| OB12/M16 | Before finalization pending row stays pending across reservation/provider/provision steps; finalize commit OB12-T, before-COMMIT fault restores pending, after-COMMIT lost response retains cancelled row; resolver/retry/confirm OB12-I. | NOT RUN |
++| OB12/M17 | Provider uncertainty, invalid advance/close and failed provisioning preserve staged pending queue/history (OB12-N); no delivery work from provider fake. | NOT RUN |
++| OB12/M18 | Accepted/confirmed baseline obtained with OB12-T; recovery/confirmation retries, including rejected recovery, preserve that exact terminal outbox (OB12-I/N). | NOT RUN |
++| OB12/M19 | Immediate/reject/decide/student and T19 denied/lookup-miss variants leave invitation/outbox/attempt/event rows unchanged; these identities do not create invitation email. | NOT RUN |
++| OB12/M20 | Default/vector/consumer probes preserve queue/history; T1 and final S restoration compare full rows. | NOT RUN |
++| OB12/M21 | Mock gate denial reaches no database. Failure/cleanup assertions do not invent PostgreSQL outbox evidence; future SQL failures inherit the affected case's rollback baseline. | NOT RUN |
++
++## Stage 1.12 C12 complete cancellation setup — NOT RUN
++
++**C12 initial state.** For each kind k, collision-checked V(12,k,70) has email
++m12-k<k>-n70@example.invalid, digest from V notation, issuer U(1), created_at=
++fixture_anchor-1 day, expires_at=fixture_anchor+7 days, status='invited'; accepted_at,
++accepted_user_id,cancelled_at and all three acceptance fields NULL. Institution:
++tenant A, role_name='admin', updated_at=fixture_anchor, email_verified_at=NULL,
++email_delivery_status='pending', email_delivery_attempts=0, resend_count=0,
++email_delivery_at/last_sent_at NULL.
++Platform has no institution/role/delivery/updated_at columns: do not invent them.
++No operation, grant, lifecycle or projection event exists for this invite. For
++institution use OB12-S pending row O(12,70), plus valid non-pending/unrelated
++controls; for platform record unchanged institution queues, not a platform row.
++Source: [institution schema:26–91](../../../supabase/migrations/20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql#L26),
++[delivery additions:40–94](../../../supabase/migrations/20261001030000_phase_7_15_invitation_delivery_email_verification.sql#L40),
++[platform schema:8–29](../../../supabase/migrations/20261008000000_phase_9_super_admin_invitations.sql#L8),
++[B05 additions:11–18](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L11).
++
++**C12 direct action.** Actual service_role with scalar/JSON role='service_role',
++sub=H(1), email=platform@example.invalid; verify role/claims and baseline. Use
++transaction-local b05.acceptance_id/b05.recovery_id/b05.lifecycle_actor empty
++(or absent), with all normal guards enabled. Set ONLY status='cancelled' and
++cancelled_at=Tcancel, where Tcancel is the validated fixture_anchor supplied
++as explicit timestamptz. Preserve accepted_at/accepted_user_id NULL and every
++other invitation column. This is a textual UPDATE contract, not submitted SQL.
++The deterministic value is supported by existing fixture_anchor plumbing;
++neither the database clock nor clock_timestamp() is mocked. Expected one changed
++invite, final cancelled_at exactly Tcancel, status cancelled, identity/digest/
++expiry/acceptance/delivery fields unchanged (institution updated_at unchanged).
++OB12-T updates institution pending outbox at Tsql, which is the observed
++transaction now(), not Tcancel. Lifecycle +1 repaired=false, attribution=
++unrecorded_initiator, actor_user_id=NULL; institution admin projection +1 with
++issuer fallback U(1), platform projection +0. No operation/grant/attempt/event
++changes. Source: [guard:152–203](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L152),
++[lifecycle trigger/record:838–889](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L838).
++
++**C12 distinct negative/exposure variants.** Institution status-only cancellation
++with cancelled_at still NULL expects 23514 identifying
++platform_admin_invitations_terminal_state_check; no outbox/audit/invite change.
++The platform schema has no equivalent timestamp CHECK; do not require that
++denial there. For existing V(12,k,80) provider_started exposure, build the stored
++Q via real reserve/advance transitions, then use the SAME complete direct action
++with b05.recovery_id equal its recorded Q and other routing settings empty.
++Acceptance fields/Q remain as recorded, operation stays provider_started;
++cancelled_at=Tcancel, OB12-T and lifecycle/projection changes as above. Wrong
++recovery setting expects55P03 'Invitation acceptance requires reconciliation',
++all rows unchanged. This documents the existing trusted-service boundary, not
++its acceptance or a repaired authorization check.
++
++**C12 retries/already-cancelled.** After successful direct cancellation, an
++identical direct UPDATE retaining Tcancel may run and preserves timestamp and
++all invitation fields. AFTER UPDATE OF status may try event repair; an existing
++event remains byte-identical/+0 and projection +0, OB12-I. For a separately
++staged historical cancelled invite with no lifecycle event, preserve its original
++cancelled_at and identity; lifecycle(kind,V,'cancelled',NULL) returns closed=true,
++already_applied=true, adds exactly one repaired=true/unrecorded_initiator event,
++no historical projection and OB12-I. Retry adds zero events. Fresh lifecycle RPC
++cancellation instead assigns clock_timestamp() itself: record server bounds
++immediately before/after and require cancelled_at within them; its later repeat
++preserves the exact returned timestamp. It is not expected to equal fixture_anchor.
++The guard does not prohibit changing cancelled_at alone on a cancelled row;
++therefore only identical direct retries are asserted idempotent, not arbitrary
++direct timestamp overwrites. Source: [guard terminal field list:163–172](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L163),
++[RPC clock/repeat:907–933](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L907).
++T1 captures restored state after each variant; C/A remain mandatory.
++
++## Stage 1.12 T19 wrong-tenant actor setup — NOT RUN
++
++**T19 boundary actor/resource.** Actor U(2)/H(2), admin-a@example.invalid, is an
++active confirmed synthetic public/Auth identity with exactly the active 'admin'
++role scoped institution A/OA; no role in B, no organization/platform role and
++no additional permission grants. Both A and B are active. Create a pending
++membership target RB=R(4), owner-restaged from A/OA to B/OB before the baseline,
++for active confirmed U(6)/H(6), email
++existing-b@example.invalid, requested_role='staff', all decision fields NULL,
++created_at=fixture_anchor-2 days, updated_at=fixture_anchor-1 day. U(6)'s existing
++staff B/OB grant is a recorded unchanged baseline, not a newly authorized grant.
++Preserve R(4)'s existing ID rather than inserting a duplicate pending
++(user_id,requested_role) pair; only institution_id/organization_id are restaged
++to B/OB together under the enabled scope guard. No invite or outbox is added.
++Fixture actor grants come from
++[pre-fixture:20–45](../../../scripts/validation/b05_containment/fixtures_pre_b05.sql#L20).
++RB's tenant restaging is a future-reviewed owner setup description, not a
++changed fixture file. Source scope/unique predicates:
++[membership schema/index:582–693](../../../supabase/migrations/20260915000000_phase_6_13_organization_institution_tenancy.sql#L582),
++[child guard:709–754](../../../supabase/migrations/20260915000000_phase_6_13_organization_institution_tenancy.sql#L709).
++
++Actual SQL role service_role, scalar role and JSON role='service_role',
++sub=H(2), email=admin-a@example.invalid. Bind supplied actor U(2) to H(2) in
++the synthetic claim baseline, verify current_user/auth.role and identities.
++Both routines have service EXECUTE: refusal must arise inside the administrator
++guard, not from missing claims/EXECUTE/RLS, malformed arguments or absent target.
++The guard uses the supplied actor's active admin scope; immediate/reject do not
++receive an actor_auth argument or validate the claim subject as human identity.
++This assumption models the verified backend boundary only; it proves no JWT,
++gateway or production authentication. B01 remains open. No separate permission
++code is tested: the SQL authority is the active institution-admin role.
++
++Call immediate(RB,B,U(2),reason) and reject(RB,B,U(2),reason), separately from
++the same baseline. Both expect42501 with EXACT diagnostic
++'Phase 8.1: active institution administrator required' from
++phase81_assert_institution_admin(U(2),B), before request mutation/lookup.
++Use T1 exact code AND origin capture. A positive rollback control for the SAME
++actor U(2) with R(1),A must pass the admin guard; an independent control with
++U(3)/H(3) admin B and RB,B must pass it too. Inspect actor/request state to rule
++out inactive identity/tenant/role or missing service claims as the cause. Source:
++[guard:132–165](../../../supabase/migrations/20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql#L132),
++[immediate guard-before-lookup:535–550](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L535),
++[reject guard-before-lookup:747–753](../../../supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql#L747).
++
++After each denial, RB and all other membership rows, students/users/Auth,
++user_roles/user_permission_grants, institutions, invitations/operations,
++outbox/attempt/events and every audit table retain identical IDs/contents/times;
++decision fields stay NULL and no new grants exist. No SQL security audit is
++inserted by this guard; auth_security_events delta0 alongside admin/platform/
++lifecycle audit delta0. Do not invent a required audit insert or claim an HTTP
++security-event outcome. Snapshot after nested recovery BEFORE outer rollback,
++then verify full restoration separately. Unexpected lookup-miss, success or
++other42501 origin fails A. T1/C; all checks remain NOT RUN.
++
++**T19 lookup-miss control is separate.** Bind existing R(1) in A but supplied
++tenant B and verified active B-admin U(3)/H(3) claims. The administrator guard
++passes; immediate(R(1),B,U(3),reason) returns exactly {not_found:true}, and
++reject(R(1),B,U(3),reason) returns NULL. Both preserve the same full state baseline
++with audit delta0. These are not evidence of tenant-boundary authorization denial
++and cannot substitute for the U(2)/RB,B variants above.
++
+ No runtime result, owner decision or execution authorization is created by this
+ matrix. Legacy exposures, incomplete consumer fixtures, unavailable runtime
+ components and B01–B07 keep acceptance blocked even if offline checks pass.

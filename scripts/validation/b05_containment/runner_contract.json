@@ -1,0 +1,322 @@
+{
+  "contract_version": 3,
+  "purpose": "b05-containment-validation",
+  "stage": "1.10",
+  "execution_authorized": false,
+  "runner_mode": "file_only_preparation",
+  "generic_purpose_registration": false,
+  "runtime_adapter": null,
+  "existing_guard": "scripts/validation/disposable_container.py",
+  "required_later_target": {
+    "docker_endpoint": "npipe:////./pipe/dockerDesktopLinuxEngine",
+    "engine_name_and_os": "docker-desktop linux",
+    "platform": "linux/amd64",
+    "pull": "never",
+    "auto_remove": true,
+    "network_mode": "none",
+    "port_bindings": {},
+    "publish_all_ports": false,
+    "privileged": false,
+    "binds": [],
+    "volumes": [],
+    "inherited_storage": [],
+    "devices": [],
+    "host_namespace_sharing": false,
+    "tmpfs": {
+      "/var/lib/postgresql/data": "rw,noexec,nosuid,nodev,size=536870912"
+    },
+    "pgdata": "/var/lib/postgresql/data",
+    "socket_directory": "/var/lib/postgresql/data",
+    "database": "postgres",
+    "database_user": "postgres",
+    "listen_addresses": "",
+    "run_token_format": "^[a-f0-9]{32}$",
+    "container_id_format": "^[a-f0-9]{64}$",
+    "name_template": "codex-b05-containment-validation-{run_token_first_12}",
+    "labels": {
+      "collegeai.validation.disposable": "true",
+      "collegeai.validation.run": "{run_token}",
+      "collegeai.validation.purpose": "b05-containment-validation"
+    },
+    "approved_image_reference": "see image_requirements; null approval refuses creation",
+    "cap_drop": [
+      "ALL"
+    ],
+    "cap_add": [
+      "CHOWN",
+      "SETUID",
+      "SETGID"
+    ],
+    "capability_rule": "startup only; reviewed shim proves postgres/psql have zero effective capabilities after dropping root",
+    "security_opt": [
+      "no-new-privileges:true"
+    ],
+    "security_profiles": "reviewed default seccomp/AppArmor; no unconfined or additional profile/privilege override",
+    "device_requests": [],
+    "device_cgroup_rules": [],
+    "docker_socket": "ABSENT",
+    "namespace_modes": {
+      "PidMode": "",
+      "IpcMode": "private",
+      "UTSMode": "",
+      "CgroupnsMode": "private",
+      "UsernsMode": ""
+    },
+    "namespace_rule": "pin reviewed engine-version representations; reject host modes and container:<id> sharing",
+    "attached_networks": [
+      "none"
+    ],
+    "mount_rule": "sole PGDATA tmpfs with every specified option and 512 MiB runtime capacity; reject image-declared anonymous volumes, reparse/symlink data paths and external tablespace/WAL/log storage",
+    "ownership": "cryptographically fresh token; record same-engine create acknowledgement, full ID, name, labels, approved image before start; no existing-target input",
+    "lost_create_response": "create before start; recover full ID only from fresh exclusive cidfile plus matching same-engine create event and exact ownership/image inspection; missing or contradictory provenance means INCOMPLETE, no guessed target",
+    "inspect_fields": [
+      "Id",
+      "Name",
+      "Image",
+      "Config.Image",
+      "Config.Labels",
+      "Config.Env",
+      "Config.Volumes",
+      "Config.Entrypoint",
+      "Config.Cmd",
+      "Config.User",
+      "HostConfig.AutoRemove",
+      "HostConfig.Privileged",
+      "HostConfig.CapAdd",
+      "HostConfig.CapDrop",
+      "HostConfig.SecurityOpt",
+      "HostConfig.Devices",
+      "HostConfig.DeviceRequests",
+      "HostConfig.DeviceCgroupRules",
+      "HostConfig.PidMode",
+      "HostConfig.IpcMode",
+      "HostConfig.UTSMode",
+      "HostConfig.CgroupnsMode",
+      "HostConfig.UsernsMode",
+      "HostConfig.Binds",
+      "HostConfig.Mounts",
+      "HostConfig.VolumesFrom",
+      "HostConfig.Tmpfs",
+      "HostConfig.NetworkMode",
+      "HostConfig.PortBindings",
+      "HostConfig.PublishAllPorts",
+      "Mounts",
+      "NetworkSettings.Networks",
+      "NetworkSettings.Ports",
+      "State"
+    ],
+    "missing_unknown_fields": "REFUSE; independently approve version-specific null/empty/default and legacy/mirrored tmpfs representations before use"
+  },
+  "bootstrap_requirements": {
+    "bypass_image_initializers": true,
+    "os_user": "postgres",
+    "startup_mount_owner": "postgres:postgres",
+    "startup_mount_mode": "0700",
+    "initdb_local_authentication": "trust",
+    "tcp_hba": "reject",
+    "unix_socket_permissions": "0700",
+    "database_password_required": false,
+    "fresh_initdb": true,
+    "locale": "C",
+    "encoding": "UTF8",
+    "timezone": "UTC",
+    "server_version_num": 170006,
+    "extensions": {
+      "vector": "0.8.0",
+      "btree_gist": "1.7"
+    },
+    "extension_schema": "extensions",
+    "role_profile": "synthetic_service_bypassrls",
+    "claim_profile": "synthetic_scalar_and_json_claims",
+    "provider_mode": "offline_fake_only",
+    "reviewed_startup_shim": null,
+    "startup_scope": "chown/chmod only inspected tmpfs mount itself; no recursive host operations; drop root/capabilities before initdb/server/psql",
+    "availability": "UNVERIFIED_NOT_RUN: exact version/control/SQL/shared-library availability needs later local verification",
+    "psql": "docker exec --user postgres to validated full ID only; -X -v ON_ERROR_STOP=1 -h /var/lib/postgresql/data -U postgres -d postgres; no TCP/DSN/host-client fallback",
+    "effective_checks": "after metadata acceptance, reviewed socket-only probe verifies data_directory/socket/listener/HBA, runtime tmpfs options/capacity, OS uid/capabilities and versions; failed probe fails and destroys lane"
+  },
+  "future_time_limits_seconds": {
+    "readiness": 60,
+    "sql_process": 120,
+    "lock": 5,
+    "cleanup_stop": 10,
+    "client_term_grace": 5,
+    "client_kill_verify": 5,
+    "control_call": 20,
+    "cleanup_total": 60
+  },
+  "forbidden_inputs": [
+    "purpose_override",
+    "container_override",
+    "database_url",
+    "dsn",
+    "host",
+    "port",
+    "password_file",
+    "env_file",
+    "supabase_config",
+    "provider_credentials",
+    "Docker context/config overrides",
+    "arbitrary command flags"
+  ],
+  "required_later_checks": [
+    "independently approved manifest/exact input hashes",
+    "exact 40-file set",
+    "pinned local engine/CLI/config",
+    "fresh token and creation provenance",
+    "full ID ownership before every operation",
+    "immutable digest/content image ID and local availability",
+    "complete privilege/device/namespace/network/mount metadata",
+    "effective PGDATA/tmpfs/socket/process settings",
+    "bounded client/backend termination and shutdown",
+    "ownership-only cleanup",
+    "independent removal/resource-release evidence",
+    "approved adapter mocked failure assertions"
+  ],
+  "authorization_rule": "Specification only. Future independently reviewed dedicated adapter/startup supervisor and explicit execution authorization required; no execution flag exists. Existing runners and their purpose allowlist remain unchanged.",
+  "image_requirements": {
+    "reference_tag_only": "public.ecr.aws/supabase/postgres:17.6.1.166",
+    "approved_repository_digest": null,
+    "approved_content_image_id": null,
+    "platform": "linux/amd64",
+    "availability": "UNVERIFIED_NOT_RUN",
+    "before_create": [
+      "independent digest approval",
+      "successful local image inspect without pull",
+      "approved repository@sha256 digest resolves to approved sha256 content image ID",
+      "linux/amd64 and reviewed entrypoint/tools/extension libraries match"
+    ],
+    "create_reference": "approved repository@sha256 digest only, --pull=never; absence/mismatch refuses creation without build/download/substitution",
+    "inspect_identity": "container Image equals approved content image ID; Config.Image equals approved digest reference"
+  },
+  "docker_control": {
+    "endpoint": "npipe:////./pipe/dockerDesktopLinuxEngine",
+    "context_for_reference_only": "desktop-linux",
+    "approved_cli_absolute_path": null,
+    "approved_cli_sha256": null,
+    "approved_engine_id": null,
+    "invocation_prefix": [
+      "{approved_cli_absolute_path}",
+      "--host",
+      "npipe:////./pipe/dockerDesktopLinuxEngine",
+      "--config",
+      "{private_checked_local_config_directory}"
+    ],
+    "context_selection": "PROHIBITED: no --context or mutable context store used for operations",
+    "configuration": "fresh private local config directory; approved bytes or absence of unexpected files checked before each invocation; no credentials, credential helpers or CLI plugins",
+    "environment": "explicit allowlist of reviewed Windows system essentials only; reject Docker overrides and exclude inherited DOCKER*, PG*, DATABASE_URL, SUPABASE*, HOME/user configuration and provider credentials",
+    "commands": "argument vector, pinned executable, reviewed subcommands/flags only; no shell or PATH lookup",
+    "recheck": "same endpoint and approved engine ID, healthy daemon and exact resource ownership before each lifecycle/readiness/SQL/copy/signal operation",
+    "trust_limit": "named-pipe access grants daemon-wide authority; tokens/labels do not protect against a hostile daemon administrator or mutable trusted host"
+  },
+  "process_and_shutdown": {
+    "reviewed_supervisor": null,
+    "tracking": "track each in-container exec/client process group, PID and start identity; concurrency clients individually; signal only verified identities on owned full ID, never guessed PIDs or host processes",
+    "deadline": "external monotonic deadline plus reviewed in-container supervisor; killing host Docker CLI does not establish psql/backend termination",
+    "timeout_interruption": "stop further replay/ledger/copy; fail lane; TERM tracked client groups then bounded KILL if needed; collect termination evidence and shut down whole owned cluster",
+    "backend_rule": "client exit is insufficient; require cluster/container shutdown/removal evidence proving no surviving PostgreSQL runtime",
+    "shutdown": "ownership-check exact full ID then Docker stop --timeout 10; if still running ownership-recheck before kill; if stopped but not auto-removed ownership-recheck before exact-ID rm; each call and overall cleanup bounded",
+    "unverified_termination": "INCOMPLETE if ownership, daemon identity/access, client/backend termination or removal cannot be verified"
+  },
+  "cleanup_evidence": {
+    "always": "finally on success/failure/bootstrap/replay/ledger/copy/timeout/interruption; destructive operations only when recorded creation ownership and daemon identity remain provable",
+    "ownership_only": "same engine/full ID/token/name/purpose/image; failed bootstrap/storage validation still permits cleanup of proven-created resource; no generic allowlist expansion",
+    "independent_required": [
+      "healthy same-engine inspect specifically reports full ID absent, not generic failure",
+      "separate successful all-container query filtered by full ID confirms absence",
+      "correlated daemon die/destroy events or independently reviewed equivalent runtime-removal evidence (including never-started containers)"
+    ],
+    "resources": "before-inspect proves sole bounded tmpfs, no persistent volumes/bridges; independent destroy/runtime-removal evidence must establish task and container-managed mount/scratch release; stop return value or time elapsed alone is insufficient",
+    "evidence_limit": "daemon lifecycle evidence does not attest physical memory erasure or Docker Desktop VM swap; unavailable resource-release evidence means INCOMPLETE",
+    "already_removed": "require healthy-daemon independent absence and correlated removal evidence, even if --rm raced inspection",
+    "forbidden": [
+      "name-based stop/removal",
+      "project-wide enumeration for cleanup",
+      "Docker prune",
+      "host storage deletion",
+      "unrelated database shutdown"
+    ]
+  },
+  "run_status": {
+    "default": "NOT_RUN",
+    "denied_before_create": "REFUSED",
+    "verified_failure_with_cleanup": "FAILED_CLEANED",
+    "success": "COMPLETE only after all approved assertions and independent cleanup evidence pass",
+    "unverified_ownership_daemon_termination_cleanup": "INCOMPLETE; retain sanitized evidence for operator resolution",
+    "acceptance_completion": "INCOMPLETE/nonzero status for any failed assertion, blocked/skipped subcase, known source exposure or missing evidence. FAILED_CLEANED is a separate resource outcome, never successful acceptance.",
+    "matrix": "M01-M21 NOT RUN; offline unit/hash results do not satisfy runtime cases."
+  },
+  "expected_error_handling": {
+    "status": "SPECIFIED_NOT_IMPLEMENTED_NOT_RUN",
+    "specification": "scripts/validation/b05_containment/test_matrix.md: Stage 1.10 T1/T2/T3/C/A",
+    "on_error_stop": true,
+    "continuing_probe": "Anonymous INVOKER nested EXCEPTION subtransaction around one exact statement at actual test role. GET STACKED DIAGNOSTICS; accept exact SQLSTATE AND source diagnostic only; rethrow all unexpected errors. Assertions outside catch. Never use SECURITY DEFINER test helper.",
+    "isolation": "Outer savepoint before role/claims/setup; inspect post-operation state after nested recovery, then rollback/release outer savepoint and compare restored state. One still-open S connection through all probes/postflight/final ROLLBACK.",
+    "whole_file_refusal": "Nonzero psql exit plus exact verbose SQLSTATE/statement/origin; verified backend exit/rollback then independent new-connection catalog/row comparison. No continuation in aborted transaction.",
+    "concurrent_steps": "One explicit transaction per participant/step. Expected statement error recovered in nested subtransaction then whole participant ROLLBACK. Record server lock order and commit boundaries. Timeout/deadlock never a semantic rejection.",
+    "unexpected_error": "ON_ERROR_STOP stays 1; stop statements/ledger; close and verify rollback/backend termination; unconditional ownership-only cleanup; overall acceptance INCOMPLETE/nonzero status.",
+    "no_runtime_claim": "Savepoint/subtransaction/SQLSTATE/lock/cleanup semantics remain source-derived expectations, NOT runtime verified.",
+    "reviewed_wrapper_artifact": null,
+    "reviewed_rollback_successor_derivative": null,
+    "reviewed_commit_successor_derivative": null
+  },
+  "runtime_prerequisite_identities": {
+    "status": "ALL_UNAVAILABLE_IDENTITIES_UNRESOLVED",
+    "specification": "scripts/validation/b05_containment/README.md: Exact runtime prerequisite contract",
+    "version_selection": "Inherited bootstrap versions are requirements only, not approved/available selections. All additional versions remain unresolved; no silent substitution.",
+    "docker_cli_version": null,
+    "docker_cli_byte_length": null,
+    "docker_cli_build_and_dependencies": null,
+    "engine_version": null,
+    "engine_api_version": null,
+    "docker_desktop_version_and_build": null,
+    "version_specific_metadata_contract": null,
+    "windows_build_identity": null,
+    "python_executable_version_path_hash_and_dependencies": null,
+    "approved_private_config_identity": null,
+    "approved_environment_key_allowlist": null,
+    "postgres_toolchain_requirement": {
+      "server_version_num": 170006,
+      "version": "17.6",
+      "binaries": [
+        "initdb",
+        "postgres",
+        "psql",
+        "pg_ctl"
+      ],
+      "approved_paths_hashes_lengths_builds_and_dependencies": null
+    },
+    "extension_requirement": {
+      "schema": "extensions",
+      "vector": "0.8.0",
+      "btree_gist": "1.7",
+      "approved_control_sql_library_hashes_lengths_and_dependencies": null
+    },
+    "startup_shim_version_hash_and_dependencies": null,
+    "supervisor_version_hash_and_dependencies": null,
+    "adapter_version_hash_and_dependencies": null,
+    "offline_provider_fake_version_hash_and_loss_model": null,
+    "independent_cleanup_observer_version_hash_and_release_mechanism": null,
+    "approved_manifest_identity": null,
+    "approved_probe_fault_barrier_and_derivative_identities": null,
+    "image_verification": "Before create, independently approved repository digest/content ID and full in-image tool/file provenance must match local pinned-CLI inspect on approved engine with pull=never. No pull/build/download/substitution.",
+    "cli_verification": "Checked non-reparse absolute executable raw hash/length before every invocation; version/build bound to independently approved executable/dependency bytes; no PATH/shell/plugin lookup.",
+    "engine_verification": "Exact named pipe/private config; approved engine ID/OS/Engine/API/Desktop version identity and healthy status before every operation; mutable context is never used.",
+    "effective_verification": "Only under separate future authorization: socket-only PostgreSQL version/settings, exact extension schema/version and process/tmpfs/capability checks after metadata approval; missing evidence refuses or INCOMPLETE."
+  },
+  "decision_register": {
+    "specification": "scripts/validation/b05_containment/README.md: B01-B07 decision register",
+    "status": {
+      "B01": "OPEN_OWNER_DECISION_UNRESOLVED",
+      "B02": "OPEN_OWNER_DECISION_UNRESOLVED",
+      "B03": "OPEN_OWNER_DECISION_UNRESOLVED",
+      "B04": "OPEN_OWNER_DECISION_UNRESOLVED",
+      "B05": "OPEN_OWNER_DECISION_UNRESOLVED",
+      "B06": "OPEN_OWNER_DECISION_UNRESOLVED",
+      "B07": "OPEN_OWNER_DECISION_UNRESOLVED"
+    },
+    "owner_identity": null,
+    "approvals": null,
+    "legacy_rule": "Preserve signatures/behavior/ACLs unless a separately supported authorized project-owner decision approves an exact change."
+  }
+}

@@ -1,0 +1,2402 @@
+{
+  "project": "CollegeAIChatbot",
+  "workstream": "B05 Student Enrollment Security Containment",
+  "prepared_date": "2026-10-12",
+  "timezone": "Asia/Calcutta",
+  "record_revision": "preparation-2",
+  "record_kind": "Unsigned administrative reference index and pending assignment schedule; no new decision IDs",
+  "status": "BLOCKED - GOVERNANCE INPUTS REQUIRED",
+  "verified_assignment_count": 0,
+  "human_independent_review": "PENDING / NOT PERFORMED",
+  "security_approval": "NOT ESTABLISHED",
+  "production_readiness": "NOT ESTABLISHED",
+  "governance_process": {
+    "approved_process_name": null,
+    "approved_process_revision": null,
+    "controlled_record_location": null,
+    "custodian_assignment_reference": null,
+    "accountable_issuer_reference": null,
+    "issuer_authority_reference": null,
+    "authorized_recipient_alias": null,
+    "authorized_contact_channel_reference": null,
+    "contact_authorization_reference": null,
+    "dispatch_record_reference": null,
+    "status": "NOT SUPPLIED / NOT VERIFIED"
+  },
+  "source_artifact_identities": [
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "bytes": 72805,
+      "sha256": "22b3c0dda941de271d0a039b7358afdfb5b15013d1e7b895eb69ef4ddf2f08e5"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "bytes": 51864,
+      "sha256": "76140efa2c780932fe0c07c29bda0921e073417c830a66d3ea540f9ce55d0f32"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "bytes": 142045,
+      "sha256": "a298967d5d8f5fb188f29dbe395bd40628b4f7ffca525b322a4dac39c19e3e86"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "bytes": 73355,
+      "sha256": "a9af4cab04cb134fa581d688eb75f94e3ffd0a8ced3a33548793702877cb1231"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "bytes": 76172,
+      "sha256": "c31f7c7f672eb846d45b642a21af5a22d1611a0f5efa1763a9db550b3f9b48cb"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "bytes": 56819,
+      "sha256": "a733cf6a92f5d00a41123606941bebca454194d89ada239e8651ffc89fc3ec30"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OFFLINE_EVIDENCE.json",
+      "bytes": 164055,
+      "sha256": "4bcc861d0ef44f9f416bf1f5a9fe27ea303c16e4ee2048f89d496c5d3d83d3e4"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+      "bytes": 225727,
+      "sha256": "d478304c248b486c4cef18116260b0dc5d734f118394583de1234eb484432d5b"
+    }
+  ],
+  "assignment_record_template": {
+    "status": "UNFILLED / NOT VERIFIED",
+    "controlled_record_reference": null,
+    "record_revision": null,
+    "responsibility": null,
+    "approved_stable_alias": null,
+    "organization_and_role_reference": null,
+    "identity_confirmation": {
+      "restricted_mapping_reference": null,
+      "authenticated_confirmation_reference": null,
+      "issuer_reference": null,
+      "issued_at_utc": null,
+      "issued_at_asia_calcutta": null
+    },
+    "delegation": {
+      "issuer_backed_record_reference": null,
+      "issuer_authority_reference": null,
+      "decision_or_collection_powers": null,
+      "existing_blocker_question_evidence_ids": [],
+      "evidenced_instance_keys": [],
+      "target_environment_reference": null,
+      "applicable_artifact_identities": [],
+      "effective_at_utc": null,
+      "effective_at_asia_calcutta": null,
+      "expires_at_utc": null,
+      "expires_at_asia_calcutta": null,
+      "revocation_source_reference": null,
+      "revocation_conditions": null,
+      "co_approval_requirements": null,
+      "limitations": null
+    },
+    "independent_verification": {
+      "verifier_assignment_reference": null,
+      "competence_evidence_reference": null,
+      "permitted_evidence_access_reference": null,
+      "conflict_disclosure_reference": null,
+      "role_overlap_and_separation_disposition_reference": null,
+      "inspected_evidence_identities": [],
+      "identity_verified": false,
+      "issuer_authority_verified": false,
+      "scope_and_validity_verified": false,
+      "revocation_checked": false,
+      "independence_verified": false,
+      "disposition": null,
+      "controlled_review_record_reference": null,
+      "reviewed_at_utc": null,
+      "reviewed_at_asia_calcutta": null,
+      "reasons_and_limits": null
+    },
+    "evidence_provenance": [],
+    "outstanding_dependencies": [],
+    "follow_up_assignee_reference": null,
+    "follow_up_due_at": null,
+    "revalidation_triggers": [
+      "Record/artifact/scope changes",
+      "Expiry, revocation or issuer authority change",
+      "Conflict, competence or evidence-access change",
+      "Before reliance and each relevant approval/operation boundary"
+    ]
+  },
+  "blocker_assignment_schedule": [
+    {
+      "existing_blocker_id": "B01",
+      "suggested_competence_coverage_only": "Authentication, authentic principals, identity mapping, authorization and RLS",
+      "canonical_intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L48",
+      "existing_question_references": [
+        "DR01.01",
+        "DR01.02",
+        "DR01.03",
+        "DR01.04",
+        "DR01.05",
+        "DR01.06"
+      ],
+      "existing_criterion_references": [
+        "C01.1",
+        "C01.2",
+        "C01.3",
+        "C01.4",
+        "C01.5"
+      ],
+      "owner_assignment_reference": null,
+      "co_owner_assignment_references": [],
+      "independent_reviewer_assignment_reference": null,
+      "target_scope": null,
+      "instance_scope": null,
+      "assignment_status": "UNASSIGNED / NOT VERIFIED",
+      "independent_assignment_disposition": null,
+      "blocker_status": "OPEN",
+      "outstanding_dependencies": [
+        "Verified identity and issuer-backed scope/validity/revocation records",
+        "Competence/access/conflict and separation-of-duties review",
+        "Canonical evidence and per-question/instance responsibility reconciliation"
+      ]
+    },
+    {
+      "existing_blocker_id": "B02",
+      "suggested_competence_coverage_only": "Database privileges, explicit routine grants, helpers and consumers",
+      "canonical_intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L61",
+      "existing_question_references": [
+        "DR02.01",
+        "DR02.02",
+        "DR02.03",
+        "DR02.04",
+        "DR02.05",
+        "DR02.06"
+      ],
+      "existing_criterion_references": [
+        "C02.1",
+        "C02.2",
+        "C02.3",
+        "C02.4",
+        "C02.5"
+      ],
+      "owner_assignment_reference": null,
+      "co_owner_assignment_references": [],
+      "independent_reviewer_assignment_reference": null,
+      "target_scope": null,
+      "instance_scope": null,
+      "assignment_status": "UNASSIGNED / NOT VERIFIED",
+      "independent_assignment_disposition": null,
+      "blocker_status": "OPEN",
+      "outstanding_dependencies": [
+        "Verified identity and issuer-backed scope/validity/revocation records",
+        "Competence/access/conflict and separation-of-duties review",
+        "Canonical evidence and per-question/instance responsibility reconciliation"
+      ]
+    },
+    {
+      "existing_blocker_id": "B03",
+      "suggested_competence_coverage_only": "Migration/extension creators, global/schema defaults and consumer impact",
+      "canonical_intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L74",
+      "existing_question_references": [
+        "DR03.01",
+        "DR03.02",
+        "DR03.03",
+        "DR03.04",
+        "DR03.05"
+      ],
+      "existing_criterion_references": [
+        "C03.1",
+        "C03.2",
+        "C03.3",
+        "C03.4",
+        "C03.5"
+      ],
+      "owner_assignment_reference": null,
+      "co_owner_assignment_references": [],
+      "independent_reviewer_assignment_reference": null,
+      "target_scope": null,
+      "instance_scope": null,
+      "assignment_status": "UNASSIGNED / NOT VERIFIED",
+      "independent_assignment_disposition": null,
+      "blocker_status": "OPEN",
+      "outstanding_dependencies": [
+        "Verified identity and issuer-backed scope/validity/revocation records",
+        "Competence/access/conflict and separation-of-duties review",
+        "Canonical evidence and per-question/instance responsibility reconciliation"
+      ]
+    },
+    {
+      "existing_blocker_id": "B04",
+      "suggested_competence_coverage_only": "Target/deployment provenance, applied migration bytes, definitions and drift",
+      "canonical_intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L86",
+      "existing_question_references": [
+        "DR04.01",
+        "DR04.02",
+        "DR04.03",
+        "DR04.04",
+        "DR04.05"
+      ],
+      "existing_criterion_references": [
+        "C04.1",
+        "C04.2",
+        "C04.3",
+        "C04.4",
+        "C04.5"
+      ],
+      "owner_assignment_reference": null,
+      "co_owner_assignment_references": [],
+      "independent_reviewer_assignment_reference": null,
+      "target_scope": null,
+      "instance_scope": null,
+      "assignment_status": "UNASSIGNED / NOT VERIFIED",
+      "independent_assignment_disposition": null,
+      "blocker_status": "OPEN",
+      "outstanding_dependencies": [
+        "Verified identity and issuer-backed scope/validity/revocation records",
+        "Competence/access/conflict and separation-of-duties review",
+        "Canonical evidence and per-question/instance responsibility reconciliation"
+      ]
+    },
+    {
+      "existing_blocker_id": "B05",
+      "suggested_competence_coverage_only": "Legacy authorization, privileged bodies, lookup, bootstrap and integration",
+      "canonical_intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L98",
+      "existing_question_references": [
+        "DR05.01",
+        "DR05.02",
+        "DR05.03",
+        "DR05.04",
+        "DR05.05",
+        "DR05.06",
+        "DR05.07",
+        "DR05.08"
+      ],
+      "existing_criterion_references": [
+        "C05.1",
+        "C05.2",
+        "C05.3",
+        "C05.4",
+        "C05.5"
+      ],
+      "owner_assignment_reference": null,
+      "co_owner_assignment_references": [],
+      "independent_reviewer_assignment_reference": null,
+      "target_scope": null,
+      "instance_scope": null,
+      "assignment_status": "UNASSIGNED / NOT VERIFIED",
+      "independent_assignment_disposition": null,
+      "blocker_status": "OPEN",
+      "outstanding_dependencies": [
+        "Verified identity and issuer-backed scope/validity/revocation records",
+        "Competence/access/conflict and separation-of-duties review",
+        "Canonical evidence and per-question/instance responsibility reconciliation"
+      ]
+    },
+    {
+      "existing_blocker_id": "B06",
+      "suggested_competence_coverage_only": "Recovery/revocation/concurrency, audit retention, maintenance, delivery and cutover",
+      "canonical_intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L113",
+      "existing_question_references": [
+        "DR06.01",
+        "DR06.02",
+        "DR06.03",
+        "DR06.04",
+        "DR06.05",
+        "DR06.06",
+        "DR06.07",
+        "DR06.08",
+        "DR06.09"
+      ],
+      "existing_criterion_references": [
+        "C06.1",
+        "C06.2",
+        "C06.3",
+        "C06.4",
+        "C06.5"
+      ],
+      "owner_assignment_reference": null,
+      "co_owner_assignment_references": [],
+      "independent_reviewer_assignment_reference": null,
+      "target_scope": null,
+      "instance_scope": null,
+      "assignment_status": "UNASSIGNED / NOT VERIFIED",
+      "independent_assignment_disposition": null,
+      "blocker_status": "OPEN",
+      "outstanding_dependencies": [
+        "Verified identity and issuer-backed scope/validity/revocation records",
+        "Competence/access/conflict and separation-of-duties review",
+        "Canonical evidence and per-question/instance responsibility reconciliation"
+      ]
+    },
+    {
+      "existing_blocker_id": "B07",
+      "suggested_competence_coverage_only": "Governance and collection approval boundaries, validation/environment and independent review",
+      "canonical_intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L129",
+      "existing_question_references": [
+        "DR07.01",
+        "DR07.02",
+        "DR07.03",
+        "DR07.04",
+        "DR07.05",
+        "DR07.06"
+      ],
+      "existing_criterion_references": [
+        "C07.1",
+        "C07.2",
+        "C07.3",
+        "C07.4",
+        "C07.5"
+      ],
+      "owner_assignment_reference": null,
+      "co_owner_assignment_references": [],
+      "independent_reviewer_assignment_reference": null,
+      "target_scope": null,
+      "instance_scope": null,
+      "assignment_status": "UNASSIGNED / NOT VERIFIED",
+      "independent_assignment_disposition": null,
+      "blocker_status": "OPEN",
+      "outstanding_dependencies": [
+        "Verified identity and issuer-backed scope/validity/revocation records",
+        "Competence/access/conflict and separation-of-duties review",
+        "Canonical evidence and per-question/instance responsibility reconciliation"
+      ]
+    }
+  ],
+  "question_reference_index": [
+    {
+      "existing_question_id": "DR01.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L147",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L54",
+      "evidence_decision_lineage": "E01\u2013E03; OD02/17; B01 source facts",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR01.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L148",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L55",
+      "evidence_decision_lineage": "E01/E02; OD02/06/07",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR01.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L149",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L56",
+      "evidence_decision_lineage": "E03; OD17/20",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR01.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L150",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L57",
+      "evidence_decision_lineage": "E01\u2013E03; OD06/07/17",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR01.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L151",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L58",
+      "evidence_decision_lineage": "E01/E02; OD06/07; M19-LR-01 below",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR01.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L152",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L59",
+      "evidence_decision_lineage": "E01/E02/E17/E19; OD01/02/05",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR02.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L153",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L67",
+      "evidence_decision_lineage": "E04\u2013E06; OD06/09/17",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR02.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L154",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L68",
+      "evidence_decision_lineage": "E05/E06/E15; OD09/15",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR02.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L155",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L69",
+      "evidence_decision_lineage": "E05/E06/E14; OD06/17",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR02.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L156",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L70",
+      "evidence_decision_lineage": "E03/E06/E15; OD06/17",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR02.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L157",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L71",
+      "evidence_decision_lineage": "E04\u2013E09; OD17; DR03",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR02.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L158",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L72",
+      "evidence_decision_lineage": "E04/E15/E20; OD09/10/15/18",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR03.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L159",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L80",
+      "evidence_decision_lineage": "E07\u2013E09; OD17",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR03.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L160",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L81",
+      "evidence_decision_lineage": "E07\u2013E09; OD17/19",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR03.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L161",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L82",
+      "evidence_decision_lineage": "E07\u2013E09; OD17",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR03.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L162",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L83",
+      "evidence_decision_lineage": "E07\u2013E09; OD17; M20 subcases below",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR03.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L163",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L84",
+      "evidence_decision_lineage": "E08/E09/E15; OD17/19",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR04.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L164",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L92",
+      "evidence_decision_lineage": "E10\u2013E12/E23; OD20",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR04.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L165",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L93",
+      "evidence_decision_lineage": "E10\u2013E12; OD18/19",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR04.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L166",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L94",
+      "evidence_decision_lineage": "E10/E12; OD18/20",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR04.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L167",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L95",
+      "evidence_decision_lineage": "E11/E12; K01\u2013K10; OD17/19",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR04.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L168",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L96",
+      "evidence_decision_lineage": "E15/E21; OD18",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L169",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L104",
+      "evidence_decision_lineage": "E12\u2013E15; OD06/09/18",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L170",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L105",
+      "evidence_decision_lineage": "E12\u2013E15/E20; OD06/09/15/18",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L171",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L106",
+      "evidence_decision_lineage": "E12\u2013E15/E20; OD06/09/15/18",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L172",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L107",
+      "evidence_decision_lineage": "E13/E15; OD06/09/18; B05 source facts",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L173",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L108",
+      "evidence_decision_lineage": "E13\u2013E15; OD06/07/10",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L174",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L109",
+      "evidence_decision_lineage": "E13/E15/E19; OD06\u2013OD08/10",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.07",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L175",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L110",
+      "evidence_decision_lineage": "E13/E15; OD06/07/09; M19-LR-01",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR05.08",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L176",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L111",
+      "evidence_decision_lineage": "E12/E14/E18; OD19",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L177",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L119",
+      "evidence_decision_lineage": "E22; OD16; maintenance M01\u2013M04",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L178",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L120",
+      "evidence_decision_lineage": "E18/E22; OD14/16",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L179",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L121",
+      "evidence_decision_lineage": "E18; OD14/19",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L180",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L122",
+      "evidence_decision_lineage": "E13/E19; OD03\u2013OD05/07/08",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L181",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L123",
+      "evidence_decision_lineage": "E17/E19; OD05/08/12/13/16; B06 source facts",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L182",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L124",
+      "evidence_decision_lineage": "E13/E19; OD07/08/10/18",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.07",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L183",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L125",
+      "evidence_decision_lineage": "E16/E17/E19; OD12/13",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.08",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L184",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L126",
+      "evidence_decision_lineage": "E15/E20; OD04/15",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR06.09",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L185",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L127",
+      "evidence_decision_lineage": "E15/E20\u2013E22; OD15/18",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR07.01",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L186",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L135",
+      "evidence_decision_lineage": "E23\u2013E26; OD20",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR07.02",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L187",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L136",
+      "evidence_decision_lineage": "E23; OD20; DR04.01",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR07.03",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L188",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L137",
+      "evidence_decision_lineage": "E24/E25; OD20",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR07.04",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L189",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L138",
+      "evidence_decision_lineage": "E24\u2013E26; OD20; current runner contract",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR07.05",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L190",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L139",
+      "evidence_decision_lineage": "E24\u2013E26; OD20; no approval supplied",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    },
+    {
+      "existing_question_id": "DR07.06",
+      "canonical_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L191",
+      "intake_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L140",
+      "evidence_decision_lineage": "E24\u2013E26; OD18\u2013OD20",
+      "instance_inventory": null,
+      "controlled_instance_records": [],
+      "owner_assignment_reference": null,
+      "reviewer_assignment_reference": null,
+      "status": "UNANSWERED / NOT APPROVED; PENDING OWNER DECISION; PENDING INDEPENDENT REVIEW"
+    }
+  ],
+  "evidence_responsibility_schedule": [
+    {
+      "existing_evidence_id": "E01",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L118",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L149",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L152",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E02",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L119",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L156",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L159",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E03",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L120",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L163",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L166",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E04",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L121",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L170",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L173",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E05",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L122",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L177",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L180",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E06",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L123",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L184",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L187",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E07",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L124",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L191",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L194",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E08",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L125",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L198",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L201",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E09",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L126",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L205",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L208",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E10",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L127",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L212",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L215",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E11",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L128",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L219",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L222",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E12",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L129",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L226",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L229",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E13",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L130",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L233",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L236",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "DERIVED CONTRACT/ASSESSMENT NOT ACCEPTED; R NOT RUN",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E14",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L131",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L240",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L243",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "DERIVED CONTRACT/ASSESSMENT NOT ACCEPTED; R NOT RUN",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E15",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L132",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L247",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L250",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E16",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L133",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L254",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L257",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E17",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L134",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L261",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L264",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E18",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L135",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L268",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L271",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E19",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L136",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L275",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L278",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E20",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L137",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L282",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L285",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E21",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L138",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L289",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L292",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E22",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L139",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L296",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L299",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "NOT COLLECTED / NOT ACCEPTED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E23",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L140",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L303",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L306",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "PENDING / NOT APPROVED",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E24",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L141",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L310",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L313",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "REVIEW/DESIGN REQUEST ONLY; COMPONENTS/APPROVALS MISSING; R NOT RUN",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E25",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L142",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L317",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L320",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "REVIEW/DESIGN REQUEST ONLY; COMPONENTS/APPROVALS MISSING; R NOT RUN",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    },
+    {
+      "existing_evidence_id": "E26",
+      "canonical_index_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L143",
+      "canonical_contract_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L324",
+      "canonical_supplier_collector_permissions_reference": "SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md#L327",
+      "supplier_assignment_references": [],
+      "collector_assignment_references": [],
+      "accountable_owner_assignment_references": [],
+      "independent_acceptance_reviewer_assignment_references": [],
+      "selected_component_scope": null,
+      "target_and_operation_boundaries": null,
+      "permission_and_handling_schedule_reference": null,
+      "artifact_provenance_records": [],
+      "responsibility_status": "UNASSIGNED / NOT VERIFIED",
+      "current_evidence_status": "REVIEW/DESIGN REQUEST ONLY; COMPONENTS/APPROVALS MISSING; R NOT RUN",
+      "limitation": "Routing reference only; existing contract governs. No collection or acceptance authority."
+    }
+  ],
+  "e23": {
+    "status": "PENDING / NOT APPROVED",
+    "existing_annex_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+    "responsibility_schedule": [
+      {
+        "canonical_responsibility": "Accountable collection approver",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L28",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "DB metadata collector(s)",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L29",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Source/document analyst(s)",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L30",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Deployment/provenance supplier(s)",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L31",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Consumer/worker/operator supplier(s)",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L32",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Policy/attestation owner(s)",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L33",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Independent scope/security reviewer",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L34",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Independent database/method reviewer",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L35",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Evidence acceptance reviewers",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L36",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Storage/access/retention/legal-hold owner(s)",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L37",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      },
+      {
+        "canonical_responsibility": "Abort coordinator and resume approver",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L38",
+        "assignment_references": [],
+        "status": "UNASSIGNED / NOT VERIFIED"
+      }
+    ],
+    "readiness_checks": [
+      {
+        "existing_check_id": "PF01",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L320",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF02",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L321",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF03",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L322",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF04",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L323",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF05",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L324",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF06",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L325",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF07",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L326",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF08",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L327",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF09",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L328",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF10",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L329",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF11",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L330",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF12",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L331",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      },
+      {
+        "existing_check_id": "PF13",
+        "canonical_reference": "SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md#L332",
+        "completion_record_reference": null,
+        "independent_disposition_reference": null,
+        "status": "PENDING / NOT PERFORMED"
+      }
+    ],
+    "completed_controlled_annex_reference": null,
+    "completed_manifest_and_schedule_identities": [],
+    "independent_review_records": [],
+    "target_specific_approval_reference": null,
+    "detached_approval_signature_or_identity_reference": null,
+    "validity_and_revocation_check_reference": null,
+    "collection_authorized": false,
+    "preflight_authorized": false,
+    "outstanding_dependencies": [
+      "All existing annex fields and selected PF01-PF13 prerequisites",
+      "Verified exact target/method/permission/scope/output/handling/retention/window/revocation/contact/abort records",
+      "Separate independent review followed by genuine attributable detached target-specific approval"
+    ]
+  },
+  "decision_intake": {
+    "template_reference": "B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md#L142",
+    "canonical_question_register_reference": "B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md#L141",
+    "record_key_rule": "Existing DR ID + evidenced inventory key + controlled record revision",
+    "actual_scoped_instance_inventory": null,
+    "controlled_decision_record_references": [],
+    "independent_decision_disposition_references": [],
+    "accepted_decision_count": 0,
+    "status": "PENDING VERIFIED ASSIGNMENTS AND GENUINE SCOPED RECORDS"
+  },
+  "preserved_disposition": {
+    "decisions": {
+      "B01": "OPEN",
+      "B02": "OPEN",
+      "B03": "OPEN",
+      "B04": "OPEN",
+      "B05": "OPEN",
+      "B06": "OPEN",
+      "B07": "OPEN"
+    },
+    "runtime_cases": {
+      "M01": "NOT RUN",
+      "M02": "NOT RUN",
+      "M03": "NOT RUN",
+      "M04": "NOT RUN",
+      "M05": "NOT RUN",
+      "M06": "NOT RUN",
+      "M07": "NOT RUN",
+      "M08": "NOT RUN",
+      "M09": "NOT RUN",
+      "M10": "NOT RUN",
+      "M11": "NOT RUN",
+      "M12": "NOT RUN",
+      "M13": "NOT RUN",
+      "M14": "NOT RUN",
+      "M15": "NOT RUN",
+      "M16": "NOT RUN",
+      "M17": "NOT RUN",
+      "M18": "NOT RUN",
+      "M19": "NOT RUN",
+      "M20": "NOT RUN",
+      "M21": "NOT RUN"
+    },
+    "broader_runtime_cases": {
+      "T01": "NOT RUN",
+      "T02": "NOT RUN",
+      "T03": "NOT RUN",
+      "T04": "NOT RUN",
+      "T05": "NOT RUN",
+      "T06": "NOT RUN",
+      "T07": "NOT RUN",
+      "T08": "NOT RUN",
+      "T09": "NOT RUN",
+      "T10": "NOT RUN",
+      "T11": "NOT RUN",
+      "T12": "NOT RUN",
+      "T13": "NOT RUN",
+      "T14": "NOT RUN"
+    },
+    "base_coverage": {
+      "denominator": 35,
+      "covered": 0,
+      "blocked": 35,
+      "deferred": 0,
+      "excluded": 0,
+      "criterion_ids": [
+        "C01.1",
+        "C01.2",
+        "C01.3",
+        "C01.4",
+        "C01.5",
+        "C02.1",
+        "C02.2",
+        "C02.3",
+        "C02.4",
+        "C02.5",
+        "C03.1",
+        "C03.2",
+        "C03.3",
+        "C03.4",
+        "C03.5",
+        "C04.1",
+        "C04.2",
+        "C04.3",
+        "C04.4",
+        "C04.5",
+        "C05.1",
+        "C05.2",
+        "C05.3",
+        "C05.4",
+        "C05.5",
+        "C06.1",
+        "C06.2",
+        "C06.3",
+        "C06.4",
+        "C06.5",
+        "C07.1",
+        "C07.2",
+        "C07.3",
+        "C07.4",
+        "C07.5"
+      ]
+    },
+    "expanded_coverage_denominator": null,
+    "T13": "Conditional; unpassed if deferred",
+    "execution_authorized": false,
+    "runtime_adapter": null,
+    "collection_authority": "PENDING / NOT APPROVED"
+  },
+  "activity": {
+    "owner_contact_performed": false,
+    "assignments_issued": false,
+    "owner_decisions_obtained": false,
+    "governance_dispatch_performed": false,
+    "target_preflight_performed": false,
+    "runtime_activity_performed": false,
+    "scope": "Local document reads, pending administrative record preparation and local byte/reference/lexical validation only; session statement, not forensic audit"
+  },
+  "preserved_baseline_identities": [
+    {
+      "path": "backend/app/core/security.py",
+      "bytes": 18142,
+      "sha256": "78c74d4996e311153fee7b0412642abccb8add9232639a5d6fe2f0dd95f2f6eb"
+    },
+    {
+      "path": "backend/app/db/supabase.py",
+      "bytes": 9574,
+      "sha256": "c5c36679afd0c071e494083617da48f0bbab8c2e469139411799f2428a40fbe6"
+    },
+    {
+      "path": "backend/app/repositories/tenancy.py",
+      "bytes": 31783,
+      "sha256": "c35bfa19064802f1c772280188d8381ca439937d2b227de156e03b1cb2da1dad"
+    },
+    {
+      "path": "backend/app/services/tenancy.py",
+      "bytes": 27952,
+      "sha256": "ea58c253685cc0b56b11b0ad8d3a9995d1d37752dffe0c4872c848709858a249"
+    },
+    {
+      "path": "backend/tests/B05_RECOVERY_CONTRACT.md",
+      "bytes": 9622,
+      "sha256": "2b4260f0e8a1e472a6a005495859b6bff6d07db041b705b518f0d8859b2e2d03"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/ADR-ENROLLMENT-003.md",
+      "bytes": 7664,
+      "sha256": "278cdc388af6491d874c0706aacd242a0d4bee19eba6fae5c857d47e2b9fb741"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_BLOCKER_REMEDIATION_REPORT.md",
+      "bytes": 16737,
+      "sha256": "59863d25d04e8ec1b277a55a2c0b3dd5625b3c3744c08a6ebbe011b755135d33"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_ENTRY_HASHES.json",
+      "bytes": 16503,
+      "sha256": "4eb955ccfc7acda8cbfd607c4e27ad9ce55abbad493bf861d3d82ca8f10bc24a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_HASH_EVIDENCE.json",
+      "bytes": 36431,
+      "sha256": "2b8362bc097c7f49e41ef0a36f5f2f58f6278925b8faffc85e33eb3c39a9eb49"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_INDEPENDENT_READINESS_REVIEW.md",
+      "bytes": 10785,
+      "sha256": "fdd94200b9b7863d3a154b1f3a33ac31d53b7ac05ab1fa3e7da550bbdd007e68"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_OFFLINE_HASH_EVIDENCE.json",
+      "bytes": 35844,
+      "sha256": "7a3c4660ee2c3497bfca68d7ab95108958f5acad07c29f2cfe01eae95981d91b"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_10_TEST_MATRIX_RECOVERED.md",
+      "bytes": 84107,
+      "sha256": "df11a19fc8f18c3b3fecfd61930657be52a06ed510c435f36b64ee05e474e4aa"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_ENTRY_HASHES.json",
+      "bytes": 25080,
+      "sha256": "41792b415ac35e8dd1e7abdb3ff5b7471eccb3cf111169f777df9a0a70bca134"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_OFFLINE_HASH_EVIDENCE.json",
+      "bytes": 43998,
+      "sha256": "e8118c9d3896902be1903141115fdf355b748c8b605d4c29fe4379e13f893bfc"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_12_TARGETED_ORACLE_REMEDIATION_REPORT.md",
+      "bytes": 12804,
+      "sha256": "ead3a9ce59a48f924764507ba0c3aaa91d4fc29c354a9a83adaa3a80119fab15"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_HASH_EVIDENCE.json",
+      "bytes": 27087,
+      "sha256": "ff508a6777aa1397a87073e5a611808f7bce9f03c75555237372ebcba085d1af"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_INDEPENDENT_TARGETED_RE_REVIEW.md",
+      "bytes": 19998,
+      "sha256": "303489df763361e0ed41ec34881e8ee5ff0ab76e0e5eb7ef8353d8d49321a8dd"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_BASELINE_RECOVERY_ADDENDUM.md",
+      "bytes": 9269,
+      "sha256": "cb07f0954a64b6671d3f34e96ca8866277f32306a635d8bfe205a6de3fc181eb"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_MATRIX_RECOVERY_EVIDENCE.json",
+      "bytes": 36580,
+      "sha256": "85dcb46eac86e943b76482d89af0c3bdf816eff744d77ed93711f1a6b9b26e96"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_MATRIX_DIFF.patch",
+      "bytes": 26606,
+      "sha256": "7660eb87c6b08d2fa9872828b786c33f5b85c4dfbdd8b588272c9fdd7dda1572"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_13_VERIFIED_TEST_MANIFEST_DIFF.patch",
+      "bytes": 8554,
+      "sha256": "12949cf6d8d2ca18cde0e56c38d34ea3671c3568a6b001286f6eebbc0939425f"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_B01_B07_DECISION_REGISTER.md",
+      "bytes": 72805,
+      "sha256": "22b3c0dda941de271d0a039b7358afdfb5b15013d1e7b895eb69ef4ddf2f08e5"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_DEPENDENCY_ORDERED_CLOSURE_PLAN.md",
+      "bytes": 29111,
+      "sha256": "f32a7530d83a8f49c051c87bb8056a4fb7de3dff635b0a8b01eea72ed422a6ff"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_14_OFFLINE_EVIDENCE.json",
+      "bytes": 73907,
+      "sha256": "d068d1ed5d2b80493a81452ffa77f781cac232d353e07199f786f1aafa645217"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_INDEPENDENT_DECISION_REVIEW.md",
+      "bytes": 37280,
+      "sha256": "d4aeef70d3aecfa2fe3dbf880d7d11c2ce4fc24dce045e947c0184d81f8ee7ea"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_15_OFFLINE_EVIDENCE.json",
+      "bytes": 109909,
+      "sha256": "533f59dfc2b45e17e6f33c85de14da8dba1548c5b2d804483a00b58f2f30d623"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_DOCUMENTATION_REPAIR.md",
+      "bytes": 13838,
+      "sha256": "62016dd03bb1a9d5b02b2d34fbcd37d0b374242f8ad0cf91136837f22391fd83"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_16_OFFLINE_EVIDENCE.json",
+      "bytes": 305610,
+      "sha256": "65902308a0a3094e5fb99498b5ca53a0008e7867a658edae609e0eaa114a440a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_INDEPENDENT_READINESS_REVIEW.md",
+      "bytes": 37684,
+      "sha256": "5ab9c78d0c1dce4137e65d5b6807a5cceded1129d65b2a740d2092d4976d4d84"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_9_OFFLINE_HASH_EVIDENCE.json",
+      "bytes": 23438,
+      "sha256": "517426ac49f2b885f4c818b6e9a7e54f059709c7b0c9dcdc72639f68873cbe52"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/REVIEW_SUMMARY.md",
+      "bytes": 12688,
+      "sha256": "0bc8e4ceef8dd50a7fb3bc78acb63d7c3a566f723a0dd7380c391c0211a4aadf"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_B05_REMEDIATION_DESIGN.md",
+      "bytes": 74723,
+      "sha256": "a5846632243ee52eb28b8d02c34a9d5530a54376619f59ebefa32612a3900c27"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_B05_ROUTINE_SECURITY_REVIEW.md",
+      "bytes": 70307,
+      "sha256": "dfc8767ab3d3d7e78f08b8b5689e092b99865beeb740cbe45b9f8b26acfbfcfd"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_BLOCKER_EVIDENCE_MATRIX.md",
+      "bytes": 46136,
+      "sha256": "fab90b17a703c75ec17f0017bb8164183020107babcec12edc6a6275373cc1be"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_CANDIDATE_RESULTS.json",
+      "bytes": 292092,
+      "sha256": "42e4678c417b0b0c73fc85107323802a3746b3ce134f4a5fb937cbe0d2e2ca5a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_CHANGE_PLAN.md",
+      "bytes": 17135,
+      "sha256": "073543f966608d247e1d09427bc78cea8d8dfdb800bf846b7c5ba4ca234f8fe8"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_E23_READ_ONLY_AUTHORIZATION_ANNEX_DRAFT.md",
+      "bytes": 76172,
+      "sha256": "c31f7c7f672eb846d45b642a21af5a22d1611a0f5efa1763a9db550b3f9b48cb"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_INDEPENDENT_REVIEW.md",
+      "bytes": 19086,
+      "sha256": "6f9f3e99f151cc81db938966c6b24730bb46f16eef2b6c303395a5b823391bb4"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_CANDIDATE.sql",
+      "bytes": 49694,
+      "sha256": "897a4c786adc487bce04462690f8a4bbcab215f2e3e53841f84a82f40c1a63c7"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_REVIEW.md",
+      "bytes": 64477,
+      "sha256": "43bd8294163c4a1cc1158e85979873dbece914d065f83f003df63324016d50d8"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_OWNER_DECISIONS_AND_EVIDENCE_READINESS.md",
+      "bytes": 56819,
+      "sha256": "a733cf6a92f5d00a41123606941bebca454194d89ada239e8651ffc89fc3ec30"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+      "bytes": 51805,
+      "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_READ_ONLY_COLLECTION_PACKAGE.md",
+      "bytes": 73355,
+      "sha256": "a9af4cab04cb134fa581d688eb75f94e3ffd0a8ced3a33548793702877cb1231"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_REVIEW.md",
+      "bytes": 41567,
+      "sha256": "99849afbfe9c11a12565c50761a9cb5466cf724cbb21832dc31641c9145e38a5"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_ROUTINE_INVENTORY.md",
+      "bytes": 20229,
+      "sha256": "2f1b2eb1dc7e09711a22a177d2ce259a9175189b371a4a8c29e6f1cd6c43f1cf"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_SOURCE_EVIDENCE.json",
+      "bytes": 373727,
+      "sha256": "2aee432277ad5fb794fa179e22ea34148c7d8232277c47967d77861163c8f75a"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_STATIC_RESULTS.json",
+      "bytes": 521790,
+      "sha256": "9e292d77bf6f391be59d51a21ebb09dec7da374b3e15a38f7ecdd783ed400c16"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SOURCE_EVIDENCE.json",
+      "bytes": 152768,
+      "sha256": "6f4cd69ce31673d2388555080a945cd21486a097d70790d0dbe693948f3381e8"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/SQL_REPAIR_REVIEW.md",
+      "bytes": 25696,
+      "sha256": "64d5b8a62aebb4e4f65db09cf6edda41f9e2b9255f29efe829d2f2d089c5a182"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STATIC_REVIEW_RESULTS.json",
+      "bytes": 18606,
+      "sha256": "d00b4ba740f81ab350f95ccbf39feb034570fe0e212f8e8061c0601078ac3b64"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STATIC_REVIEW_RESULTS.json.before_repair",
+      "bytes": 4063,
+      "sha256": "ff7964e3e2e6d31f126850d838395d8745dde728ea100c3ed652caa7107d9d2e"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_MIGRATION_PLAN.md",
+      "bytes": 20417,
+      "sha256": "292a9c4b15af7db214f03672435a36dd1f96e4a09b2f8b07ca496fc059284210"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_SCHEMA_FINAL_REVIEW.md",
+      "bytes": 15131,
+      "sha256": "a375b9a4eeca9aac1594c80d30923297fd97746e5273005ee35199cf2844ae01"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_SECURITY_REVIEW.md",
+      "bytes": 11790,
+      "sha256": "7fe2ff0f36d813ae334e28f99c3cede5f089b3f517fd6ed4d6e9cc1f719336ea"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/STUDENT_ENROLLMENT_TEST_PLAN.md",
+      "bytes": 16879,
+      "sha256": "086cfc5e37973c782c6d9c8cf1b16c37f77d2fdbfbf198bd8459c25de5c29399"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/build_security_containment_source_evidence.py",
+      "bytes": 17071,
+      "sha256": "3709807a2392bec77f91cd51b57e9c66cdc552d9a3bbe4488812a8a2acdb7b9f"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/student_enrollment_schema_review_draft.sql",
+      "bytes": 81515,
+      "sha256": "c04b3b51e8dcff739a2ad85989258bb5f2b1ea4123d6a506349133db1fa41206"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/student_enrollment_schema_review_draft.sql.before_repair",
+      "bytes": 67127,
+      "sha256": "0ff9b917da73dd0c112e3f540d60849ffffc2db51aeb61965c14b67a08a030b6"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/synthetic_fixtures.json",
+      "bytes": 38003,
+      "sha256": "14b028e8283719a86cc7ae6411ca8e0ad9603e72947fb1b48124f1e4fee3878c"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_10_offline.py",
+      "bytes": 13103,
+      "sha256": "7ed3cbae37203664af2ada41940273cc53b3457f0456db74f8b45ef991111530"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_12_offline.py",
+      "bytes": 8667,
+      "sha256": "44f26551f359321357af7a26541bc0beb0c88f3751caa67d915c1fda35214c39"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_b05_stage_1_13_offline.py",
+      "bytes": 6341,
+      "sha256": "a7323322ad01dc31d60f2ba9fde94568da2d0b79b8e701510ee2126c5d2f1225"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_review_static.py",
+      "bytes": 10366,
+      "sha256": "e1c0205a5286c707f948533d17765a218db6dccbd69dd90eee0367bd6db1db69"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/verify_security_containment_static.py",
+      "bytes": 17249,
+      "sha256": "03ace9d1ec1a2c1eda94e737c96748b21d616c995853a2d5a0c3464a46b98298"
+    },
+    {
+      "path": "scripts/maintenance/reset_supabase_data.sql",
+      "bytes": 6405,
+      "sha256": "910e276f35fc4fe4d05c1307d2d926c95b7b1e691ec630d52b59d7b1acdf2008"
+    },
+    {
+      "path": "scripts/validation/academic_setup_concurrency.py",
+      "bytes": 5509,
+      "sha256": "d23514baf15d5d7051c1532a60a3afb9081a3c7212264570a3bb1edc0b34ada1"
+    },
+    {
+      "path": "scripts/validation/academic_setup_database.sql",
+      "bytes": 12466,
+      "sha256": "c933e69c2a791a1aa07c2438e9c2b14be230c7e2106893cf3a776d1052efffb8"
+    },
+    {
+      "path": "scripts/validation/academic_setup_sql_lint.sql",
+      "bytes": 1408,
+      "sha256": "4730066e772e1820fa8fa11b078c16e4b526da522583ae6864b18b8e483ba757"
+    },
+    {
+      "path": "scripts/validation/b05_containment/README.md",
+      "bytes": 27419,
+      "sha256": "69a4be6e7d94d49f6765dbf0fe4901ab63d45bef108c674a1eea3650a56ad952"
+    },
+    {
+      "path": "scripts/validation/b05_containment/bootstrap.sql",
+      "bytes": 3496,
+      "sha256": "18d1370e7339281b1ba1072aa439582364e582931aebcb8a7453008053392c38"
+    },
+    {
+      "path": "scripts/validation/b05_containment/containment_successor.validation.sql",
+      "bytes": 51805,
+      "sha256": "d360dd302c7be96e042d45d3056bd15934b107ab8c8de8ada9c113d2b8344d37"
+    },
+    {
+      "path": "scripts/validation/b05_containment/fixtures_post_b05.sql",
+      "bytes": 3506,
+      "sha256": "a7870e1b46396c4b93fdaec60ccd44226193ca7cf55d06e4b79ec3dd2becfbb8"
+    },
+    {
+      "path": "scripts/validation/b05_containment/fixtures_pre_b05.sql",
+      "bytes": 8759,
+      "sha256": "b6ccf7960d3448d5938ec38e1cb1d180a5a803d0c76fe116375662573f3c61ed"
+    },
+    {
+      "path": "scripts/validation/b05_containment/migration_manifest.json",
+      "bytes": 25694,
+      "sha256": "52d1bfc38db7f1466b884cf8c971c75c44b44ebb77df1b54b08d5d49b0720208"
+    },
+    {
+      "path": "scripts/validation/b05_containment/prepare.py",
+      "bytes": 7340,
+      "sha256": "3bf5a6589becad59b7336b18de0f75b51ed1aba497fb0a416a24ddc246f0deee"
+    },
+    {
+      "path": "scripts/validation/b05_containment/runner_contract.json",
+      "bytes": 17754,
+      "sha256": "c18b23a093e21aea584e8f100fe733feffe690784db19741c245387523a3a278"
+    },
+    {
+      "path": "scripts/validation/b05_containment/test_matrix.md",
+      "bytes": 106301,
+      "sha256": "a654bf895a26acd8d5f19edb2535185925c36b532c79d26ecc54e6b50324a13d"
+    },
+    {
+      "path": "scripts/validation/b05_containment/test_preparation_safety.py",
+      "bytes": 14464,
+      "sha256": "2e8a7f5ae269a1c056451e0587362063d527b7374e23964e40cfc05916fe4982"
+    },
+    {
+      "path": "scripts/validation/build_academic_curriculum_convergence_contract.py",
+      "bytes": 4507,
+      "sha256": "1e062890d57ccc08eb9eb9eaccca6dca52fb6332a3f4c0c1b29eb63fcedace49"
+    },
+    {
+      "path": "scripts/validation/disposable_container.py",
+      "bytes": 8322,
+      "sha256": "2a7617a5f0771712fe816ff5dfe3b922e7294ab11553f45fc6bac5364bd5fcbe"
+    },
+    {
+      "path": "scripts/validation/faculty_assignment_concurrency.py",
+      "bytes": 17815,
+      "sha256": "b5020ada6d201b5e92a716c2afbb80786e404b300ff910631bf5d75fad57e058"
+    },
+    {
+      "path": "scripts/validation/faculty_attendance_concurrency.py",
+      "bytes": 5336,
+      "sha256": "37fa015d6ebf4de17a14029682be4234656010e7600f36182b51b88f2132422c"
+    },
+    {
+      "path": "scripts/validation/faculty_attendance_database.sql",
+      "bytes": 15583,
+      "sha256": "ffbbd227cb9192c4ec3b999e7d4261f39b92ffc19a7c1e231f00ba948882cec1"
+    },
+    {
+      "path": "scripts/validation/faculty_responsibilities_database.sql",
+      "bytes": 10061,
+      "sha256": "08e0c56067864554d86f4405e86c20561482254d7bf92dea35257c4d051b7c6b"
+    },
+    {
+      "path": "scripts/validation/faculty_tests_concurrency.py",
+      "bytes": 6870,
+      "sha256": "daa2c80673ed0ecf0d16e5ee307735f24446b464bca38263fcfe22ec9782dd46"
+    },
+    {
+      "path": "scripts/validation/faculty_tests_database.sql",
+      "bytes": 19296,
+      "sha256": "e3f8a5e14c5968c5549e15f1a799d5c95473efbefd746d641675d89c4d07dd59"
+    },
+    {
+      "path": "scripts/validation/invoke_local_supabase.ps1",
+      "bytes": 3002,
+      "sha256": "e3644cd03807939337ab611d0439bc44062540e761380b777aaecd94aad268dd"
+    },
+    {
+      "path": "scripts/validation/manage_local_super_admin.ps1",
+      "bytes": 2750,
+      "sha256": "140ce3a3df0e68c7ba80be18417b6cfa060cdaffee12f3f2784c8a52666d0188"
+    },
+    {
+      "path": "scripts/validation/phase717_local_outbox.sql",
+      "bytes": 4462,
+      "sha256": "fa2665dfbbcb7cd83b2d6369f0e6506f70f4131067dffa6c684b4f3bb648c23f"
+    },
+    {
+      "path": "scripts/validation/phase718_local_mailgun_webhooks.sql",
+      "bytes": 6238,
+      "sha256": "e71b7be7876247706baf6794579358ae40f0585c2b550735165680a58775b980"
+    },
+    {
+      "path": "scripts/validation/provision_local_demo_users.ps1",
+      "bytes": 4796,
+      "sha256": "2e0818015a1dca6db07587e20e06c3a599912e924e18ef1157dd5419d4f81844"
+    },
+    {
+      "path": "scripts/validation/test_disposable_container.py",
+      "bytes": 19471,
+      "sha256": "b5707820bf6226e4642750da44ad8acd6eda47d80b9278d680908b7faecdb05c"
+    },
+    {
+      "path": "scripts/validation/test_runner_safety.py",
+      "bytes": 8364,
+      "sha256": "8f73f167c26214ea1e50b017ad2bbfd22abbdb37d0403281c738daf951870a50"
+    },
+    {
+      "path": "scripts/validation/test_runner_worker.ps1",
+      "bytes": 3161,
+      "sha256": "b21c7e19bc58d56291b90c35823794a14362fdd991f0ccfc3642fdff253f1844"
+    },
+    {
+      "path": "scripts/validation/verify_academic_setup_database.ps1",
+      "bytes": 5260,
+      "sha256": "6ef6653918417ce64480c500d08d4e87716d45b998cba8523d4121a762efd91c"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_assignment_database.ps1",
+      "bytes": 5180,
+      "sha256": "77c5dcd02d41e268f70c896075a38f76b6e64c2a329b54cd570db22862fb792b"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_attendance_database.ps1",
+      "bytes": 5180,
+      "sha256": "3128ae0ec73c7ed962844ca6a30dc6a56b2d76ce22b278b34ff621cadeddc59c"
+    },
+    {
+      "path": "scripts/validation/verify_faculty_tests_database.ps1",
+      "bytes": 5420,
+      "sha256": "b744a5dd26ed21b0a2e1a960375e6c04e79a6cb5df2b5b60cfcd81ba46ff1081"
+    },
+    {
+      "path": "scripts/validation/verify_supabase_data_reset.py",
+      "bytes": 10843,
+      "sha256": "4f0746643bc8835c27574e338e0a46c3ab06440834ad0fea579e7137aab33b5f"
+    },
+    {
+      "path": "supabase/migrations/20250717000000_reconstructed_pre_phase_3_6_baseline.sql",
+      "bytes": 40228,
+      "sha256": "7fd1ea5c096eb47667a2ba55cc1bf4a872c959e12300c2110a69a698ca6e6429"
+    },
+    {
+      "path": "supabase/migrations/20250718000000_phase_3_6_embeddings.sql",
+      "bytes": 2939,
+      "sha256": "21230835555e0353b124c8314c72948c97ece834beafccdb7e89f9fe6412f2aa"
+    },
+    {
+      "path": "supabase/migrations/20260905000000_phase_3_7_1_vector_search_index.sql",
+      "bytes": 683,
+      "sha256": "da5e2f8a7c35c3ebee708bd977b9ebfc048f3666e06d26bf3c9edc7d7729df80"
+    },
+    {
+      "path": "supabase/migrations/20260905000001_phase_3_7_2_vector_similarity_search.sql",
+      "bytes": 1781,
+      "sha256": "c1dc20ecfba849522dba9c26e0393ce9060044c2ce8363d93846d205835240e4"
+    },
+    {
+      "path": "supabase/migrations/20260905000002_phase_3_8_metadata_access_filtering.sql",
+      "bytes": 3173,
+      "sha256": "fa6e41711c7485ee373306ca2cd3a1d37ff5e7489d56ff8d0e24f167e6fd0fa7"
+    },
+    {
+      "path": "supabase/migrations/20260909000000_phase_admin_1_admin_student_schema.sql",
+      "bytes": 26864,
+      "sha256": "0e70348067cf8096adff2bcef47587de70c889e55d55b43907fc9b069091009f"
+    },
+    {
+      "path": "supabase/migrations/20260909000001_phase_admin_2_extracted_text_column.sql",
+      "bytes": 312,
+      "sha256": "986f739f0506e5b3f1dce55f9b69a41b31a21fe66553bce006b251a51d6008e3"
+    },
+    {
+      "path": "supabase/migrations/20260909000002_phase_admin_2_faq_published_column.sql",
+      "bytes": 342,
+      "sha256": "9641a4c31bc7a58e4440d2a966b2fe61ea0b1ff9ccd68f5dfa03a3cc007656d4"
+    },
+    {
+      "path": "supabase/migrations/20260909000003_phase_admin_2_notice_published_column.sql",
+      "bytes": 358,
+      "sha256": "d70ebfc843866f85129944d9630ec52e4f515ed9e528936ed589662c22336e28"
+    },
+    {
+      "path": "supabase/migrations/20260912000000_phase_6_2_student_identity_model.sql",
+      "bytes": 9311,
+      "sha256": "a2b8793d3073bf7130497a828ff2f33c101f6db7788110c5adafe5dd46c67e57"
+    },
+    {
+      "path": "supabase/migrations/20260913000000_phase_6_7_attendance.sql",
+      "bytes": 9473,
+      "sha256": "365de679d8ce9edf278cfe117ae5496b2e2996ce2f0975e0d35c8542f343a423"
+    },
+    {
+      "path": "supabase/migrations/20260913010000_phase_6_8_results.sql",
+      "bytes": 18299,
+      "sha256": "c9b3d84ee8f3cfb8b94943a3eb8f9b8006315f79ffb8c32ef63eceae73925fd9"
+    },
+    {
+      "path": "supabase/migrations/20260914000000_phase_6_11_student_notifications.sql",
+      "bytes": 5831,
+      "sha256": "f105032d0a821755a0c13a79462907d3f58b983797a21e338aa97e6879c07f47"
+    },
+    {
+      "path": "supabase/migrations/20260915000000_phase_6_13_organization_institution_tenancy.sql",
+      "bytes": 33925,
+      "sha256": "e74e4fe768ec9c2cb0dd452bbf5c42617797574ba18daa9a7fcab8fdd633b637"
+    },
+    {
+      "path": "supabase/migrations/20260928000000_phase_7_2_public_knowledge_policy.sql",
+      "bytes": 4021,
+      "sha256": "2a43a3c2c3093a3405c809ccd26a4da8689440c5fbd8eb3264500eccf66600a5"
+    },
+    {
+      "path": "supabase/migrations/20260928010000_phase_7_4_public_rag_hardening.sql",
+      "bytes": 2923,
+      "sha256": "d52fe69d7e1037f7cdecf1af1a2ca4e840164e0042f17afc3250dd1ff4076092"
+    },
+    {
+      "path": "supabase/migrations/20260929000000_phase_7_10_legacy_primary_key_convergence.sql",
+      "bytes": 2153,
+      "sha256": "5be4401f19629449017963db2084e3ac90b2b54dad4c0406b78b828ae6bd3c5c"
+    },
+    {
+      "path": "supabase/migrations/20261001000000_phase_7_12_super_admin_identity_authorization.sql",
+      "bytes": 9678,
+      "sha256": "4aa88e05e5e893ec393a95941ad581fa902e4992aa49a47287a5f1f3676aa27d"
+    },
+    {
+      "path": "supabase/migrations/20261001010000_phase_7_13_super_admin_institution_management.sql",
+      "bytes": 8245,
+      "sha256": "bbc87fb76863894a68744396151c24c1bf8eca64bbfb30955b5693681bf72e7c"
+    },
+    {
+      "path": "supabase/migrations/20261001020000_phase_7_14_super_admin_university_admin_lifecycle.sql",
+      "bytes": 11166,
+      "sha256": "1d59c03c1535c8328d153b31c77c082372a65acdaf75bf3f914b8710acecbef8"
+    },
+    {
+      "path": "supabase/migrations/20261001030000_phase_7_15_invitation_delivery_email_verification.sql",
+      "bytes": 13057,
+      "sha256": "27d2aaa03f376748a8f640e6841d9506b8b77a527b425a2864c68c804a244892"
+    },
+    {
+      "path": "supabase/migrations/20261002000000_phase_7_17_email_outbox_worker.sql",
+      "bytes": 20309,
+      "sha256": "0a52abea3da21e8a1763e19e167572549ce3434296afb4654913d71c9394a7f2"
+    },
+    {
+      "path": "supabase/migrations/20261002010000_phase_7_18_mailgun_webhook_reconciliation.sql",
+      "bytes": 8121,
+      "sha256": "77e8b695e3b512907e04b66548fa533d5a76af644b288d4c9249eb713b0e045e"
+    },
+    {
+      "path": "supabase/migrations/20261004000000_phase_7_23_staff_faculty_onboarding_roster.sql",
+      "bytes": 6810,
+      "sha256": "30a51b837e5b988b64b4f41decf15386c0e531e0ee5b3036ee91be16ba3d3f2e"
+    },
+    {
+      "path": "supabase/migrations/20261004010000_admin_published_flags_schema_convergence.sql",
+      "bytes": 598,
+      "sha256": "92d25a5fa3b1a2658068ed1bd240a78376bdbc64b7aea1fe4952442129fc6c19"
+    },
+    {
+      "path": "supabase/migrations/20261004235959_permission_primary_key_convergence.sql",
+      "bytes": 1121,
+      "sha256": "813d843c8ff0e24f9950b92134a69c75bdd6bcfa465194df100f63f522c0c25b"
+    },
+    {
+      "path": "supabase/migrations/20261005000000_phase_8_granular_permissions.sql",
+      "bytes": 9582,
+      "sha256": "48a16106676dcd225479f3582b5a2036f5da0f736176037fe1cbf043c9a55a42"
+    },
+    {
+      "path": "supabase/migrations/20261006000000_phase_8_1_scoped_rbac_and_faculty_assignments.sql",
+      "bytes": 24077,
+      "sha256": "764489c42aa6542fa08c4a3c415b16be63bc42c6efbe481c3346e12798c4c716"
+    },
+    {
+      "path": "supabase/migrations/20261007000000_phase_9_auth_security_events.sql",
+      "bytes": 3934,
+      "sha256": "fa7747315c474b5684a45fe584a76a7594b36cf81043ec8badd24d8cd6f71270"
+    },
+    {
+      "path": "supabase/migrations/20261008000000_phase_9_super_admin_invitations.sql",
+      "bytes": 2328,
+      "sha256": "88e6b4a9bb314a47fbcf1879d521653c279fb9d3224200d050f271f65ef7f606"
+    },
+    {
+      "path": "supabase/migrations/20261009000000_phase_7_24_immediate_staff_faculty_approval.sql",
+      "bytes": 8460,
+      "sha256": "71a58d4e62dd4902bc0de489f9d9db66cccc6eae563fd50636b6f2465ce2fd2e"
+    },
+    {
+      "path": "supabase/migrations/20261010000000_phase_10_faculty_attendance_management.sql",
+      "bytes": 13253,
+      "sha256": "2f93ece8b89e006b61e46fe25f62ef79fec8c58e81b9fe7a835270069321c49b"
+    },
+    {
+      "path": "supabase/migrations/20261011000000_faculty_responsibilities_and_validity.sql",
+      "bytes": 23484,
+      "sha256": "5938051c99abecc3d582e213341d39e62d4430f5a90655091d42fe59c2f7c94c"
+    },
+    {
+      "path": "supabase/migrations/20261012000000_faculty_attendance_workflow.sql",
+      "bytes": 26738,
+      "sha256": "287e93f20bf6c5d1e91ac49b32c05d3468ea3ece549b84d789a295113402119f"
+    },
+    {
+      "path": "supabase/migrations/20261013000000_faculty_tests_examination.sql",
+      "bytes": 41259,
+      "sha256": "74186837ca7289041ffb88cc80d23d5a7dbc5194369849d8a098a7ba974c231e"
+    },
+    {
+      "path": "supabase/migrations/20261014000000_scoped_faculty_teaching_assignment_management.sql",
+      "bytes": 10064,
+      "sha256": "ff4d27a703c7d572579560f280c99e049be7f35a279c7d616229e513d5b62519"
+    },
+    {
+      "path": "supabase/migrations/20261015000000_student_academic_experience_read_indexes.sql",
+      "bytes": 1598,
+      "sha256": "b5ccc9f28e354303136e665777e531524ae8bd15e62e6fa676440cddbc4ffcea"
+    },
+    {
+      "path": "supabase/migrations/20261016000000_academic_master_data_management.sql",
+      "bytes": 17665,
+      "sha256": "a4d7ca4814b126d4322d66c6ae71fcd7a4d68407223506fe52d82bdc5a07004b"
+    },
+    {
+      "path": "supabase/migrations/20261016010000_academic_curriculum_semester_convergence.sql",
+      "bytes": 1227,
+      "sha256": "3c98b7aa8207176a1c60195ba2bf11ca709afe1a297c0dac71d589fd0d024c33"
+    },
+    {
+      "path": "supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql",
+      "bytes": 53941,
+      "sha256": "581146602e75d94342777b81ee70b9ab423fb0117b2fda8b871d4b750249bc1e"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OWNER_DECISION_EVIDENCE_CLOSURE_MATRIX.md",
+      "bytes": 142045,
+      "sha256": "a298967d5d8f5fb188f29dbe395bd40628b4f7ffca525b322a4dac39c19e3e86"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_17_OFFLINE_EVIDENCE.json",
+      "bytes": 225727,
+      "sha256": "d478304c248b486c4cef18116260b0dc5d734f118394583de1234eb484432d5b"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OWNER_INTAKE_AND_REVIEW.md",
+      "bytes": 51864,
+      "sha256": "76140efa2c780932fe0c07c29bda0921e073417c830a66d3ea540f9ce55d0f32"
+    },
+    {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_STAGE_1_18_OFFLINE_EVIDENCE.json",
+      "bytes": 164055,
+      "sha256": "4bcc861d0ef44f9f416bf1f5a9fe27ea303c16e4ee2048f89d496c5d3d83d3e4"
+    }
+  ],
+  "local_validation": {
+    "status": "PASS - LOCAL DOCUMENT PREPARATION ONLY",
+    "human_governance_verification": false,
+    "preserved_baseline_file_count": 143,
+    "preserved_baseline_raw_bytes": "PASS",
+    "canonical_question_reference_count": 45,
+    "evidence_contract_count": 26,
+    "e23_responsibility_count": 11,
+    "pf_reference_count": 13,
+    "local_reference_count": 212,
+    "manifest_pins_verified": 52,
+    "safeguards": [
+      {
+        "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_MIGRATION_CANDIDATE.sql",
+        "unconditional_stop_lines": [
+          28,
+          31
+        ],
+        "final_rollback_line": 443,
+        "declared_ledger_versions": 39
+      },
+      {
+        "path": "docs/reviews/student_enrollment_final_2026-10-11/SECURITY_CONTAINMENT_POST_B05_SUCCESSOR_DRAFT.sql",
+        "unconditional_stop_lines": [
+          42,
+          45
+        ],
+        "final_rollback_line": 475,
+        "declared_ledger_versions": 40
+      },
+      {
+        "path": "scripts/validation/b05_containment/containment_successor.validation.sql",
+        "unconditional_stop_lines": [
+          42,
+          45
+        ],
+        "final_rollback_line": 475,
+        "declared_ledger_versions": 40
+      }
+    ],
+    "runner_and_purpose_guard": "UNCHANGED / UNAUTHORIZED",
+    "pending_human_records": "PASS - ALL UNFILLED / NOT VERIFIED",
+    "only_two_new_paths": true,
+    "git_diff_check_exit_code": 0,
+    "git_warnings": "warning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\nwarning: unable to access 'C:\\Users\\dsmes/.config/git/ignore': Permission denied\n",
+    "handoff_identity": {
+      "path": "docs/reviews/student_enrollment_final_2026-10-11/B05_GOVERNANCE_ASSIGNMENT_HANDOFF.md",
+      "bytes": 11250,
+      "sha256": "3470d1761a7b8c73caef17335b5aca93c016dfaa7cccd0451f47676bbc5ac55c"
+    },
+    "verification_method": "In-memory standard-library structural/byte/reference/lexical checks and Git status/diff reads; no target preflight, application imports, tests or embedded prior-stage execution",
+    "limitations": [
+      "Local hashes establish bounded raw-byte identity only",
+      "Reference and lexical checks do not establish SQL grammar or effective behavior",
+      "No human identity/authority/independence/approval evidence has been supplied",
+      "Future reliance requires independently computed detached register/handoff identities and authentic governance records"
+    ],
+    "requester_clarification_recheck": {
+      "result": "PASS - LOCAL DOCUMENT CHECK ONLY",
+      "scope": "143 preserved baseline identities, source identities, 212 references, unchanged pending schedules/dispositions, whitespace and Git status/diff",
+      "human_governance_verification": false
+    }
+  },
+  "outstanding_governance_inputs": [
+    "Approved process/custodian/issuer/controlled location and authorized recipient/channel",
+    "Controlled identity/delegation/scope/validity/revocation/separation records for all responsible parties",
+    "Independent reviewer appointments, competence and evidence access",
+    "Per-question/instance and per-E responsibility records",
+    "Completed E23 packet, independent review and separate attributable target-specific approval"
+  ],
+  "requester_clarification": {
+    "recorded_date": "2026-10-12",
+    "timezone": "Asia/Calcutta",
+    "source": "Requester reply to the governance-process and evidence clarification in this conversation",
+    "statement": "No approved governance process or controlled record location has been identified or verified. No verified owner/delegation or independent reviewer records have been supplied. Existing local documents are preparation and review material, not proof of appointments or authorization.",
+    "evidence_class": "Attributed requester context only; not independently verified governance evidence",
+    "authority_or_approval_conferred": false,
+    "next_required_action": "The accountable project governance authority identifies the approved process and controlled location, formally designates owners and independent reviewers, and supplies verifiable assignment/delegation references through that channel.",
+    "responsible_authority_assignment_reference": null,
+    "approval_channel_assumed": false,
+    "owner_assignment_assumed": false,
+    "dispatch_status": "PENDING APPROVED PROCESS AND AUTHORIZED RECIPIENT/CHANNEL",
+    "disposition": "Existing open/pending/not-run statuses and restrictions retained"
+  }
+}
