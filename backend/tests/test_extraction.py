@@ -23,6 +23,7 @@ client = TestClient(app, raise_server_exceptions=False)
 DV_ID = "d0000000-0000-0000-0000-000000000001"
 RUN_ID = "a0000000-0000-0000-0000-000000000001"
 INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
+KS_ID = "30000000-0000-0000-0000-000000000201"
 R2_BUCKET = "college-ai-knowledge"
 OBJECT_KEY = "inst/ks/ver/doc.pdf"
 
@@ -56,6 +57,7 @@ FAKE_RUN_QUEUED = {
     "document_version_id": DV_ID,
     "document_versions": {
         "document_version_id": DV_ID,
+        "knowledge_source_id": KS_ID,
         "storage_bucket": R2_BUCKET,
         "storage_object_key": OBJECT_KEY,
         "file_type": "txt",
@@ -83,6 +85,10 @@ def _active_institution_authorization():
         patch(
             "app.services.authorization.tenancy_repo.get_institution_by_id",
             return_value={"status": "active", "is_active": True},
+        ),
+        patch(
+            "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+            return_value={"knowledge_source_id": KS_ID, "institution_id": INSTITUTION_ID},
         ),
     ):
         yield
@@ -150,6 +156,7 @@ def test_pdf_download_from_r2_called_with_correct_bucket_and_key():
         **FAKE_RUN_QUEUED,
         "document_versions": {
             "document_version_id": DV_ID,
+            "knowledge_source_id": KS_ID,
             "storage_bucket": R2_BUCKET,
             "storage_object_key": OBJECT_KEY,
             "file_type": "txt",

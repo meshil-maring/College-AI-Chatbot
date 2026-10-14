@@ -9,7 +9,6 @@ from app.core.security import (
     assert_tenant_object,
     require_institution_roles,
     require_permission,
-    require_permission,
 )
 from app.db.supabase import get_admin_client
 from app.repositories import admin_knowledge as knowledge_repo
@@ -41,30 +40,41 @@ logger = logging.getLogger(__name__)
 _INGEST_ALLOWED = require_institution_roles("admin", "staff", "faculty")
 
 
+def _assert_source_tenant(current_user: dict, source: dict | None) -> None:
+    """Require an institution-owned source inside the resolved caller scope."""
+    if source is None:
+        raise AppError(
+            "Knowledge source not found", 404, "KNOWLEDGE_SOURCE_NOT_FOUND"
+        )
+    # The shared helper permits global rows. Processing requires an owner,
+    # and the institution dependency pins the caller to an active grant.
+    if not source.get("institution_id") or not current_user.get("institution_id"):
+        raise AppError(
+            "This resource does not belong to your institution", 403, "TENANT_MISMATCH"
+        )
+    assert_tenant_object(current_user, source["institution_id"])
+
+
 def _assert_run_tenant(
     current_user: dict,
     run: dict | None,
     db,
 ) -> None:
-    """Phase 6.13.7 — tenant guard for document-processing pipelines.
+    """Resolve run -> version -> document -> source and fail closed.
 
-    The processing run's tenant is the tenant of its knowledge source (the
-    document_versions row carries knowledge_source_id). Resolved SERVER-SIDE
-    from the run id in the URL; no client-supplied tenant is consulted.
-
-    Legacy behaviour is preserved: runs whose document_versions projection
-    carries no knowledge_source_id (older fixtures / rows) are skipped, and
-    platform-level accounts are no-ops via the existing assert_tenant_object.
+    The repository hoists documents.knowledge_source_id onto the version
+    projection. An unresolved relationship never authorizes processing.
     """
     if run is None:
-        return
+        raise AppError("Processing run not found", 404, "RUN_NOT_FOUND")
     dv = run.get("document_versions") or {}
     ks_id = dv.get("knowledge_source_id") if isinstance(dv, dict) else None
     if not ks_id:
-        return
+        raise AppError(
+            "Knowledge source not found", 404, "KNOWLEDGE_SOURCE_NOT_FOUND"
+        )
     ks = knowledge_repo.get_knowledge_source_detail(db, ks_id)
-    if ks is not None:
-        assert_tenant_object(current_user, ks.get("institution_id"))
+    _assert_source_tenant(current_user, ks)
 
 
 @router.post("/ingest", response_model=IngestResponse, status_code=201)
@@ -74,11 +84,12 @@ async def ingest(
     current_user: dict = Depends(_INGEST_ALLOWED),
     _permission_user: dict = Depends(require_permission("ai.knowledge.create")),
 ) -> IngestResponse:
-    # Tenant isolation: the target knowledge source must belong to the
-    # caller's institution (no-op for platform-level accounts).
+    if not knowledge_source_id.strip():
+        raise AppError(
+            "Knowledge source not found", 404, "KNOWLEDGE_SOURCE_NOT_FOUND"
+        )
     ks = get_knowledge_source(get_admin_client(), knowledge_source_id)
-    if ks is not None:
-        assert_tenant_object(current_user, ks.get("institution_id"))
+    _assert_source_tenant(current_user, ks)
     return await ingest_document(
         file=file,
         knowledge_source_id=knowledge_source_id,
@@ -97,15 +108,13 @@ def extract(
 
     if run is None:
         raise AppError("Processing run not found", status_code=404, code="RUN_NOT_FOUND")
+    _assert_run_tenant(current_user, run, db)
     if run["status"] != "queued":
         raise AppError(
             f"Run is not in queued state (current: {run['status']})",
             status_code=409,
             code="RUN_NOT_QUEUED",
         )
-
-    # Phase 6.13.7: the run must belong to the caller's tenant (server-side).
-    _assert_run_tenant(current_user, run, db)
 
     dv = run["document_versions"]
     run_id_str = str(processing_run_id)
@@ -159,15 +168,13 @@ def chunk(
 
     if run is None:
         raise AppError("Processing run not found", status_code=404, code="RUN_NOT_FOUND")
+    _assert_run_tenant(current_user, run, db)
     if run["status"] != "ready":
         raise AppError(
             f"Run is not in ready state (current: {run['status']})",
             status_code=409,
             code="RUN_NOT_READY",
         )
-
-    # Phase 6.13.7: the run must belong to the caller's tenant (server-side).
-    _assert_run_tenant(current_user, run, db)
 
     dv = run["document_versions"]
     document_version_id = dv["document_version_id"]

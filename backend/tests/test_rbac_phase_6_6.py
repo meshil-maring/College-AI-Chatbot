@@ -261,7 +261,9 @@ def test_faculty_can_reach_permitted_ingestion_operation():
     run = {
         "processing_run_id": RUN_ID,
         "status": "ready",
-        "document_versions": {"document_version_id": str(uuid4())},
+        "document_versions": {
+            "document_version_id": str(uuid4()), "knowledge_source_id": KS_ID,
+        },
     }
     claims = {"sub": faculty["auth_user_id"], "email": faculty["email"]}
     p1 = patch("app.core.security.verify_jwt", return_value=claims)
@@ -276,6 +278,10 @@ def test_faculty_can_reach_permitted_ingestion_operation():
         patch(
             "app.api.ingestion.get_processing_run_with_version",
             return_value=run,
+        ),
+        patch(
+            "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+            return_value={"knowledge_source_id": KS_ID, "institution_id": TENANT_A},
         ),
         patch("app.api.ingestion.get_extracted_text", return_value="text"),
         patch("app.api.ingestion.delete_chunks_for_run"),

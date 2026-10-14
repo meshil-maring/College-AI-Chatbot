@@ -35,6 +35,7 @@ client = TestClient(app, raise_server_exceptions=False)
 DV_ID = "d0000000-0000-0000-0000-000000000002"
 RUN_ID = "a0000000-0000-0000-0000-000000000002"
 INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
+KS_ID = "30000000-0000-0000-0000-000000000201"
 
 FAKE_CLAIMS = {
     "sub": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
@@ -66,6 +67,7 @@ FAKE_RUN_READY = {
     "document_version_id": DV_ID,
     "document_versions": {
         "document_version_id": DV_ID,
+        "knowledge_source_id": KS_ID,
         "storage_bucket": "college-ai-knowledge",
         "storage_object_key": "inst/ks/ver/doc.txt",
         "file_type": "txt",
@@ -94,6 +96,10 @@ def _active_institution_authorization():
         patch(
             "app.services.authorization.tenancy_repo.get_institution_by_id",
             return_value={"status": "active", "is_active": True},
+        ),
+        patch(
+            "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+            return_value={"knowledge_source_id": KS_ID, "institution_id": INSTITUTION_ID},
         ),
     ):
         yield

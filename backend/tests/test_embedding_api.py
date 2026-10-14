@@ -1,10 +1,8 @@
 """Tests for the Phase 3.6F embedding API route.
 
-Phase 6.13.7 note: the route now resolves the processing run SERVER-SIDE to
-enforce tenant scope on the run's knowledge source (``_assert_run_tenant``).
-The fixtures below stub that read-only lookup with a run whose document
-versions carry no ``knowledge_source_id`` (legacy shape), so the original
-assertions — delegation contract, no status updates — are unchanged.
+Fixtures include the source ID hoisted by the repository from documents and
+its verified institution ownership. Older ownerless fixtures were delegation
+shortcuts, not a requirement to permit unresolved ownership in production.
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -19,6 +17,7 @@ client = TestClient(app, raise_server_exceptions=False)
 
 RUN_ID = "a0000000-0000-0000-0000-000000000003"
 INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
+KS_ID = "30000000-0000-0000-0000-000000000201"
 
 FAKE_CLAIMS = {
     "sub": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
@@ -50,6 +49,7 @@ FAKE_RUN = {
     "document_version_id": "d0000000-0000-0000-0000-000000000003",
     "document_versions": {
         "document_version_id": "d0000000-0000-0000-0000-000000000003",
+        "knowledge_source_id": KS_ID,
         "storage_bucket": "college-ai-knowledge",
         "storage_object_key": "inst/ks/ver/doc.pdf",
         "file_type": "pdf",
@@ -78,6 +78,10 @@ def _active_institution_authorization():
         patch(
             "app.services.authorization.tenancy_repo.get_institution_by_id",
             return_value={"status": "active", "is_active": True},
+        ),
+        patch(
+            "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+            return_value={"knowledge_source_id": KS_ID, "institution_id": INSTITUTION_ID},
         ),
     ):
         yield

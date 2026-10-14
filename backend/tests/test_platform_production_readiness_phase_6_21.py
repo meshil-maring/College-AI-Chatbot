@@ -432,11 +432,14 @@ def test_extraction_failure_response_carries_no_internals():
     run_id = str(uuid4())
     run = {"processing_run_id": run_id, "status": "queued",
            "document_versions": {"document_version_id": str(uuid4()),
+                                 "knowledge_source_id": "ks-1",
                                  "storage_bucket": "b", "storage_object_key": "k",
                                  "file_type": "pdf"}}
     with (_auth("admin", TENANT_A),
           patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
           patch("app.api.ingestion.get_processing_run_with_version", return_value=run),
+          patch("app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+                return_value={"knowledge_source_id": "ks-1", "institution_id": TENANT_A}),
           patch("app.api.ingestion.update_run_status"),
           patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
           patch("app.api.ingestion.download_file", return_value=b"not a pdf %%%")):
