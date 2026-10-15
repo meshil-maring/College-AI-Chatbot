@@ -53,7 +53,7 @@ def get_academic_year_context(client: Client, academic_year_id: UUID | str) -> d
         .maybe_single()
         .execute()
     )
-    return response.data
+    return academics_repo._single_row(response)
 
 
 def get_semester_context(client: Client, semester_id: UUID | str) -> dict | None:
@@ -102,7 +102,7 @@ def get_program_institution(client: Client, program_id: UUID | str) -> UUID | st
         .maybe_single()
         .execute()
     )
-    row = response.data
+    row = academics_repo._single_row(response)
     if row is None:
         return None
     department = row.get("departments") or {}

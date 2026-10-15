@@ -22,6 +22,7 @@ from app.config import settings
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import admin_academics as academics_repo
+from app.repositories import results as results_repo
 from app.repositories import tenancy as tenancy_repo
 
 logger = logging.getLogger(__name__)
@@ -315,6 +316,38 @@ def _normalize_student_identity(row: dict) -> dict:
     return row
 
 
+def _validate_student_academic_references(db, institution_id, fields: dict) -> None:
+    """Validate supplied non-null references against the student's institution."""
+    if fields.get("program_id") is not None:
+        owner = results_repo.get_program_institution(db, fields["program_id"])
+        if owner is None:
+            raise AppError(
+                "Program not found (or its department chain is broken)",
+                status_code=404,
+                code="PROGRAM_NOT_FOUND",
+            )
+        if str(owner) != str(institution_id):
+            raise AppError(
+                "The program does not belong to the student's institution",
+                status_code=403,
+                code="TENANT_MISMATCH",
+            )
+    if fields.get("academic_year_id") is not None:
+        year = results_repo.get_academic_year_context(db, fields["academic_year_id"])
+        if year is None or year.get("institution_id") is None:
+            raise AppError(
+                "Academic year not found",
+                status_code=404,
+                code="ACADEMIC_CONTEXT_INVALID",
+            )
+        if str(year["institution_id"]) != str(institution_id):
+            raise AppError(
+                "The academic year does not belong to the student's institution",
+                status_code=403,
+                code="TENANT_MISMATCH",
+            )
+
+
 def create_student(payload: StudentCreate) -> dict:
     db = get_admin_client()
     _validate_choice(payload.status, STUDENT_STATUSES, "student status")
@@ -322,6 +355,7 @@ def create_student(payload: StudentCreate) -> dict:
         payload.approval_status, APPROVAL_STATUSES, "student approval status"
     )
     row = _normalize_student_identity(payload.model_dump(mode="json"))
+    _validate_student_academic_references(db, payload.institution_id, row)
     try:
         response = db.table("students").insert(row).execute()
     except Exception as exc:
@@ -352,6 +386,7 @@ def update_student(student_id: UUID | str, payload: StudentUpdate) -> dict:
             fields["approval_status"], APPROVAL_STATUSES, "student approval status"
         )
     fields = _normalize_student_identity(fields)
+    _validate_student_academic_references(db, existing.get("institution_id"), fields)
     response = (
         db.table("students")
         .update(fields)
