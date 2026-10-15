@@ -10,8 +10,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.admin import _ADMIN, _APPROVAL
+from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
+from app.services.authorization import resolve_institution_authorization_context
 
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -62,6 +64,15 @@ def _principal(
 
 ADMIN_A_USER = _principal(ADMIN_A, "admin", INST_A)
 ADMIN_B_USER = _principal(ADMIN_B, "admin", INST_B)
+
+
+@pytest.fixture(params=[(INST_A, INST_B), (INST_B, INST_A)], ids=["a-then-b", "b-then-a"])
+def conflicting_admin(request: pytest.FixtureRequest) -> dict:
+    principal = _principal(ADMIN_A, "admin", None)
+    principal["role_assignments"] = [
+        _grant("admin", institution_id) for institution_id in request.param
+    ]
+    return principal
 
 
 def _active_institution(institution_id: UUID | str) -> dict:
@@ -160,6 +171,41 @@ def test_inactive_institution_is_denied() -> None:
         response = client.get("/api/v1/admin/me")
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "TENANT_INACTIVE"
+
+
+def test_conflicting_institution_grants_fail_context_resolution(
+    conflicting_admin: dict,
+) -> None:
+    with patch("app.services.authorization.get_admin_client") as get_admin_client:
+        with pytest.raises(AppError) as exc_info:
+            resolve_institution_authorization_context(
+                conflicting_admin, allowed_roles=("admin",)
+            )
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.code == "SCOPE_INCONSISTENT"
+    get_admin_client.assert_not_called()
+
+
+@pytest.mark.parametrize("method", ["GET", "PATCH"])
+def test_conflicting_institution_grants_are_denied_before_resource_access(
+    conflicting_admin: dict, method: str
+) -> None:
+    with (
+        _authenticated(conflicting_admin),
+        patch("app.api.admin.admin_faq.get_faq") as get_faq,
+        patch("app.api.admin.admin_faq.update_faq") as update_faq,
+        patch("app.api.admin._record_audit") as record_audit,
+    ):
+        response = client.request(
+            method,
+            f"/api/v1/admin/faqs/{RESOURCE_ID}",
+            json={"question": "changed"} if method == "PATCH" else None,
+        )
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "SCOPE_INCONSISTENT"
+    get_faq.assert_not_called()
+    update_faq.assert_not_called()
+    record_audit.assert_not_called()
 
 
 def test_staff_keeps_only_the_institution_scoped_approval_exception() -> None:
