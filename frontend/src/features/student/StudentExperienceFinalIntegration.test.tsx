@@ -162,7 +162,7 @@ describe('phase 6.16.4 complete student journey', () => {
 
     // Request accounting: one request per section mount, no duplicates from
     // rendering or navigation.
-    expect(vi.mocked(getMyAcademicProfile)).toHaveBeenCalledTimes(10) // 7 dashboards + attendance + results + profile pages
+    expect(vi.mocked(getMyAcademicProfile)).toHaveBeenCalledTimes(4) // shell access check + attendance + results + profile pages
     expect(vi.mocked(getMyAttendanceSummary)).toHaveBeenCalledTimes(9) // 7 dashboards + attendance page + filter
     expect(vi.mocked(getMyResultsSummary)).toHaveBeenCalledTimes(8) // 7 dashboards + results page
     expect(vi.mocked(getMyTestResultsSummary)).toHaveBeenCalledTimes(8)

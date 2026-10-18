@@ -61,6 +61,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
     identifier.trim() !== '' && !isEmailAddress(identifier.trim())
 
   const busy = status === 'authenticating'
+  const showStudentApprovalHelp = audience === 'general' || audience === 'student'
 
   /**
    * Client-side validation is UX only (mirrors the backend rules: identifier
@@ -114,8 +115,14 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
           </p>
           <h1 className="text-3xl font-bold text-white tracking-tight">College AI Chatbot</h1>
           <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-            Sign in to continue. Your role and institution are resolved by the backend after authentication.
+            Sign in with your account details to continue.
           </p>
+          {showStudentApprovalHelp && (
+            <p id="student-approval-help" className="mt-3 text-sm text-slate-400 leading-relaxed">
+              New student accounts need institutional approval before signing in.
+              {' '}For questions about your registration or account access, contact your institution administrator.
+            </p>
+          )}
 
           {displayedError !== null && (
             <div
@@ -149,6 +156,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
                 name="identifier"
                 required
                 autoComplete="username"
+                aria-describedby={showStudentApprovalHelp ? 'student-approval-help' : undefined}
                 disabled={busy}
                 placeholder="student@college.edu or REG2026001"
                 className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"

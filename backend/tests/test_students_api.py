@@ -50,7 +50,10 @@ def _student_row(student_id: str = STUDENT_ID) -> dict:
 @pytest.fixture(autouse=True)
 def student_auth():
     app.dependency_overrides[get_current_user] = _student_user
-    yield
+    # Academic eligibility itself is exercised by test_student_access_lifecycle.
+    # These contract tests isolate the existing raw record service responses.
+    with patch("app.api.students.get_student_context", return_value={"institution_id": None}):
+        yield
     app.dependency_overrides.pop(get_current_user, None)
 
 

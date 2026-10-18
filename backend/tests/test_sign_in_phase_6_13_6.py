@@ -113,7 +113,7 @@ def student_account(**overrides: Any) -> dict:
     return account
 
 
-def institution_db(is_active: bool = True, code: str = INSTITUTION_CODE) -> MagicMock:
+def institution_db(is_active: bool = True, code: str = INSTITUTION_CODE, auth_user_id=None) -> MagicMock:
     """Admin client mock whose institution lookup returns one row."""
     db = MagicMock(spec=Client)
     (
@@ -126,7 +126,19 @@ def institution_db(is_active: bool = True, code: str = INSTITUTION_CODE) -> Magi
         "status": "active" if is_active else "pending",
         "is_active": is_active,
     }
+    if auth_user_id is not None:
+        link_public_account(db, auth_user_id)
     return db
+
+
+def link_public_account(db, auth_user_id):
+    """Keep institution and application-account reads separate in the fixture."""
+    institution_query = db.table.return_value
+    user_query = MagicMock()
+    user_query.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        "auth_user_id": str(auth_user_id), "status": "active",
+    }
+    db.table.side_effect = lambda name: user_query if name == "users" else institution_query
 
 
 def auth_client(
@@ -195,6 +207,7 @@ def student_login_api(
     auth = auth or auth_client(student)
     db = db or institution_db()
     student = student or student_row()
+    link_public_account(db, student["user_id"])
     institution = institution or {
         "institution_id": str(student["institution_id"]),
         "name": "Test College",
@@ -1306,7 +1319,7 @@ def test_23c_password_never_persisted_by_the_service_layer():
     the identity repositories — only the identifier is looked up."""
     student = student_row()
     with patch(
-        "app.services.student_auth.get_admin_client", return_value=institution_db()
+        "app.services.student_auth.get_admin_client", return_value=institution_db(auth_user_id=student["user_id"])
     ), patch(
         "app.services.student_auth.create_supabase_client",
         return_value=auth_client(student),
@@ -1331,7 +1344,7 @@ def test_23d_password_forwarded_only_to_supabase_auth():
     student = student_row()
     auth = auth_client(student)
     with patch(
-        "app.services.student_auth.get_admin_client", return_value=institution_db()
+        "app.services.student_auth.get_admin_client", return_value=institution_db(auth_user_id=student["user_id"])
     ), patch(
         "app.services.student_auth.create_supabase_client", return_value=auth
     ), patch(

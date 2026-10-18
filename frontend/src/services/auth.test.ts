@@ -121,12 +121,33 @@ describe('login (existing POST /api/v1/auth/login contract)', () => {
     expect(err).toBeInstanceOf(AuthError)
     expect(err.kind).toBe<AuthErrorKind>('registration_pending')
     expect(authErrorMessage(err)).toBe(
-      'Your registration is pending. Contact your institution administrator to continue signing in.',
+      'Your registration is pending. You can sign in after your institution approves it. Contact your institution administrator if you need help.',
     )
   })
 })
 
 describe('studentLogin (POST /api/v1/auth/student/login contract)', () => {
+  it.each(['pending', 'rejected', 'inactive'])(
+    'keeps %s account details out of the login error while offering account-access help',
+    async (state) => {
+      const rawMessage = `Synthetic account is ${state}`
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(401, {
+        error: { code: 'INVALID_CREDENTIALS', message: rawMessage },
+      })))
+      const error = await studentLogin({
+        identifier: 'TEST1001', institution_code: 'TEST', password: 'test-password',
+      }).catch((value) => value)
+      expect(error).toBeInstanceOf(AuthError)
+      expect(error.kind).toBe('invalid_credentials')
+      expect(error.message).toBe(
+        'Invalid login credentials. Please check your details and try again. For help with account approval or access, contact your administrator.',
+      )
+      expect(authErrorMessage(error)).toBe(error.message)
+      expect(error.message).not.toContain(rawMessage)
+      expect(error.message).not.toContain(state)
+    },
+  )
+
   it('sends identifier + institution_code + password for a register number', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, LOGIN_RESPONSE))
     vi.stubGlobal('fetch', fetchMock)
@@ -199,7 +220,7 @@ describe('studentLogin (POST /api/v1/auth/student/login contract)', () => {
     expect(err.status).toBe(401)
     expect(err.code).toBe('INVALID_CREDENTIALS')
     expect(authErrorMessage(err)).toBe(
-      'Invalid login credentials. Please check your details and try again.',
+      'Invalid login credentials. Please check your details and try again. For help with account approval or access, contact your administrator.',
     )
   })
 
@@ -375,6 +396,18 @@ describe('password and session lifecycle endpoints', () => {
 })
 
 describe('fetchCurrentUser (GET /api/v1/auth/me session operation)', () => {
+  it('explains ACCOUNT_INACTIVE only when validating an existing session', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(403, {
+      error: { code: 'ACCOUNT_INACTIVE', message: 'private backend details' },
+    }))))
+    const sessionError = await fetchCurrentUser('synthetic-token').catch((error) => error)
+    expect(sessionError).toMatchObject({ kind: 'account_inactive', status: 403, code: 'ACCOUNT_INACTIVE' })
+    expect(authErrorMessage(sessionError)).toBe('Your account is inactive. Contact your institution administrator for help with access.')
+    const loginError = await login({ email: 'fixture@example.test', password: 'secret123' }).catch((error) => error)
+    expect(loginError.kind).toBe('unknown')
+    expect(authErrorMessage(loginError)).not.toMatch(/inactive|private backend details/)
+  })
+
   it('parses the identity and sends the bearer token', async () => {
     const me = {
       authenticated: true,
@@ -500,7 +533,7 @@ describe('Phase 6.15.6 — one session-expiry vocabulary', () => {
     const sessionError = new AuthError('session_invalid', 401, 'TOKEN_EXPIRED')
 
     expect(authErrorMessage(loginError)).toBe(
-      'Invalid login credentials. Please check your details and try again.',
+      'Invalid login credentials. Please check your details and try again. For help with account approval or access, contact your administrator.',
     )
     expect(authErrorMessage(loginError)).not.toBe(authErrorMessage(sessionError))
   })

@@ -73,6 +73,12 @@ def make_mocks(student, auth_success=True, institution_active=True):
     db = MagicMock(spec=Client)
     mocks["db"] = db
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = _inst_response(institution_id=student.get("institution_id"), is_active=institution_active)
+    users_query = MagicMock()
+    users_query.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = {
+        "auth_user_id": str(student["user_id"]), "status": "active",
+    }
+    institution_query = db.table.return_value
+    db.table.side_effect = lambda name: users_query if name == "users" else institution_query
     auth_client = MagicMock()
     mocks["auth_client"] = auth_client
     if auth_success:

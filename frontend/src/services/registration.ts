@@ -45,6 +45,7 @@ export type RegistrationErrorKind =
   | 'server' // 5xx upstream error
   | 'network' // request never produced an HTTP response
   | 'timeout' // request aborted via timeout signal
+  | 'rate_limited'
   | 'unknown'
 
 /** User-safe message for each failure kind (never contains internals). */
@@ -68,6 +69,8 @@ export function registrationErrorMessage(error: RegistrationError): string {
       return 'Could not reach the backend. Please make sure the server is running, then try again.'
     case 'timeout':
       return 'The request timed out. Please try again.'
+    case 'rate_limited':
+      return 'Too many registration requests. Please wait a moment and try again.'
     default:
       return 'Something went wrong. Please try again.'
   }
@@ -147,6 +150,10 @@ async function buildRegistrationError(
   const status = response.status
   const body = await readJsonBody(response)
   const code = extractCode(body)
+
+  if (status === 429) {
+    return new RegistrationError('rate_limited', status, code)
+  }
 
   if (status === 422) {
     return new RegistrationError('validation', status, code ?? 'VALIDATION_ERROR')

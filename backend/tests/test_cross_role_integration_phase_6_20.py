@@ -33,7 +33,7 @@ assuming uniform 403s.
 
 from contextlib import ExitStack, contextmanager
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -545,13 +545,15 @@ def test_staff_and_admin_approve_within_their_own_tenant():
             )
         assert response.status_code == 200, role
         assert response.json()["approval_status"] == "approved"
-        approve_mock.assert_called_once_with(UUID(STUDENT_A), UUID(INSTITUTION_A))
-        audit_mock.assert_called_once()
+        approve_mock.assert_called_once_with(UUID(STUDENT_A), UUID(INSTITUTION_A), actor=ANY)
+        assert approve_mock.call_args.kwargs["actor"]["roles"] == [role]
+        # Approval audit is committed atomically by the provisioning command.
+        audit_mock.assert_not_called()
 
 
 def test_stale_approval_decision_produces_the_documented_409():
-    """pending -> approved is strict: a stale approve/reject is 409 and writes nothing."""
-    already_decided = dict(PENDING_STUDENT_ROW, approval_status="approved")
+    """A rejected registration cannot be decided again and writes nothing."""
+    already_decided = dict(PENDING_STUDENT_ROW, approval_status="rejected")
     for role in ("staff", "admin"):
         for operation in ("approve", "reject"):
             with _auth(role), patch(

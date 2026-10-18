@@ -46,8 +46,16 @@ from app.services import student_data
 from app.services import student_notices as student_notices_service
 from app.services import student_resources as student_resources_service
 from app.services import student_results as student_results_service
+from app.services.student_context import get_student_context, assert_student_context_tenant
 
 router = APIRouter(prefix="/students", tags=["students"])
+
+
+def require_eligible_student(current_user: dict = Depends(get_current_user)) -> dict:
+    """Apply the same approval and tenant guard to legacy academic endpoints."""
+    context = get_student_context(current_user)
+    assert_student_context_tenant(current_user, context)
+    return current_user
 
 
 @router.get("/me/profile")
@@ -85,7 +93,7 @@ def my_academic_profile(
 def my_results(
     academic_year_id: UUID | None = None,
     semester_id: UUID | None = None,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_eligible_student),
 ) -> list[dict]:
     """Return the authenticated student's own published result summaries."""
     results = student_data.get_own_results(
@@ -146,7 +154,7 @@ def my_result_detail(
 @router.get("/me/results/{result_id}")
 def my_result(
     result_id: UUID,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_eligible_student),
 ) -> dict:
     """Return ONE of the authenticated student's own published result
     summaries with its per-course grade rows (Phase 6.8).
@@ -191,7 +199,7 @@ def my_test_results_summary(
 def my_test_results(
     academic_year_id: UUID | None = None,
     semester_id: UUID | None = None,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_eligible_student),
 ) -> list[dict]:
     """Return the authenticated student's own published test scores."""
     results = student_data.get_own_test_results(
@@ -244,7 +252,7 @@ def my_attendance(
     semester_id: UUID | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_eligible_student),
 ) -> list[dict]:
     """Return the authenticated student's own attendance records."""
     attendance = student_data.get_own_attendance(

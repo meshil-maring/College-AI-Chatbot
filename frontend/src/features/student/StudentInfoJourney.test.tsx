@@ -74,7 +74,7 @@ describe('phase 6.16.3 student information journey', () => {
     await screen.findByText('Welcome, REG-100')
     // Performance: exactly ONE request per section mount, no duplicates from
     // rendering, and navigation never creates uncontrolled requests.
-    expect(vi.mocked(getMyAcademicProfile)).toHaveBeenCalledTimes(5) // 4 dashboard mounts + profile page
+    expect(vi.mocked(getMyAcademicProfile)).toHaveBeenCalledTimes(2) // shell access check + profile page
     expect(vi.mocked(getMyNotices)).toHaveBeenCalledTimes(5) // 4 dashboards (limit 5) + notices page (limit 20)
     expect(vi.mocked(getMyResources)).toHaveBeenCalledTimes(5) // 4 dashboards (limit 6) + resources page (limit 20)
     expect(vi.mocked(getMyAttendanceSummary)).toHaveBeenCalledTimes(4)

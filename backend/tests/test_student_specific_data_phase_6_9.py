@@ -10,6 +10,7 @@ from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
 from app.services import student_context
+from app.services import student_data
 client = TestClient(app, raise_server_exceptions=False)
 TENANT_A = "a1111111-0000-0000-0000-000000000001"
 TENANT_B = "b2222222-0000-0000-0000-000000000002"
@@ -47,7 +48,10 @@ def _db_without_profile():
 
 @pytest.fixture(autouse=True)
 def cleanup():
-    yield
+    # The legacy routes now use the canonical eligibility guard as well.
+    # Point that guard at each test's existing offline profile fixture.
+    with patch("app.services.student_context.get_admin_client", side_effect=lambda: student_data.get_admin_client()):
+        yield
     app.dependency_overrides.pop(get_current_user, None)
 
 class TestStudentContextResolution:
@@ -315,7 +319,8 @@ class TestMalformedIds:
     def test_malformed_result_id_rejected(self):
         """21. Malformed IDs fail safely."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        response = client.get("/api/v1/students/me/results/not-a-uuid")
+        with patch("app.services.student_data.get_admin_client", return_value=_db_with_student_profile()):
+            response = client.get("/api/v1/students/me/results/not-a-uuid")
         assert response.status_code == 422
 
 class TestRoleBoundaries:

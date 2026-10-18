@@ -124,9 +124,9 @@ def _register_user(payload):
     try:
         user_id = student_svc._create_public_user(db, auth_user_id, email, payload.first_name, payload.last_name)
     except Exception as exc:
+        student_svc._try_delete_auth_user(auth_user_id)
         if isinstance(exc, AppError):
             raise
-        student_svc._try_delete_auth_user(auth_user_id)
         raise AppError("Registration failed - could not create the account record", status_code=500, code="REGISTRATION_FAILED") from exc
 
     try:

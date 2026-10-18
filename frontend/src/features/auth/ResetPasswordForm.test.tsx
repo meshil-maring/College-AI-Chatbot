@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode } from 'react'
 import ResetPasswordForm from './ResetPasswordForm.tsx'
 import * as auth from '../../services/auth.ts'
 
@@ -24,6 +25,13 @@ afterEach(() => {
 })
 
 describe('ResetPasswordForm', () => {
+  it('keeps the recovery form usable when StrictMode replays effects', async () => {
+    window.history.replaceState(null, '', '/reset-password#access_token=recovery-token&type=recovery')
+    render(<StrictMode><ResetPasswordForm onBackToLogin={vi.fn()} /></StrictMode>)
+    expect(await screen.findByLabelText('New password')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(window.location.hash).toBe('')
+  })
   it('rejects an absent or invalid recovery token', async () => {
     window.history.replaceState(null, '', '/reset-password#type=signup&access_token=not-recovery')
     render(<ResetPasswordForm onBackToLogin={vi.fn()} />)

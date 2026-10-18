@@ -6,12 +6,10 @@
  *   user        — current application user (from GET /api/v1/auth/me)
  *   accessToken — the opaque Supabase JWT supplied to API clients in later phases
  *   login()     — backend password login + identity bootstrap
- *   logout()    — clears local auth state only: the backend authentication is
- *                 stateless JWT and exposes no logout/revocation endpoint,
- *                 so there is nothing to call.
+ *   logout()    — clears local state and revokes the provider refresh session.
  *
- * Persistence: the access token is the only credential-like value stored
- * (localStorage). The password is never stored. On mount the saved token is
+ * Persistence: provider access/refresh tokens and expiry use localStorage.
+ * The password is never stored. On mount the saved token is
  * re-validated through GET /api/v1/auth/me; a rejected token is cleared and a
  * network failure keeps it while surfacing a controlled error.
  *
@@ -160,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const sessionTokenRef = useRef<string | null>(null)
   const sessionGenerationRef = useRef(0)
+  const restoreStartedRef = useRef(false)
 
   /** Commit (or clear) the session token in state AND in the race-guard ref. */
   const setSessionToken = useCallback((token: string | null): void => {
@@ -256,11 +255,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const renewed = await refreshSession(savedRefreshToken)
         restoredToken = renewed.access_token
         me = await fetchCurrentUser(restoredToken)
-        storeProviderSession(
-          renewed.access_token,
-          renewed.refresh_token,
-          renewed.expires_in,
-        )
+        if (sessionGenerationRef.current !== generationAtStart || readStoredToken() !== token) return
+        storeProviderSession(renewed.access_token, renewed.refresh_token, renewed.expires_in)
       }
       // A logout/expiry/newer-login that settled while the request was
       // in-flight invalidates this result — never resurrect a superseded
@@ -278,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (readStoredToken() !== token) return
       if (err instanceof AuthError && err.kind === 'session_invalid') {
         // The token is no longer accepted: discard the saved session.
-        clearSession(null)
+        clearSession(SESSION_EXPIRED_MESSAGE)
         setStatus('unauthenticated')
       } else {
         // Network failure: the token may still be valid, so keep it and
@@ -294,6 +290,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession, setSessionToken])
 
   useEffect(() => {
+    // Do not rotate the same refresh token twice during StrictMode replay.
+    if (restoreStartedRef.current) return
+    restoreStartedRef.current = true
     void restore()
   }, [restore])
 
@@ -303,9 +302,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string,
       institutionCode?: string,
     ): Promise<void> => {
-      const generationAtStart = sessionGenerationRef.current
+      const generationAtStart = ++sessionGenerationRef.current
       setStatus('authenticating')
       setError(null)
+      setUser(null)
+      setSessionToken(null)
+      clearStoredProviderSession()
       try {
         // Routes to POST /auth/login (email) or POST /auth/student/login
         // (academic identifier + institution code) — Phase 6.15.3.
@@ -419,7 +421,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(me)
         setError(null)
       } catch (refreshError) {
-        if (sessionGenerationRef.current !== generationAtStart) return
+        if (
+          sessionGenerationRef.current !== generationAtStart ||
+          sessionTokenRef.current !== tokenAtStart ||
+          readStoredToken() !== tokenAtStart
+        ) return
         if (
           refreshError instanceof AuthError &&
           refreshError.kind === 'network' &&
@@ -431,7 +437,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           )
           return
         }
-        clearSession(SESSION_EXPIRED_MESSAGE)
+        clearSession(
+          refreshError instanceof AuthError && refreshError.kind === 'account_inactive'
+            ? authErrorMessage(refreshError)
+            : SESSION_EXPIRED_MESSAGE,
+        )
         setStatus('unauthenticated')
       }
     }
@@ -488,12 +498,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setError(null)
           setStatus('authenticated')
         })
-        .catch(() => {
+        .catch((err) => {
           if (sessionGenerationRef.current !== generationAtStart) return
           if (readStoredToken() !== nextToken) return
           // The adopted token is not accepted: drop it so this tab does not
           // hold a dead session.
-          clearSession(SESSION_EXPIRED_MESSAGE)
+          clearSession(
+            err instanceof AuthError && err.kind === 'account_inactive'
+              ? authErrorMessage(err)
+              : SESSION_EXPIRED_MESSAGE,
+          )
           setStatus('unauthenticated')
         })
     }

@@ -57,6 +57,7 @@ type AuthOperation = 'login' | 'session' | 'mutation'
 export type AuthErrorKind =
   | 'invalid_credentials' // 400 INVALID_CREDENTIALS (/auth/login) or 401 INVALID_CREDENTIALS (/auth/student/login)
   | 'registration_pending' // verified faculty/staff credentials awaiting admin approval
+  | 'account_inactive' // existing ACCOUNT_INACTIVE denial while validating a session
   | 'validation' // 422 FastAPI request validation failure
   | 'session_invalid' // 401/404 from /auth/me — token rejected or user gone
   | 'server' // 5xx upstream error
@@ -71,9 +72,11 @@ function messageFor(kind: AuthErrorKind): string {
     case 'invalid_credentials':
       // Generic on purpose: must not reveal whether the email / register
       // number / roll number exists or which part was wrong.
-      return 'Invalid login credentials. Please check your details and try again.'
+      return 'Invalid login credentials. Please check your details and try again. For help with account approval or access, contact your administrator.'
     case 'registration_pending':
-      return 'Your registration is pending. Contact your institution administrator to continue signing in.'
+      return 'Your registration is pending. You can sign in after your institution approves it. Contact your institution administrator if you need help.'
+    case 'account_inactive':
+      return 'Your account is inactive. Contact your institution administrator for help with access.'
     case 'validation':
       return 'Please enter a valid email and a password of at least 6 characters.'
     case 'session_invalid':
@@ -174,6 +177,10 @@ async function buildAuthError(
   const status = response.status
   const body = await readJsonBody(response)
   const { code } = extractAppError(body)
+
+  if (operation === 'session' && status === 403 && code === 'ACCOUNT_INACTIVE') {
+    return new AuthError('account_inactive', status, code)
+  }
 
   // Backend error code wins over status: both /auth/login (400) and
   // /auth/student/login (401) use `INVALID_CREDENTIALS` for rejected

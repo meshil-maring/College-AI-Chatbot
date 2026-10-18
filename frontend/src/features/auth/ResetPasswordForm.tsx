@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PasswordField from './PasswordField.tsx'
 import { AuthError, completePasswordReset } from '../../services/auth.ts'
 
@@ -13,8 +13,12 @@ export default function ResetPasswordForm({ onBackToLogin }: ResetPasswordFormPr
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [completed, setCompleted] = useState(false)
+  const recoveryRead = useRef(false)
 
   useEffect(() => {
+    // StrictMode replays effects after the fragment has already been removed.
+    if (recoveryRead.current) return
+    recoveryRead.current = true
     const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     const token = fragment.get('access_token')
     const recovery = fragment.get('type') === 'recovery'

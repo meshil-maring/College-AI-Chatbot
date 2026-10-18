@@ -192,8 +192,8 @@ function setIdentity(
   authState.role = role
 }
 
-function navigationLabels(role: string): string[] {
-  const nav = screen.getByRole('navigation', { name: NAV_LANDMARKS[role] })
+async function navigationLabels(role: string): Promise<string[]> {
+  const nav = await screen.findByRole('navigation', { name: NAV_LANDMARKS[role] })
   return within(nav)
     .getAllByRole('button')
     .map((button) => button.textContent ?? '')
@@ -251,10 +251,10 @@ describe('role -> shell matrix', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('renders StudentShell for the student role only', () => {
+  it('renders StudentShell for the student role only', async () => {
     setIdentity(STUDENT_B, 'student')
     render(<App />)
-    expect(screen.getByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('navigation', { name: 'Staff navigation' }),
@@ -284,31 +284,31 @@ describe('role -> shell matrix', () => {
 
 
 describe('role -> navigation isolation', () => {
-  it('renders exactly its own navigation model for each role', () => {
+  it('renders exactly its own navigation model for each role', async () => {
     const { rerender } = render(<App />)
 
-    expect(navigationLabels('admin')).toEqual(ADMIN_NAV_ITEMS.map((item) => item.label))
+    expect(await navigationLabels('admin')).toEqual(ADMIN_NAV_ITEMS.map((item) => item.label))
 
     setIdentity(STAFF_A, 'staff')
     rerender(<App />)
-    expect(navigationLabels('staff')).toEqual(STAFF_NAV_ITEMS.map((item) => item.label))
+    expect(await navigationLabels('staff')).toEqual(STAFF_NAV_ITEMS.map((item) => item.label))
 
     setIdentity(FACULTY_A, 'faculty')
     rerender(<App />)
-    expect(navigationLabels('faculty')).toEqual(FACULTY_NAV_ITEMS.map((item) => item.label))
+    expect(await navigationLabels('faculty')).toEqual(FACULTY_NAV_ITEMS.map((item) => item.label))
 
     setIdentity(STUDENT_B, 'student')
     rerender(<App />)
-    expect(navigationLabels('student')).toEqual(STUDENT_NAV_ITEMS.map((item) => item.label))
+    expect(await navigationLabels('student')).toEqual(STUDENT_NAV_ITEMS.map((item) => item.label))
   })
 
-  it('never exposes another role\'s navigation entries', () => {
+  it('never exposes another role\'s navigation entries', async () => {
     const { rerender } = render(<App />)
 
     for (const [role, user] of ROLES) {
       setIdentity(user, role)
       rerender(<App />)
-      const labels = navigationLabels(role)
+      const labels = await navigationLabels(role)
       for (const forbidden of FORBIDDEN_LABELS[role]) {
         expect(labels, `${role} navigation must not expose "${forbidden}"`).not.toContain(
           forbidden,
@@ -317,10 +317,10 @@ describe('role -> navigation isolation', () => {
     }
   })
 
-  it('keeps the staff approval exception and nothing more for staff', () => {
+  it('keeps the staff approval exception and nothing more for staff', async () => {
     setIdentity(STAFF_A, 'staff')
     render(<App />)
-    const labels = navigationLabels('staff')
+    const labels = await navigationLabels('staff')
     expect(labels).toContain('Student Approvals')
     for (const adminOnly of ['Students', 'Test Results', 'Documents', 'FAQs']) {
       expect(labels).not.toContain(adminOnly)
@@ -348,16 +348,16 @@ describe('role transition safety', () => {
     expect(screen.queryByRole('region', { name: 'Key metrics' })).not.toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Quick actions' })).not.toBeInTheDocument()
     expect(screen.queryByText('Signed in as admin.a@college.edu')).not.toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
   })
 
-  it('walks every transition without inheriting the previous role', () => {
+  it('walks every transition without inheriting the previous role', async () => {
     const { rerender } = render(<App />)
 
     for (const [role, user] of ROLES) {
       setIdentity(user, role)
       rerender(<App />)
-      expect(screen.getByRole('navigation', { name: NAV_LANDMARKS[role] })).toBeInTheDocument()
+      expect(await screen.findByRole('navigation', { name: NAV_LANDMARKS[role] })).toBeInTheDocument()
       for (const other of Object.keys(NAV_LANDMARKS)) {
         if (other === role) continue
         expect(
@@ -367,7 +367,7 @@ describe('role transition safety', () => {
       // Only the current identity is rendered.
       expect(screen.getByText(`Signed in as ${user.email}`)).toBeInTheDocument()
       for (const forbidden of FORBIDDEN_LABELS[role]) {
-        expect(navigationLabels(role)).not.toContain(forbidden)
+        expect(await navigationLabels(role)).not.toContain(forbidden)
       }
     }
   })
@@ -390,7 +390,7 @@ describe('role transition safety', () => {
     // A different account signs in: the student shell, with no admin residue.
     setIdentity(STUDENT_B, 'student')
     rerender(<App />)
-    expect(screen.getByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
 })
@@ -439,7 +439,7 @@ describe('stale view-state protection', () => {
 
     expect(screen.queryByRole('heading', { name: 'Student Approvals' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Student Approvals' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
+    expect(await screen.findByRole('button', { name: 'Dashboard' })).toHaveAttribute(
       'aria-current',
       'page',
     )

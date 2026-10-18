@@ -11,7 +11,7 @@
  *   sends (or trusts) a user-supplied institution UUID.
  * - At least one academic identifier (register number OR university roll
  *   number) is required — mirrors the backend IDENTIFIER_REQUIRED rule.
- * - Password minimum length 6 — mirrors the backend validator.
+ * - Password minimum length 8 — mirrors the backend validator.
  * - A successful registration ALWAYS yields approval_status='pending'; the
  *   response carries no token, so the student is NOT treated as logged in.
  *
@@ -25,7 +25,7 @@
  * registration contract itself is unchanged.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PasswordField from './PasswordField.tsx'
 import {
   RegistrationError,
@@ -71,7 +71,10 @@ export default function RegistrationForm({
   const [universityRollNumber, setUniversityRollNumber] = useState('')
   const [designation, setDesignation] = useState('')
   const [department, setDepartment] = useState('')
-  const [institutionCode, setInstitutionCode] = useState('')
+  const [institutionCode, setInstitutionCode] = useState(
+    () => new URLSearchParams(window.location.search).get('institution')?.trim().toUpperCase() ?? '',
+  )
+  const institutionLookupGeneration = useRef(0)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -84,6 +87,11 @@ export default function RegistrationForm({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<RegistrationResponse | null>(null)
+  const confirmationTitleRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    if (success !== null) confirmationTitleRef.current?.focus()
+  }, [success])
 
   /** True when the stored resolution belongs to the currently typed code. */
   function isResolvedFor(code: string): boolean {
@@ -114,6 +122,7 @@ export default function RegistrationForm({
   async function resolveInstitution(
     rawCode: string,
   ): Promise<InstitutionLookupResponse | null> {
+    const generation = ++institutionLookupGeneration.current
     const code = rawCode.trim()
     if (code.length < 2) {
       setResolvedInstitution(null)
@@ -125,11 +134,13 @@ export default function RegistrationForm({
     setInstitutionMessage('Finding institution…')
     try {
       const found = await lookupInstitution(code)
+      if (generation !== institutionLookupGeneration.current) return null
       setResolvedInstitution(found)
       setInstitutionStatus('found')
       setInstitutionMessage(null)
       return found
     } catch (err) {
+      if (generation !== institutionLookupGeneration.current) return null
       setResolvedInstitution(null)
       if (err instanceof RegistrationError) {
         if (err.kind === 'institution_not_found') {
@@ -272,28 +283,54 @@ export default function RegistrationForm({
       <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
         <main className="max-w-md w-full py-16">
           <div className="rounded-2xl border border-emerald-700/60 bg-slate-800 p-8 shadow-xl">
-            <h1 className="text-3xl font-bold text-white tracking-tight">
+            <h1
+              ref={confirmationTitleRef}
+              tabIndex={-1}
+              className="text-3xl font-bold text-white tracking-tight focus:outline-none"
+            >
               Registration Successful
             </h1>
             <div
               role="status"
+              aria-atomic="true"
               className="mt-5 rounded-lg border border-emerald-900/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400"
             >
-              {registrationType === 'student'
-                ? 'Your student account has been created.'
-                : `Your ${registrationType} registration has been submitted.`}
+              <p>
+                {registrationType === 'student'
+                  ? 'Your student account has been created.'
+                  : `Your ${registrationType} registration has been submitted.`}
+              </p>
+              <p className="mt-1 font-semibold">Awaiting institutional approval</p>
             </div>
             <p className="mt-4 text-sm text-slate-300 leading-relaxed">
-              Your account is currently waiting for approval from your college
-              administrator or staff.
+              Your registration has been submitted to{' '}
+              <span className="font-semibold text-white">
+                {resolvedInstitution?.name ?? success.institution_code}
+              </span>.
             </p>
             <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-              You will be able to log in after your account has been approved.
+              {registrationType === 'student'
+                ? 'An institution administrator or authorized staff member will review your student account.'
+                : 'Your institution administrator will review your registration.'}
+              {' '}You can sign in after your account has been approved.
+            </p>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              If you receive a confirmation email, use its link to verify your email address.
+              {' '}Email verification is separate from institutional approval.
+            </p>
+            {registrationType === 'student' && (
+              <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+                After approval, return to login with your email, register number, or university roll number.
+                {' '}Your institution code is <span className="font-semibold text-white">{success.institution_code}</span>.
+              </p>
+            )}
+            <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+              For questions about your registration, contact your institution administrator.
             </p>
             <button
               type="button"
               onClick={onBackToLogin}
-              className="mt-6 w-full rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-500"
+              className="mt-6 w-full rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
             >
               Back to Login
             </button>
@@ -316,9 +353,8 @@ export default function RegistrationForm({
               : registrationType === 'faculty'
                 ? 'Faculty'
                 : 'Staff'}{' '}
-            Registration. Registration is handled entirely by the
-            backend; your account is reviewed by your college before you can
-            sign in.
+            Registration. Submit your details for review by your institution
+            before signing in.
           </p>
 
           {error !== null && (
@@ -436,6 +472,7 @@ export default function RegistrationForm({
                 aria-describedby="institution-status"
                 value={institutionCode}
                 onChange={(event) => {
+                  institutionLookupGeneration.current += 1
                   setInstitutionCode(event.target.value)
                   // Typing invalidates the previous resolution; the code is
                   // re-verified on blur (or right before submission).

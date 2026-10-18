@@ -45,6 +45,14 @@ beforeEach(() => {
 })
 
 describe('lookupInstitution', () => {
+  it('explains rate limiting without exposing the server response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(429, {
+      error: { code: 'AUTH_RATE_LIMITED', message: 'internal details' },
+    })))
+    const error = await lookupInstitution('TEST').catch((value) => value)
+    expect(error.kind).toBe('rate_limited')
+    expect(error.message).toBe('Too many registration requests. Please wait a moment and try again.')
+  })
   it('sends the code as a query parameter and parses the safe response', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, INSTITUTION))
     vi.stubGlobal('fetch', fetchMock)

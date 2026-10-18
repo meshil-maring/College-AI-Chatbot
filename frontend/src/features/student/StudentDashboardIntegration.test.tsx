@@ -37,7 +37,7 @@ describe('phase 6.16.1 dashboard integration', () => {
     render(<StudentShell />)
     expect(await screen.findByText('Welcome, REG-100')).toBeInTheDocument()
     expect(screen.getByText('Test College (TC01)')).toBeInTheDocument()
-    expect(screen.getByText('80%')).toBeInTheDocument()
+    expect(await screen.findByText('80%')).toBeInTheDocument()
     expect(screen.getByText('Midterm 1')).toBeInTheDocument()
     expect(screen.getByText('Exam schedule update')).toBeInTheDocument()
     expect(screen.getByText('Lecture notes week 3')).toBeInTheDocument()

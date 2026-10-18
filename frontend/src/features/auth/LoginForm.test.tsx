@@ -15,6 +15,8 @@ import userEvent from '@testing-library/user-event'
 import LoginForm from './LoginForm.tsx'
 import * as devAuth from '../../services/devAuth.ts'
 import { SESSION_EXPIRED_MESSAGE } from '../../services/sessionEvents.ts'
+import { AuthError } from '../../services/auth.ts'
+import * as registration from '../../services/registration.ts'
 
 vi.mock('../../services/devAuth.ts', async () => {
   const actual = await vi.importActual<typeof import('../../services/devAuth.ts')>(
@@ -37,6 +39,12 @@ vi.mock('./AuthProvider.tsx', () => ({
   useAuth: () => authState,
 }))
 
+vi.mock('../../services/registration.ts', async () => ({
+  ...await vi.importActual<typeof import('../../services/registration.ts')>('../../services/registration.ts'),
+  lookupInstitution: vi.fn(),
+  registerStudent: vi.fn(),
+}))
+
 beforeEach(() => {
   authState.status = 'unauthenticated'
   authState.error = null
@@ -55,6 +63,33 @@ describe('LoginForm — password recovery', () => {
 })
 
 describe('LoginForm — registration navigation', () => {
+  it('returns from successful student registration to login without signing in', async () => {
+    const user = userEvent.setup()
+    vi.mocked(registration.lookupInstitution).mockResolvedValue({
+      institution_id: 'fixture-institution', code: 'TEST', name: 'Synthetic College',
+    })
+    vi.mocked(registration.registerStudent).mockResolvedValue({
+      message: 'Registration submitted.', user_id: 'fixture-user', institution_id: 'fixture-institution',
+      institution_code: 'TEST', registration_type: 'student', approval_status: 'pending',
+      student_id: 'fixture-student', request_id: null,
+    })
+    render(<LoginForm audience="student" />)
+    await user.click(screen.getByRole('button', { name: /register as student/i }))
+    await user.type(screen.getByLabelText('Full Name'), 'Synthetic Student')
+    await user.type(screen.getByLabelText('Email'), 'synthetic@example.com')
+    await user.type(screen.getByLabelText('Register Number'), 'TEST1001')
+    await user.type(screen.getByLabelText('Institution Code'), 'TEST')
+    await user.type(screen.getByLabelText('Password'), 'test-password')
+    await user.type(screen.getByLabelText('Confirm Password'), 'test-password')
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Awaiting institutional approval')
+    expect(screen.getByText('Synthetic College')).toBeInTheDocument()
+    expect(authState.login).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Back to Login' }))
+    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
+    expect(screen.getByText(/New student accounts need institutional approval/)).toBeInTheDocument()
+    expect(authState.login).not.toHaveBeenCalled()
+  })
   it('shows the registration form when "Register as Student" is clicked', async () => {
     const user = userEvent.setup()
     render(<LoginForm />)
@@ -231,7 +266,7 @@ describe('LoginForm — loading state and duplicate submission (Phase 6.15.3)', 
 
 describe('LoginForm — authentication error display (Phase 6.15.3)', () => {
   it('renders the user-safe auth error in the alert region', async () => {
-    authState.error = 'Invalid login credentials. Please check your details and try again.'
+    authState.error = new AuthError('invalid_credentials', 401, 'INVALID_CREDENTIALS').message
     vi.mocked(devAuth.fetchDevAuthStatus).mockResolvedValue({ dev_test_mode: false })
     render(<LoginForm />)
 
@@ -239,6 +274,24 @@ describe('LoginForm — authentication error display (Phase 6.15.3)', () => {
     expect(alert).toHaveTextContent(
       'Invalid login credentials. Please check your details and try again.',
     )
+    expect(alert).toHaveTextContent('For help with account approval or access, contact your administrator.')
+    expect(alert).not.toHaveTextContent(/pending|rejected|inactive/)
+  })
+})
+
+describe('LoginForm — student approval guidance', () => {
+  it.each(['general', 'student'] as const)('explains approval on the %s login without inferring account status', (audience) => {
+    render(<LoginForm audience={audience} />)
+    expect(screen.getByText(/New student accounts need institutional approval/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Email, Register Number or University Roll Number')).toHaveAttribute(
+      'aria-describedby', 'student-approval-help',
+    )
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it.each(['faculty', 'staff', 'admin', 'super_admin'] as const)('keeps student-specific guidance off the %s login', (audience) => {
+    render(<LoginForm audience={audience} />)
+    expect(screen.queryByText(/New student accounts need institutional approval/)).not.toBeInTheDocument()
   })
 })
 

@@ -10,6 +10,8 @@ import {
 } from '../../services/studentApi.ts'
 import type { StudentView } from './studentNavigation.ts'
 import { useStudentResource } from './useStudentResource.ts'
+import type { StudentResourceState } from './useStudentResource.ts'
+import type { StudentAcademicProfile } from '../../types/student.ts'
 import { SectionCard } from './SectionState.tsx'
 import StudentIdentityCard from './StudentIdentityCard.tsx'
 import AcademicContextCard from './AcademicContextCard.tsx'
@@ -33,6 +35,14 @@ function ViewLink({ label, view, onNavigate }: { label: string; view: StudentVie
 
 export default function StudentDashboard({ onNavigate }: { onNavigate: (view: StudentView) => void }) {
   const profile = useStudentResource(getMyAcademicProfile, 'Unable to load your academic profile.', '', 'academic-profile')
+  return <StudentDashboardContent profile={profile} onNavigate={onNavigate} />
+}
+
+/** The shell reuses its access-check profile instead of requesting it twice. */
+export function StudentDashboardContent({ profile, onNavigate }: {
+  profile: StudentResourceState<StudentAcademicProfile>
+  onNavigate: (view: StudentView) => void
+}) {
   const attendance = useStudentResource(getMyAttendanceSummary, 'Unable to load attendance.', '', 'attendance-summary')
   const results = useStudentResource(getMyResultsSummary, 'Unable to load results.', '', 'results-summary')
   const testResults = useStudentResource(getMyTestResultsSummary, 'Unable to load results.', '', 'test-results-summary')

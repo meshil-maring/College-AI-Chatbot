@@ -224,4 +224,19 @@ def authenticate_student(identifier: str, password: str, institution_code: str |
     _assert_approved(student)
     _assert_student_active(student)
     _assert_institution_active(db, institution_id)
-    return _supabase_sign_in(email, password)
+    # Academic identifiers must obey the public account lifecycle too. Never
+    # issue a session for a detached/inactive account or a mismatched Auth link.
+    response = (
+        db.table("users")
+        .select("auth_user_id, status")
+        .eq("id", str(student["user_id"]))
+        .maybe_single()
+        .execute()
+    )
+    account = response.data if response is not None else None
+    if not account or account.get("status") != "active" or not account.get("auth_user_id"):
+        raise SafeAuthFailure()
+    result = _supabase_sign_in(email, password)
+    if str(result["user"]["id"]) != str(account["auth_user_id"]):
+        raise SafeAuthFailure()
+    return result

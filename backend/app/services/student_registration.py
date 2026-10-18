@@ -347,6 +347,15 @@ def _create_auth_account(
             status_code=502,
             code="AUTH_ACCOUNT_UNAVAILABLE",
         )
+    # Public signup can conceal an existing confirmed email behind a synthetic
+    # user with no identities. That response did not create an account: never
+    # link it to a profile or treat it as owned by our compensation path.
+    if not (email_confirm or invitation_only) and getattr(response.user, "identities", None) == []:
+        raise AppError(
+            "An account already exists for this email",
+            status_code=409,
+            code="EMAIL_ALREADY_REGISTERED",
+        )
     return str(response.user.id)
 
 
@@ -542,10 +551,10 @@ def _register_student(
             first_name,
             last_name,
         )
-    except AppError:
-        raise
     except Exception as exc:
         _try_delete_auth_user(auth_user_id)
+        if isinstance(exc, AppError):
+            raise
         raise AppError(
             "Registration failed - could not create the account record",
             status_code=500,

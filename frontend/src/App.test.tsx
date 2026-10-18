@@ -19,8 +19,11 @@ import * as platformApi from './services/platformApi.ts'
 import * as platformInstitutionsApi from './services/platformInstitutionsApi.ts'
 import type { DashboardSummary } from './types/admin.ts'
 import { emptyDashboardSummary } from './test/adminDashboardFixtures.ts'
+import { getMyAcademicProfile } from './services/studentApi.ts'
+import { PROFILE } from './features/student/studentTestFixtures.ts'
 
 vi.mock('./services/adminApi.ts')
+vi.mock('./services/studentApi.ts')
 vi.mock('./services/platformApi.ts')
 vi.mock('./services/platformInstitutionsApi.ts')
 vi.mock('./services/devAuth.ts', () => ({
@@ -46,6 +49,7 @@ vi.mock('./features/auth/AuthProvider.tsx', () => ({
 }))
 
 beforeEach(() => {
+  vi.mocked(getMyAcademicProfile).mockResolvedValue(PROFILE)
   authState.status = 'authenticated'
   authState.user = {
     authenticated: true,

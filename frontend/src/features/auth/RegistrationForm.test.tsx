@@ -8,7 +8,7 @@
 
 /// <reference types="vitest/globals" />
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RegistrationForm from './RegistrationForm.tsx'
 import * as registration from '../../services/registration.ts'
@@ -88,6 +88,33 @@ beforeEach(() => {
     registration_type: 'staff',
     student_id: null,
     request_id: '72000000-0000-0000-0000-000000000002',
+  })
+})
+
+describe('institution lookup races', () => {
+  it('ignores an old lookup after the institution code changes', async () => {
+    let finish!: (value: InstitutionLookupResponse) => void
+    vi.mocked(registration.lookupInstitution).mockImplementationOnce(
+      () => new Promise((resolve) => { finish = resolve }),
+    )
+    render(<RegistrationForm onBackToLogin={vi.fn()} />)
+    const input = screen.getByLabelText('Institution Code')
+    fireEvent.change(input, { target: { value: 'IMPHAL' } })
+    fireEvent.blur(input)
+    fireEvent.change(input, { target: { value: 'OTHER' } })
+    await act(async () => { finish(INSTITUTION) })
+    expect(screen.queryByText('Imphal College')).not.toBeInTheDocument()
+    expect(registration.registerStudent).not.toHaveBeenCalled()
+  })
+
+  it('keeps the institution selected at the gateway', () => {
+    window.history.replaceState(null, '', '/login/student?institution=IMPHAL')
+    try {
+      render(<RegistrationForm onBackToLogin={vi.fn()} />)
+      expect(screen.getByLabelText('Institution Code')).toHaveValue('IMPHAL')
+    } finally {
+      window.history.replaceState(null, '', '/')
+    }
   })
 })
 
@@ -355,11 +382,16 @@ describe('RegistrationForm — registration submission', () => {
     expect(
       screen.getByText('Your student account has been created.'),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        'Your account is currently waiting for approval from your college administrator or staff.',
-      ),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Awaiting institutional approval')
+    expect(screen.getByRole('status')).toHaveAttribute('aria-atomic', 'true')
+    expect(screen.getByRole('heading', { name: 'Registration Successful' })).toHaveFocus()
+    expect(screen.getByText('Imphal College')).toBeInTheDocument()
+    expect(screen.getByText(/administrator or authorized staff member will review/)).toHaveTextContent(
+      'You can sign in after your account has been approved.',
+    )
+    expect(screen.getByText(/Email verification is separate/)).toBeInTheDocument()
+    expect(screen.getByText(/After approval, return to login/)).toHaveTextContent('IMPHAL')
+    expect(screen.getByText(/For questions about your registration/)).toBeInTheDocument()
     expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
   })
 
@@ -592,7 +624,9 @@ describe('RegistrationForm — loading states and approval flow', () => {
       name: /back to login/i,
     })
     expect(successBackButton).toHaveLength(1)
-    await user.click(successBackButton[0])
+    await user.tab()
+    expect(successBackButton[0]).toHaveFocus()
+    await user.keyboard('{Enter}')
     expect(onBackToLogin).toHaveBeenCalledTimes(1)
   })
 })

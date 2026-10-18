@@ -539,6 +539,18 @@ async def refresh_session(body: RefreshRequest, request: Request) -> dict:
     try:
         assert_sign_in_allowed(get_admin_client(), account)
     except SafeAuthFailure as exc:
+        # The provider has verified this existing session. Preserve the same
+        # inactive-account convention as /auth/me without exposing status on
+        # password login or changing the approval/institution guards above.
+        if account is not None and (
+            account.get("status") in {"inactive", "deactivated"}
+            or account.get("student_is_active") is False
+        ):
+            raise AppError(
+                "This account is not active",
+                status_code=403,
+                code="ACCOUNT_INACTIVE",
+            ) from exc
         raise AppError(
             "The session could not be renewed. Please sign in again.",
             status_code=401,

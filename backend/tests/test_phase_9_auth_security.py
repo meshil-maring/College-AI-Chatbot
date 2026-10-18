@@ -331,6 +331,72 @@ def test_refresh_uses_provider_refresh_token_and_revalidates_server_identity():
 
 
 @pytest.mark.parametrize(
+    ("account_changes", "expected_status", "expected_code"),
+    [
+        ({"status": "inactive"}, 403, "ACCOUNT_INACTIVE"),
+        ({"status": "deactivated"}, 403, "ACCOUNT_INACTIVE"),
+        ({"student_is_active": False}, 403, "ACCOUNT_INACTIVE"),
+        ({"approval_status": "pending"}, 401, "SESSION_REFRESH_FAILED"),
+        ({"approval_status": "rejected"}, 401, "SESSION_REFRESH_FAILED"),
+        ({"status": "unknown"}, 401, "SESSION_REFRESH_FAILED"),
+    ],
+)
+def test_refresh_preserves_inactive_denial_without_changing_approval_rules(
+    account_changes, expected_status, expected_code,
+):
+    provider = MagicMock()
+    provider.auth.refresh_session.return_value = SimpleNamespace(
+        session=_session(),
+        user=SimpleNamespace(id=AUTH_USER_ID, email=CURRENT_USER["email"]),
+    )
+    account = {
+        "user_id": APP_USER_ID, "status": "active", "institution_id": None,
+        "approval_status": "approved", "student_is_active": True,
+    } | account_changes
+    with (
+        patch("app.api.auth.create_supabase_client", return_value=provider),
+        patch("app.api.auth.get_sign_in_context", new=AsyncMock(return_value=account)),
+        patch("app.api.auth.get_admin_client", return_value=MagicMock()),
+        patch("app.api.auth.record_auth_security_event") as audit,
+    ):
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": "provider-refresh-token"},
+        )
+
+    assert response.status_code == expected_status
+    expected_message = (
+        "This account is not active" if expected_code == "ACCOUNT_INACTIVE"
+        else "The session could not be renewed. Please sign in again."
+    )
+    assert response.json() == {"error": {"code": expected_code, "message": expected_message}}
+    assert "new-access-token" not in response.text
+    assert "new-refresh-token" not in response.text
+    audit.assert_not_called()
+
+
+def test_refresh_rejects_expired_provider_session_without_disclosing_account_state():
+    provider = MagicMock()
+    provider.auth.refresh_session.side_effect = AuthApiError(
+        "private provider details", 400, "refresh_token_not_found",
+    )
+    with (
+        patch("app.api.auth.create_supabase_client", return_value=provider),
+        patch("app.api.auth.get_sign_in_context", new=AsyncMock()) as identity,
+        patch("app.api.auth.record_auth_security_event"),
+    ):
+        response = client.post(
+            "/api/v1/auth/refresh", json={"refresh_token": "expired-refresh-token"},
+        )
+
+    assert response.status_code == 401
+    assert response.json() == {"error": {
+        "code": "SESSION_REFRESH_FAILED",
+        "message": "The session could not be renewed. Please sign in again.",
+    }}
+    identity.assert_not_called()
+
+
+@pytest.mark.parametrize(
     ("path", "scope", "event"),
     [
         ("/api/v1/auth/logout", "local", "logout"),
