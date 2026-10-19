@@ -17,10 +17,12 @@ import type { PendingStudent } from '../../types/admin.ts'
 const adminApi = vi.hoisted(() => ({
   AdminApiError: class AdminApiError extends Error {
     readonly status: number
-    constructor(status: number, message: string) {
+    readonly code: string | null
+    constructor(status: number, message: string, code: string | null = null) {
       super(message)
       this.name = 'AdminApiError'
       this.status = status
+      this.code = code
     }
   },
   listPendingStudents: vi.fn(),
@@ -45,6 +47,31 @@ const PENDING: PendingStudent = {
   created_at: '',
   updated_at: '',
 }
+
+describe('registration queue recovery', () => {
+  it('refreshes an empty queue to show a newly registered student', async () => {
+    adminApi.listPendingStudents.mockResolvedValueOnce([]).mockResolvedValueOnce([PENDING])
+    render(<AdminApprovals accessToken="token" />)
+    await screen.findByText('No students are awaiting approval right now.')
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh registrations' }))
+    expect(await screen.findByText(PENDING.student_number)).toBeInTheDocument()
+    expect(adminApi.listPendingStudents).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps an uncertain approval available for retry instead of claiming it was processed', async () => {
+    adminApi.listPendingStudents.mockResolvedValue([PENDING])
+    adminApi.approvePendingStudent.mockRejectedValue(
+      new adminApi.AdminApiError(409, 'Student approval requires retry or reconciliation', 'STUDENT_PROVISIONING_UNCERTAIN'),
+    )
+    render(<AdminApprovals accessToken="token" />)
+    await screen.findByText(PENDING.student_number)
+    await userEvent.click(screen.getByRole('button', { name: 'Approve' }))
+    expect(await screen.findByText('Student approval requires retry or reconciliation')).toBeInTheDocument()
+    expect(screen.queryByText(/already processed/)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeEnabled()
+    expect(adminApi.listPendingStudents).toHaveBeenCalledTimes(1)
+  })
+})
 
 beforeEach(() => {
   adminApi.listPendingStudents.mockReset()
@@ -108,7 +135,7 @@ describe('AdminApprovals', () => {
       .mockResolvedValueOnce([PENDING])
       .mockResolvedValueOnce([]) // refreshed queue after the conflict
     vi.mocked(adminApi.approvePendingStudent).mockRejectedValue(
-      new adminApi.AdminApiError(409, 'Student is not pending approval'),
+      new adminApi.AdminApiError(409, 'Student is not pending approval', 'STUDENT_NOT_PENDING'),
     )
     render(<AdminApprovals accessToken="token" />)
     await waitFor(() => {

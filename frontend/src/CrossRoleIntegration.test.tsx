@@ -163,11 +163,8 @@ const FORBIDDEN_LABELS: Readonly<Record<string, readonly string[]>> = {
     'Documents',
     'FAQs',
     'User Management',
-    // 'Students' is intentionally NOT forbidden for faculty: the faculty
-    // shell now renders an inert "Coming Soon" placeholder section with that
-    // label. The placeholder performs no request and renders no data, and
-    // the backend still fails closed (/students/me/* -> 404,
-    // /admin/* -> 403) for every faculty request.
+    // Faculty Students uses authorized section rosters. Student self-service
+    // and administrative endpoints retain their separate role boundaries.
   ],
   staff: [
     'Admin Panel',

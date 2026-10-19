@@ -61,6 +61,7 @@ export type AuthErrorKind =
   | 'validation' // 422 FastAPI request validation failure
   | 'session_invalid' // 401/404 from /auth/me — token rejected or user gone
   | 'server' // 5xx upstream error
+  | 'unavailable' // authentication dependency temporarily unavailable
   | 'network' // request never produced an HTTP response
   | 'rate_limited'
   | 'password_verification'
@@ -87,6 +88,8 @@ function messageFor(kind: AuthErrorKind): string {
       return SESSION_EXPIRED_MESSAGE
     case 'server':
       return 'The authentication server reported an error. Please try again later.'
+    case 'unavailable':
+      return 'Authentication is temporarily unavailable. Please try again shortly.'
     case 'network':
       return 'Could not reach the backend. Please make sure the server is running, then try again.'
     case 'rate_limited':
@@ -180,6 +183,14 @@ async function buildAuthError(
 
   if (operation === 'session' && status === 403 && code === 'ACCOUNT_INACTIVE') {
     return new AuthError('account_inactive', status, code)
+  }
+
+  if (status === 503 && (
+    code === 'AUTH_SERVICE_UNAVAILABLE'
+    || code === 'AUTH_VERIFICATION_UNAVAILABLE'
+    || code === 'AUTH_AUDIT_UNAVAILABLE'
+  )) {
+    return new AuthError('unavailable', status, code)
   }
 
   // Backend error code wins over status: both /auth/login (400) and

@@ -45,6 +45,18 @@ beforeEach(() => {
 })
 
 describe('lookupInstitution', () => {
+  it('explains a temporary lookup outage without treating the code as invalid', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(503, {
+      error: { code: 'INSTITUTION_LOOKUP_UNAVAILABLE', message: 'private database diagnostics' },
+    })))
+
+    const error = await lookupInstitution('GIT').catch((value) => value)
+    expect(error).toBeInstanceOf(RegistrationError)
+    expect(error.kind).toBe('unavailable')
+    expect(error.status).toBe(503)
+    expect(error.message).toBe('Institution verification is temporarily unavailable. Please try again shortly.')
+  })
+
   it('explains rate limiting without exposing the server response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(429, {
       error: { code: 'AUTH_RATE_LIMITED', message: 'internal details' },

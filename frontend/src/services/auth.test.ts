@@ -73,6 +73,22 @@ describe('isEmailAddress (backend `_is_email` mirror)', () => {
 })
 
 describe('login (existing POST /api/v1/auth/login contract)', () => {
+  it.each(['AUTH_SERVICE_UNAVAILABLE', 'AUTH_AUDIT_UNAVAILABLE'])(
+    'explains %s without exposing backend diagnostics or blaming credentials',
+    async (code) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(503, {
+        error: { code, message: 'private database hostname and credentials' },
+      })))
+
+      const error = await login({ email: 'admin@college.edu', password: 'test-password' }).catch((value) => value)
+      expect(error).toBeInstanceOf(AuthError)
+      expect(error.kind).toBe('unavailable')
+      expect(error.status).toBe(503)
+      expect(authErrorMessage(error)).toBe('Authentication is temporarily unavailable. Please try again shortly.')
+      expect(error.message).not.toContain('private database')
+    },
+  )
+
   it('sends email + password to the general login endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, LOGIN_RESPONSE))
     vi.stubGlobal('fetch', fetchMock)

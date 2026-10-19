@@ -63,6 +63,21 @@ describe('LoginForm — password recovery', () => {
 })
 
 describe('LoginForm — registration navigation', () => {
+  it('opens student registration directly from a university link and preserves its code', async () => {
+    window.history.replaceState({}, '', '/login/student?institution=QUEST123&register=1')
+    try {
+      render(<LoginForm audience="student" />)
+      expect(screen.getByLabelText('Institution Code')).toHaveValue('QUEST123')
+      expect(screen.getByLabelText('Full Name')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: /back to login/i }))
+      expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
+      expect(authState.login).not.toHaveBeenCalled()
+    } finally {
+      window.history.replaceState({}, '', '/')
+    }
+  })
+
   it('returns from successful student registration to login without signing in', async () => {
     const user = userEvent.setup()
     vi.mocked(registration.lookupInstitution).mockResolvedValue({

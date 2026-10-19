@@ -2,6 +2,7 @@ import logging
 import time
 from typing import cast
 
+import httpx
 import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -294,7 +295,7 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
         },
         503: {
             "model": PublicAPIErrorResponse,
-            "description": "Public generation is temporarily unavailable.",
+            "description": "Public chat or a required dependency is temporarily unavailable.",
         },
         504: {
             "model": PublicAPIErrorResponse,
@@ -340,6 +341,15 @@ def public_chat(request: PublicChatRequest, http_request: Request) -> PublicChat
     except AppError as exc:
         status = exc.status_code
         raise
+    except httpx.TransportError:
+        status = 503
+        logger.warning("event=public_chat_failed status=503 category=dependency_unavailable")
+        raise AppError(
+            "The chatbot is temporarily unavailable. Please try again shortly.",
+            status_code=503,
+            code="PUBLIC_CHAT_UNAVAILABLE",
+            headers={"Retry-After": "5"},
+        ) from None
     except Exception:
         status = 500
         # This public boundary deliberately records only coarse metadata.

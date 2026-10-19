@@ -33,6 +33,19 @@ export interface FacultyAttendanceRosterRow {
   reconciliation_state?: 'NONE' | 'PENDING' | 'LINKED' | 'CONFLICT'
 }
 
+export interface FacultyStudentRegistrationEvent {
+  event_id: string
+  roster_id: string
+  occurred_at: string | null
+  action: 'roster_added' | 'roster_imported' | 'roster_updated' | 'roster_removed' | 'account_updated' | 'account_approved' | 'account_pending' | 'identity_conflict'
+  student_name: string
+  register_number: string | null
+  university_roll_number: string | null
+}
+
+export const getFacultyStudentRegistrationHistory = (token: string, sectionId: string, query: URLSearchParams) =>
+  request<{ items: FacultyStudentRegistrationEvent[]; total: number }>(`/sections/${encodeURIComponent(sectionId)}/registration-history?${query}`, token)
+
 export interface FacultyAttendanceAssignment {
   assignment_id: string
   assigned_at: string

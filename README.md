@@ -99,6 +99,19 @@ Equivalent: `uv run uvicorn app.main:app --reload`. Health probe: `http://127.0.
 > (`env_file=".env"`), so run backend commands from `backend/`. This is documented as a known
 > limitation in `docs/locks/PHASE_6_6_LOCK.md`.
 
+If `uv` warns that `VIRTUAL_ENV` points to the root `.venv`, run `deactivate`
+before running `uv run start` from `backend/`; uv uses `backend/.venv`.
+The console command is `start` (a `startr` command does not exist).
+
+If university lookup or public chat returns HTTP 503, check `/ready`.
+`/health` only confirms that the API process is running. A database connection
+error such as `[Errno 11001] getaddrinfo failed` means the configured Supabase
+hostname could not be resolved. Check `SUPABASE_URL` in `backend/.env` against
+the project's URL and check that the Supabase project is available and its
+hostname resolves on your network. Restore connectivity, then retry the
+institution lookup. The API deliberately keeps database diagnostics out of
+public responses and does not bypass institution validation during an outage.
+
 ## Run the frontend
 
 ```powershell
@@ -110,6 +123,10 @@ npm run dev             # http://localhost:5173, proxies /api -> http://localhos
 `npm run build` type-checks (`tsc -b`) and builds; `npm run preview` serves the build.
 
 ## Tests
+
+The [student registration and approval guide](docs/status/STUDENT_REGISTRATION_APPROVAL_COMPLETION.md)
+documents the complete student flow and the focused database repair required
+when the approval RPC is missing from an existing Supabase project.
 
 ```powershell
 # backend (run from backend/)

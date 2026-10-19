@@ -29,10 +29,13 @@ import FacultyAssignments from './FacultyAssignments.tsx'
 import FacultyTests from './FacultyTests.tsx'
 import FacultyComingSoon from './FacultyComingSoon.tsx'
 import FacultyAttendance from './FacultyAttendance.tsx'
+import FacultyStudents from './FacultyStudents.tsx'
 import FacultyResponsibilityWorkspace from './FacultyResponsibilityWorkspace.tsx'
 import ScopedTeachingAssignmentManager from './ScopedTeachingAssignmentManager.tsx'
 import { responsibilityPermissions } from './responsibilities.ts'
 import { useFacultyContext } from './useFacultyContext.ts'
+import { navigateTo, useBrowserLocation } from '../../lib/navigation.ts'
+import { FACULTY_PATHS, resolveFacultyRoute } from './facultyRoutes.ts'
 
 type IconName = 'dashboard' | 'course' | 'sections' | 'students' | 'attendance' | 'tests' | 'results' | 'resources' | 'assistant' | 'notices' | 'settings' | 'logout'
 type AttendanceAction = 'overview' | 'students' | 'mark' | 'upload' | 'history'
@@ -63,7 +66,9 @@ const NAV_ICONS: Record<FacultyView, IconName> = {
 
 export default function FacultyShell() {
   const { user, role, accessToken, logout } = useAuth()
-  const [view, setView] = useState<FacultyView>('dashboard')
+  const { pathname } = useBrowserLocation()
+  const route = resolveFacultyRoute(pathname)
+  const view = route?.view ?? 'dashboard'
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [testsDirty, setTestsDirty] = useState(false)
   const [attendanceActionRequest, setAttendanceActionRequest] = useState<{ action: AttendanceAction; id: number }>({ action: 'overview', id: 0 })
@@ -76,7 +81,7 @@ export default function FacultyShell() {
   function navigate(nextView: FacultyView) {
     if (view === 'results' && nextView !== view && testsDirty && !window.confirm('Discard unsaved assessment changes?')) return
     setTestsDirty(false)
-    setView(nextView)
+    navigateTo(FACULTY_PATHS[nextView])
     setMobileNavOpen(false)
   }
 
@@ -94,7 +99,7 @@ export default function FacultyShell() {
           <div className="relative flex h-9 w-9 items-center justify-center text-[#ffc72c]" aria-hidden="true"><GraduationCap className="h-9 w-9" strokeWidth={1.7} /></div>
           <div><p className="text-[19px] font-bold tracking-tight text-white">College <span className="text-[#ffc72c]">AI</span></p><p className="text-[11px] text-slate-400">Faculty Portal</p></div>
         </div>
-        <div className="px-3 pt-5"><button type="button" onClick={() => navigate('assignments')} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="course" /></span>My Courses</button><button type="button" onClick={() => navigate('students')} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="students" /></span>My Students</button></div>
+        <div className="px-3 pt-5"><button type="button" onClick={() => navigate('assignments')} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="course" /></span>My Courses</button>{navigation.some(item => item.key === 'students') ? <button type="button" onClick={() => navigate('students')} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-slate-300 hover:bg-[#102235] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#ffc72c]"><span className="text-slate-400"><PortalIcon name="students" /></span>My Students</button> : null}</div>
         <nav aria-label="Faculty navigation" className="flex-1 overflow-y-auto px-3 py-5">
           <div className="space-y-1">
             {navigation.map((item) => {
@@ -135,6 +140,7 @@ export default function FacultyShell() {
             {view === 'teaching-assignment-management' && accessToken ? <ScopedTeachingAssignmentManager accessToken={accessToken} /> : null}
             {view === 'assignments' && accessToken !== null ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">My Sections</h1><FacultyAssignments accessToken={accessToken} /></> : null}
             {view === 'attendance' && accessToken !== null ? <FacultyAttendance accessToken={accessToken} actionRequest={attendanceActionRequest} scopeVersion={JSON.stringify(context)} onNavigateAssignments={() => navigate('assignments')} /> : null}
+            {view === 'students' && accessToken !== null ? <FacultyStudents accessToken={accessToken} scopeVersion={JSON.stringify(context)} /> : null}
             {view === 'results' && accessToken !== null ? <FacultyTests accessToken={accessToken} scopeVersion={JSON.stringify(context)} onDirtyChange={setTestsDirty} /> : null}
             {FACULTY_COMING_SOON_VIEWS.includes(view) && view !== 'attendance' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">{FACULTY_VIEW_HEADINGS[view]}</h1><FacultyComingSoon view={view} /></> : null}
             {view === 'assistant' ? <section aria-label="AI Assistant"><ChatShell /></section> : null}

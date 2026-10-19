@@ -1,5 +1,5 @@
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
-import { lookupInstitution } from '../../services/registration.ts'
+import { lookupInstitution, RegistrationError, registrationErrorMessage } from '../../services/registration.ts'
 import type { InstitutionLookupResponse } from '../../types/registration.ts'
 import { createInstitutionBranding } from './institutionBranding.ts'
 
@@ -16,7 +16,10 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
       <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center text-slate-100">
         <section className="max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-xl">
           <h1 className="text-2xl font-bold text-white">Institution unavailable</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">We could not load that institution. Check the code or try again later.</p>
+          <p role="alert" className="mt-3 text-sm leading-6 text-slate-400">{query.error instanceof RegistrationError
+            ? registrationErrorMessage(query.error)
+            : 'We could not load that institution. Check the code or try again later.'}</p>
+          <button type="button" onClick={() => void query.refetch()} disabled={query.isFetching} className="mt-6 mr-3 rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-60">{query.isFetching ? 'Retrying…' : 'Try again'}</button>
           <a href="/u" className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">Choose another institution</a>
         </section>
       </main>
@@ -69,6 +72,10 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
               <p className="mt-5 text-sm font-semibold text-sky-300">Continue securely <span aria-hidden="true">→</span></p>
             </a>
           </div>
+          <p className="mt-6 text-sm text-slate-300">
+            New student?{' '}
+            <a href={`/login/student?institution=${encodeURIComponent(institution.code)}&register=1`} className="rounded-sm font-semibold text-emerald-300 underline focus:outline-none focus:ring-2 focus:ring-emerald-300">Register as Student</a>
+          </p>
           <p className="mt-7 text-xs leading-5 text-slate-500">Public AI uses public knowledge only. Authentication and tenant access are resolved by the server after sign-in.</p>
         </section>
       </main>

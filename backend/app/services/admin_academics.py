@@ -17,6 +17,7 @@ from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+from postgrest.exceptions import APIError
 
 from app.config import settings
 from app.core.errors import AppError
@@ -495,6 +496,13 @@ def approve_student(student_id, institution_id, *, actor=None) -> dict:
     except AppError:
         raise
     except Exception as exc:
+        if isinstance(exc, APIError) and exc.code in {"PGRST202", "42883", "42703"}:
+            logger.warning("event=student_approval_unavailable category=database_schema")
+            raise AppError(
+                "Student approval is unavailable. Contact your platform administrator.",
+                status_code=503,
+                code="STUDENT_APPROVAL_UNAVAILABLE",
+            ) from None
         raise AppError("Student approval requires retry or reconciliation", 409,
                        "STUDENT_PROVISIONING_UNCERTAIN") from exc
     if result.get("not_found"):

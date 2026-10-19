@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -438,6 +439,32 @@ def test_unhandled_retrieval_failure_uses_generic_error_envelope():
     assert response.json()["error"]["code"] == "INTERNAL_ERROR"
     assert "SELECT" not in response.text
     assert "internal_table" not in response.text
+
+
+@pytest.mark.parametrize("boundary", [
+    "app.services.public_chat.tenancy_repo.get_institution_by_code",
+    "app.services.public_chat.tenancy_repo.get_institution_by_id",
+    "app.services.public_chat.retrieve",
+])
+def test_database_connection_failure_is_retryable(boundary, caplog):
+    fake = _client_with_public_and_cross_tenant_chunks()
+    with (
+        patch("app.services.public_chat.get_admin_client", return_value=fake),
+        patch(boundary, side_effect=httpx.ConnectError("private database host and credentials")),
+        patch("app.main.OpenRouterGenerationProvider") as provider,
+    ):
+        response = TestClient(app).post(
+            "/api/v1/chat/public",
+            json={"institution_code": "COLLEGE001", "message": "What courses?"},
+        )
+    assert response.status_code == 503
+    assert response.headers["Retry-After"] == "5"
+    assert response.json() == {"error": {
+        "code": "PUBLIC_CHAT_UNAVAILABLE",
+        "message": "The chatbot is temporarily unavailable. Please try again shortly.",
+    }}
+    provider.return_value.generate.assert_not_called()
+    assert "private database host and credentials" not in caplog.text
 
 
 def test_openapi_documents_narrow_unauthenticated_contract():

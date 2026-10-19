@@ -6,4 +6,5 @@ import { queryClient } from '../lib/queryClient.ts'
 afterEach(() => {
   cleanup()
   queryClient.clear()
+  window.history.replaceState(null, '', '/')
 })

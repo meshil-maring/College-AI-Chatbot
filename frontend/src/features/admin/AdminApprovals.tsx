@@ -57,6 +57,7 @@ function actionErrorMessage(error: unknown): string {
 export default function AdminApprovals({ accessToken }: { accessToken: string }) {
   const [busyStudentId, setBusyStudentId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null)
   const [dismissedStudentIds, setDismissedStudentIds] = useState<Set<string>>(new Set())
   const queueQuery = useApiQuery<PendingStudent[]>(
     ['admin', 'pending-students', accessToken],
@@ -72,17 +73,21 @@ export default function AdminApprovals({ accessToken }: { accessToken: string })
     : queueQuery.isError
       ? { phase: 'error', message: actionErrorMessage(queueQuery.error) }
       : { phase: 'ready', students: (queueQuery.data ?? []).filter((student) => !dismissedStudentIds.has(student.student_id)) }
-  const loadQueue = () => { setActionError(null); void queueQuery.refetch() }
+  const loadQueue = () => { setActionError(null); setActionSuccess(null); void queueQuery.refetch() }
 
   async function decide(student: PendingStudent, decision: 'approve' | 'reject') {
     setBusyStudentId(student.student_id)
     setActionError(null)
+    setActionSuccess(null)
     try {
       await decisionMutation.mutateAsync({ studentId: student.student_id, decision })
+      setActionSuccess(decision === 'approve'
+        ? `Student ${student.student_number} approved. They can sign in after completing any required email verification.`
+        : `Student ${student.student_number} rejected. Their account cannot sign in.`)
       setDismissedStudentIds((current) => new Set(current).add(student.student_id))
       await queueQuery.refetch()
     } catch (error) {
-      if (error instanceof AdminApiError && error.status === 409) {
+      if (error instanceof AdminApiError && error.status === 409 && error.code === 'STUDENT_NOT_PENDING') {
         // The student was already processed by another approver: refresh
         // the queue instead of pretending the local action succeeded.
         await queueQuery.refetch()
@@ -148,8 +153,17 @@ export default function AdminApprovals({ accessToken }: { accessToken: string })
       <p className="mt-1 text-sm text-slate-400">
         Student registrations awaiting a decision for your institution.
       </p>
+      <button
+        type="button"
+        onClick={loadQueue}
+        disabled={queueQuery.isFetching || busyStudentId !== null}
+        className="mt-4 rounded-lg border border-slate-600 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-60"
+      >
+        {queueQuery.isFetching ? 'Refreshing…' : 'Refresh registrations'}
+      </button>
 
       <div aria-live="polite" className="min-h-[1.5rem]">
+        {actionSuccess !== null && <p className="mt-3 text-sm text-emerald-300">{actionSuccess}</p>}
         {actionError !== null ? (
           <p role="status" className="mt-3 text-sm text-amber-300">
             {actionError}

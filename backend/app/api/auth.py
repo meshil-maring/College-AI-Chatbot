@@ -33,9 +33,10 @@ always resolved from trusted server-side records after authentication.
 import logging
 import time
 
+import httpx
 from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
-from supabase_auth.errors import AuthApiError
+from supabase_auth.errors import AuthApiError, AuthRetryableError
 
 from app.config import settings
 from app.core.errors import AppError
@@ -255,6 +256,20 @@ async def login(body: AuthRequest, request: Request):
     and tenant-bound accounts approved + active with an active institution).
     """
     enforce_auth_rate_limit("login", request)
+    try:
+        return await _authenticate_email_login(body, request)
+    except (httpx.TransportError, AuthRetryableError):
+        logger.warning("event=auth_login_unavailable category=dependency_unavailable")
+        raise AppError(
+            "Authentication is temporarily unavailable. Please try again shortly.",
+            status_code=503,
+            code="AUTH_SERVICE_UNAVAILABLE",
+            headers={"Retry-After": "5"},
+        ) from None
+
+
+async def _authenticate_email_login(body: AuthRequest, request: Request) -> dict:
+    """Issue a login response only after all provider and account checks succeed."""
     try:
         client = create_supabase_client()
         response = client.auth.sign_in_with_password(

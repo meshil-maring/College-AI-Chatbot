@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.tsx'
-import { lookupInstitution } from '../../services/registration.ts'
+import { lookupInstitution, RegistrationError } from '../../services/registration.ts'
 
 vi.mock('../../services/registration.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/registration.ts')>()
@@ -36,6 +36,7 @@ describe('institution presentation gateway', () => {
     expect(lookupInstitution).toHaveBeenCalledWith('GIT')
     expect(screen.getByRole('link', { name: /Open public AI/ })).toHaveAttribute('href', '/u/git/ai')
     expect(screen.getByRole('link', { name: /Continue securely/ })).toHaveAttribute('href', '/login/student?institution=GIT')
+    expect(screen.getByRole('link', { name: 'Register as Student' })).toHaveAttribute('href', '/login/student?institution=GIT&register=1')
   })
 
   it('shows a safe error instead of backend diagnostics', async () => {
@@ -46,6 +47,19 @@ describe('institution presentation gateway', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not find that institution right now')
     expect(document.body).not.toHaveTextContent('database host and secret details')
+  })
+
+  it('lets a direct gateway visit recover after a temporary lookup outage', async () => {
+    window.history.replaceState({}, '', '/u/git')
+    vi.mocked(lookupInstitution)
+      .mockRejectedValueOnce(new RegistrationError('unavailable', 503, 'INSTITUTION_LOOKUP_UNAVAILABLE'))
+      .mockResolvedValueOnce({ institution_id: 'institution-1', code: 'GIT', name: 'Greenfield Institute of Technology' })
+    render(<App />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Institution verification is temporarily unavailable')
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByRole('heading', { name: 'Greenfield Institute of Technology' })).toBeInTheDocument()
+    expect(lookupInstitution).toHaveBeenCalledTimes(2)
   })
 })
 

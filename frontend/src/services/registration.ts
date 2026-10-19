@@ -43,6 +43,7 @@ export type RegistrationErrorKind =
   | 'roll_number_already_registered' // 409 ROLL_NUMBER_ALREADY_REGISTERED
   | 'validation' // 422 VALIDATION_ERROR (client contract mismatch)
   | 'server' // 5xx upstream error
+  | 'unavailable' // institution verification dependency unavailable
   | 'network' // request never produced an HTTP response
   | 'timeout' // request aborted via timeout signal
   | 'rate_limited'
@@ -65,6 +66,8 @@ export function registrationErrorMessage(error: RegistrationError): string {
       return 'Please review the highlighted fields and try again.'
     case 'server':
       return 'The server reported an error. Please try again later.'
+    case 'unavailable':
+      return 'Institution verification is temporarily unavailable. Please try again shortly.'
     case 'network':
       return 'Could not reach the backend. Please make sure the server is running, then try again.'
     case 'timeout':
@@ -183,7 +186,11 @@ async function buildRegistrationError(
     )
   }
   if (status >= 500) {
-    return new RegistrationError('server', status, code)
+    return new RegistrationError(
+      code === 'INSTITUTION_LOOKUP_UNAVAILABLE' ? 'unavailable' : 'server',
+      status,
+      code,
+    )
   }
   return new RegistrationError('unknown', status, code)
 }

@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import httpx
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -151,3 +153,20 @@ def test_lookup_requires_no_authentication():
             headers={"Authorization": ""},
         )
     assert r.status_code == 200
+
+
+@pytest.mark.parametrize("error_type", [httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout])
+def test_database_transport_failure_is_retryable_and_does_not_leak_details(error_type):
+    db = fake_db(inst_row())
+    db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.side_effect = error_type(
+        "[Errno 11001] getaddrinfo failed: private database host and credentials"
+    )
+    with patch("app.services.tenancy.get_admin_client", return_value=db):
+        # Expected dependency failures must not reach Starlette's unhandled-error handler.
+        response = TestClient(app).get("/api/v1/institutions/lookup", params={"code": "GIT"})
+    assert response.status_code == 503
+    assert response.headers["Retry-After"] == "5"
+    assert response.json() == {"error": {
+        "code": "INSTITUTION_LOOKUP_UNAVAILABLE",
+        "message": "Institution verification is temporarily unavailable. Please try again shortly.",
+    }}

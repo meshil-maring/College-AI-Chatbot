@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from postgrest.exceptions import APIError
 from fastapi.testclient import TestClient
 
 from app.api.admin import _APPROVAL
@@ -724,5 +725,22 @@ def test_platform_student_role_still_forbidden():
         _clear()
     assert resp.status_code == 403
     assert resp.json()["error"]["code"] == "FORBIDDEN"
+
+
+@pytest.mark.parametrize("code", ["PGRST202", "42883", "42703"])
+def test_missing_approval_schema_is_unavailable_instead_of_a_decision_conflict(code):
+    with (
+        patch.object(svc, "get_admin_client", return_value=MagicMock()),
+        patch.object(repo, "get_student_for_approval", return_value=_pending_row()),
+        patch.object(repo, "approve_student_and_provision", side_effect=APIError({
+            "code": code, "message": "internal database function or column details",
+            "details": None, "hint": None,
+        })),
+    ):
+        with pytest.raises(AppError) as caught:
+            svc.approve_student(STUDENT_A, TENANT_A, actor=_user(TENANT_A))
+    assert caught.value.status_code == 503
+    assert caught.value.code == "STUDENT_APPROVAL_UNAVAILABLE"
+    assert "internal database" not in caught.value.message
 
 

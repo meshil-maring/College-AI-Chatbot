@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useBrowserLocation } from './lib/navigation.ts'
+import { resolveFacultyRoute } from './features/faculty/facultyRoutes.ts'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider.tsx'
 import LoginForm, { type LoginAudience } from './features/auth/LoginForm.tsx'
 import ChangePasswordForm from './features/auth/ChangePasswordForm.tsx'
@@ -38,6 +40,7 @@ export type AppRoute =
   | { readonly kind: 'login'; readonly audience: LoginAudience }
   | { readonly kind: 'reset-password' }
   | { readonly kind: 'super-admin' }
+  | { readonly kind: 'faculty' }
   | { readonly kind: 'admin-invitation'; readonly token: string }
   | { readonly kind: 'super-admin-invitation'; readonly token: string }
   | { readonly kind: 'super-admin-register' }
@@ -70,6 +73,7 @@ function resolveInvitationToken(pathname: string): string | null | undefined {
 }
 
 export function resolveAppRoute(pathname: string): AppRoute {
+  if (resolveFacultyRoute(pathname)) return { kind: 'faculty' }
   const publicInstitutionCode = resolvePublicInstitutionCode(pathname)
   if (publicInstitutionCode !== undefined) {
     return { kind: 'public-chat', institutionCode: publicInstitutionCode }
@@ -247,15 +251,14 @@ function AuthenticatedShell() {
   return <UnsupportedRoleShell key={shellKey} onSignOut={logout} />
 }
 
-function UnsupportedRoleShell({ onSignOut }: { onSignOut: () => void }) {
+function UnsupportedRoleShell({ onSignOut, message = 'This account does not have an application role assigned. Please contact your institution administrator.' }: { onSignOut: () => void; message?: string }) {
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
       <main className="max-w-xl w-full text-center py-16">
         <div className="rounded-2xl border border-amber-900/50 bg-amber-500/10 p-10 shadow-xl">
           <h1 className="text-2xl font-bold text-amber-300">Access restricted</h1>
           <p className="mt-4 text-slate-300">
-            This account does not have an application role assigned. Please
-            contact your institution administrator.
+            {message}
           </p>
           <button
             type="button"
@@ -317,6 +320,14 @@ function SuperAdminGate() {
   return <UnsupportedRoleShell onSignOut={logout} />
 }
 
+function FacultyGate() {
+  const { status, role, logout } = useAuth()
+  if (status === 'restoring') return <RestoringShell />
+  if (status !== 'authenticated') return <LoginForm audience="faculty" />
+  if (role !== 'faculty') return <UnsupportedRoleShell onSignOut={logout} message="This page requires a faculty account. Sign in with your faculty account to continue." />
+  return <AuthenticatedExperience />
+}
+
 function NotFoundPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center text-slate-100">
@@ -330,12 +341,7 @@ function NotFoundPage() {
 }
 
 function App() {
-  const [pathname, setPathname] = useState(() => window.location.pathname)
-  useEffect(() => {
-    const updatePathname = (): void => setPathname(window.location.pathname)
-    window.addEventListener('popstate', updatePathname)
-    return () => window.removeEventListener('popstate', updatePathname)
-  }, [])
+  const { pathname } = useBrowserLocation()
   const route = resolveAppRoute(pathname)
   if (route.kind === 'public-chat') {
     return route.institutionCode === null
@@ -362,6 +368,7 @@ function App() {
       {route.kind === 'home' ? <RootGate /> : null}
       {route.kind === 'login' ? <AuthGate audience={route.audience} /> : null}
       {route.kind === 'super-admin' ? <SuperAdminGate /> : null}
+      {route.kind === 'faculty' ? <FacultyGate /> : null}
     </AuthProvider>
   )
 }

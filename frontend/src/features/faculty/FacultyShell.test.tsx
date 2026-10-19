@@ -74,6 +74,28 @@ afterEach(() => {
 })
 
 describe('FacultyShell', () => {
+  it('hides both student entries when the server grants no roster access', () => {
+    authState.user = { ...FACULTY_USER, effective_permissions: ['profile.own.read'] }
+    render(<FacultyShell />)
+    expect(screen.queryByRole('button', { name: 'Students', exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'My Students', exact: true })).not.toBeInTheDocument()
+  })
+  it('opens the live Students directory from the faculty navigation', async () => {
+    facultyAttendanceApi.getFacultyAttendanceAssignments.mockResolvedValue([])
+    const user = userEvent.setup()
+    render(<FacultyShell />)
+    await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
+    expect(await screen.findByRole('heading', { name: 'No student rosters available' })).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/faculty/students')
+    expect(screen.queryByText('No information is available for this section yet.')).not.toBeInTheDocument()
+  })
+  it('restores a faculty view directly from its URL', async () => {
+    window.history.replaceState(null, '', '/faculty/students')
+    facultyAttendanceApi.getFacultyAttendanceAssignments.mockResolvedValue([])
+    render(<FacultyShell />)
+    expect(await screen.findByRole('heading', { name: 'Students', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Students', exact: true })).toHaveAttribute('aria-current', 'page')
+  })
   it('opens the implemented tests workflow in the existing shell', async () => {
     const user = userEvent.setup()
     render(<FacultyShell />)
@@ -99,7 +121,7 @@ describe('FacultyShell', () => {
   it('renders an inert Coming Soon placeholder for each section without a backend contract', async () => {
     const user = userEvent.setup()
     render(<FacultyShell />)
-    for (const label of ['Students', 'Notices', 'Learning Resources']) {
+    for (const label of ['Notices', 'Learning Resources']) {
       await user.click(screen.getByRole('button', { name: label }))
       expect(screen.getByRole('heading', { name: label, level: 1 })).toBeInTheDocument()
       expect(screen.getByText('Coming Soon')).toBeInTheDocument()
@@ -117,7 +139,7 @@ describe('FacultyShell', () => {
     vi.stubGlobal('fetch', fetchSpy)
     const user = userEvent.setup()
     render(<FacultyShell />)
-    for (const label of ['Students', 'Notices', 'Learning Resources']) {
+    for (const label of ['Notices', 'Learning Resources']) {
       await user.click(screen.getByRole('button', { name: label }))
     }
     expect(fetchSpy).not.toHaveBeenCalled()

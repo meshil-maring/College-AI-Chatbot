@@ -7,7 +7,7 @@ import { hasPermission } from '../auth/permissions.ts'
 /** The only role that renders the faculty shell. */
 const FACULTY_SHELL_ROLES: readonly string[] = ['faculty']
 
-/** Every view the faculty shell can render (no router library is installed). */
+/** Every view the faculty shell can render; URL paths live in facultyRoutes.ts. */
 export type FacultyView =
   | 'dashboard'
   | 'assignments'
@@ -27,7 +27,6 @@ export type FacultyView =
  * `FacultyComingSoon` placeholder — no requests, no data, no actions.
  */
 export const FACULTY_COMING_SOON_VIEWS: readonly FacultyView[] = [
-  'students',
   'notices',
   'resources',
 ]
@@ -65,6 +64,7 @@ const FACULTY_VIEW_PERMISSIONS: Readonly<Partial<Record<FacultyView, string>>> =
   assistant: 'ai.chat',
   profile: 'profile.own.read',
   assignments: 'faculty.assignments.read',
+  students: 'attendance.read',
   attendance: 'attendance.read',
   results: 'results.read',
 }
@@ -150,8 +150,8 @@ export const FACULTY_WORKSPACE_SURFACES: readonly FacultyWorkspaceSurface[] = [
   {
     key: 'students',
     title: 'Students',
-    status: 'not-available',
-    description: 'Student information is not available for faculty accounts yet.',
+    status: 'available',
+    description: 'Browse authorized section rosters, student details, and subject attendance.',
   },
   {
     key: 'attendance',

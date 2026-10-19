@@ -46,6 +46,8 @@ import hmac
 import secrets
 from uuid import UUID
 
+import httpx
+
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories import tenancy as tenancy_repo
@@ -195,6 +197,7 @@ def lookup_institution_by_code(code: str) -> InstitutionLookupResponse:
       * 404 INSTITUTION_NOT_FOUND — no institution with this code
       * 403 INSTITUTION_NOT_ACCEPTING_REGISTRATIONS — institution exists but
         is not ACTIVE (pending/rejected/suspended), so it cannot be joined.
+      * 503 INSTITUTION_LOOKUP_UNAVAILABLE — database connection failed or timed out.
     """
     normalized = (code or "").strip().upper()
     if not normalized:
@@ -205,7 +208,15 @@ def lookup_institution_by_code(code: str) -> InstitutionLookupResponse:
         )
 
     db = get_admin_client()
-    institution = tenancy_repo.get_institution_by_code(db, normalized)
+    try:
+        institution = tenancy_repo.get_institution_by_code(db, normalized)
+    except httpx.TransportError:
+        raise AppError(
+            "Institution verification is temporarily unavailable. Please try again shortly.",
+            status_code=503,
+            code="INSTITUTION_LOOKUP_UNAVAILABLE",
+            headers={"Retry-After": "5"},
+        ) from None
     if institution is None:
         raise AppError(
             "Institution not found",

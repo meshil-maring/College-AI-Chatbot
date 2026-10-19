@@ -49,7 +49,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [showRegistration, setShowRegistration] = useState(
     () =>
-      (audience === 'faculty' || audience === 'staff') &&
+      (audience === 'student' || audience === 'faculty' || audience === 'staff') &&
       new URLSearchParams(window.location.search).get('register') === '1',
   )
 

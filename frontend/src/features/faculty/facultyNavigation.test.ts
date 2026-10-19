@@ -18,6 +18,12 @@ import {
 } from './facultyNavigation.ts'
 
 describe('buildFacultyNavigation', () => {
+  it('requires an attendance read grant to show the live Students directory', () => {
+    expect(buildFacultyNavigation('faculty', []).map(item => item.key)).not.toContain('students')
+    expect(buildFacultyNavigation('faculty', ['attendance.read']).map(item => item.key)).toContain('students')
+    expect(buildFacultyNavigation('faculty', [], ['attendance.read']).map(item => item.key)).toContain('students')
+    expect(FACULTY_COMING_SOON_VIEWS).not.toContain('students')
+  })
   it('requires a results grant from teaching role or scoped responsibility', () => {
     expect(buildFacultyNavigation('faculty', []).map(item => item.key)).not.toContain('results')
     expect(buildFacultyNavigation('faculty', ['results.read']).map(item => item.key)).toContain('results')
@@ -74,7 +80,7 @@ describe('buildFacultyNavigation', () => {
     // permission-check; they are roadmap labels for any faculty identity.
     const navigation = buildFacultyNavigation('faculty', [])
     const keys = navigation.map((item) => item.key)
-    expect(keys).toEqual(['students', 'notices', 'resources'])
+    expect(keys).toEqual(['notices', 'resources'])
   })
 })
 
@@ -91,7 +97,6 @@ describe('FACULTY_COMING_SOON_VIEWS (inert placeholders)', () => {
     expect([...FACULTY_COMING_SOON_VIEWS].sort()).toEqual([
       'notices',
       'resources',
-      'students',
     ])
   })
 
@@ -116,7 +121,7 @@ describe('FACULTY_WORKSPACE_SURFACES (verified capability map)', () => {
     const available = FACULTY_WORKSPACE_SURFACES.filter(
       (surface) => surface.status === 'available',
     )
-    expect(available.map((surface) => surface.key)).toEqual(['assignments', 'assistant', 'attendance', 'results'])
+    expect(available.map((surface) => surface.key)).toEqual(['assignments', 'assistant', 'students', 'attendance', 'results'])
   })
 
   it('marks student academic surfaces as not available (server-denied)', () => {
@@ -126,7 +131,6 @@ describe('FACULTY_WORKSPACE_SURFACES (verified capability map)', () => {
     expect(notAvailable.map((surface) => surface.key).sort()).toEqual([
       'notices',
       'resources',
-      'students',
     ])
   })
 })

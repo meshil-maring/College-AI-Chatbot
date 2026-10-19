@@ -125,6 +125,18 @@ def attendance_profile(roster_id: UUID, limit: int = Query(50, ge=1, le=500), of
     return reporting.student_profile(current_user, roster_id, limit=limit, offset=offset)
 
 
+@router.get('/attendance/sections/{section_id}/registration-history')
+def student_registration_history(
+    section_id: UUID,
+    limit: int = Query(25, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    search: str = Query('', max_length=128),
+    current_user: dict = Depends(_FACULTY),
+) -> dict:
+    from app.services.faculty_students import registration_history
+    return registration_history(current_user, section_id, limit=limit, offset=offset, search=search)
+
+
 @router.get('/attendance/sections/{section_id}/sessions')
 def attendance_sessions(section_id: UUID, limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0),
     current_user: dict = Depends(_FACULTY)) -> dict:
@@ -156,7 +168,7 @@ def edit_roster(roster_id: UUID, payload: RosterUpdateRequest, current_user: dic
     authorize_permissions(current_user, 'attendance.manage')
     updated = faculty_attendance.update_roster(current_user, roster_id, payload)
     from app.api.admin import _record_audit
-    _record_audit(current_user, 'attendance.roster.update', 'faculty_attendance_rosters', str(roster_id), payload.model_dump(exclude_unset=True))
+    _record_audit(current_user, 'attendance.roster.update', 'faculty_attendance_rosters', str(roster_id), updated)
     return updated
 
 

@@ -20,7 +20,7 @@ afterEach(() => {
 
 describe('FacultyComingSoon', () => {
   it('labels the section Coming Soon and states plainly that no information exists', () => {
-    render(<FacultyComingSoon view="students" />)
+    render(<FacultyComingSoon view="notices" />)
     expect(screen.getByText('Coming Soon')).toBeInTheDocument()
     expect(
       screen.getByText('No information is available for this section yet.'),
