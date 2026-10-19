@@ -97,16 +97,176 @@ After these locks, lock the institution, participating user rows sorted by UUID,
 
 Idempotency is actor/institution/command scoped. Same key plus identical logical payload returns the original result only after current authorization; changed input conflicts. Return recorded and current head separately. Stale expected revisions require reload and human review, never automatic rebasing. Audit, finding/decision, claims and head writes are intended to share one transaction; no swallowed exception or best-effort audit. Disconnect uncertainty is resolved by retrying the unchanged command/key after checking outcome. Time is taken after lock waits. The lock/rollback/security behavior is a design requirement, **not verified PostgreSQL behavior**.
 
-## Undecided owner matters - enablement blockers
+## Academic identity verification owner decision register
 
-1. Freshness: bounded lifetime versus explicit no-expiry, renewal triggers, source age/supersession, policy changes and effects on earlier decisions; reservation of expired claims.
-2. Normalization: allowed characters/length, whitespace/case, Unicode normalization and confusables, spreadsheet/OCR handling, collation and collision adjudication. ASCII trim/case mechanisms and the 256-character sketch ceiling are not selected institutional values; approval strings do not enforce a character policy. Missing approved rules block positives; discovered conflicts require review, never first-match assignment.
-3. Identifier/person-key stability, reuse/transfer and exceptional wrong-person-key/profile reassociation; whether register number itself is the stable key.
-4. Named uploaders/custodians/grantors/verifiers, acceptable authenticity evidence, uploader/authenticator separation, trusted subject-binding/reviewer authority, additional correction/withdrawal dual-control requirements, mandate succession and emergency revocation procedure.
-5. Exact locator format; acceptance completeness and import confirmation; restricted evidence/audit readers, retention duration, deletion/profile-unlink exceptions, backup recovery and purge, legal holds and logged exceptional access.
-6. Source supersession/invalidation response, legacy missing/disagreeing optional values, operational lock budgets and scalability. Conservative refusal is the draft default, not a final institutional normalization/freshness choice.
+Status: **OWNER DECISION REQUIRED**. Every entry below is **UNDECIDED**; its decision and approval evidence are **not recorded**. Every linked follow-up is **TECHNICAL VALIDATION REQUIRED**, deferred until the decisions, reviewed design and separate authorization exist. This register organizes existing blockers; it grants no implementation or SQL-execution approval.
 
-Binding-specific enablement blockers: who establishes/approves identity-to-account evidence; authenticated proofing/session provenance and current directory completeness; exact method/mode allowlists and whether no-account subjects are permitted; validity/renewal/revocation and authority succession; alias/multiple-account handling; independent review; and account attachment/recovery/reassociation/replacement/correction policy. Existing writers must participate in a reviewed revision/locking protocol, including change-away-and-back detection. The conservative model requires distinct subject, establisher, reviewer and verifier and refuses ordinary association changes; these are proposed guards, not owner-approved institutional workflows. Missing real decisions keeps SQL positives disabled.
+Review baseline: the recorded offline result is **199 passed, 0 failures, 0 errors, 0 skipped** ([correction evidence](offline_test_plan.md#four-finding-correction-validation-2026-10-18)). The latest independent review, as supplied in the task, confirmed the four prior defects fixed for the reviewed cases. They remain closed absent new evidence. That review confirmation is task-provided; this register does not invent a separate review artifact or claim a new test run. Sequential model passes establish no PostgreSQL, storage or operational guarantee.
+
+**Decision authority for every entry:** existing documents reserve policy choices and authority designations to the owner, but establish no named institutional decision-maker or delegated approval mandate. Each entry therefore requires owner resolution; proposed operational roles below are not appointments or authority to approve policy. Record the actual decider's authority evidence before recording any decision as approved. No admin, verifier, DB owner or fixture mandate is inferred to be that decider.
+
+**How to complete each entry:** record its ID, explicit answer and scope, accountable decider and authority evidence, dated retrievable approval evidence, policy/version and effective date, and any unresolved conditions. The entry-specific evidence below is also required. An evidence-reference string alone is insufficient. Do not change an entry's status on the strength of a test result; track the linked technical results separately. Where no alternatives are listed, the proposal supplies no settled option set.
+
+### 1. Authority and ownership
+
+**A1 - Who owns the authoritative academic directory, and who may attest that it is complete and current?**
+
+* **Why / blocked:** account ownership and absence searches require full institution, account, alias and historical coverage. Observed emptiness cannot establish completeness; safe positive verification remains blocked without trusted authority and coverage.
+* **Decision / evidence needed:** identify the directory owner, completeness attester and revision/continuity authority; document their mandates, institution scope, coverage, attestation procedure and baseline provenance. No such real appointments are established. The synthetic `subject_directory_writer` mandate is only a model prerequisite.
+* **Follow-up:** T2, T4, T6 must validate authoritative inputs, writer coverage, baseline provenance and continuity. Basis: [persistent directory invariant](rpc_contract.md#persistent-no-accounts-directory-invariant-proposed-control-not-owner-approved).
+
+**A2 - Who may approve proofing procedures and appoint proofing staff, independent reviewers and other verification authorities?**
+
+* **Why / blocked:** role membership cannot confer proofing, review or delegation authority. Positive evidence and source acceptance cannot be trusted while appointments, separation and succession are unresolved.
+* **Decision / evidence needed:** record authorized appointing/approving authority and explicit institution-bound appointments for proof establishers/reviewers, uploaders/custodians, permission grantors and selected verifiers. Specify uploader/authenticator separation, independent review, any additional correction/withdrawal dual control, succession and emergency revocation. The proposed distinct subject/establisher/reviewer/verifier guard is not an approved operating policy; self-grant and positive self-approval remain prohibited.
+* **Follow-up:** T1, T3, T6 must validate authority provenance, independence, revocation and succession against the chosen policy. Basis: [permission authority](rpc_contract.md#individual-permission-assignmentrevocation), [subject-binding invariant](rpc_contract.md#exact-subject-binding-invariant-normative-proposal).
+
+**A3 - Who may authorize recovery after an integrity incident and restoration of trusted service?**
+
+* **Why / blocked:** repairing rows or restoring a backup cannot authorize renewed trust. Ordinary writers and bootstrap cannot clear a latched incident; operational incident recovery remains unavailable.
+* **Decision / evidence needed:** designate incident, evidence-invalidation, recovery and restoration approval responsibilities, including succession and the evidence required to authorize recovery. No recovery authority or ordinary incident-clear workflow is established. B4 covers the recovery procedure separately.
+* **Follow-up:** T1, T4, T5 must validate authorization boundaries, durable incident state and restoration gates. Basis: [unresolved directory responsibilities](rpc_contract.md#persistent-no-accounts-directory-invariant-proposed-control-not-owner-approved).
+
+#### A1–A3 owner decision handoff
+
+Status for **A1**, **A2** and **A3**: **UNDECIDED / OWNER DECISION REQUIRED**. This handoff is for obtaining documented answers; no answer, appointment or approval evidence has been supplied. It supplements the entries above without changing their questions or the remaining register.
+
+For each response, supply the decision ID, explicit answer and institution scope, actual decider and documentation establishing that person's authority, dated retrievable approval evidence, policy/version and effective date, and unresolved conditions. These are the register's existing recording requirements. A reference string, job title, fixture mandate or test result alone cannot establish approval. The README does not identify the responsible person or establish a delegated approval chain; that gap must be resolved before routing for an authoritative decision.
+
+**A1 handoff — Directory ownership and completeness authority**
+
+* **Decision required:** identify who owns the authoritative academic directory, who may attest that it is complete and current, and who holds revision/continuity authority.
+* **Authorized decider:** not established by existing evidence. The register reserves designation to the owner but names no institutional decision-maker or delegate. A proposed directory writer is not evidence of appointment or policy authority.
+* **Documentation to supply:** mandates/designations for the directory owner, completeness attester and revision/continuity authority; institution, account, alias and historical coverage; the completeness/currentness attestation procedure; and baseline provenance. Supply the common decision/authority evidence above. No real appointments or supporting attestation evidence are recorded.
+* **Blocked until recorded:** safe positive verification cannot rely on unestablished directory authority or coverage; account ownership and absence searches cannot infer trust from observed rows or emptiness.
+* **Later validation:** **T2** — complete writer/input coverage; **T4** — durable baseline/history and continuity; **T6** — actual authority, completeness and provenance. All remain **TECHNICAL VALIDATION REQUIRED**.
+
+**A2 handoff — Proofing approval and verification appointments**
+
+* **Decision required:** identify who may approve proofing procedures and appoint proof establishers, independent reviewers, uploaders/custodians, permission grantors and selected verifiers; specify separation, succession and emergency revocation rules.
+* **Authorized decider:** not established by existing evidence. Admin status, verifier capability and proposed operational roles do not establish appointment or proofing-policy approval authority.
+* **Documentation to supply:** the appointing/approving authority's mandate; explicit institution-bound appointments; uploader/authenticator separation and independent-review requirements; any additional correction/withdrawal dual control; succession and emergency revocation rules. Supply the common decision/authority evidence above. Self-grant and positive self-approval remain prohibited; proposed distinct-person guards are not approved operating policy.
+* **Blocked until recorded:** positive evidence and source acceptance cannot be trusted while appointments, separation and succession remain unresolved. This decision does not itself settle C5's acceptable proofing methods or evidence-validity policy.
+* **Later validation:** **T1** — authority and permission boundaries; **T3** — authorization/revocation behavior under transactions and races; **T6** — authority provenance, independence and succession in the trusted process. All remain **TECHNICAL VALIDATION REQUIRED**.
+
+**A3 handoff — Incident recovery and restoration authority**
+
+* **Decision required:** identify who may authorize recovery after an integrity incident and restoration of trusted service, with responsibilities for incident handling and evidence invalidation.
+* **Authorized decider:** not established by existing evidence. No recovery or restoration approval authority is appointed; technical access or the ability to restore a backup does not establish that authority.
+* **Documentation to supply:** explicit incident, evidence-invalidation, recovery and restoration approval responsibilities; succession; and the required evidence for authorizing recovery, together with the common decision/authority evidence above. **Gap:** the README requires recovery-authorization evidence but does not specify its final contents; that requirement must be decided, not filled with assumed criteria. B4 separately covers the recovery procedure.
+* **Blocked until recorded:** operational incident recovery remains unavailable. Repair, ordinary directory writes, bootstrap or backup restoration cannot authorize renewed trust or clear a latched incident.
+* **Later validation:** **T1** — recovery authorization boundaries; **T4** — durable incident state and authorized recovery gates; **T5** — backup/restoration gates and continuity. All remain **TECHNICAL VALIDATION REQUIRED**.
+
+**Dependencies and routing gaps**
+
+* **A1 and A2 require coordination:** directory ownership/completeness supplies the trusted boundary used by proofing and review; proofing appointments alone cannot attest directory completeness. A1 does not appoint proofing reviewers or approve their procedures.
+* **A3 requires alignment with A1 and A2:** recovery/restoration responsibilities must be reconciled with directory revision/continuity authority and the appointments, succession and revocation rules. Neither A1 nor A2 automatically grants incident recovery authority, and A3 cannot replace directory completeness or independent proofing.
+* The README establishes no single common decider, mandatory ordering or delegation chain among A1–A3. Their answers can be prepared together, but each needs its own explicit decision and authority evidence. A3's operational procedure remains B4; A1–A3 do not resolve B1–D3 or validate T1–T6.
+
+**Next action:** obtain documentation identifying the institutional decision-maker(s) and their authority, then request the three evidence-backed responses above. Keep all three decisions **UNDECIDED** while that evidence is missing. Recording owner decisions does not authorize implementation, validation execution or SQL execution. Both **DESIGN_ONLY_NOT_AUTHORIZED** and **AV_SELF_APPROVAL_CONTROL_UNRESOLVED** remain unchanged.
+
+### 2. Directory changes and continuity
+
+**B1 - Which changes must advance directory revisions, and what invalidation scope and operating limits are acceptable?**
+
+* **Why / blocked:** an untracked account or alias change can reuse stale ownership/absence evidence. Complete writer coverage and an acceptable operating model remain prerequisites.
+* **Decision / evidence needed:** approve the operation inventory covering account/alias/profile/Auth creation and removal, reassignment, activation/inactivity, recovery/replacement, legacy cleanup and restore, including change-away-and-back and identical-value restores. Specify per-account revision rules, directory generation granularity, and operational lock/deadline limits. The proposal uses institution-wide generations, conservatively invalidating unrelated subjects' absence evidence; no alternative granularity is specified or approved.
+* **Follow-up:** T2, T3 must map every real writer and validate atomic revision changes, compatible reads, races and measured blocking. Basis: [directory invariant](rpc_contract.md#persistent-no-accounts-directory-invariant-proposed-control-not-owner-approved), [lock boundary](rpc_contract.md#lock-order-races-and-retry-boundary).
+
+**B2 - What durable directory history, baselines and deletion tombstones must survive?**
+
+* **Why / blocked:** removed or inactive associations must not become apparent never-associated subjects. Without retained history and trustworthy bootstrap, absence evidence and historical ownership cannot be relied upon.
+* **Decision / evidence needed:** specify baseline/bootstrap provenance, before/after history, writer/time/reason/audit attribution, tombstones and continuity retention requirements, coordinated with D1/D3. Consecutive snapshots, a retained bootstrap receipt and a separate highwater anchor are proposed representations, not approved storage or retention choices.
+* **Follow-up:** T1, T2, T4, T5 must validate protected history, monotonic revisions, deletion/recreation and persistence through failure and restoration. Basis: [directory invariant](rpc_contract.md#persistent-no-accounts-directory-invariant-proposed-control-not-owner-approved).
+
+**B3 - What independent continuity guarantees must detect restoration or rollback of trusted state?**
+
+* **Why / blocked:** coherent rollback of every model-held store can make old evidence usable again and erase later incidents/audit. The passing limitation test does not solve this; safe continuity remains unestablished.
+* **Decision / evidence needed:** identify the accountable continuity authority and required independently trusted continuity/restore guarantees, including what must survive backup restoration and how unknown continuity is treated. No external mechanism is selected. Missing trusted continuity must fail closed; restarting generation at one cannot restore trust.
+* **Follow-up:** T4, T5 must assess the resulting technical design and test independent/mixed and coherent rollback, witness loss and restoration against a surviving independent trust source. Basis: [restoration characterization](rpc_contract.md#strict-generation-validation-and-restoration-characterization).
+
+**B4 - What must happen after an integrity incident before evidence or service can be trusted again?**
+
+* **Why / blocked:** deleting bad rows or repairing history cannot clear observed unreliability. Durable detection/reporting, evidence invalidation and recovery are unresolved operational prerequisites.
+* **Decision / evidence needed:** define incident handling, reliability marking, reporting/delivery responsibility, affected-evidence treatment and recovery/revalidation conditions under A3's authority. Preserve decisions and history; a new receipt or baseline cannot itself authorize recovery. No ordinary reset/rebootstrap is a supported recovery option.
+* **Follow-up:** T3, T4, T5 must validate read-side and command-side detection, durable delivery despite transaction rollback, incident persistence after repair and separately authorized recovery. Basis: [directory invariant](rpc_contract.md#persistent-no-accounts-directory-invariant-proposed-control-not-owner-approved), [evidence/event boundary](rpc_contract.md#evidence-provenance-and-collection-to-commit-boundary).
+
+### 3. Identity and source policies
+
+**C1 - How current must sources and decisions be, and what happens when a source or policy is replaced?**
+
+* **Why / blocked:** source age, decision age and proof validity are distinct. Missing rules block positives; replacement alone cannot transfer or silently renew prior decisions.
+* **Supported options:** bounded decision lifetime or explicit no-expiry; neither is selected. Source-age and supersession consequences remain to be specified.
+* **Decision / evidence needed:** record source dating/missing-date rules, renewal triggers, policy-version effects, supersession/invalidation remediation and treatment of prior decisions and expired claims. Coordinate proof validity with C5 and reuse with C4.
+* **Follow-up:** T1, T3, T6 must validate policy representation, expiry boundaries after waits and replacement/invalidation effects on new commands and current reads. Basis: [source custody](rpc_contract.md#accepted-immutable-source-versions---custody-prerequisite), [read contract](rpc_contract.md#error-and-read-contracts).
+
+**C2 - What proves a register copy authentic and its imported entries complete and exact?**
+
+* **Why / blocked:** hashes and references do not prove institutional authenticity or faithful extraction. No source acceptance can support enablement without approved custody and confirmation procedures.
+* **Supported examples:** trusted institutional handoff or validated issuer signature; PDF/image page-entry or spreadsheet sheet-row/cell locators, according to format. These are examples, not selected procedures.
+* **Decision / evidence needed:** specify acceptable provenance evidence, exact locator syntax, import-completeness/original-string confirmation and source-integrity read-back schedule. Retain actual authenticated handoff/issuer and extraction evidence for the exact copy; resolve uploader/authenticator separation through A2.
+* **Follow-up:** T1, T5, T6 must validate custody, complete atomic imports, OCR/numeric/formula ambiguity refusal, original-byte integrity and retrievable evidence. Basis: [custody prerequisite](rpc_contract.md#accepted-immutable-source-versions---custody-prerequisite).
+
+**C3 - How are identifiers normalized, and how are ambiguous or colliding values resolved?**
+
+* **Why / blocked:** normalization can merge different people or lose leading zeros. Missing approved rules block positives; conflicts cannot be resolved by first-match selection.
+* **Decision / evidence needed:** approve per-kind characters/length, whitespace/case, Unicode/confusables, collation, extraction handling and collision adjudication, with representative raw/canonical and conflict examples. The ASCII mechanisms and 256-character sketch ceiling are not approved institutional rules. Register number stays mandatory; roll stays optional and cannot replace it.
+* **Follow-up:** T1, T6 must validate complete policy representation, source-wide and historical collisions, actual DB comparisons and raw-string preservation. Basis: the earlier matching rules in this README and [retention/security limits](rpc_contract.md#retention-and-security-limits).
+
+**C4 - What identifies the same person over time, and may identifiers ever be reused or reassigned?**
+
+* **Why / blocked:** identifier reuse or a wrong-person repair can transfer another person's history. Historical positive identifiers remain reserved pending policy; that guard is not approval of lifetime uniqueness.
+* **Supported conditional choice:** register number may serve as the stable person key only with owner confirmation of lifetime stability and ownership semantics; no invented replacement key is supported.
+* **Decision / evidence needed:** document stable-key semantics, reuse/transfer adjudication and exceptional wrong-person-key/profile reassociation, including ownership history and approval evidence required for exceptions.
+* **Follow-up:** T1, T3, T6 must validate uniqueness/reservations, collision review, unchanged ordinary-correction tuples and any separately designed exceptional workflow. Basis: the earlier matching/lifecycle rules and [owner binding decisions](rpc_contract.md#owner-decisions-that-block-a-safe-positive-contract).
+
+**C5 - What identity proofing, account authentication and independent review are acceptable?**
+
+* **Why / blocked:** matching academic identifiers or controlling an account does not prove the human owns the official entry. Real proofing and reviewer authority remain absent; positive SQL stays disabled.
+* **Supported policy choice:** whether to permit the separately governed `no_accounts` mode; it grants no account entitlement. Account mode requires the exact person/profile/user/Auth/revision binding. No proofing method is selected.
+* **Decision / evidence needed:** approve method/mode allowlists, authenticated-session/institutional proof procedures, alias/multiple-account search coverage, evidence validity/renewal/revocation, review independence and authority succession. Provide procedure and retrievable evidence requirements, with A1/A2 appointments; fixture mandates and durations are not approval.
+* **Follow-up:** T1, T2, T3, T6 must validate real proof provenance, complete absence searches, exact binding versions, authority and expiry/revocation without replacing owner judgment with tests. Basis: [subject-binding invariant](rpc_contract.md#exact-subject-binding-invariant-normative-proposal).
+
+**C6 - How may account recovery, identity correction and legacy reconciliation change an established association?**
+
+* **Why / blocked:** ordinary reverify/correct cannot attach or replace an account or migrate the historical tuple, including NULL fields. Removing a legacy conflict or issuing fresh evidence cannot authorize that transition.
+* **Decision / evidence needed:** specify separately authorized attachment, recovery/replacement, reassociation and wrong-person repair workflows; reconcile missing/disagreeing legacy identifiers and optional roll values. Decide treatment of previously associated subjects seeking `no_accounts` status; the current historical-association guard refuses them. Record required proof, reviewers and retained ownership history.
+* **Follow-up:** T1, T2, T3, T6 must validate the eventual workflow, all revision changes, preserved history, invalidation of old evidence and races with positives/current reads. Basis: [subject-binding invariant](rpc_contract.md#exact-subject-binding-invariant-normative-proposal), [directory invariant](rpc_contract.md#persistent-no-accounts-directory-invariant-proposed-control-not-owner-approved).
+
+### 4. Data governance
+
+**D1 - How long must evidence/history be kept, and when may deletion, unlinking or exceptions occur?**
+
+* **Why / blocked:** append-only history and restrictive references can block profile deletion or tenant movement, including rejected-candidate references. Lawful retention/deletion rules remain unresolved enablement blockers.
+* **Decision / evidence needed:** specify periods, legal holds and deletion/purge/unlink exceptions for original registers/entries, decisions/findings/claims, mandates/permissions, proof/session receipts/approvals, directory history/tombstones, invalidations/incidents, denials and audit. Reconcile deletion with B2/B3 continuity and historical reservations; no purge/unlink command is supplied.
+* **Follow-up:** T1, T4, T5 must validate immutable records, FK consequences, holds, any separately designed exceptions and backup expiry. Basis: [retention/security limits](rpc_contract.md#retention-and-security-limits).
+
+**D2 - Who may view retained evidence and history, for which purposes and with what exceptional access?**
+
+* **Why / blocked:** verifier capability is not unrestricted download/history authority. Read projections, storage access and exceptional access cannot be enabled safely without a separate policy.
+* **Decision / evidence needed:** designate tenant-scoped reader authority, purpose limits, redaction, access logging and exceptional-access approval/logging for sources, proof/session evidence, directory history, incidents/denials and audit. Public publication and public RAG ingestion remain excluded.
+* **Follow-up:** T1, T4, T5 must validate DB permissions/RLS, reader APIs, storage restrictions, cross-tenant denial, redaction and access-log durability. Basis: [retention/security limits](rpc_contract.md#retention-and-security-limits).
+
+**D3 - What private storage, backup, restoration and cleanup requirements must protect retained material?**
+
+* **Why / blocked:** an immutable DB reference does not protect original bytes, backups or independent continuity. Custody and recovery cannot be trusted without aligned storage and backup governance.
+* **Decision / evidence needed:** approve encryption, non-overwriting private object/version retention, backup retention/expiry, recovery/restoration and purge requirements, plus failed-upload staging/cleanup policy. Align with legal holds, B2/B3 continuity and A3 restoration authority; accepted evidence cannot be treated as disposable staging.
+* **Follow-up:** T4, T5 must validate overwrite/delete restrictions, private retrieval, failed acceptance cleanup, byte integrity, backup expiry and restored evidence/history/incident state. Basis: earlier register custody rules, [retention/security limits](rpc_contract.md#retention-and-security-limits).
+
+### 5. Technical validation after decisions
+
+All rows are **TECHNICAL VALIDATION REQUIRED / NOT RUN**. These are engineering obligations, not additional policy approvals or substitutes for A1-D3. The existing [PostgreSQL and custody plan](postgres_integration_tests.md) supplies deferred cases; this register authorizes none of them.
+
+| ID | Required validation and evidence after owner decisions |
+| --- | --- |
+| T1 - Constraints and permissions/RLS | Review the resulting schema and demonstrate tenant-safe FKs, uniqueness, heads/revisions, immutable evidence, deletion consequences, ownership/default/inherited privileges, service/API boundaries, private helpers, RLS and restricted readers at actual privilege levels. Record negative-access and integrity results; reference checks alone cannot enforce complete policy. |
+| T2 - Complete writer coverage | Inventory every directory, alias, profile, account/Auth, external identity, recovery, legacy, evidence and authority writer and relevant reader. Demonstrate atomic revision/generation/history updates and compatible locking, including deletion/recreation and change-away-and-back. Synthetic writer methods do not prove real coverage. |
+| T3 - Locks, transactions, rollback and concurrency | Finalize deterministic lock order and approved operating budgets; test real multi-session races, post-wait authorization/evidence/time checks, stale heads, idempotency, disconnects, deadlocks/timeouts, audit failures and full rollback. Include permission/source/binding changes and compatible usability reads. Sequential tests supply none of these guarantees. |
+| T4 - Durable history and incident delivery | Demonstrate persistent baselines/tombstones/bootstrap/highwater, immutable successful history, attributable denials/incidents and read-side reporting that survives rolled-back commands. Repair or rebootstrap must not erase incidents. Validate the separately designed recovery authority and workflow under the owner's conditions. |
+| T5 - Storage, backups and restoration | Test private immutable original bytes/versioning, hashing/read-back, staging cleanup, encryption/access, retention/holds/purge, backups and expiry. Exercise partial/mixed and coherent trusted-state rollback, including audit/incident history, against an independently trusted continuity source. Missing witness/unknown continuity must fail closed; the offline total-rollback test remains a limitation. |
+| T6 - Trusted process and policy enforcement | Validate actual institutional source authenticity, directory completeness/alias searches, identity/session proofing and independent review with approved procedures and retrievable evidence. Demonstrate normalization, collision/reuse, freshness and recovery policies in the resulting design. Database tests cannot establish real-world authority or completeness. |
+
+Recommended sequence: obtain documented answers and authority evidence for A1-A3 first; complete B1-D3 with those accountable authorities; then review the resulting policy/design and seek separate authorization for the necessary validation. Owner answers alone do not authorize implementation or execution. **DESIGN_ONLY_NOT_AUTHORIZED** and **AV_SELF_APPROVAL_CONTROL_UNRESOLVED** remain unchanged; final design approval, implementation and SQL execution remain blocked.
 
 No policy rows, mandates, accepted registers or permission assignments are included. Complete policy governance references are required in SQL; absence blocks positive verification and permission enablement. Withdrawal and permission revocation deliberately remain possible without new policy/source approval.
 

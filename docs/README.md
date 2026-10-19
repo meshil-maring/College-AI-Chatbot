@@ -10,6 +10,10 @@ artifacts**: each file records what was true when its phase was locked or valida
 | `reports/` | Physical-validation and implementation reports (Markdown + HTML) |
 | `evidence/` | Raw JSON evidence captured during validation runs (latency/behaviour baselines, physical validation results, OpenAPI dump) |
 | `schema/` | `schemaV2_export.sql` — exported database schema snapshot |
+| `reports/` | Validation/implementation reports plus the root-level security audit reports (`M1_PREFLIGHT_AUDIT_REPORT.md`, `SECURITY_REMEDIATION_PLANNING_REPORT.md`) |
+| `proposals/` | Design proposals (e.g. `academic_identity_verification_design/`) |
+| `reviews/` | Independent review packages (e.g. `student_enrollment_final_2026-10-11/`) |
+| `security/` | Security audit records |
 | `mcp/` | Postman MCP guide (`postman_mcp_readme.md`) and its captured documentation page |
 
 ## Notes

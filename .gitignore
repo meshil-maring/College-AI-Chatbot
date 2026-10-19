@@ -11,6 +11,13 @@ supabase/.temp/
 # pytest
 .pytest_cache/
 
+# Tooling caches
+.ruff_cache/
+.uv-cache/
+
+# Local verification log artifacts
+logs/
+
 # Nested third-party repos (cloned via Postman MCP guide; not part of this repo)
 mcp_servers/
 
