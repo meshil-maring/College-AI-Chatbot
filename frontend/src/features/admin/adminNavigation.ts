@@ -73,7 +73,6 @@ export interface AdminNavItem {
  */
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { key: 'dashboard', label: 'Dashboard' },
-  { key: 'approvals', label: 'Student Approvals' },
   { key: 'staff-faculty', label: 'Staff & Faculty' },
   { key: 'students', label: 'Students' },
   { key: 'attendance', label: 'Attendance' },

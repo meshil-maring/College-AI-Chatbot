@@ -5,6 +5,7 @@ from uuid import UUID
 from app.db.supabase import get_admin_client
 from app.repositories.query_pages import read_all
 from app.services.faculty_responsibilities import authorize_section
+from app.services.student_registrations import schema_required
 
 _ACTIONS = {
     'attendance.roster.create': 'roster_added',
@@ -14,9 +15,10 @@ _ACTIONS = {
 }
 
 
+@schema_required
 def registration_history(user: dict, section_id: UUID, *, limit: int = 25,
                          offset: int = 0, search: str = '') -> dict:
-    authorize_section(user, section_id, 'attendance.read')
+    scope = authorize_section(user, section_id, 'attendance.read')
     tenant, section = str(user['institution_id']), str(section_id)
     db = get_admin_client()
     roster = read_all(db.table('faculty_attendance_rosters')
@@ -86,6 +88,22 @@ def registration_history(user: dict, section_id: UUID, *, limit: int = 25,
             'student_name': row['student_name'], 'register_number': row['register_number'],
             'university_roll_number': row.get('university_roll_number'),
         })
+
+    class_fields = ('program_id', 'academic_year_id', 'semester_id')
+    if all(scope.get(field) for field in class_fields) and (scope.get('section_code') or scope.get('code')):
+        registrations_query = (db.table('student_registrations').select(
+            'registration_id, student_name, register_number, university_roll_number, created_at')
+            .eq('institution_id', tenant).eq('section_code', scope.get('section_code') or scope['code'])
+            .order('registration_id'))
+        for field in class_fields:
+            registrations_query = registrations_query.eq(field, str(scope[field]))
+        for row in read_all(registrations_query):
+            if row.get('created_at'):
+                events.append({'event_id': f"registration:{row['registration_id']}",
+                    'roster_id': row['registration_id'], 'registration_id': row['registration_id'],
+                    'occurred_at': row['created_at'], 'action': 'class_registered',
+                    'student_name': row['student_name'], 'register_number': row['register_number'],
+                    'university_roll_number': row.get('university_roll_number')})
 
     query = search.strip().casefold()
     events = [event for event in events if not query or any(query in str(event.get(key) or '').casefold()

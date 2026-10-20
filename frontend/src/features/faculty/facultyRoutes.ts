@@ -1,4 +1,5 @@
 import type { FacultyView } from './facultyNavigation.ts'
+import type { StudentPage } from '../students/studentsNavigation.ts'
 
 export const FACULTY_PATHS: Readonly<Record<FacultyView, string>> = {
   dashboard: '/faculty',
@@ -16,7 +17,7 @@ export const FACULTY_PATHS: Readonly<Record<FacultyView, string>> = {
 }
 
 export const STUDENT_REGISTRATION_PATH = '/faculty/students/register'
-export type FacultyStudentPage = 'roster' | 'history' | 'waiting-approval' | 'register'
+export type FacultyStudentPage = StudentPage
 export const FACULTY_STUDENT_PATHS: Readonly<Record<FacultyStudentPage, string>> = {
   roster: '/faculty/students/roster',
   history: '/faculty/students/record-history',

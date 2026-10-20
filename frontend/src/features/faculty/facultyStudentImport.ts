@@ -1,4 +1,5 @@
-import { getFacultyAttendanceStudents, type FacultyAttendanceRosterRow } from '../../services/facultyAttendanceApi.ts'
+import type { FacultyAttendanceRosterRow } from '../../services/facultyAttendanceApi.ts'
+import { getClassStudentRegistrations, type ClassStudentRegistration } from '../../services/studentRegistrationApi.ts'
 import { readStudentFile, type ImportStudent, type ReviewStudent } from '../admin/students/studentImport.ts'
 
 export const REGISTRATION_COLUMNS = ['name', 'register_number', 'university_roll_number', 'email']
@@ -7,10 +8,10 @@ export function readRegistrationFile(file: File) {
   return readStudentFile(file, { requiredColumns: ['name', 'register_number'], allowedColumns: REGISTRATION_COLUMNS })
 }
 
-export async function loadRegistrationRoster(token: string, sectionId: string): Promise<FacultyAttendanceRosterRow[]> {
-  const students: FacultyAttendanceRosterRow[] = []
+export async function loadRegistrationRoster(token: string, sectionId: string, getRegistrations = getClassStudentRegistrations): Promise<ClassStudentRegistration[]> {
+  const students: ClassStudentRegistration[] = []
   for (let offset = 0; offset < 100_000; offset += 100) {
-    const page = await getFacultyAttendanceStudents(token, sectionId, new URLSearchParams({ limit: '100', offset: String(offset), sort: 'register_number' }))
+    const page = await getRegistrations(token, sectionId, offset)
     students.push(...page.items)
     if (students.length >= page.total) return students
     if (page.items.length < 100) throw new Error('The full section roster could not be loaded. Refresh the roster before importing.')
@@ -22,7 +23,7 @@ const key = (value: string | null) => (value ?? '').trim().toLowerCase()
 const identity = (row: ImportStudent) => JSON.stringify([row.name, row.registerNumber, row.rollNumber, row.email].map(key))
 
 /** File review is advisory; the registration endpoint rechecks identity and scope. */
-export function reviewStudentRegistrations(rows: ImportStudent[], existing: FacultyAttendanceRosterRow[]): ReviewStudent[] {
+export function reviewStudentRegistrations(rows: ImportStudent[], existing: Pick<FacultyAttendanceRosterRow, 'register_number' | 'student_name' | 'university_roll_number' | 'email'>[]): ReviewStudent[] {
   return rows.map((row) => {
     const errors: string[] = []
     if (!row.name) errors.push('Student name is missing')
@@ -43,6 +44,6 @@ export function reviewStudentRegistrations(rows: ImportStudent[], existing: Facu
       || (!!row.rollNumber && key(other.rollNumber) === key(row.rollNumber)))
     if (related.some((other) => identity(other) !== identity(row))) return { ...row, status: 'conflicting', message: 'Student identifiers repeat with different details in this file' }
     if (related.some((other) => other.row < row.row)) return { ...row, status: 'duplicate', message: 'Repeated student record in this file' }
-    return { ...row, status: 'valid', message: row.rollNumber ? 'Ready for registration' : 'University roll number will be checked for the selected semester when registering' }
+    return { ...row, status: 'valid', message: 'Ready for registration' }
   })
 }

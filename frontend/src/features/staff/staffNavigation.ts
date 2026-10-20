@@ -62,7 +62,7 @@ export interface StaffNavItem {
  */
 export const STAFF_NAV_ITEMS: readonly StaffNavItem[] = [
   { key: 'dashboard', label: 'Dashboard' },
-  { key: 'approvals', label: 'Student Approvals' },
+  { key: 'approvals', label: 'Students' },
   { key: 'assistant', label: 'AI Assistant' },
   { key: 'profile', label: 'Profile' },
 ]
@@ -97,7 +97,7 @@ export function buildStaffNavigation(
 /** Human-readable heading for each view (used for the page `h1`). */
 export const STAFF_VIEW_HEADINGS: Readonly<Record<StaffView, string>> = {
   dashboard: 'Dashboard',
-  approvals: 'Student Approvals',
+  approvals: 'Students',
   assistant: 'AI Assistant',
   profile: 'Profile',
 }

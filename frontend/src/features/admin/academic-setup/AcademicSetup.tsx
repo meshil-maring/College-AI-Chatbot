@@ -14,6 +14,7 @@ export function usable(data: AcademicCatalogue, entity: AcademicEntity, row: Aca
   if (!row.is_active) return false
   const ancestry: Partial<Record<AcademicEntity, [AcademicEntity, string][]>> = {
     programs: [['departments', 'department_id']], courses: [['departments', 'department_id']],
+    batches: [['programs', 'program_id']],
     semesters: [['academic_years', 'academic_year_id']],
     program_courses: [['programs', 'program_id'], ['courses', 'course_id'], ...(row.semester_id ? [['semesters', 'semester_id'] as [AcademicEntity, string]] : [])],
     course_offerings: [['programs', 'program_id'], ['courses', 'course_id'], ['academic_years', 'academic_year_id'], ['semesters', 'semester_id']],
@@ -25,6 +26,7 @@ function missingPrerequisites(data: AcademicCatalogue, entity: AcademicEntity): 
   return ACADEMIC_DEFINITIONS[entity].requires.filter((source) => !records(data, source).some((row) => usable(data, source, row)))
 }
 function label(data: AcademicCatalogue, entity: AcademicEntity, row: AcademicRecord): string {
+  if (entity === 'batches') return `${row.start_year}–${row.end_year} · ${find(data, 'programs', row.program_id)?.name ?? 'Branch unavailable'}`
   if (entity === 'course_offerings' || entity === 'program_courses') {
     const subject = find(data, 'courses', row.course_id), program = find(data, 'programs', row.program_id), term = find(data, 'semesters', row.semester_id)
     const year = find(data, 'academic_years', row.academic_year_id ?? term?.academic_year_id)
@@ -106,6 +108,10 @@ function AcademicSetupWorkspace({ accessToken }: { accessToken: string }) {
     setError(null); setNotice(null)
     if (!editing && missing.length > 0) { setError('Create or activate the required records before saving this step.'); return }
     if (form.start_date && form.end_date && String(form.end_date) <= String(form.start_date)) { setError('End date must follow start date.'); return }
+    if (entity === 'batches' && !editing) {
+      const start = Number(form.start_year), end = Number(form.end_year)
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1900 || start > 2200 || end <= start || end > start + 10) { setError('Enter an admission year and a completion year 1 to 10 years later, for example 2026–2030.'); return }
+    }
     if (entity === 'semesters') {
       const year = find(data, 'academic_years', form.academic_year_id)
       if (year && (String(form.start_date) < String(year.start_date) || String(form.end_date) > String(year.end_date))) { setError('Semester dates must fit within the selected academic year.'); return }
@@ -140,7 +146,7 @@ function AcademicSetupWorkspace({ accessToken }: { accessToken: string }) {
         <div role="progressbar" aria-label="Steps with active records" aria-valuenow={started} aria-valuemin={0} aria-valuemax={available.length} className="h-2 overflow-hidden rounded-full bg-slate-700">
           <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${available.length ? started / available.length * 100 : 0}%` }} />
         </div>
-        <p className="text-xs text-slate-400">This tracks steps with at least one usable record. Add every department, program, subject and teaching group your college needs.</p>
+        <p className="text-xs text-slate-400">This tracks steps with at least one usable record. Add every department, program, subject, teaching group and admission batch your college needs.</p>
         {suggested ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-800 bg-emerald-950/40 p-3">
           <div><p className="text-sm font-medium">Suggested next step: {stepNumber(suggested)}. {ACADEMIC_DEFINITIONS[suggested].label}</p><p className="mt-1 text-xs text-slate-300">{ACADEMIC_DEFINITIONS[suggested].help}</p></div>
           <button type="button" disabled={busy || formOpen} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 disabled:opacity-50" onClick={() => reset(suggested)}>Go to {ACADEMIC_DEFINITIONS[suggested].label}</button>
@@ -198,7 +204,7 @@ function AcademicSetupWorkspace({ accessToken }: { accessToken: string }) {
                 {field.source || field.options ? <select id={id} aria-describedby={describedBy} required={field.required} disabled={Boolean(editing && field.immutable)} value={String(form[field.key] ?? '')} onChange={(event) => change(field, event.target.value)} className={inputClass}>
                   <option value="">{field.required ? `Select ${field.label.toLowerCase()}` : 'Any semester'}</option>{field.source ? choices(field).map((row) => <option key={String(row[ACADEMIC_DEFINITIONS[field.source!].id])} value={String(row[ACADEMIC_DEFINITIONS[field.source!].id])}>{label(data, field.source!, row)}</option>) : field.options?.map((option) => <option key={option} value={option}>{option.replaceAll('_', ' ')}</option>)}
                 </select> : field.type === 'textarea' ? <textarea id={id} aria-describedby={describedBy} maxLength={4000} placeholder={field.placeholder} value={String(form[field.key] ?? '')} onChange={(event) => change(field, event.target.value)} className={inputClass} />
-                  : field.type !== 'checkbox' ? <input id={id} aria-describedby={describedBy} required={field.required} maxLength={field.type ? undefined : 200} placeholder={field.placeholder} disabled={Boolean(editing && field.immutable)} type={field.type ?? 'text'} min={field.min} step={field.type === 'number' ? ['capacity', 'semester_number'].includes(field.key) ? '1' : '0.01' : undefined} value={String(form[field.key] ?? '')} onChange={(event) => change(field, event.target.value)} className={inputClass} /> : null}
+                  : field.type !== 'checkbox' ? <input id={id} aria-describedby={describedBy} required={field.required} maxLength={field.type ? undefined : 200} placeholder={field.placeholder} disabled={Boolean(editing && field.immutable)} type={field.type ?? 'text'} min={field.min} step={field.type === 'number' ? ['capacity', 'semester_number', 'start_year', 'end_year'].includes(field.key) ? '1' : '0.01' : undefined} value={String(form[field.key] ?? '')} onChange={(event) => change(field, event.target.value)} className={inputClass} /> : null}
                 {hint ? <p id={`${id}-hint`} className="mt-2 text-xs text-amber-200">{hint}</p> : null}
               </div>
             })}
@@ -207,7 +213,7 @@ function AcademicSetupWorkspace({ accessToken }: { accessToken: string }) {
           <div className="flex gap-3"><button disabled={busy || (!editing && missing.length > 0)} type="submit" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm disabled:opacity-50">{busy ? 'Saving…' : 'Save record'}</button><button type="button" disabled={busy} onClick={() => setFormOpen(false)} className="rounded-lg border border-slate-600 px-4 py-2 text-sm">Cancel</button></div>
         </form> : null}
         {records(data, entity).length === 0 ? <p role="status" className="mt-6 text-sm text-slate-400">No {definition.label.toLowerCase()} have been entered. {canManage ? missing.length ? 'Follow the prerequisite steps above to continue.' : 'Select Add record to enter your college’s first record.' : 'Ask an administrator with management access to add records.'}</p>
-          : <ul className="mt-5 divide-y divide-slate-700">{records(data, entity).map((row) => <li key={String(row[definition.id])} className="flex flex-wrap items-center gap-3 py-3"><div className="mr-auto"><p className="text-sm font-medium">{label(data, entity, row)}</p><p className="mt-1 text-xs text-slate-400">{row.is_active ? usable(data, entity, row) ? 'Active' : 'Unavailable: an academic parent is inactive' : 'Inactive'}{row.is_current ? ' · Current' : ''}{row.start_date ? ` · ${row.start_date} – ${row.end_date}` : ''}</p></div>{canManage ? <button disabled={busy || formOpen} className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm" onClick={() => open(row)}>Edit {String(row.code ?? 'offering')}</button> : null}</li>)}</ul>}
+          : <ul className="mt-5 divide-y divide-slate-700">{records(data, entity).map((row) => <li key={String(row[definition.id])} className="flex flex-wrap items-center gap-3 py-3"><div className="mr-auto"><p className="text-sm font-medium">{label(data, entity, row)}</p><p className="mt-1 text-xs text-slate-400">{row.is_active ? usable(data, entity, row) ? 'Active' : 'Unavailable: an academic parent is inactive' : 'Inactive'}{row.is_current ? ' · Current' : ''}{row.start_date ? ` · ${row.start_date} – ${row.end_date}` : ''}</p></div>{canManage ? <button disabled={busy || formOpen} className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm" onClick={() => open(row)}>Edit {entity === 'batches' ? `${row.start_year}–${row.end_year}` : String(row.code ?? 'offering')}</button> : null}</li>)}</ul>}
         <div className="mt-5 border-t border-slate-700 pt-4">
           {formOpen ? <p className="mb-3 text-xs text-slate-400">Save or cancel this record before changing steps.</p> : null}
           <div className="flex flex-wrap justify-between gap-3">

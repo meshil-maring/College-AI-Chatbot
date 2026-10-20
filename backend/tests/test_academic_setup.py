@@ -25,6 +25,7 @@ PAYLOADS = {
     "courses": {"name": "Mathematics", "code": "MATH", "department_id": ID},
     "program_courses": {"program_id": ID, "course_id": ID, "course_type": "core"},
     "course_offerings": {"program_id": ID, "course_id": ID, "academic_year_id": ID, "semester_id": ID},
+    "batches": {"program_id": ID, "start_year": 2026, "end_year": 2030},
     "sections": {"name": "Section A", "code": "A", "course_offering_id": ID},
 }
 
@@ -56,7 +57,7 @@ def test_creates_existing_entity_with_server_actor_and_scope(api, entity):
     response = client.post(f"{BASE}/{entity}?institution_id={FOREIGN}&actor_user_id={ID}", json=PAYLOADS[entity])
     assert response.status_code == 201
     name, args = db.rpc.call_args.args
-    assert name == "manage_academic_master_record"
+    assert name == ("manage_academic_batch" if entity == "batches" else "manage_academic_master_record")
     assert args["p_actor_user_id"] == ACTOR
     assert args["p_institution_id"] == TENANT
     assert args["p_entity"] == entity
@@ -114,6 +115,8 @@ def test_inactive_account_and_institution_fail_closed(api):
     ("programs", {"duration_years": 0}), ("semesters", {"semester_number": 1.2}),
     ("courses", {"credits": -1}), ("course_offerings", {"capacity": 0}),
     ("sections", {"capacity": 1.5}), ("program_courses", {"course_type": "forged"}),
+    ("batches", {"end_year": 2025}), ("batches", {"end_year": 2040}),
+    ("batches", {"start_year": 2026.5}), ("batches", {"start_year": 1800}),
 ])
 def test_invalid_create_payloads_never_reach_database(api, entity, fields):
     client, db, _, _ = api
@@ -127,6 +130,7 @@ def test_invalid_create_payloads_never_reach_database(api, entity, fields):
     ("course_offerings", {"semester_id": FOREIGN}), ("sections", {"code": "B"}),
     ("departments", {"name": None}), ("departments", {"is_active": None}),
     ("departments", {}),
+    ("batches", {"program_id": FOREIGN}), ("batches", {"start_year": 2025}), ("batches", {"end_year": 2031}),
 ])
 def test_reparenting_null_required_fields_and_empty_updates_are_rejected(api, entity, fields):
     client, db, _, _ = api
@@ -147,6 +151,7 @@ def test_catalogue_queries_follow_tenant_ancestors_and_filter_corrupt_links(api)
     client, db, user, _ = api
     source = {
         "departments": [{"department_id": "d", "is_active": True}],
+        "academic_batches": [],
         "programs": [{"program_id": "p", "department_id": "d"}],
         "courses": [{"course_id": "c", "department_id": "d"}],
         "academic_years": [{"academic_year_id": "y"}],
@@ -176,7 +181,7 @@ def test_catalogue_queries_follow_tenant_ancestors_and_filter_corrupt_links(api)
     queries["sections"].in_.assert_called_once_with("course_offering_id", ["o"])
     user["effective_permissions"] = ["departments.read"]
     result = client.get(BASE).json()
-    assert set(result["records"]) == {"departments", "programs"}
+    assert set(result["records"]) == {"departments", "programs", "batches"}
     assert result["manageable"] == []
 
 
@@ -208,6 +213,7 @@ def test_catalogue_missing_curriculum_schema_returns_a_safe_update_error(api, co
         else:
             source = {
                 "departments": [{"department_id": "d"}],
+                "academic_batches": [],
                 "programs": [{"program_id": "p", "department_id": "d"}],
                 "courses": [], "academic_years": [{"academic_year_id": "y"}],
                 "semesters": [],

@@ -11,6 +11,7 @@ import {
   getMyProfile,
   listFaqs,
   listStudents,
+  listAuditLogs,
   uploadResultsCsv,
 } from './adminApi.ts'
 
@@ -21,6 +22,15 @@ describe('adminApi', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+  })
+
+  it('filters student history on the server while preserving existing audit requests', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockImplementation(async () => new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } }))
+    await listAuditLogs('token', 100, 'student_registrations')
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/v1/admin/audit-logs?limit=100&table_name=student_registrations')
+    await listAuditLogs('token')
+    expect(mockFetch.mock.calls[1][0]).toBe('/api/v1/admin/audit-logs?limit=50')
   })
 
   it('getAdminIdentity sends GET to /api/v1/admin/me with auth header', async () => {

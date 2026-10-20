@@ -20,7 +20,7 @@ describe('buildStaffNavigation', () => {
     const navigation = buildStaffNavigation('staff')
     expect(navigation).toEqual([
       { key: 'dashboard', label: 'Dashboard' },
-      { key: 'approvals', label: 'Student Approvals' },
+      { key: 'approvals', label: 'Students' },
       { key: 'assistant', label: 'AI Assistant' },
       { key: 'profile', label: 'Profile' },
     ])

@@ -20,8 +20,9 @@ def _require_academic_schema(error: APIError) -> None:
         return
     logger.warning(
         "event=academic_schema_unavailable database_code=%s "
-        "required_migration=20261016010000_academic_curriculum_semester_convergence.sql",
+        "required_migration=%s",
         error.code,
+        "20261020010000_academic_batches.sql" if any(name in error.message for name in ("academic_batches", "manage_academic_batch")) else "20261016010000_academic_curriculum_semester_convergence.sql",
     )
     raise AppError(
         "Academic setup requires a database update. Please contact your administrator.",
@@ -34,7 +35,7 @@ RESOURCES = {
     "departments": "departments", "programs": "departments",
     "academic_years": "academic_years", "semesters": "semesters",
     "courses": "courses", "program_courses": "courses",
-    "course_offerings": "courses", "sections": "courses",
+    "course_offerings": "courses", "sections": "courses", "batches": "departments",
 }
 COLUMNS = {
     entity: ",".join([IDS[entity], *model.model_fields])
@@ -61,7 +62,7 @@ def catalogue(user: dict) -> dict:
             return []
         result = []
         for offset in range(0, len(values), 100):
-            query = db.table(entity).select(COLUMNS[entity]).order(IDS[entity])
+            query = db.table("academic_batches" if entity == "batches" else entity).select(COLUMNS[entity]).order(IDS[entity])
             query = query.eq(column, str(institution)) if column == "institution_id" else query.in_(column, values[offset:offset + 100])
             try:
                 result.extend(read_all(query))
@@ -76,6 +77,7 @@ def catalogue(user: dict) -> dict:
     rows["departments"] = read("departments", "institution_id", [str(institution)])
     departments = [r["department_id"] for r in rows["departments"]]
     rows["programs"] = read("programs", "department_id", departments)
+    rows["batches"] = read("batches", "program_id", [r["program_id"] for r in rows["programs"]])
     rows["courses"] = read("courses", "department_id", departments)
     rows["academic_years"] = read("academic_years", "institution_id", [str(institution)])
     rows["semesters"] = read("semesters", "academic_year_id", [r["academic_year_id"] for r in rows["academic_years"]])
@@ -105,7 +107,7 @@ def save(user: dict, entity: str, payload: dict, record_id: UUID | None = None) 
     if not payload:
         raise AppError("At least one field is required", 422, "ACADEMIC_INPUT_INVALID")
     try:
-        data = get_admin_client().rpc("manage_academic_master_record", {
+        data = get_admin_client().rpc("manage_academic_batch" if entity == "batches" else "manage_academic_master_record", {
             "p_actor_user_id": str(user["user_id"]), "p_institution_id": str(tenant(user)),
             "p_entity": entity, "p_record_id": str(record_id) if record_id else None,
             "p_payload": payload,

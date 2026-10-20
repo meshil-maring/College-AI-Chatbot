@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getFacultyAttendanceStudents, type FacultyAttendanceRosterRow } from '../../services/facultyAttendanceApi.ts'
+import { getClassStudentRegistrations, type ClassStudentRegistration } from '../../services/studentRegistrationApi.ts'
 import { parseCsv, readImportRows, type ImportStudent } from '../admin/students/studentImport.ts'
 import { loadRegistrationRoster, REGISTRATION_COLUMNS, reviewStudentRegistrations } from './facultyStudentImport.ts'
 
-vi.mock('../../services/facultyAttendanceApi.ts', () => ({ getFacultyAttendanceStudents: vi.fn() }))
+vi.mock('../../services/studentRegistrationApi.ts', () => ({ getClassStudentRegistrations: vi.fn() }))
 const row = (overrides: Partial<ImportStudent> = {}): ImportStudent => ({ row: 2, name: 'Ada Rao', registerNumber: '001', rollNumber: '', email: '', attendance: '', ...overrides })
-const existing: FacultyAttendanceRosterRow = { roster_id: 'r1', student_name: 'Ada Rao', register_number: '001', university_roll_number: null, email: null, roster_status: 'UNREGISTERED', linked_student_id: null }
+const existing: ClassStudentRegistration = { registration_id: 'r1', batch_id: 'batch-1', program_id: 'program-1', section_code: 'A', batch_start_year: 2026, batch_end_year: 2030, identity_conflict: false, subjects_assigned: false, student_name: 'Ada Rao', register_number: '001', university_roll_number: null, email: null, roster_status: 'UNREGISTERED', linked_student_id: null }
 beforeEach(() => vi.resetAllMocks())
 
 describe('bulk student registration review', () => {
@@ -24,10 +24,10 @@ describe('bulk student registration review', () => {
     expect(reviewStudentRegistrations([row({ name: '', email: 'invalid' })], [])[0]).toMatchObject({ status: 'invalid', message: 'Student name is missing; Email format is invalid' })
   })
   it('loads all section roster pages and refuses incomplete duplicate checks', async () => {
-    vi.mocked(getFacultyAttendanceStudents).mockResolvedValueOnce({ items: Array.from({ length: 100 }, () => existing), total: 101 }).mockResolvedValueOnce({ items: [existing], total: 101 })
+    vi.mocked(getClassStudentRegistrations).mockResolvedValueOnce({ items: Array.from({ length: 100 }, () => existing), total: 101 }).mockResolvedValueOnce({ items: [existing], total: 101 })
     expect(await loadRegistrationRoster('token', 'section-1')).toHaveLength(101)
-    expect(vi.mocked(getFacultyAttendanceStudents).mock.lastCall?.[2].get('offset')).toBe('100')
-    vi.mocked(getFacultyAttendanceStudents).mockResolvedValue({ items: [], total: 10 })
+    expect(vi.mocked(getClassStudentRegistrations).mock.lastCall?.[2]).toBe(100)
+    vi.mocked(getClassStudentRegistrations).mockResolvedValue({ items: [], total: 10 })
     await expect(loadRegistrationRoster('token', 'section-1')).rejects.toThrow('full section roster could not be loaded')
   })
 })

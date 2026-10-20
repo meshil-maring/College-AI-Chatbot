@@ -11,6 +11,7 @@ from pydantic import (
     StrictBool,
     create_model,
     field_validator,
+    model_validator,
 )
 
 Text = Annotated[str, Field(min_length=1, max_length=200)]
@@ -19,7 +20,7 @@ Hours = Annotated[float, Field(ge=0)]
 Capacity = Annotated[int, Field(gt=0, strict=True)]
 Entity = Literal[
     "departments", "programs", "academic_years", "semesters", "courses",
-    "program_courses", "course_offerings", "sections",
+    "program_courses", "course_offerings", "sections", "batches",
 ]
 
 
@@ -49,6 +50,18 @@ class ProgramCreate(DepartmentCreate):
     degree_type: Text
     duration_years: Positive
     total_credits: Positive | None = None
+
+
+class BatchCreate(MasterRecord):
+    program_id: UUID
+    start_year: Annotated[int, Field(ge=1900, le=2200, strict=True)]
+    end_year: Annotated[int, Field(ge=1901, le=2210, strict=True)]
+
+    @model_validator(mode="after")
+    def cohort_range(self):
+        if not self.start_year < self.end_year <= self.start_year + 10:
+            raise ValueError("A batch must span between 1 and 10 years")
+        return self
 
 
 class YearCreate(NamedRecord):
@@ -95,18 +108,19 @@ CREATE_MODELS = {
     "departments": DepartmentCreate, "programs": ProgramCreate,
     "academic_years": YearCreate, "semesters": SemesterCreate,
     "courses": CourseCreate, "program_courses": CurriculumCreate,
-    "course_offerings": OfferingCreate, "sections": SectionCreate,
+    "course_offerings": OfferingCreate, "sections": SectionCreate, "batches": BatchCreate,
 }
 IDS = {
     "departments": "department_id", "programs": "program_id",
     "academic_years": "academic_year_id", "semesters": "semester_id",
     "courses": "course_id", "program_courses": "program_course_id",
-    "course_offerings": "course_offering_id", "sections": "section_id",
+    "course_offerings": "course_offering_id", "sections": "section_id", "batches": "batch_id",
 }
 # Academic ancestry is immutable. Section code participates in class scope.
 IMMUTABLE = {
     entity: {field for field in model.model_fields if field.endswith("_id")}
     | ({"code"} if entity == "sections" else set())
+    | ({"start_year", "end_year"} if entity == "batches" else set())
     for entity, model in CREATE_MODELS.items()
 }
 UPDATE_MODELS = {

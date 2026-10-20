@@ -32,7 +32,7 @@
 import { useState } from 'react'
 import AcademicSetup from './academic-setup/AcademicSetup.tsx'
 import AdminFrame from './AdminFrame.tsx'
-import type { StudentSection } from './students/studentSections.ts'
+import { leaveStudents, navigateStudents, useStudentsLocation } from '../students/studentsNavigation.ts'
 import {
   Bell,
   Bot,
@@ -52,9 +52,9 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider.tsx'
+import { hasPermission } from '../auth/permissions.ts'
 import ChatShell from '../chat/ChatShell.tsx'
 import AdminDashboard from './dashboard/AdminDashboard.tsx'
-import AdminApprovals from './students/AdminApprovals.tsx'
 import AdminProfile from './profile/AdminProfile.tsx'
 import FaqManager from './faqs/FaqManager.tsx'
 import DocumentManager from './documents/DocumentManager.tsx'
@@ -72,7 +72,7 @@ const ADMIN_NAV_ICONS: Record<AdminView, LucideIcon> = {
   dashboard: LayoutDashboard,
   approvals: UserCheck,
   'staff-faculty': Users,
-  students: GraduationCap,
+  students: Users,
   attendance: CalendarCheck,
   results: ClipboardCheck,
   'test-results': ClipboardList,
@@ -88,10 +88,20 @@ const ADMIN_NAV_ICONS: Record<AdminView, LucideIcon> = {
 
 export default function AdminShell() {
   const { user, role, accessToken, logout } = useAuth()
-  const [currentView, setCurrentView] = useState<AdminView>('dashboard')
+  const [workspaceView, setWorkspaceView] = useState<AdminView>('dashboard')
+  const studentsLocation = useStudentsLocation('admin')
+  const currentView = studentsLocation ? 'students' : workspaceView
+  const studentSection = studentsLocation?.page ?? 'roster'
   const navigation = buildAdminNavigation(role, user?.effective_permissions)
-  const [studentSection, setStudentSection] = useState<StudentSection>('all')
   const [studentSearch, setStudentSearch] = useState('')
+  const permissions = user?.effective_permissions
+  const canReviewStudents = ['students.read', 'students.approve', 'students.reject'].every((permission) => hasPermission(permissions, permission))
+  const canBrowseStudents = hasPermission(permissions, 'students.read') && hasPermission(permissions, 'attendance.read')
+
+  function setCurrentView(view: AdminView) {
+    if (view === 'students' || view === 'approvals') navigateStudents('admin', view === 'approvals' ? 'waiting-approval' : 'roster')
+    else { setWorkspaceView(view); leaveStudents() }
+  }
 
   // Phase 6.15.4 — identity comes from the canonical /auth/me bootstrap
   // (AuthProvider state). App.tsx only renders this shell once /auth/me has
@@ -105,10 +115,14 @@ export default function AdminShell() {
       icons={ADMIN_NAV_ICONS}
       onNavigate={setCurrentView}
       studentSection={studentSection}
-      onStudentSection={setStudentSection}
+      onStudentSection={(section) => navigateStudents('admin', section, 'individual', studentsLocation?.sectionId)}
+      studentSectionId={studentsLocation?.sectionId}
+      canReviewStudents={canReviewStudents || canBrowseStudents}
+      canReadStudentHistory={canBrowseStudents}
+      canRegisterStudents={hasPermission(permissions, 'students.create')}
       identityLabel={identityLabel}
       onLogout={logout}
-      onSearch={(search) => { setStudentSearch(search); setStudentSection('all') }}
+      onSearch={(search) => { setStudentSearch(search); navigateStudents('admin', 'roster') }}
     >
         {user === null ? (
           <section
@@ -140,7 +154,7 @@ export default function AdminShell() {
           </section>
         ) : (
           <>
-            {currentView !== 'assistant' && currentView !== 'faculty-assignments' && currentView !== 'students' ? (
+            {currentView !== 'assistant' && currentView !== 'faculty-assignments' && currentView !== 'students' && currentView !== 'approvals' ? (
               <h1 className="mb-4 break-words text-2xl font-bold text-white">
                 {ADMIN_VIEW_HEADINGS[currentView]}
               </h1>
@@ -152,20 +166,6 @@ export default function AdminShell() {
               <AdminDashboard onNavigate={setCurrentView} />
             ) : null}
 
-            {currentView === 'approvals' ? (
-              accessToken !== null ? (
-                <AdminApprovals accessToken={accessToken} />
-              ) : (
-                <section
-                  role="status"
-                  className="rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center"
-                >
-                  <p className="text-sm text-slate-300">
-                    Your session could not be verified. Please sign in again.
-                  </p>
-                </section>
-              )
-            ) : null}
             {currentView === 'staff-faculty' ? (
               accessToken !== null ? (
                 <StaffFacultyManager accessToken={accessToken} />
@@ -181,7 +181,7 @@ export default function AdminShell() {
             {currentView === 'faculty-assignments' && accessToken !== null ? (
               <FacultyAssignmentManager accessToken={accessToken} />
             ) : null}
-            {currentView === 'students' ? <StudentManager key={`${accessToken}:${user.institution_id}`} section={studentSection} onSection={setStudentSection} search={studentSearch} onSearch={setStudentSearch} /> : null}
+            {currentView === 'students' ? <StudentManager key={`${accessToken}:${user.institution_id}`} section={studentSection} search={studentSearch} sectionId={studentsLocation?.sectionId ?? ''} onNavigate={(page, id, replace) => navigateStudents('admin', page, page === 'register' ? studentsLocation?.method : 'individual', id, replace)} registrationMethod={studentsLocation?.method ?? 'individual'} onRegistrationMethod={(method) => navigateStudents('admin', 'register', method, studentsLocation?.sectionId)} /> : null}
             {currentView === 'academic-setup' && accessToken !== null ? <AcademicSetup accessToken={accessToken} /> : null}
             {currentView === 'attendance' ? <AttendanceManager /> : null}
             {currentView === 'results' ? <ResultsManager /> : null}

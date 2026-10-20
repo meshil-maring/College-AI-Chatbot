@@ -79,11 +79,13 @@ export default function StudentImport({
   directoryReady,
   onBack,
   registration,
+  embedded = false,
 }: {
   students: Student[]
   directoryReady: boolean
   onBack: () => void
   registration?: StudentRegistrationImport
+  embedded?: boolean
 }) {
   const [upload, setUpload] = useState<{
     name: string
@@ -235,7 +237,7 @@ export default function StudentImport({
 
   return (
     <section className="students-content" aria-label="Bulk student import">
-      {!registration && <div className="students-breadcrumb">
+      {!registration && !embedded && <div className="students-breadcrumb">
         <button onClick={onBack}>Students</button>
         <ChevronRight />
         <span>Bulk Import</span>
@@ -248,7 +250,7 @@ export default function StudentImport({
               : 'Upload File'}
         </span>
       </div>}
-      {!registration && <div className="students-title">
+      {!registration && !embedded && <div className="students-title">
         <div>
           <h1>Bulk Student Import</h1>
           <p>
@@ -367,7 +369,7 @@ export default function StudentImport({
           <div>
             <strong>A little preparation goes a long way.</strong>
             <p>
-              {registration ? 'Include name and register_number. Email is optional; university_roll_number is required after the first semester. Attendance is managed separately. ' : 'Include name, register_number, university_roll_number, and email. Attendance is optional (0–100). '}
+              {registration ? 'Include name and register_number. University roll number and email are optional. The selected course, branch, section, and batch apply to every row. Subjects and attendance are managed separately. ' : 'Include name, register_number, university_roll_number, and email. Attendance is optional (0–100). '}
               Format identifiers as text to preserve leading zeros. Excel reads the first sheet.
             </p>
           </div>
@@ -662,7 +664,7 @@ export default function StudentImport({
               <div className="students-alert">
                 <Info />
                 <span>
-                  {registration ? 'The selected students will be added to this section. Account matching, semester requirements, and permissions are checked again when each student is registered.' : <>Saving bulk student records is not available yet. Download the
+                  {registration ? 'The selected students will be registered in this course, branch, section, and admission batch. Subjects can be assigned later. Account matching and permissions are checked again for each student.' : <>Saving bulk student records is not available yet. Download the
                   validation report to keep your review. No student records have
                   been created or changed.</>}
                 </span>
@@ -752,7 +754,7 @@ export default function StudentImport({
             </div>
           </div>
           <p className="students-review-note">
-            {registration ? 'Validation checks this file against the selected section roster. Final identity and semester checks take place during registration.' : 'Validation checks this file and your institution’s student numbers. Final account and identity checks will be required before any import.'}
+            {registration ? 'Validation checks this file against class registrations. Final identity and permission checks take place during registration.' : 'Validation checks this file and your institution’s student numbers. Final account and identity checks will be required before any import.'}
           </p>
         </>
       )}

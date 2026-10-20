@@ -28,8 +28,16 @@ const dates: AcademicField[] = [
 const parent = (key: string, label: string, source: AcademicEntity, help: string, required = true): AcademicField => ({ key, label, source, help, required, immutable: true })
 const capacity: AcademicField = { key: 'capacity', label: 'Capacity', type: 'number', min: 1, help: 'Optional: enter the maximum number of students, for example 60. Leave blank if no limit is specified.', placeholder: 'e.g. 60' }
 
-export const ACADEMIC_ENTITIES: AcademicEntity[] = ['departments', 'programs', 'academic_years', 'semesters', 'courses', 'program_courses', 'course_offerings', 'sections']
+export const ACADEMIC_ENTITIES: AcademicEntity[] = ['departments', 'programs', 'academic_years', 'semesters', 'courses', 'program_courses', 'course_offerings', 'sections', 'batches']
 export const ACADEMIC_DEFINITIONS: Record<AcademicEntity, Definition> = {
+  batches: {
+    label: 'Batches', id: 'batch_id', requires: ['programs'],
+    help: 'Create admission cohorts for each branch. Students choose an active batch during individual or bulk registration. A batch is separate from an academic year.',
+    example: '2026–2030 for B.Tech Computer Science',
+    fields: [parent('program_id', 'Branch / program', 'programs', 'Select the branch that admits this cohort. Create its program in Step 2 first.'),
+      { key: 'start_year', label: 'Admission year', type: 'number', min: 1900, required: true, immutable: true, help: 'Enter the admission year, for example 2026. This is the first year of the batch.', placeholder: 'e.g. 2026' },
+      { key: 'end_year', label: 'Completion year', type: 'number', min: 1901, required: true, immutable: true, help: 'Enter the expected completion year, for example 2030. It must follow the admission year by 1 to 10 years.', placeholder: 'e.g. 2030' }],
+  },
   departments: {
     label: 'Departments', id: 'department_id', requires: [],
     help: 'Add the academic departments in your college. Programs and subjects will belong to these departments.',

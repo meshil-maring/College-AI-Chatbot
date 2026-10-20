@@ -138,6 +138,10 @@ def authorize_section(current_user: dict, section_id: UUID, permission: str, *, 
     resource = next((s for s in sections if str(s["section_id"]) == str(section_id)), None)
     if resource is None:
         raise AppError("Section is outside your active academic scope", 403, "FACULTY_SCOPE_DENIED")
+    # An authorized institution administrator does not need a teaching assignment.
+    if effective_authorization(current_user, resource, permission, teaching=[], responsibilities=[],
+                               owner_user_id=owner_user_id, require_owner=require_owner):
+        return resource
     teaching = _all_rows(get_admin_client().table("faculty_section_assignments").select("*").eq("institution_id", str(tenant)).eq("faculty_user_id", str(current_user["user_id"])).eq("section_id", str(section_id)))
     responsibilities = [] if teaching_only else list_responsibilities(UUID(str(tenant)), UUID(str(current_user["user_id"])), active_only=True)
     if not effective_authorization(current_user, resource, permission, teaching=teaching, responsibilities=responsibilities,

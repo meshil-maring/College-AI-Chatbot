@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { RefreshCw, Search } from 'lucide-react'
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
-import { getFacultyStudentRegistrationHistory, type FacultyAttendanceAssignment, type FacultyStudentRegistrationEvent } from '../../services/facultyAttendanceApi.ts'
+import type { FacultyAttendanceAssignment, FacultyStudentRegistrationEvent } from '../../services/facultyAttendanceApi.ts'
+import { useStudentWorkspaceApi } from '../students/StudentWorkspaceContext.tsx'
 
 const input = 'mt-1 w-full rounded-lg border border-[#304862] bg-[#091725] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#ffc72c]'
 const button = 'rounded-lg border border-[#304862] px-3 py-2 text-sm text-slate-200 hover:bg-[#142638] focus:outline-none focus:ring-2 focus:ring-[#ffc72c] disabled:opacity-40'
@@ -10,14 +11,16 @@ const ACTIONS: Record<FacultyStudentRegistrationEvent['action'], string> = {
   roster_added: 'Added to roster', roster_imported: 'Imported to roster', roster_updated: 'Student record updated',
   roster_removed: 'Removed from roster', account_updated: 'Account status updated', account_approved: 'Account approved',
   account_pending: 'Account awaiting approval', identity_conflict: 'Identity review required',
+  class_registered: 'Registered in class; subjects assigned separately',
 }
 
 export default function FacultyStudentRecordHistory({ token, assignment }: { token: string; assignment: FacultyAttendanceAssignment }) {
+  const api = useStudentWorkspaceApi()
   const [filters, setFilters] = useState({ search: '', page: 0 })
   const [draftSearch, setDraftSearch] = useState('')
   const history = useApiQuery(
-    ['faculty', 'students', token, assignment.section_id, 'registration-history', filters],
-    () => getFacultyStudentRegistrationHistory(token, assignment.section_id, new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(filters.page * PAGE_SIZE), search: filters.search })),
+    [api.namespace, 'students', token, assignment.section_id, 'registration-history', filters],
+    () => api.getHistory(token, assignment.section_id, new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(filters.page * PAGE_SIZE), search: filters.search })),
   )
   const result = history.isError ? undefined : history.data
   return <section aria-label="Student registration history" className="space-y-4 rounded-xl border border-[#26394e] bg-[#0d1c2c] p-5">

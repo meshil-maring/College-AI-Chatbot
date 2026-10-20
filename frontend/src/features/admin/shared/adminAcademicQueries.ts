@@ -15,5 +15,7 @@ export async function invalidateFacultyAcademicOptions(token: string): Promise<v
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: adminAcademicKeys.assignments(token) }),
     invalidateFacultyResponsibilities(token),
+    queryClient.invalidateQueries({ queryKey: ['faculty', 'registration-batches'] }),
+    queryClient.invalidateQueries({ queryKey: ['admin', 'registration-batches'] }),
   ])
 }

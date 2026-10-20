@@ -21,9 +21,10 @@ nothing in the RAG implementation itself is modified.
 """
 
 import logging
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, Form, Query, Request, UploadFile
 
 from app.config import settings
 from app.core.errors import AppError
@@ -31,11 +32,17 @@ from app.core.security import (
     authorize_permissions,
     assert_tenant_object,
     get_current_user,
+    has_permission,
     require_institution_roles,
     scope_tenant,
     user_tenant_id,
 )
 from app.db.supabase import get_admin_client
+from app.schemas.student_registrations import StudentRegistrationCreate
+from app.services import student_registrations
+from app.services import faculty_attendance_reporting as student_reporting
+from app.services.faculty_students import registration_history
+from app.services.phase81_rbac import _active_sections
 from app.repositories import admin_knowledge as knowledge_repo
 from app.repositories.admin_audit import (
     get_audit_entry,
@@ -121,6 +128,13 @@ _ADMIN_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("PATCH", "/admin/notices/{notice_id}"): ("notices.update",),
     ("DELETE", "/admin/notices/{notice_id}"): ("notices.delete",),
     ("GET", "/admin/students"): ("students.read",),
+    ("GET", "/admin/student-workspace/sections"): ("students.read",),
+    ("GET", "/admin/student-workspace/sections/{section_id}/students"): ("students.read", "attendance.read"),
+    ("GET", "/admin/student-workspace/roster/{roster_id}/profile"): ("students.read", "attendance.read"),
+    ("GET", "/admin/student-workspace/sections/{section_id}/history"): ("students.read", "attendance.read"),
+    ("GET", "/admin/student-workspace/sections/{section_id}/registrations"): ("students.read",),
+    ("POST", "/admin/student-workspace/sections/{section_id}/registrations"): ("students.create",),
+    ("GET", "/admin/student-workspace/sections/{section_id}/batches"): ("students.read",),
     ("POST", "/admin/students"): ("students.create",),
     ("GET", "/admin/students/pending"): ("students.read",),
     ("POST", "/admin/students/{student_id}/approve"): ("students.approve",),
@@ -1410,3 +1424,54 @@ def revoke_faculty_assignment(
         UUID(str(user_tenant_id(current_user))),
         assignment_id,
     )
+
+
+# Admin uses the same student projections and registration services as Faculty,
+# with an institution role boundary instead of a teaching-assignment boundary.
+@router.get('/student-workspace/sections')
+def student_workspace_sections(current_user: dict = Depends(_ADMIN)) -> list[dict]:
+    return [{**section, 'can_manage': has_permission(current_user, 'students.create')}
+            for section in _active_sections(UUID(str(current_user['institution_id'])))]
+
+
+@router.get('/student-workspace/sections/{section_id}/students')
+def student_workspace_roster(section_id: UUID, limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0),
+    search: str = Query('', max_length=128), registration: Literal['UNREGISTERED', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] | None = None,
+    sort: Literal['register_number', 'student_name', 'attendance_percentage', 'record_count'] = 'register_number',
+    descending: bool = False, batch_id: UUID | None = None, current_user: dict = Depends(_ADMIN)) -> dict:
+    return student_reporting.students_page(current_user, section_id, limit=limit, offset=offset,
+        search=search, registration=registration, sort=sort, descending=descending, batch_id=batch_id)
+
+
+@router.get('/student-workspace/roster/{roster_id}/profile')
+def student_workspace_profile(roster_id: UUID, limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0),
+                              current_user: dict = Depends(_ADMIN)) -> dict:
+    return student_reporting.student_profile(current_user, roster_id, limit=limit, offset=offset)
+
+
+@router.get('/student-workspace/sections/{section_id}/history')
+def student_workspace_history(section_id: UUID, limit: int = Query(25, ge=1, le=100), offset: int = Query(0, ge=0),
+    search: str = Query('', max_length=128), current_user: dict = Depends(_ADMIN)) -> dict:
+    return registration_history(current_user, section_id, limit=limit, offset=offset, search=search)
+
+
+@router.get('/student-workspace/sections/{section_id}/registrations')
+def student_workspace_registrations(section_id: UUID, limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0),
+    registration: Literal['UNREGISTERED', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] | None = None,
+    batch_id: UUID | None = None, search: str = Query('', max_length=128),
+    sort: Literal['register_number', 'student_name'] = 'register_number',
+    current_user: dict = Depends(_ADMIN)) -> dict:
+    return student_registrations.list_registrations(current_user, section_id, limit=limit, offset=offset,
+        registration=registration, batch_id=batch_id, search=search, sort=sort)
+
+
+@router.get('/student-workspace/sections/{section_id}/batches')
+def student_workspace_batches(section_id: UUID, include_inactive: bool = False, current_user: dict = Depends(_ADMIN)) -> list[dict]:
+    return student_registrations.available_batches(current_user, section_id, include_inactive=include_inactive)
+
+
+@router.post('/student-workspace/sections/{section_id}/registrations', status_code=201)
+def student_workspace_register(section_id: UUID, payload: StudentRegistrationCreate, current_user: dict = Depends(_ADMIN)) -> dict:
+    created = student_registrations.create_registration(current_user, section_id, payload, permission='students.create')
+    _record_audit(current_user, 'students.registration.create', 'student_registrations', str(created['registration_id']), created)
+    return created

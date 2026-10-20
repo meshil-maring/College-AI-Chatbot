@@ -9,18 +9,20 @@
 
 /// <reference types="vitest/globals" />
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AdminShell from './AdminShell.tsx'
 import * as adminApi from '../../services/adminApi.ts'
 import type { DashboardSummary } from '../../types/admin.ts'
 import type { AcademicCatalogue } from '../../types/academicSetup.ts'
+import { adminStudentWorkspaceApi as studentApi } from '../../services/adminStudentWorkspaceApi.ts'
 import {
   buildDashboardSummary,
   emptyDashboardSummary,
 } from '../../test/adminDashboardFixtures.ts'
 
 vi.mock('../../services/adminApi.ts')
+vi.mock('../../services/adminStudentWorkspaceApi.ts')
 vi.mock('../chat/ChatShell.tsx', () => ({ default: () => <div>AI Assistant chat</div> }))
 
 const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
@@ -34,6 +36,7 @@ const authState = vi.hoisted(() => ({
     email: 'admin@test.com',
     role: 'admin' as const,
     institution_id: 'inst-1',
+    effective_permissions: ['*'] as string[],
   },
   role: 'admin' as string | null,
   accessToken: 'test-token' as string | null,
@@ -48,9 +51,15 @@ beforeEach(() => {
   authState.role = 'admin'
   authState.accessToken = 'test-token'
   authState.logout.mockReset()
+  authState.user.effective_permissions = ['*']
   vi.mocked(adminApi.getAdminIdentity).mockReset()
   vi.mocked(adminApi.getDashboardSummary).mockReset()
   vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
+  vi.mocked(studentApi.getSections).mockResolvedValue([{ can_manage: true, assignment_id: 'section-1', assigned_at: '', section_id: 'section-1', academic_year_id: 'year-1', semester_id: 'semester-1', section: { section_id: 'section-1', name: 'Section A', code: 'A', program_id: 'program-1', program: { program_id: 'program-1', name: 'Computer Science', degree_type: 'B.Tech' }, course: { name: 'Data Mining', code: 'CS501' } } }])
+  vi.mocked(studentApi.getStudents).mockResolvedValue({ items: [], total: 0 })
+  vi.mocked(studentApi.getRegistrations).mockResolvedValue({ items: [], total: 0 })
+  vi.mocked(studentApi.getBatches).mockResolvedValue([])
+  vi.mocked(studentApi.getHistory).mockResolvedValue({ items: [], total: 0 })
 })
 
 describe('AdminShell', () => {
@@ -71,7 +80,6 @@ describe('AdminShell', () => {
     expect(nav).toBeInTheDocument()
     for (const label of [
       'Dashboard',
-      'Student Approvals',
       'Students',
       'Attendance',
       'Results',
@@ -133,7 +141,7 @@ describe('AdminShell', () => {
     )
     await user.click(screen.getByRole('button', { name: /Approve Student/ }))
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Student Approvals' })).toHaveAttribute(
+      expect(screen.getByRole('link', { name: 'Waiting approval' })).toHaveAttribute(
         'aria-current',
         'page',
       )
@@ -147,6 +155,38 @@ describe('AdminShell', () => {
     render(<AdminShell />)
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(authState.logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses the faculty submenu, keeps both methods in Register, and supports Back, Forward and reload', async () => {
+    vi.mocked(adminApi.listStudents).mockResolvedValue([])
+    const user = userEvent.setup()
+    const first = render(<AdminShell />)
+    await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
+    const pages = screen.getByRole('navigation', { name: 'Students pages' })
+    expect(within(pages).getAllByRole('link').map((link) => link.textContent)).toEqual(['Roster', 'Record history', 'Waiting approval', 'Register'])
+    expect(screen.queryByRole('button', { name: 'Student Approvals' })).not.toBeInTheDocument()
+    await user.click(within(pages).getByRole('link', { name: 'Register', exact: true }))
+    await user.click(screen.getByRole('tab', { name: 'Bulk Registration' }))
+    expect(window.location.hash).toBe('#admin/students/register?method=bulk')
+    expect(screen.getByRole('link', { name: 'Register', exact: true })).toHaveAttribute('aria-current', 'page')
+    expect(within(pages).queryByRole('link', { name: 'Bulk Import' })).not.toBeInTheDocument()
+    act(() => window.history.back())
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Individual Registration' })).toHaveAttribute('aria-selected', 'true'))
+    act(() => window.history.forward())
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Bulk Registration' })).toHaveAttribute('aria-selected', 'true'))
+    first.unmount()
+    render(<AdminShell />)
+    expect(await screen.findByRole('tab', { name: 'Bulk Registration' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('marks restricted submenu pages unavailable without granting access', async () => {
+    authState.user.effective_permissions = ['students.read', 'profile.own.read']
+    vi.mocked(adminApi.listStudents).mockResolvedValue([])
+    render(<AdminShell />)
+    await userEvent.click(screen.getByRole('button', { name: 'Students', exact: true }))
+    const pages = screen.getByRole('navigation', { name: 'Students pages' })
+    expect(within(pages).getByText('Record history')).toHaveAttribute('aria-disabled', 'true')
+    expect(within(pages).getByText('Waiting approval')).toHaveAttribute('aria-disabled', 'true')
   })
 
   function mockAcademicNavigation() {

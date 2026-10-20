@@ -75,7 +75,7 @@ describe('StaffShell', () => {
     const nav = screen.getByRole('navigation', { name: 'Staff navigation' })
     expect(nav).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Student Approvals' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Students' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'AI Assistant' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Profile' })).toBeInTheDocument()
   })
@@ -120,8 +120,11 @@ describe('StaffShell', () => {
   it('navigates to the approvals view', async () => {
     const user = userEvent.setup()
     render(<StaffShell />)
-    await user.click(screen.getByRole('button', { name: 'Student Approvals' }))
-    expect(screen.getByRole('heading', { name: 'Student Approvals', level: 1 })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Students' }))
+    expect(screen.getByRole('heading', { name: 'Students', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Waiting approval' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByRole('link', { name: 'Roster' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Register', exact: true })).not.toBeInTheDocument()
   })
 
   it('navigates to the profile view', async () => {
@@ -129,6 +132,18 @@ describe('StaffShell', () => {
     render(<StaffShell />)
     await user.click(screen.getByRole('button', { name: 'Profile' }))
     expect(screen.getByRole('heading', { name: 'Profile', level: 1 })).toBeInTheDocument()
+  })
+
+  it('restores the permitted Students page and preserves collapse behavior', async () => {
+    window.history.replaceState(null, '', '/#staff/students/waiting-approval')
+    const user = userEvent.setup()
+    render(<StaffShell />)
+    expect(screen.getByRole('link', { name: 'Waiting approval' })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
+    expect(screen.queryByRole('navigation', { name: 'Students pages' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
+    expect(screen.getByRole('link', { name: 'Waiting approval' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Register', exact: true })).not.toBeInTheDocument()
   })
 
   it('shows a controlled neutral state when the identity is missing', () => {

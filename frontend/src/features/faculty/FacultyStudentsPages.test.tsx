@@ -1,17 +1,20 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches, type ClassStudentRegistration } from '../../services/studentRegistrationApi.ts'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FacultyStudentsPage from './FacultyStudents.tsx'
 import FacultyStudentsNavigation from './FacultyStudentsNavigation.tsx'
 import { queryClient } from '../../lib/queryClient.ts'
-import { addFacultyAttendanceStudent, getFacultyAttendanceAssignments, getFacultyAttendanceStudents, getFacultyStudentRegistrationHistory, type FacultyAttendanceRosterRow, type FacultyStudentRegistrationEvent } from '../../services/facultyAttendanceApi.ts'
+import { getFacultyAttendanceAssignments, getFacultyAttendanceStudents, getFacultyStudentRegistrationHistory, type FacultyStudentRegistrationEvent } from '../../services/facultyAttendanceApi.ts'
+
+vi.mock('../../services/studentRegistrationApi.ts', () => ({ createClassStudentRegistration: vi.fn(), getClassStudentRegistrations: vi.fn(), getRegistrationBatches: vi.fn() }))
 
 vi.mock('../../services/facultyAttendanceApi.ts', () => ({
   getFacultyAttendanceAssignments: vi.fn(), getFacultyAttendanceStudents: vi.fn(), getFacultyStudentRegistrationHistory: vi.fn(),
-  getFacultyAttendanceProfile: vi.fn(), addFacultyAttendanceStudent: vi.fn(),
+  getFacultyAttendanceProfile: vi.fn(),
 }))
-const assignment = { can_manage: true, assignment_id: 'section-1', section_id: 'section-1', assigned_at: '', semester_id: 'semester-1', academic_year_id: 'year-1', section: { section_id: 'section-1', name: 'Section A', code: 'A', course: { name: 'Data Mining', code: 'CS501' } } }
-const pending = { roster_id: 'pending-1', student_name: 'Beena Shah', register_number: 'CS002', university_roll_number: null, email: 'beena@college.edu', roster_status: 'PENDING_APPROVAL' as const, linked_student_id: null }
+const assignment = { can_manage: true, assignment_id: 'section-1', section_id: 'section-1', assigned_at: '', semester_id: 'semester-1', academic_year_id: 'year-1', section: { section_id: 'section-1', name: 'Section A', code: 'A', program_id: 'program-1', program: { program_id: 'program-1', name: 'Computer Science', degree_type: 'B.Tech' }, course: { name: 'Data Mining', code: 'CS501' } } }
+const pending = { registration_id: 'registration-1', batch_id: 'batch-1', program_id: 'program-1', section_code: 'A', batch_start_year: 2026, batch_end_year: 2030, identity_conflict: false, subjects_assigned: false as const, roster_id: 'pending-1', student_name: 'Beena Shah', register_number: 'CS002', university_roll_number: null, email: 'beena@college.edu', roster_status: 'PENDING_APPROVAL' as const, linked_student_id: null }
 const activity: FacultyStudentRegistrationEvent = { event_id: 'event-1', roster_id: 'roster-1', occurred_at: '2026-10-19T09:00:00Z', action: 'roster_added', student_name: 'Ada Rao', register_number: 'CS001', university_roll_number: 'UNI001' }
 
 function FacultyStudents({ accessToken }: { accessToken: string }) {
@@ -23,6 +26,8 @@ function FacultyStudents({ accessToken }: { accessToken: string }) {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.mocked(getRegistrationBatches).mockResolvedValue([{ batch_id: 'batch-1', program_id: 'program-1', start_year: 2026, end_year: 2030, is_active: true }])
+  vi.mocked(getClassStudentRegistrations).mockResolvedValue({ items: [], total: 0 })
   window.history.replaceState(null, '', '/faculty/students/roster?section_id=section-1')
   vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([assignment])
   vi.mocked(getFacultyAttendanceStudents).mockImplementation(async (_token, _section, query) => ({ items: query.get('registration') === 'PENDING_APPROVAL' ? [pending] : [{ ...pending, student_name: 'Roster student', roster_status: 'ACTIVE' }], total: 1 }))
@@ -76,13 +81,13 @@ describe('Students page navigation', () => {
 
   it('keeps the current page when changing sections and discards a late history response', async () => {
     window.history.replaceState(null, '', '/faculty/students/record-history?section_id=section-1')
-    vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([assignment, { ...assignment, section_id: 'section-2', section: { ...assignment.section, section_id: 'section-2', name: 'Section B' } }])
+    vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([assignment, { ...assignment, section_id: 'section-2', section: { ...assignment.section, section_id: 'section-2', name: 'Section B', code: 'B' } }])
     let finish!: (value: { items: FacultyStudentRegistrationEvent[]; total: number }) => void
     vi.mocked(getFacultyStudentRegistrationHistory).mockImplementation((_token, section) => section === 'section-1' ? new Promise((resolve) => { finish = resolve }) : Promise.resolve({ items: [{ ...activity, student_name: 'Section B student' }], total: 1 }))
     const user = userEvent.setup()
     render(<FacultyStudents accessToken="token" />)
-    await screen.findByRole('combobox', { name: 'Section and subject' })
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Section and subject' }), 'section-2')
+    await screen.findByRole('combobox', { name: 'Section', exact: true })
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Section', exact: true }), 'B')
     expect(await screen.findByText('Section B student')).toBeInTheDocument()
     await act(async () => finish({ items: [activity], total: 1 }))
     expect(screen.queryByText('Ada Rao')).not.toBeInTheDocument()
@@ -106,8 +111,8 @@ describe('Students page navigation', () => {
   })
 
   it('keeps the selected page when a registration finishes after leaving the form', async () => {
-    let finish!: (student: FacultyAttendanceRosterRow) => void
-    vi.mocked(addFacultyAttendanceStudent).mockImplementation(() => new Promise((resolve) => { finish = resolve }))
+    let finish!: (student: ClassStudentRegistration) => void
+    vi.mocked(createClassStudentRegistration).mockImplementation(() => new Promise((resolve) => { finish = resolve }))
     const user = userEvent.setup()
     render(<FacultyStudents accessToken="token" />)
     await screen.findByText('Roster student')
@@ -115,6 +120,8 @@ describe('Students page navigation', () => {
     await user.click(within(nav).getByRole('link', { name: 'Register', exact: true }))
     await user.type(screen.getByRole('textbox', { name: 'Student name (required)' }), 'Beena Shah')
     await user.type(screen.getByRole('textbox', { name: 'Register number (required)' }), 'CS002')
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Batch' })).toBeEnabled())
+    fireEvent.change(screen.getByRole('combobox', { name: 'Batch' }), { target: { value: 'batch-1' } })
     await user.click(screen.getByRole('button', { name: 'Register student', exact: true }))
     expect(screen.getByRole('button', { name: 'Registering student…' })).toBeDisabled()
     await user.click(within(nav).getByRole('link', { name: 'Record history' }))
@@ -132,7 +139,7 @@ describe('Students page navigation', () => {
     await screen.findByText('Beena Shah')
     await user.click(screen.getByRole('button', { name: 'Next page' }))
     await waitFor(() => expect(vi.mocked(getFacultyAttendanceStudents).mock.lastCall?.[2].get('offset')).toBe('25'))
-    await user.type(screen.getByRole('textbox', { name: 'Search students' }), 'Beena')
+    await user.type(screen.getByRole('searchbox', { name: 'Search students' }), 'Beena')
     await user.click(screen.getByRole('button', { name: 'Search', exact: true }))
     await waitFor(() => expect(vi.mocked(getFacultyAttendanceStudents).mock.lastCall?.[2].get('search')).toBe('Beena'))
     expect(vi.mocked(getFacultyAttendanceStudents).mock.lastCall?.[2].get('registration')).toBe('PENDING_APPROVAL')

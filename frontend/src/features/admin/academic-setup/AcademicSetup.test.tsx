@@ -7,8 +7,9 @@ import type { AcademicCatalogue } from '../../../types/academicSetup.ts'
 
 vi.mock('../../../services/adminApi.ts')
 const fixture = (): AcademicCatalogue => ({
-  institution_id: 'tenant', manageable: ['departments', 'programs', 'academic_years', 'semesters', 'courses', 'program_courses', 'course_offerings', 'sections'],
+  institution_id: 'tenant', manageable: ['departments', 'programs', 'academic_years', 'semesters', 'courses', 'program_courses', 'course_offerings', 'sections', 'batches'],
   records: {
+    batches: [],
     departments: [{ department_id: 'd', name: 'Science', code: 'SCI', is_active: true }, { department_id: 'inactive', name: 'Archived', code: 'OLD', is_active: false }],
     programs: [{ program_id: 'p', department_id: 'd', name: 'Science degree', code: 'BS', is_active: true }, { program_id: 'blocked', department_id: 'inactive', name: 'Unavailable', code: 'BAD', is_active: true }],
     academic_years: [{ academic_year_id: 'y', name: '2026-27', code: 'Y26', start_date: '2026-07-01', end_date: '2027-06-30', is_active: true }],
@@ -23,6 +24,35 @@ async function loaded() { await screen.findByRole('button', { name: /^Add record
 function tab(name: string) { fireEvent.click(within(screen.getByRole('navigation', { name: 'Academic setup entities' })).getByRole('button', { name: new RegExp(`^${name}`) })) }
 
 describe('AcademicSetup', () => {
+  it('creates branch batches and rejects invalid admission year ranges', async () => {
+    render(<AcademicSetup accessToken="jwt" />); await loaded(); tab('Batches')
+    expect(screen.getByRole('heading', { name: 'Batches', exact: true })).toBeInTheDocument()
+    expect(screen.getByText(/No batches have been entered/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Add record' }))
+    fireEvent.change(screen.getByLabelText('Branch / program *'), { target: { value: 'p' } })
+    fireEvent.change(screen.getByLabelText('Admission year *'), { target: { value: '2026' } })
+    fireEvent.change(screen.getByLabelText('Completion year *'), { target: { value: '2025' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save record' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('completion year 1 to 10 years later')
+    expect(api.saveAcademicRecord).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('Completion year *'), { target: { value: '2030' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save record' }))
+    await waitFor(() => expect(api.saveAcademicRecord).toHaveBeenCalledWith('jwt', 'batches', { program_id: 'p', start_year: 2026, end_year: 2030, is_active: true }, undefined))
+  })
+
+  it('archives an existing batch while preserving its branch and admission years', async () => {
+    const data = fixture(); data.records.batches = [{ batch_id: 'batch-1', program_id: 'p', start_year: 2026, end_year: 2030, is_active: true }]
+    vi.mocked(api.getAcademicCatalogue).mockResolvedValue(data)
+    render(<AcademicSetup accessToken="jwt" />); await loaded(); tab('Batches')
+    expect(screen.getByText('2026–2030 · Science degree')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit 2026–2030' }))
+    expect(screen.getByLabelText('Branch / program *')).toBeDisabled()
+    expect(screen.getByLabelText('Admission year *')).toBeDisabled()
+    expect(screen.getByLabelText('Completion year *')).toBeDisabled()
+    fireEvent.click(screen.getByLabelText('Active'))
+    fireEvent.click(screen.getByRole('button', { name: 'Save record' }))
+    await waitFor(() => expect(api.saveAcademicRecord).toHaveBeenCalledWith('jwt', 'batches', { is_active: false }, 'batch-1'))
+  })
   it('shows honest empty states and never creates data while loading', async () => {
     const data = fixture(); Object.keys(data.records).forEach((key) => { data.records[key as keyof typeof data.records] = [] })
     vi.mocked(api.getAcademicCatalogue).mockResolvedValue(data)
@@ -109,13 +139,13 @@ describe('AcademicSetup', () => {
       'Departments, Step 1, 0 active records', 'Programs, Step 2, 0 active records',
       'Academic Years, Step 3, 0 active records', 'Semesters, Step 4, 0 active records',
       'Courses / Subjects, Step 5, 0 active records', 'Program Curriculum, Step 6, 0 active records',
-      'Course Offerings, Step 7, 0 active records', 'Sections, Step 8, 0 active records',
+      'Course Offerings, Step 7, 0 active records', 'Sections, Step 8, 0 active records', 'Batches, Step 9, 0 active records',
     ])
     fireEvent.click(screen.getByRole('button', { name: 'Next: Programs' }))
-    expect(screen.getByText('Step 2 of 8')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 9')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add record' })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: 'Open Step 1: Departments' }))
-    expect(screen.getByText('Step 1 of 8')).toBeInTheDocument()
+    expect(screen.getByText('Step 1 of 9')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add record' })).toBeEnabled()
     expect(api.saveAcademicRecord).not.toHaveBeenCalled()
   })
@@ -196,7 +226,7 @@ describe('AcademicSetup', () => {
     const data: AcademicCatalogue = { institution_id: 'tenant', manageable: ['courses'], records: { courses: [] } }
     vi.mocked(api.getAcademicCatalogue).mockResolvedValue(data)
     render(<AcademicSetup accessToken="jwt" />); await loaded()
-    await screen.findByText('Step 5 of 8')
+    await screen.findByText('Step 5 of 9')
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuemax', '1')
     expect(within(screen.getByRole('navigation', { name: 'Academic setup entities' })).getAllByRole('button')).toHaveLength(1)
     expect(screen.getByText('Step 1: Departments — ask an administrator with access to this step for help.')).toBeInTheDocument()
@@ -212,7 +242,7 @@ describe('AcademicSetup', () => {
     expect(within(screen.getByRole('navigation', { name: 'Academic setup entities' })).getByRole('button', { name: /^Programs/ })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     fireEvent.click(screen.getByRole('button', { name: 'Next: Programs' }))
-    expect(screen.getByText('Step 2 of 8')).toBeInTheDocument()
+    expect(screen.getByText('Step 2 of 9')).toBeInTheDocument()
     expect(api.saveAcademicRecord).not.toHaveBeenCalled()
   })
   it('does not treat a curriculum link to an inactive semester as ready for an offering', async () => {

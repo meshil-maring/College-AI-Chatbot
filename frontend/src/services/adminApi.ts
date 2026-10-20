@@ -331,8 +331,10 @@ export async function deleteAttendance(accessToken: string, id: string): Promise
 // Audit logs
 // ============================================================================
 
-export async function listAuditLogs(accessToken: string, limit = 50): Promise<AuditLogEntry[]> {
-  return requestJson<AuditLogEntry[]>('GET', `${ADMIN_BASE}/audit-logs?limit=${limit}`, accessToken)
+export async function listAuditLogs(accessToken: string, limit = 50, tableName?: 'students' | 'student_registrations'): Promise<AuditLogEntry[]> {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (tableName) params.set('table_name', tableName)
+  return requestJson<AuditLogEntry[]>('GET', `${ADMIN_BASE}/audit-logs?${params}`, accessToken)
 }
 
 export interface StaffPermissionEntry {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ArrowRight,
   ChevronLeft,
@@ -7,8 +7,6 @@ import {
   Filter,
   GraduationCap,
   RefreshCw,
-  Search,
-  Upload,
   UserCheck,
   UserPlus,
   Users,
@@ -16,6 +14,7 @@ import {
 import type { Student } from '../../../types/admin.ts'
 import { downloadCsv } from './studentImport.ts'
 import type { StudentSection } from './studentSections.ts'
+import { StudentsPageHeader, StudentsSearch, StudentsStats } from '../../students/StudentsUI.tsx'
 
 export default function StudentDirectory({
   students,
@@ -39,6 +38,8 @@ export default function StudentDirectory({
   const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState(false)
+  const [draftSearch, setDraftSearch] = useState(search)
+  useEffect(() => { setDraftSearch(search); setPage(1) }, [search])
   const filtered = students.filter(
     (student) =>
       (status === 'all' ||
@@ -108,85 +109,15 @@ export default function StudentDirectory({
       ]),
     ])
   return (
-    <section className="students-content" aria-label="Student directory">
-      <div className="students-breadcrumb">
-        <span>Students</span>
-        <ChevronRight />
-        <span aria-current="page">All Students</span>
-      </div>
-      <div className="students-title">
-        <div>
-          <h1>Students</h1>
-          <p>
-            Your students, their records, and a clearer view of your
-            institution.
-          </p>
-        </div>
-        <div className="students-heading-actions">
-          <button
-            className="students-button"
-            onClick={() => onSection('import')}
-          >
-            <Upload />
-            Bulk Import
-          </button>
-          <button
-            className="students-button primary"
-            onClick={() => onSection('add')}
-          >
-            <UserPlus />
-            Add Student
-          </button>
-        </div>
-      </div>
-      <div className="students-stats">
-        {stats.map(({ title, value, Icon, color, filter, description }) => (
-          <button
-            key={title}
-            className={`students-stat ${color} ${status === filter ? 'is-selected' : ''}`}
-            aria-pressed={status === filter}
-            onClick={() => {
-              setStatus(filter)
-              setPage(1)
-            }}
-          >
-            <span className="students-stat-icon">
-              <Icon />
-            </span>
-            <span>
-              <strong>{loading || error ? '—' : value.toLocaleString()}</strong>
-              <b>{title}</b>
-              <small>{description}</small>
-            </span>
-          </button>
-        ))}
-      </div>
+    <section className="students-content students-scope" aria-label="Student directory">
+      <StudentsPageHeader page="Roster" title="Students" description="Your students, their records, and a clearer view of your institution." actions={<>
+        <button type="button" className="students-button primary" onClick={() => onSection('register')}><UserPlus aria-hidden="true" />Register new student</button>
+      </>} />
+      <StudentsStats items={stats.map(({ title, value, Icon, color, filter, description }) => ({ key: filter, title, description, value: loading || error ? '—' : value, Icon, tone: color, selected: status === filter, onSelect: () => { setStatus(status === filter ? 'all' : filter); setPage(1) } }))} />
       <div className="students-toolbar">
-        <div className="students-tabs">
-          <button
-            className="active"
-            onClick={() => {
-              setStatus('all')
-              setPage(1)
-            }}
-          >
-            All Students{!loading && !error ? ` (${students.length})` : ''}
-          </button>
-        </div>
+        <div className="students-toolbar-heading"><h2>Roster{!loading && !error ? ` (${students.length})` : ''}</h2><p>Institution student records</p></div>
         <div className="students-table-actions">
-          <label className="students-search">
-            <Search />
-            <input
-              type="search"
-              aria-label="Search students by number"
-              placeholder="Search student number…"
-              value={search}
-              onChange={(event) => {
-                onSearch(event.target.value)
-                setPage(1)
-              }}
-            />
-          </label>
+          <StudentsSearch label="Search students by number" placeholder="Search student number…" value={draftSearch} onChange={setDraftSearch} onSubmit={() => { onSearch(draftSearch.trim()); setPage(1) }} />
           <button
             className="students-button"
             aria-expanded={filters}
@@ -197,12 +128,12 @@ export default function StudentDirectory({
             Filters{status !== 'all' ? ' (1)' : ''}
           </button>
           <button
-            className="students-button icon-only"
+            className="students-button"
             aria-label="Refresh students"
             disabled={refreshing}
             onClick={onRefresh}
           >
-            <RefreshCw className={refreshing ? 'animate-spin' : ''} />
+            <RefreshCw aria-hidden="true" className={refreshing ? 'animate-spin' : ''} />Refresh students
           </button>
         </div>
       </div>
@@ -312,12 +243,12 @@ export default function StudentDirectory({
                           setStatus('all')
                           onSearch('')
                           setPage(1)
-                        } else onSection('requests')
+                        } else onSection('waiting-approval')
                       }}
                     >
                       {students.length
                         ? 'Clear filters'
-                        : 'Review Registration Requests'}
+                        : 'Review waiting approvals'}
                       <ArrowRight />
                     </button>
                   </td>

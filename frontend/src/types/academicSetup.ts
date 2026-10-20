@@ -1,4 +1,4 @@
-export type AcademicEntity = 'departments' | 'programs' | 'academic_years' | 'semesters' | 'courses' | 'program_courses' | 'course_offerings' | 'sections'
+export type AcademicEntity = 'departments' | 'programs' | 'academic_years' | 'semesters' | 'courses' | 'program_courses' | 'course_offerings' | 'sections' | 'batches'
 export type AcademicRecord = Record<string, string | number | boolean | null>
 export interface AcademicCatalogue {
   institution_id: string

@@ -9,6 +9,7 @@ from app.repositories.query_pages import read_all, read_one
 from app.services.authorization import effective_authorization
 from app.services.faculty_responsibilities import authorize_section, faculty_context
 from app.services.phase81_rbac import _active_sections
+from app.services.student_registrations import schema_required
 
 ROSTER_FIELDS = ('roster_id', 'register_number', 'university_roll_number', 'student_name',
                  'email', 'roster_status', 'linked_student_id', 'reconciliation_state')
@@ -85,10 +86,29 @@ def overview(user: dict, section_id: UUID) -> dict:
             'trend': [{'date': date, **statistics(by_date.get(date, []))} for date in sorted(dates)]}
 
 
+@schema_required
 def students_page(user: dict, section_id: UUID, *, limit: int = 50, offset: int = 0,
                   search: str = '', registration: str | None = None, low_only: bool = False,
-                  sort: str = 'register_number', descending: bool = False) -> dict:
-    _, students, _, _ = section_data(user, section_id)
+                  sort: str = 'register_number', descending: bool = False,
+                  batch_id: UUID | None = None) -> dict:
+    section, students, _, _ = section_data(user, section_id)
+    if batch_id:
+        # Admission cohort belongs to the student's branch and persists when
+        # they progress to another semester, year or section.
+        placements = {str(row['register_number']).strip().casefold(): row
+                      for row in read_all(get_admin_client().table('student_registrations')
+                          .select('registration_id, register_number, university_roll_number')
+                          .eq('institution_id', str(user['institution_id']))
+                          .eq('program_id', str(section['program_id'])).eq('batch_id', str(batch_id))
+                          .order('registration_id'))}
+        def in_batch(student):
+            placement = placements.get(str(student['register_number']).strip().casefold())
+            if not placement:
+                return False
+            # Conflicting roll numbers must not attach a roster to another identity's cohort.
+            roll, saved_roll = student.get('university_roll_number'), placement.get('university_roll_number')
+            return not (roll and saved_roll and str(roll).strip().casefold() != str(saved_roll).strip().casefold())
+        students = [student for student in students if in_batch(student)]
     query = search.strip().casefold()
     students = [s for s in students if (not query or any(query in str(s.get(k) or '').casefold()
                  for k in ('register_number', 'university_roll_number', 'student_name', 'email')))

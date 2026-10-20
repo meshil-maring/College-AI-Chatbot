@@ -168,7 +168,6 @@ const FORBIDDEN_LABELS: Readonly<Record<string, readonly string[]>> = {
   ],
   staff: [
     'Admin Panel',
-    'Students',
     'Test Results',
     'Documents',
     'FAQs',
@@ -318,8 +317,8 @@ describe('role -> navigation isolation', () => {
     setIdentity(STAFF_A, 'staff')
     render(<App />)
     const labels = await navigationLabels('staff')
-    expect(labels).toContain('Student Approvals')
-    for (const adminOnly of ['Students', 'Test Results', 'Documents', 'FAQs']) {
+    expect(labels).toContain('Students')
+    for (const adminOnly of ['Test Results', 'Documents', 'FAQs']) {
       expect(labels).not.toContain(adminOnly)
     }
   })
@@ -428,14 +427,16 @@ describe('stale view-state protection', () => {
     setIdentity(STAFF_A, 'staff')
     const { rerender } = render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Student Approvals' }))
-    expect(await screen.findByRole('heading', { name: 'Student Approvals' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
+    expect(await screen.findByRole('link', { name: 'Waiting approval' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Roster' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Register', exact: true })).not.toBeInTheDocument()
 
     setIdentity(STUDENT_B, 'student')
     rerender(<App />)
 
-    expect(screen.queryByRole('heading', { name: 'Student Approvals' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Student Approvals' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Waiting approval' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Students', exact: true })).not.toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Dashboard' })).toHaveAttribute(
       'aria-current',
       'page',

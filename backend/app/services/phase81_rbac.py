@@ -57,7 +57,7 @@ def _active_sections(institution_id: UUID) -> list[dict]:
     courses_by_id = {str(row["course_id"]): row for row in courses}
     departments_by_id = {str(row["department_id"]): row for row in departments}
     offerings_by_id = {str(row["course_offering_id"]): row for row in offerings}
-    programs = {str(row["program_id"]): row for row in read_all(client.table("programs").select("program_id, name, code, department_id").in_("program_id", program_ids).eq("is_active", True).order("program_id"))}
+    programs = {str(row["program_id"]): row for row in read_all(client.table("programs").select("program_id, name, code, department_id, degree_type, duration_years").in_("program_id", program_ids).eq("is_active", True).order("program_id"))}
     semesters = {str(row["semester_id"]): row for row in read_all(client.table("semesters").select("semester_id, name, academic_year_id, semester_number").eq("is_active", True).order("semester_id"))}
     years = {str(row["academic_year_id"]): row for row in read_all(client.table("academic_years").select("academic_year_id, name").eq("institution_id", str(institution_id)).eq("is_active", True).order("academic_year_id"))}
     rows = []

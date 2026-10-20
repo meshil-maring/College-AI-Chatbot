@@ -37,7 +37,7 @@ export interface FacultyStudentRegistrationEvent {
   event_id: string
   roster_id: string
   occurred_at: string | null
-  action: 'roster_added' | 'roster_imported' | 'roster_updated' | 'roster_removed' | 'account_updated' | 'account_approved' | 'account_pending' | 'identity_conflict'
+  action: 'roster_added' | 'roster_imported' | 'roster_updated' | 'roster_removed' | 'account_updated' | 'account_approved' | 'account_pending' | 'identity_conflict' | 'class_registered'
   student_name: string
   register_number: string | null
   university_roll_number: string | null
@@ -60,7 +60,7 @@ export interface AttendanceSection {
   section_id: string; name: string; code: string; semester_id?: string
   department_id?: string; program_id?: string; academic_year_id?: string; course_id?: string
   department?: { department_id: string; name: string }
-  program?: { program_id: string; name: string }
+  program?: { program_id: string; name: string; degree_type?: string; duration_years?: number }
   academic_year?: { academic_year_id: string; name: string }
   semester?: { semester_id: string; name: string }
   course: { name: string; code: string; course_id?: string }
