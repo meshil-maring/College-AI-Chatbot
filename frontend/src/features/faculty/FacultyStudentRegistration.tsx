@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { useApiMutation } from '../../hooks/useApiQuery.ts'
+import { useApiMutation, useApiQuery } from '../../hooks/useApiQuery.ts'
 import { queryClient } from '../../lib/queryClient.ts'
+import { AdminApiError } from '../../services/adminApi.ts'
 import { addFacultyAttendanceStudent, type FacultyAttendanceAssignment, type FacultyAttendanceRosterRow } from '../../services/facultyAttendanceApi.ts'
+import StudentImport, { type StudentImportOutcome } from '../admin/students/StudentImport.tsx'
+import type { ReviewStudent } from '../admin/students/studentImport.ts'
+import { loadRegistrationRoster, readRegistrationFile, reviewStudentRegistrations } from './facultyStudentImport.ts'
 
 const input = 'mt-1 w-full rounded-lg border border-[#304862] bg-[#091725] px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#ffc72c]'
 const button = 'rounded-lg border border-[#304862] px-3 py-2 text-sm text-slate-200 hover:bg-[#142638] focus:outline-none focus:ring-2 focus:ring-[#ffc72c] disabled:opacity-40'
@@ -17,6 +21,13 @@ export default function FacultyStudentRegistration({ token, assignment, assignme
 }) {
   const [fields, setFields] = useState({ student_name: '', register_number: '', university_roll_number: '', email: '' })
   const [validationError, setValidationError] = useState('')
+  const [mode, setMode] = useState<'individual' | 'bulk'>('individual')
+  const [importBusy, setImportBusy] = useState(false)
+  const existingQuery = useApiQuery(
+    ['faculty', 'students', token, assignment.section_id, 'registration-roster'],
+    () => loadRegistrationRoster(token, assignment.section_id),
+    mode === 'bulk',
+  )
   const active = useRef(false)
   useEffect(() => {
     active.current = true
@@ -36,14 +47,63 @@ export default function FacultyStudentRegistration({ token, assignment, assignme
     },
   })
 
-  return <div className="mx-auto max-w-3xl space-y-5">
-    <div><h1 className="text-2xl font-bold text-white">Register new student</h1><p className="mt-2 text-sm text-slate-400">Add a student to your selected section roster.</p></div>
+  async function registerRows(rows: ReviewStudent[], onProgress: (completed: number) => void): Promise<StudentImportOutcome[]> {
+    const outcomes: StudentImportOutcome[] = []
+    let stopReason = ''
+    for (const row of rows) {
+      if (!active.current) break
+      if (stopReason) {
+        outcomes.push({ row: row.row, name: row.name, status: 'failed', message: `Not attempted: ${stopReason}` })
+        onProgress(outcomes.length)
+        continue
+      }
+      try {
+        await addFacultyAttendanceStudent(token, assignment.section_id, {
+          student_name: row.name, register_number: row.registerNumber,
+          ...(row.rollNumber ? { university_roll_number: row.rollNumber } : {}),
+          ...(row.email ? { email: row.email } : {}),
+        })
+        outcomes.push({ row: row.row, name: row.name, status: 'imported', message: 'Added to the section roster' })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Student could not be registered.'
+        outcomes.push({ row: row.row, name: row.name, status: 'failed', message })
+        if (error instanceof AdminApiError && [401, 403].includes(error.status)) stopReason = message
+      }
+      onProgress(outcomes.length)
+    }
+    void queryClient.invalidateQueries({ queryKey: ['faculty', 'students', token] })
+    void queryClient.invalidateQueries({ queryKey: ['faculty', 'attendance', token] })
+    return outcomes
+  }
+
+  const busy = registration.isPending || importBusy
+
+  return <div className={`mx-auto space-y-5 ${mode === 'individual' ? 'max-w-3xl' : 'w-full'}`}>
+    <div><h1 className="text-2xl font-bold text-white">{mode === 'bulk' ? 'Bulk Student Import' : 'Register new student'}</h1><p className="mt-2 text-sm text-slate-400">{mode === 'bulk' ? 'Upload a spreadsheet, review student records, and register the selected students.' : 'Add a student to your selected section roster.'}</p></div>
+    <div role="tablist" aria-label="Registration method" className="students-tabs students-tabs-bar">
+      {(['individual', 'bulk'] as const).map((tab) => <button key={tab} id={`registration-${tab}-tab`} role="tab" type="button" aria-selected={mode === tab} aria-controls="registration-method-panel" tabIndex={mode === tab ? 0 : -1} className={mode === tab ? 'active' : ''} disabled={busy} onClick={() => setMode(tab)} onKeyDown={(event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+        event.preventDefault()
+        const next = event.key === 'Home' ? 'individual' : event.key === 'End' ? 'bulk' : mode === 'individual' ? 'bulk' : 'individual'
+        setMode(next)
+        document.getElementById(`registration-${next}-tab`)?.focus()
+      }}>{tab === 'individual' ? 'Individual Registration' : 'Bulk Registration'}</button>)}
+    </div>
     <label className="block rounded-xl border border-[#26394e] bg-[#0d1c2c] p-5 text-sm text-slate-300">Section and subject
-      <select className={input} value={assignment.section_id} disabled={registration.isPending} onChange={(event) => onSectionChange(event.target.value)}>
+      <select className={input} value={assignment.section_id} disabled={busy} onChange={(event) => onSectionChange(event.target.value)}>
         {assignments.filter((item) => item.can_manage).map(({ section_id, section }) => <option key={section_id} value={section_id}>{section.course.code} · {section.course.name} · {section.name} ({section.code})</option>)}
       </select>
     </label>
-    <form aria-label="Register student" className="space-y-4 rounded-lg border border-[#304862] bg-[#091725] p-4" onSubmit={(event) => {
+    <div id="registration-method-panel" role="tabpanel" aria-labelledby={`registration-${mode}-tab`}>
+    {mode === 'bulk' ? <>
+      {existingQuery.isError && <div role="alert" className="students-alert error"><span>{existingQuery.error instanceof Error ? existingQuery.error.message : 'Section roster could not be loaded.'}</span><button type="button" className="students-button" onClick={() => void existingQuery.refetch()}>Retry roster checks</button></div>}
+      <StudentImport students={[]} directoryReady={existingQuery.isSuccess && !existingQuery.isFetching} onBack={onCancel} registration={{
+        readFile: readRegistrationFile,
+        reviewRows: (rows) => reviewStudentRegistrations(rows, existingQuery.data ?? []),
+        importRows: registerRows,
+        onBusyChange: setImportBusy,
+      }} />
+    </> : <form aria-label="Register student" className="space-y-4 rounded-lg border border-[#304862] bg-[#091725] p-4" onSubmit={(event) => {
       event.preventDefault()
       if (registration.isPending) return
       const data = { student_name: fields.student_name.trim(), register_number: fields.register_number.trim(), university_roll_number: fields.university_roll_number.trim(), email: fields.email.trim() }
@@ -69,6 +129,7 @@ export default function FacultyStudentRegistration({ token, assignment, assignme
         <button type="button" className={button} disabled={registration.isPending} onClick={onCancel}>Cancel</button>
         <button type="submit" className={primaryButton} disabled={registration.isPending}>{registration.isPending ? 'Registering student…' : 'Register student'}</button>
       </div>
-    </form>
+    </form>}
+    </div>
   </div>
 }

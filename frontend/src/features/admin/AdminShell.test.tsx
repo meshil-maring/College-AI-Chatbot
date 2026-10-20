@@ -106,7 +106,7 @@ describe('AdminShell', () => {
     await waitFor(() => {
       expect(screen.getByText('Administrator identity')).toBeInTheDocument()
     })
-    expect(screen.getByText('admin@test.com')).toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getByText('admin@test.com')).toBeInTheDocument()
     // Security: no token material or internal identifiers in the DOM.
     expect(screen.queryByText('test-token')).not.toBeInTheDocument()
     expect(screen.queryByText('u1')).not.toBeInTheDocument()

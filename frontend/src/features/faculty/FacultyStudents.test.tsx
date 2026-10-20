@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FacultyStudents from './FacultyStudents.tsx'
+import FacultyStudentsNavigation from './FacultyStudentsNavigation.tsx'
 import { queryClient } from '../../lib/queryClient.ts'
 import {
   addFacultyAttendanceStudent,
@@ -192,7 +193,7 @@ describe('FacultyStudents', () => {
 
   it('hides registration for read-only sections and closes the form when permissions are revoked', async () => {
     const user = userEvent.setup()
-    render(<FacultyStudents accessToken="token" />)
+    render(<><aside><FacultyStudentsNavigation accessToken="token" /></aside><FacultyStudents accessToken="token" /></>)
     await screen.findByText('Ada Rao')
     await user.click(screen.getByRole('button', { name: 'Register new student' }))
     vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([{ ...assignment, can_manage: false }])
@@ -383,5 +384,28 @@ describe('FacultyStudents', () => {
     expect(await screen.findByText('No records')).toBeInTheDocument()
     expect(screen.getByText('0.00%')).toBeInTheDocument()
     expect(screen.getByText('Email not recorded')).toBeInTheDocument()
+  })
+
+  it('shows the design breadcrumb and roster status cards and filters from a card', async () => {
+    const user = userEvent.setup()
+    render(<FacultyStudents accessToken="token" />)
+    await screen.findByText('Ada Rao')
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(breadcrumb).getByText('Students')).toBeInTheDocument()
+    expect(within(breadcrumb).getByText('Roster')).toBeInTheDocument()
+    const activeCard = await waitFor(() => {
+      const card = screen.getByRole('button', { name: /Active Students/ })
+      expect(card).toHaveTextContent('1')
+      return card
+    })
+    expect(screen.getByRole('button', { name: /Pending Approval/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Unregistered Students/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Inactive Students/ })).toBeInTheDocument()
+    expect(activeCard).toHaveAttribute('aria-pressed', 'false')
+    await user.click(activeCard)
+    expect(activeCard).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() =>
+      expect(vi.mocked(getFacultyAttendanceStudents).mock.lastCall?.[2].get('registration')).toBe('ACTIVE'),
+    )
   })
 })

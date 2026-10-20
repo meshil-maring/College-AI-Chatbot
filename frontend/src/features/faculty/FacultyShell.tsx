@@ -30,6 +30,7 @@ import FacultyTests from './FacultyTests.tsx'
 import FacultyComingSoon from './FacultyComingSoon.tsx'
 import FacultyAttendance from './FacultyAttendance.tsx'
 import FacultyStudents from './FacultyStudents.tsx'
+import FacultyStudentsNavigation from './FacultyStudentsNavigation.tsx'
 import FacultyResponsibilityWorkspace from './FacultyResponsibilityWorkspace.tsx'
 import ScopedTeachingAssignmentManager from './ScopedTeachingAssignmentManager.tsx'
 import { responsibilityPermissions } from './responsibilities.ts'
@@ -70,6 +71,7 @@ export default function FacultyShell() {
   const route = resolveFacultyRoute(pathname)
   const view = route?.view ?? 'dashboard'
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [studentsExpanded, setStudentsExpanded] = useState(true)
   const [testsDirty, setTestsDirty] = useState(false)
   const [attendanceActionRequest, setAttendanceActionRequest] = useState<{ action: AttendanceAction; id: number }>({ action: 'overview', id: 0 })
   const [activeAttendanceAction, setActiveAttendanceAction] = useState<AttendanceAction>('overview')
@@ -78,11 +80,12 @@ export default function FacultyShell() {
   const displayName = user?.email?.trim() || 'Faculty'
   const initials = displayName.slice(0, 2).toUpperCase()
 
-  function navigate(nextView: FacultyView) {
+  function navigate(nextView: FacultyView, keepNavigationOpen = false) {
     if (view === 'results' && nextView !== view && testsDirty && !window.confirm('Discard unsaved assessment changes?')) return
     setTestsDirty(false)
+    if (nextView === 'students') setStudentsExpanded(true)
     navigateTo(FACULTY_PATHS[nextView])
-    setMobileNavOpen(false)
+    if (!keepNavigationOpen) setMobileNavOpen(false)
   }
 
   function navigateAttendanceAction(action: AttendanceAction) {
@@ -105,7 +108,11 @@ export default function FacultyShell() {
             {navigation.map((item) => {
               const active = item.key === view
               return <div key={item.key}>
-                <button type="button" onClick={() => navigate(item.key)} aria-current={active ? 'page' : undefined} className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium transition ${active ? 'bg-[#3d3012] text-[#ffd03b]' : 'text-slate-300 hover:bg-[#102235] hover:text-white'} focus:outline-none focus:ring-2 focus:ring-[#ffc72c]`}><span className={active ? 'text-[#ffc72c]' : 'text-slate-400 group-hover:text-slate-200'}><PortalIcon name={NAV_ICONS[item.key]} /></span><span className="truncate">{item.label}</span></button>
+                <button type="button" onClick={() => {
+                  if (item.key === 'students' && active) setStudentsExpanded((expanded) => !expanded)
+                  else navigate(item.key, item.key === 'students')
+                }} aria-current={active ? 'page' : undefined} aria-expanded={item.key === 'students' ? active && studentsExpanded : undefined} aria-controls={item.key === 'students' && active && studentsExpanded ? 'faculty-students-pages' : undefined} className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium transition ${active && item.key !== 'students' ? 'bg-[#3d3012] text-[#ffd03b]' : 'text-slate-300 hover:bg-[#102235] hover:text-white'} focus:outline-none focus:ring-2 focus:ring-[#ffc72c]`}><span className={active && item.key !== 'students' ? 'text-[#ffc72c]' : 'text-slate-400 group-hover:text-slate-200'}><PortalIcon name={NAV_ICONS[item.key]} /></span><span className="truncate">{item.label}</span>{item.key === 'students' ? <ChevronDown aria-hidden="true" size={15} className={`ml-auto shrink-0 transition-transform ${active && studentsExpanded ? 'rotate-180' : ''}`} /> : null}</button>
+                {item.key === 'students' && active && studentsExpanded && accessToken !== null ? <FacultyStudentsNavigation accessToken={accessToken} scopeVersion={JSON.stringify(context)} onNavigate={() => setMobileNavOpen(false)} /> : null}
                 {item.key === 'attendance' && active ? <div className="ml-10 mt-1 space-y-1 border-l border-[#3d3012] pl-3">{([
                   ['overview', 'Overview'],
                   ['mark', 'Mark Attendance'],

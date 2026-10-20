@@ -30,7 +30,9 @@
  */
 
 import { useState } from 'react'
-import AcademicSetup from './AcademicSetup.tsx'
+import AcademicSetup from './academic-setup/AcademicSetup.tsx'
+import AdminFrame from './AdminFrame.tsx'
+import type { StudentSection } from './students/studentSections.ts'
 import {
   Bell,
   Bot,
@@ -51,19 +53,19 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider.tsx'
 import ChatShell from '../chat/ChatShell.tsx'
-import AdminDashboard from './AdminDashboard.tsx'
-import AdminApprovals from './AdminApprovals.tsx'
-import AdminProfile from './AdminProfile.tsx'
-import FaqManager from './FaqManager.tsx'
-import DocumentManager from './DocumentManager.tsx'
-import NoticeManager from './NoticeManager.tsx'
-import StudentManager from './StudentManager.tsx'
-import ResultsManager from './ResultsManager.tsx'
-import TestResultsManager from './TestResultsManager.tsx'
-import AttendanceManager from './AttendanceManager.tsx'
-import StaffFacultyManager from './StaffFacultyManager.tsx'
-import StaffPermissionManager from './StaffPermissionManager.tsx'
-import FacultyAssignmentManager from './FacultyAssignmentManager.tsx'
+import AdminDashboard from './dashboard/AdminDashboard.tsx'
+import AdminApprovals from './students/AdminApprovals.tsx'
+import AdminProfile from './profile/AdminProfile.tsx'
+import FaqManager from './faqs/FaqManager.tsx'
+import DocumentManager from './documents/DocumentManager.tsx'
+import NoticeManager from './notices/NoticeManager.tsx'
+import StudentManager from './students/StudentManager.tsx'
+import ResultsManager from './results/ResultsManager.tsx'
+import TestResultsManager from './test-results/TestResultsManager.tsx'
+import AttendanceManager from './attendance/AttendanceManager.tsx'
+import StaffFacultyManager from './staff-faculty/StaffFacultyManager.tsx'
+import StaffPermissionManager from './permissions/StaffPermissionManager.tsx'
+import FacultyAssignmentManager from './faculty-assignments/FacultyAssignmentManager.tsx'
 import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adminNavigation.ts'
 
 const ADMIN_NAV_ICONS: Record<AdminView, LucideIcon> = {
@@ -88,6 +90,8 @@ export default function AdminShell() {
   const { user, role, accessToken, logout } = useAuth()
   const [currentView, setCurrentView] = useState<AdminView>('dashboard')
   const navigation = buildAdminNavigation(role, user?.effective_permissions)
+  const [studentSection, setStudentSection] = useState<StudentSection>('all')
+  const [studentSearch, setStudentSearch] = useState('')
 
   // Phase 6.15.4 — identity comes from the canonical /auth/me bootstrap
   // (AuthProvider state). App.tsx only renders this shell once /auth/me has
@@ -95,54 +99,17 @@ export default function AdminShell() {
   const identityLabel = user?.email?.trim() || 'Admin'
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-slate-900 text-slate-100">
-      <header className="border-b border-slate-700 bg-slate-800/60">
-        <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <div className="mr-auto min-w-0">
-            <p className="text-lg font-bold text-white">Admin Panel</p>
-            <p className="break-words text-xs text-slate-400">Signed in as {identityLabel}</p>
-          </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-          >
-            <LogOut aria-hidden="true" className="h-4 w-4" />
-            Sign out
-          </button>
-        </div>
-        {navigation.length > 0 ? (
-          <nav aria-label="Admin navigation" className="mx-auto w-full max-w-7xl px-4 pb-3">
-            <ul className="flex flex-wrap gap-2">
-              {navigation.map((item) => {
-                const active = item.key === currentView
-                return (
-                  <li key={item.key}>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentView(item.key)}
-                      aria-current={active ? 'page' : undefined}
-                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
-                        active
-                          ? 'bg-emerald-600 text-white'
-                          : 'border border-slate-600 text-slate-200 hover:bg-slate-700'
-                      }`}
-                    >
-                      {(() => {
-                        const Icon = ADMIN_NAV_ICONS[item.key]
-                        return <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
-                      })()}
-                      {item.label}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
-        ) : null}
-      </header>
-
-      <main className="mx-auto w-full min-w-0 max-w-7xl px-4 py-6">
+    <AdminFrame
+      navigation={navigation}
+      currentView={currentView}
+      icons={ADMIN_NAV_ICONS}
+      onNavigate={setCurrentView}
+      studentSection={studentSection}
+      onStudentSection={setStudentSection}
+      identityLabel={identityLabel}
+      onLogout={logout}
+      onSearch={(search) => { setStudentSearch(search); setStudentSection('all') }}
+    >
         {user === null ? (
           <section
             role="status"
@@ -173,7 +140,7 @@ export default function AdminShell() {
           </section>
         ) : (
           <>
-            {currentView !== 'assistant' && currentView !== 'faculty-assignments' ? (
+            {currentView !== 'assistant' && currentView !== 'faculty-assignments' && currentView !== 'students' ? (
               <h1 className="mb-4 break-words text-2xl font-bold text-white">
                 {ADMIN_VIEW_HEADINGS[currentView]}
               </h1>
@@ -214,7 +181,7 @@ export default function AdminShell() {
             {currentView === 'faculty-assignments' && accessToken !== null ? (
               <FacultyAssignmentManager accessToken={accessToken} />
             ) : null}
-            {currentView === 'students' ? <StudentManager /> : null}
+            {currentView === 'students' ? <StudentManager key={`${accessToken}:${user.institution_id}`} section={studentSection} onSection={setStudentSection} search={studentSearch} onSearch={setStudentSearch} /> : null}
             {currentView === 'academic-setup' && accessToken !== null ? <AcademicSetup accessToken={accessToken} /> : null}
             {currentView === 'attendance' ? <AttendanceManager /> : null}
             {currentView === 'results' ? <ResultsManager /> : null}
@@ -230,7 +197,6 @@ export default function AdminShell() {
             {currentView === 'profile' ? <AdminProfile user={user} /> : null}
           </>
         )}
-      </main>
-    </div>
+    </AdminFrame>
   )
 }

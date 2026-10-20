@@ -241,8 +241,9 @@ export async function deleteNotice(accessToken: string, id: string): Promise<voi
 // Students + Results + Test Results + Attendance
 // ============================================================================
 
-export async function listStudents(accessToken: string, institutionId: string): Promise<Student[]> {
-  return requestJson<Student[]>('GET', `${ADMIN_BASE}/students?institution_id=${encodeURIComponent(institutionId)}`, accessToken)
+export async function listStudents(accessToken: string, institutionId: string, pagination?: { limit: number; offset: number }): Promise<Student[]> {
+  const suffix = pagination ? `&limit=${pagination.limit}&offset=${pagination.offset}` : ''
+  return requestJson<Student[]>('GET', `${ADMIN_BASE}/students?institution_id=${encodeURIComponent(institutionId)}${suffix}`, accessToken)
 }
 
 export async function createStudent(accessToken: string, payload: StudentCreate): Promise<Student> {

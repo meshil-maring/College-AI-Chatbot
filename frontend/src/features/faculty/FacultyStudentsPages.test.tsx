@@ -1,7 +1,8 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import FacultyStudents from './FacultyStudents.tsx'
+import FacultyStudentsPage from './FacultyStudents.tsx'
+import FacultyStudentsNavigation from './FacultyStudentsNavigation.tsx'
 import { queryClient } from '../../lib/queryClient.ts'
 import { addFacultyAttendanceStudent, getFacultyAttendanceAssignments, getFacultyAttendanceStudents, getFacultyStudentRegistrationHistory, type FacultyAttendanceRosterRow, type FacultyStudentRegistrationEvent } from '../../services/facultyAttendanceApi.ts'
 
@@ -12,6 +13,13 @@ vi.mock('../../services/facultyAttendanceApi.ts', () => ({
 const assignment = { can_manage: true, assignment_id: 'section-1', section_id: 'section-1', assigned_at: '', semester_id: 'semester-1', academic_year_id: 'year-1', section: { section_id: 'section-1', name: 'Section A', code: 'A', course: { name: 'Data Mining', code: 'CS501' } } }
 const pending = { roster_id: 'pending-1', student_name: 'Beena Shah', register_number: 'CS002', university_roll_number: null, email: 'beena@college.edu', roster_status: 'PENDING_APPROVAL' as const, linked_student_id: null }
 const activity: FacultyStudentRegistrationEvent = { event_id: 'event-1', roster_id: 'roster-1', occurred_at: '2026-10-19T09:00:00Z', action: 'roster_added', student_name: 'Ada Rao', register_number: 'CS001', university_roll_number: 'UNI001' }
+
+function FacultyStudents({ accessToken }: { accessToken: string }) {
+  return <>
+    <aside><FacultyStudentsNavigation accessToken={accessToken} /></aside>
+    <main><FacultyStudentsPage accessToken={accessToken} /></main>
+  </>
+}
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -27,6 +35,8 @@ describe('Students page navigation', () => {
     render(<FacultyStudents accessToken="token" />)
     await screen.findByText('Roster student')
     const nav = screen.getByRole('navigation', { name: 'Students pages' })
+    expect(nav.closest('aside')).not.toBeNull()
+    expect(within(screen.getByRole('main')).queryByRole('navigation', { name: 'Students pages' })).not.toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: 'Roster', exact: true })).toHaveAttribute('aria-current', 'page')
     expect(within(nav).getByRole('link', { name: 'Record history' })).toHaveAttribute('href', '/faculty/students/record-history?section_id=section-1')
     expect(within(nav).getByRole('link', { name: 'Waiting approval' })).toHaveAttribute('href', '/faculty/students/waiting-approval?section_id=section-1')
