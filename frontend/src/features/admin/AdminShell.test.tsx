@@ -29,6 +29,7 @@ const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
 
 /** Mutable auth context so each test can drive the canonical role. */
 const authState = vi.hoisted(() => ({
+  status: 'authenticated',
   user: {
     authenticated: true,
     user_id: 'u1',

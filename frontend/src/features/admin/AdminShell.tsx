@@ -52,7 +52,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider.tsx'
-import { hasPermission } from '../auth/permissions.ts'
+import { usePermissions } from '../auth/usePermissions.ts'
 import ChatShell from '../chat/ChatShell.tsx'
 import AdminDashboard from './dashboard/AdminDashboard.tsx'
 import AdminProfile from './profile/AdminProfile.tsx'
@@ -94,9 +94,9 @@ export default function AdminShell() {
   const studentSection = studentsLocation?.page ?? 'roster'
   const navigation = buildAdminNavigation(role, user?.effective_permissions)
   const [studentSearch, setStudentSearch] = useState('')
-  const permissions = user?.effective_permissions
-  const canReviewStudents = ['students.read', 'students.approve', 'students.reject'].every((permission) => hasPermission(permissions, permission))
-  const canBrowseStudents = hasPermission(permissions, 'students.read') && hasPermission(permissions, 'attendance.read')
+  const { can, canAll } = usePermissions()
+  const canReviewStudents = canAll('students.read', 'students.approve', 'students.reject')
+  const canBrowseStudents = canAll('students.read', 'attendance.read')
 
   function setCurrentView(view: AdminView) {
     if (view === 'students' || view === 'approvals') navigateStudents('admin', view === 'approvals' ? 'waiting-approval' : 'roster')
@@ -119,7 +119,7 @@ export default function AdminShell() {
       studentSectionId={studentsLocation?.sectionId}
       canReviewStudents={canReviewStudents || canBrowseStudents}
       canReadStudentHistory={canBrowseStudents}
-      canRegisterStudents={hasPermission(permissions, 'students.create')}
+      canRegisterStudents={can('students', 'create')}
       identityLabel={identityLabel}
       onLogout={logout}
       onSearch={(search) => { setStudentSearch(search); navigateStudents('admin', 'roster') }}

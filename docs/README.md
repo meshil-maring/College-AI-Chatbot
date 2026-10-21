@@ -1,10 +1,13 @@
 # Documentation index
 
-Phase documentation, validation evidence and schema snapshots live here. These are **historical
-artifacts**: each file records what was true when its phase was locked or validated.
+Reference documentation, phase records, validation evidence, and schema snapshots live here.
+Phase records are **historical artifacts**: each records what was true when its phase was locked
+or validated. The [RBAC reading guide](rbac/README.md) organizes the review draft by role so future
+tasks can load only the shared rules and relevant user section.
 
 | Directory | Contents |
 | --- | --- |
+| `rbac/` | Review-only RBAC documentation: shared rules, role-specific access, permission catalog, workflows, and verification gaps. Start with its [reading guide](rbac/README.md). |
 | `locks/` | Phase lock records (`PHASE_*_LOCK.md`, `FINAL_DEMO_LOCK.md`): frozen scope and evidence per phase |
 | `status/` | Phase status/scope reports and review prompts (`PHASE_*_STATUS.md`, `PHASE_*_SCOPE_REPORT.md`, other `PHASE_*` phase reports, `FINAL_DEMO_STATUS.md`) |
 | `reports/` | Physical-validation and implementation reports (Markdown + HTML) |

@@ -1,6 +1,6 @@
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
 import { useAuth } from '../../auth/AuthProvider.tsx'
-import { hasPermission } from '../../auth/permissions.ts'
+import { usePermissions } from '../../auth/usePermissions.ts'
 import { adminStudentWorkspaceApi } from '../../../services/adminStudentWorkspaceApi.ts'
 import { StudentWorkspace } from '../../faculty/FacultyStudents.tsx'
 import { StudentWorkspaceContext } from '../../students/StudentWorkspaceContext.tsx'
@@ -18,9 +18,10 @@ export default function StudentManager({ section, sectionId, onNavigate, registr
 }) {
   const { accessToken, user } = useAuth()
   const tenant = user?.institution_id
-  const canRead = hasPermission(user?.effective_permissions, 'students.read')
-  const canBrowse = canRead && hasPermission(user?.effective_permissions, 'attendance.read')
-  const canApprove = canRead && ['students.approve', 'students.reject'].every((permission) => hasPermission(user?.effective_permissions, permission))
+  const { can, canAll } = usePermissions()
+  const canRead = can('students', 'read')
+  const canBrowse = canAll('students.read', 'attendance.read')
+  const canApprove = canAll('students.read', 'students.approve', 'students.reject')
   const sections = useApiQuery(['admin', 'students', accessToken, tenant, 'sections'],
     () => adminStudentWorkspaceApi.getSections(accessToken as string),
     !!accessToken && !!tenant && canRead && (canBrowse || section === 'register'))
