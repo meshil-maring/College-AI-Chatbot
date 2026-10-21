@@ -10,7 +10,7 @@ from supabase_auth.errors import AuthApiError
 from app.config import settings
 from app.core.security import get_current_user
 from app.main import app
-from app.services.auth_security import (
+from app.services.auth.auth_security import (
     consume_password_recovery_session,
     reset_auth_abuse_state,
 )
@@ -73,7 +73,7 @@ def _session():
 def test_recovery_session_consumer_hashes_provider_session_id():
     admin = MagicMock()
     admin.rpc.return_value.execute.return_value.data = True
-    with patch("app.services.auth_security.get_admin_client", return_value=admin):
+    with patch("app.services.auth.auth_security.get_admin_client", return_value=admin):
         consumed = consume_password_recovery_session(
             session_id="provider-recovery-session",
             auth_user_id=AUTH_USER_ID,
@@ -93,8 +93,8 @@ def test_recovery_session_consumer_hashes_provider_session_id():
 def test_forgot_password_uses_provider_and_returns_generic_response():
     provider = MagicMock()
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.record_auth_security_event") as audit,
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.record_auth_security_event") as audit,
     ):
         response = client.post(
             "/api/v1/auth/forgot-password",
@@ -128,9 +128,9 @@ def test_change_password_verifies_current_password_and_revokes_other_sessions():
     )
     admin = MagicMock()
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.get_admin_client", return_value=admin),
-        patch("app.api.auth.record_auth_security_event") as audit,
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.get_admin_client", return_value=admin),
+        patch("app.api.auth.common.record_auth_security_event") as audit,
     ):
         response = client.post(
             "/api/v1/auth/change-password",
@@ -161,8 +161,8 @@ def test_change_password_normalizes_wrong_current_password():
         "bad credentials", 400, "invalid_grant"
     )
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.record_auth_security_event"),
     ):
         response = client.post(
             "/api/v1/auth/change-password",
@@ -206,10 +206,10 @@ def test_reset_completion_revokes_all_provider_sessions_without_touching_roles()
     admin = MagicMock()
     recovery_issued_at = int(time.time())
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.get_admin_client", return_value=admin),
-        patch("app.api.auth.consume_password_recovery_session", return_value=True) as consume,
-        patch("app.api.auth.record_auth_security_event") as audit,
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.get_admin_client", return_value=admin),
+        patch("app.api.auth.common.consume_password_recovery_session", return_value=True) as consume,
+        patch("app.api.auth.common.record_auth_security_event") as audit,
     ):
         response = client.post(
             "/api/v1/auth/reset-password",
@@ -237,9 +237,9 @@ def test_reset_completion_revokes_all_provider_sessions_without_touching_roles()
 def test_reset_completion_rejects_regular_authenticated_sessions():
     admin = MagicMock()
     with (
-        patch("app.api.auth.get_admin_client", return_value=admin),
-        patch("app.api.auth.consume_password_recovery_session") as consume,
-        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.auth.common.get_admin_client", return_value=admin),
+        patch("app.api.auth.common.consume_password_recovery_session") as consume,
+        patch("app.api.auth.common.record_auth_security_event"),
     ):
         response = client.post(
             "/api/v1/auth/reset-password",
@@ -259,9 +259,9 @@ def test_reset_completion_rejects_regular_authenticated_sessions():
 def test_reset_completion_rejects_replayed_recovery_sessions():
     admin = MagicMock()
     with (
-        patch("app.api.auth.get_admin_client", return_value=admin),
-        patch("app.api.auth.consume_password_recovery_session", return_value=False),
-        patch("app.api.auth.record_auth_security_event") as audit,
+        patch("app.api.auth.common.get_admin_client", return_value=admin),
+        patch("app.api.auth.common.consume_password_recovery_session", return_value=False),
+        patch("app.api.auth.common.record_auth_security_event") as audit,
     ):
         response = client.post(
             "/api/v1/auth/reset-password",
@@ -281,9 +281,9 @@ def test_reset_completion_rejects_replayed_recovery_sessions():
 def test_reset_completion_rejects_stale_recovery_sessions():
     admin = MagicMock()
     with (
-        patch("app.api.auth.get_admin_client", return_value=admin),
-        patch("app.api.auth.consume_password_recovery_session") as consume,
-        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.auth.common.get_admin_client", return_value=admin),
+        patch("app.api.auth.common.consume_password_recovery_session") as consume,
+        patch("app.api.auth.common.record_auth_security_event"),
     ):
         response = client.post(
             "/api/v1/auth/reset-password",
@@ -313,10 +313,10 @@ def test_refresh_uses_provider_refresh_token_and_revalidates_server_identity():
         "student_is_active": None,
     }
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.get_sign_in_context", new=AsyncMock(return_value=account)),
-        patch("app.api.auth.get_admin_client", return_value=MagicMock()),
-        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.get_sign_in_context", new=AsyncMock(return_value=account)),
+        patch("app.api.auth.common.get_admin_client", return_value=MagicMock()),
+        patch("app.api.auth.common.record_auth_security_event"),
     ):
         response = client.post(
             "/api/v1/auth/refresh",
@@ -354,10 +354,10 @@ def test_refresh_preserves_inactive_denial_without_changing_approval_rules(
         "approval_status": "approved", "student_is_active": True,
     } | account_changes
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.get_sign_in_context", new=AsyncMock(return_value=account)),
-        patch("app.api.auth.get_admin_client", return_value=MagicMock()),
-        patch("app.api.auth.record_auth_security_event") as audit,
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.get_sign_in_context", new=AsyncMock(return_value=account)),
+        patch("app.api.auth.common.get_admin_client", return_value=MagicMock()),
+        patch("app.api.auth.common.record_auth_security_event") as audit,
     ):
         response = client.post(
             "/api/v1/auth/refresh", json={"refresh_token": "provider-refresh-token"},
@@ -380,9 +380,9 @@ def test_refresh_rejects_expired_provider_session_without_disclosing_account_sta
         "private provider details", 400, "refresh_token_not_found",
     )
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.get_sign_in_context", new=AsyncMock()) as identity,
-        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.get_sign_in_context", new=AsyncMock()) as identity,
+        patch("app.api.auth.common.record_auth_security_event"),
     ):
         response = client.post(
             "/api/v1/auth/refresh", json={"refresh_token": "expired-refresh-token"},
@@ -406,8 +406,8 @@ def test_refresh_rejects_expired_provider_session_without_disclosing_account_sta
 def test_logout_endpoints_use_provider_revocation_scope(path, scope, event):
     provider = MagicMock()
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.record_auth_security_event") as audit,
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.record_auth_security_event") as audit,
     ):
         response = client.post(path, headers=_authenticated())
 
@@ -423,8 +423,8 @@ def test_login_attempts_are_rate_limited_by_direct_peer_ip():
         "bad credentials", 400, "invalid_grant"
     )
     with (
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.record_auth_security_event"),
     ):
         first = client.post(
             "/api/v1/auth/login",

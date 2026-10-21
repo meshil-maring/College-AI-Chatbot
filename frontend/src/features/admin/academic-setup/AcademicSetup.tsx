@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
-import { getAcademicCatalogue, saveAcademicRecord } from '../../../services/adminApi.ts'
+import { getAcademicCatalogue, saveAcademicRecord } from '../../../services/admin/adminApi.ts'
 import type { AcademicCatalogue, AcademicEntity, AcademicRecord } from '../../../types/academicSetup.ts'
 import AcademicSetupHelp from './AcademicSetupHelp.tsx'
 import { ACADEMIC_DEFINITIONS, ACADEMIC_ENTITIES as entities, type AcademicField as Field } from './academicSetupDefinitions.ts'

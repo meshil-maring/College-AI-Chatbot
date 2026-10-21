@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import {
   ArrowRight,
   ChevronLeft,
@@ -7,117 +6,83 @@ import {
   Filter,
   GraduationCap,
   RefreshCw,
-  UserCheck,
   UserPlus,
   Users,
 } from 'lucide-react'
-import type { Student } from '../../../types/admin.ts'
-import { downloadCsv } from './studentImport.ts'
-import type { StudentSection } from './studentSections.ts'
 import { StudentsPageHeader, StudentsSearch, StudentsStats } from '../../students/StudentsUI.tsx'
+import { useStudentDirectory } from './directory/useStudentDirectory.ts'
 
-export default function StudentDirectory({
-  students,
-  loading,
-  refreshing,
-  error,
-  search,
-  onSearch,
-  onRefresh,
-  onSection,
-}: {
-  students: Student[]
-  loading: boolean
-  refreshing: boolean
-  error: string | null
-  search: string
-  onSearch: (search: string) => void
-  onRefresh: () => void
-  onSection: (section: StudentSection) => void
-}) {
-  const [status, setStatus] = useState('all')
-  const [page, setPage] = useState(1)
-  const [filters, setFilters] = useState(false)
-  const [draftSearch, setDraftSearch] = useState(search)
-  useEffect(() => { setDraftSearch(search); setPage(1) }, [search])
-  const filtered = students.filter(
-    (student) =>
-      (status === 'all' ||
-        (status === 'archived'
-          ? !student.is_active
-          : student.is_active && student.status === status)) &&
-      student.student_number
-        .toLowerCase()
-        .includes(search.trim().toLowerCase()),
-  )
-  const pages = Math.max(1, Math.ceil(filtered.length / 10))
-  const currentPage = Math.min(page, pages)
-  const visible = filtered.slice((currentPage - 1) * 10, currentPage * 10)
-  const stats = [
-    {
-      title: 'Total Students',
-      value: students.length,
-      Icon: Users,
-      color: 'neutral',
-      filter: 'all',
-      description: 'Across your institution',
-    },
-    {
-      title: 'Active Students',
-      value: students.filter(
-        (student) => student.is_active && student.status === 'active',
-      ).length,
-      Icon: UserCheck,
-      color: 'valid',
-      filter: 'active',
-      description: 'Currently enrolled',
-    },
-    {
-      title: 'Graduated',
-      value: students.filter(
-        (student) => student.is_active && student.status === 'graduated',
-      ).length,
-      Icon: GraduationCap,
-      color: 'duplicate',
-      filter: 'graduated',
-      description: 'Completed their studies',
-    },
-    {
-      title: 'Archived Students',
-      value: students.filter((student) => !student.is_active).length,
-      Icon: Users,
-      color: 'invalid',
-      filter: 'archived',
-      description: 'Academic records retained',
-    },
-  ]
-  const exportRows = () =>
-    downloadCsv('students.csv', [
-      [
-        'student_number',
-        'status',
-        'enrollment_date',
-        'expected_graduation_date',
-        'is_active',
-      ],
-      ...filtered.map((student) => [
-        student.student_number,
-        student.status,
-        student.enrollment_date,
-        student.expected_graduation_date,
-        student.is_active,
-      ]),
-    ])
+export default function StudentDirectory(props: Parameters<typeof useStudentDirectory>[0]) {
+  const model = useStudentDirectory(props)
+  const {
+    students,
+    loading,
+    refreshing,
+    error,
+    onSearch,
+    onRefresh,
+    onSection,
+    status,
+    setStatus,
+    setPage,
+    filters,
+    setFilters,
+    draftSearch,
+    setDraftSearch,
+    filtered,
+    pages,
+    currentPage,
+    visible,
+    stats,
+    exportRows,
+  } = model
+
   return (
     <section className="students-content students-scope" aria-label="Student directory">
-      <StudentsPageHeader page="Roster" title="Students" description="Your students, their records, and a clearer view of your institution." actions={<>
-        <button type="button" className="students-button primary" onClick={() => onSection('register')}><UserPlus aria-hidden="true" />Register new student</button>
-      </>} />
-      <StudentsStats items={stats.map(({ title, value, Icon, color, filter, description }) => ({ key: filter, title, description, value: loading || error ? '—' : value, Icon, tone: color, selected: status === filter, onSelect: () => { setStatus(status === filter ? 'all' : filter); setPage(1) } }))} />
+      <StudentsPageHeader
+        page="Roster"
+        title="Students"
+        description="Your students, their records, and a clearer view of your institution."
+        actions={
+          <>
+            <button type="button" className="students-button primary" onClick={() => onSection('register')}>
+              <UserPlus aria-hidden="true" />
+              Register new student
+            </button>
+          </>
+        }
+      />
+      <StudentsStats
+        items={stats.map(({ title, value, Icon, color, filter, description }) => ({
+          key: filter,
+          title,
+          description,
+          value: loading || error ? '—' : value,
+          Icon,
+          tone: color,
+          selected: status === filter,
+          onSelect: () => {
+            setStatus(status === filter ? 'all' : filter)
+            setPage(1)
+          },
+        }))}
+      />
       <div className="students-toolbar">
-        <div className="students-toolbar-heading"><h2>Roster{!loading && !error ? ` (${students.length})` : ''}</h2><p>Institution student records</p></div>
+        <div className="students-toolbar-heading">
+          <h2>Roster{!loading && !error ? ` (${students.length})` : ''}</h2>
+          <p>Institution student records</p>
+        </div>
         <div className="students-table-actions">
-          <StudentsSearch label="Search students by number" placeholder="Search student number…" value={draftSearch} onChange={setDraftSearch} onSubmit={() => { onSearch(draftSearch.trim()); setPage(1) }} />
+          <StudentsSearch
+            label="Search students by number"
+            placeholder="Search student number…"
+            value={draftSearch}
+            onChange={setDraftSearch}
+            onSubmit={() => {
+              onSearch(draftSearch.trim())
+              setPage(1)
+            }}
+          />
           <button
             className="students-button"
             aria-expanded={filters}
@@ -127,13 +92,9 @@ export default function StudentDirectory({
             <Filter />
             Filters{status !== 'all' ? ' (1)' : ''}
           </button>
-          <button
-            className="students-button"
-            aria-label="Refresh students"
-            disabled={refreshing}
-            onClick={onRefresh}
-          >
-            <RefreshCw aria-hidden="true" className={refreshing ? 'animate-spin' : ''} />Refresh students
+          <button className="students-button" aria-label="Refresh students" disabled={refreshing} onClick={onRefresh}>
+            <RefreshCw aria-hidden="true" className={refreshing ? 'animate-spin' : ''} />
+            Refresh students
           </button>
         </div>
       </div>
@@ -171,11 +132,7 @@ export default function StudentDirectory({
       {error ? (
         <div className="students-alert error" role="alert">
           <span>{error}</span>
-          <button
-            className="students-button"
-            disabled={refreshing}
-            onClick={onRefresh}
-          >
+          <button className="students-button" disabled={refreshing} onClick={onRefresh}>
             Retry
           </button>
         </div>
@@ -226,11 +183,7 @@ export default function StudentDirectory({
                 <tr>
                   <td colSpan={6} className="students-empty">
                     <Users />
-                    <h2>
-                      {students.length
-                        ? 'No matching students'
-                        : 'Your student directory starts here'}
-                    </h2>
+                    <h2>{students.length ? 'No matching students' : 'Your student directory starts here'}</h2>
                     <p>
                       {students.length
                         ? 'Try another student number or clear your filters.'
@@ -246,9 +199,7 @@ export default function StudentDirectory({
                         } else onSection('waiting-approval')
                       }}
                     >
-                      {students.length
-                        ? 'Clear filters'
-                        : 'Review waiting approvals'}
+                      {students.length ? 'Clear filters' : 'Review waiting approvals'}
                       <ArrowRight />
                     </button>
                   </td>

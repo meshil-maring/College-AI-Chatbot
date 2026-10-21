@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.core.errors import AppError
-from app.services import admin_academics as svc
+from app.services.admin import admin_academics as svc
 
 INSTITUTION_ID = str(uuid4())
 FOREIGN_INSTITUTION_ID = str(uuid4())

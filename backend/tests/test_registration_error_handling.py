@@ -1,7 +1,7 @@
 """Registration must never crash the API — regression tests.
 
 Bug fixed alongside this file: the student registration duplicate check calls
-``app.repositories.admin_academics.get_student_by_email``, which read
+``app.repositories.admin.admin_academics.get_student_by_email``, which read
 ``response.data`` directly. postgrest-py >= 2.x returns ``None`` from
 ``maybe_single().execute()`` when the query matches ZERO rows, so the ordinary
 "this student does not exist yet" outcome raised::
@@ -38,9 +38,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repositories import admin_academics as repo
-from app.services import student_registration as student_svc
-from app.services import user_registration as user_reg_service
+from app.repositories.admin import admin_academics as repo
+from app.services.auth import student_registration as student_svc
+from app.services.auth import user_registration as user_reg_service
 
 # ``raise_server_exceptions=True`` (the TestClient default) is deliberate: if a
 # registration failure ever escapes the app's controlled error handling the
@@ -532,7 +532,7 @@ def test_duplicate_checks_are_still_invoked():
 # 3. Error handling — 4xx for validation, controlled 5xx for DB/service failure
 # ============================================================================
 
-_USER_REG_LOGGER = "app.services.user_registration"
+_USER_REG_LOGGER = "app.services.auth.user_registration"
 
 
 def test_database_failure_returns_controlled_5xx(caplog):

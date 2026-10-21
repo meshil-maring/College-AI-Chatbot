@@ -43,10 +43,10 @@ from pydantic import ValidationError
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories import results as results_repo
-from app.repositories.results import STUDENT_RESULT_COLUMNS, TEST_RESULT_COLUMNS
-from app.services import results as results_svc
-from app.services.admin_academics import (
+from app.repositories.academics import results as results_repo
+from app.repositories.academics.results import STUDENT_RESULT_COLUMNS, TEST_RESULT_COLUMNS
+from app.services.academics import results as results_svc
+from app.services.admin.admin_academics import (
     RESULT_STATUSES,
     RESULT_TYPES,
     TEST_RESULT_STATUSES,
@@ -117,7 +117,7 @@ def _active_institution_authorization():
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
         data={"institution_id": TENANT_A, "status": "active", "is_active": True}
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
         yield
 
 
@@ -199,23 +199,23 @@ def _context_patches(
     """Patch the academic-context lookups used by the Phase 6.8 service."""
     return (
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value=_student_context(institution_id, student_id),
         ),
         patch(
-            "app.repositories.results.get_academic_year_context",
+            "app.repositories.academics.results.get_academic_year_context",
             return_value={"academic_year_id": ay, "institution_id": institution_id},
         ),
         patch(
-            "app.repositories.results.get_semester_context",
+            "app.repositories.academics.results.get_semester_context",
             return_value={"semester_id": sem, "academic_year_id": ay},
         ),
         patch(
-            "app.repositories.results.get_course_institution",
+            "app.repositories.academics.results.get_course_institution",
             return_value=institution_id,
         ),
         patch(
-            "app.repositories.results.get_program_institution",
+            "app.repositories.academics.results.get_program_institution",
             return_value=institution_id,
         ),
     )
@@ -315,9 +315,9 @@ def test_create_test_result_derives_tenant_and_percentage() -> None:
     created = _test_result_row()
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.insert_test_result", return_value=created
+            "app.repositories.academics.results.insert_test_result", return_value=created
         ) as insert_mock,
     p_student, p_year, p_sem, p_course, p_prog,
     ):
@@ -338,9 +338,9 @@ def test_create_test_result_percentage_none_without_score() -> None:
     created["percentage"] = None
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.insert_test_result", return_value=created
+            "app.repositories.academics.results.insert_test_result", return_value=created
         ) as insert_mock,
     p_student, p_year, p_sem, p_course, p_prog,
     ):
@@ -352,9 +352,9 @@ def test_create_test_result_normalizes_letter_grade() -> None:
     db = MagicMock()
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.insert_test_result",
+            "app.repositories.academics.results.insert_test_result",
             return_value=_test_result_row(),
         ) as insert_mock,
     p_student, p_year, p_sem, p_course, p_prog,
@@ -397,9 +397,9 @@ def test_create_test_result_rejects_invalid_type_and_status() -> None:
 def test_create_test_result_rejects_unknown_student() -> None:
     db = MagicMock()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_context", return_value=None
+            "app.repositories.academics.results.get_student_context", return_value=None
         ),
     ):
         with pytest.raises(AppError) as exc:
@@ -415,7 +415,7 @@ def test_create_test_result_rejects_unknown_student() -> None:
 
 def _patch_section_context(return_value):
     return patch(
-        "app.repositories.attendance.get_section_academic_context",
+        "app.repositories.academics.attendance.get_section_academic_context",
         return_value=return_value,
     )
 
@@ -434,13 +434,13 @@ def _section_context(institution_id=TENANT_A):
 
 def test_create_test_result_rejects_unknown_academic_year() -> None:
     with (
-        patch("app.services.results.get_admin_client", return_value=MagicMock()),
+        patch("app.services.academics.results.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value=_student_context(),
         ),
         patch(
-            "app.repositories.results.get_academic_year_context", return_value=None
+            "app.repositories.academics.results.get_academic_year_context", return_value=None
         ),
     ):
         with pytest.raises(AppError) as exc:
@@ -451,13 +451,13 @@ def test_create_test_result_rejects_unknown_academic_year() -> None:
 
 def test_create_test_result_rejects_cross_tenant_academic_year() -> None:
     with (
-        patch("app.services.results.get_admin_client", return_value=MagicMock()),
+        patch("app.services.academics.results.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value=_student_context(TENANT_A),
         ),
         patch(
-            "app.repositories.results.get_academic_year_context",
+            "app.repositories.academics.results.get_academic_year_context",
             return_value={"academic_year_id": AY_ID, "institution_id": TENANT_B},
         ),
     ):
@@ -472,25 +472,25 @@ def test_create_test_result_rejects_unknown_and_mismatched_semester() -> None:
     student = _student_context()
     year = {"academic_year_id": AY_ID, "institution_id": TENANT_A}
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.repositories.results.get_student_context", return_value=student),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.repositories.academics.results.get_student_context", return_value=student),
         patch(
-            "app.repositories.results.get_academic_year_context", return_value=year
+            "app.repositories.academics.results.get_academic_year_context", return_value=year
         ),
-        patch("app.repositories.results.get_semester_context", return_value=None),
+        patch("app.repositories.academics.results.get_semester_context", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             results_svc.create_test_result(_test_result_create())
     assert exc.value.code == "ACADEMIC_CONTEXT_INVALID"
 
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.repositories.results.get_student_context", return_value=student),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.repositories.academics.results.get_student_context", return_value=student),
         patch(
-            "app.repositories.results.get_academic_year_context", return_value=year
+            "app.repositories.academics.results.get_academic_year_context", return_value=year
         ),
         patch(
-            "app.repositories.results.get_semester_context",
+            "app.repositories.academics.results.get_semester_context",
             return_value={"semester_id": SEM_ID, "academic_year_id": str(uuid4())},
         ),
     ):
@@ -505,31 +505,31 @@ def test_create_test_result_rejects_unknown_and_cross_tenant_course() -> None:
     year = {"academic_year_id": AY_ID, "institution_id": TENANT_A}
     semester = {"semester_id": SEM_ID, "academic_year_id": AY_ID}
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.repositories.results.get_student_context", return_value=student),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.repositories.academics.results.get_student_context", return_value=student),
         patch(
-            "app.repositories.results.get_academic_year_context", return_value=year
+            "app.repositories.academics.results.get_academic_year_context", return_value=year
         ),
         patch(
-            "app.repositories.results.get_semester_context", return_value=semester
+            "app.repositories.academics.results.get_semester_context", return_value=semester
         ),
-        patch("app.repositories.results.get_course_institution", return_value=None),
+        patch("app.repositories.academics.results.get_course_institution", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             results_svc.create_test_result(_test_result_create())
     assert exc.value.code == "COURSE_NOT_FOUND"
 
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.repositories.results.get_student_context", return_value=student),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.repositories.academics.results.get_student_context", return_value=student),
         patch(
-            "app.repositories.results.get_academic_year_context", return_value=year
+            "app.repositories.academics.results.get_academic_year_context", return_value=year
         ),
         patch(
-            "app.repositories.results.get_semester_context", return_value=semester
+            "app.repositories.academics.results.get_semester_context", return_value=semester
         ),
         patch(
-            "app.repositories.results.get_course_institution", return_value=TENANT_B
+            "app.repositories.academics.results.get_course_institution", return_value=TENANT_B
         ),
     ):
         with pytest.raises(AppError) as exc:
@@ -541,9 +541,9 @@ def test_create_test_result_validates_attached_section() -> None:
     db = MagicMock()
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.insert_test_result",
+            "app.repositories.academics.results.insert_test_result",
             return_value=_test_result_row(),
         ),
     p_student, p_year, p_sem, p_course, p_prog,
@@ -557,7 +557,7 @@ def test_create_test_result_validates_attached_section() -> None:
     # Unknown section / broken chain -> 404 (fail closed).
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
         _patch_section_context(None),
     ):
@@ -570,7 +570,7 @@ def test_create_test_result_validates_attached_section() -> None:
     # Cross-tenant section -> 403.
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
         _patch_section_context(_section_context(TENANT_B)),
     ):
@@ -583,7 +583,7 @@ def test_create_test_result_validates_attached_section() -> None:
     # Section offering describing a different course/year/semester -> 422.
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
         _patch_section_context({**_section_context(), "semester_id": str(uuid4())}),
     ):
@@ -604,12 +604,12 @@ def test_update_test_result_rederives_percentage_and_validates() -> None:
     existing = _test_result_row()
     updated = {**existing, "scored_marks": 10, "max_marks": 20, "percentage": 50.0}
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_test_result_row", return_value=existing
+            "app.repositories.academics.results.get_test_result_row", return_value=existing
         ),
         patch(
-            "app.repositories.results.update_test_result_row",
+            "app.repositories.academics.results.update_test_result_row",
             return_value=updated,
         ) as update_mock,
     ):
@@ -623,9 +623,9 @@ def test_update_test_result_rederives_percentage_and_validates() -> None:
 
     # Merged score validation: existing max 20 + update to 25 -> over max.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_test_result_row", return_value=existing
+            "app.repositories.academics.results.get_test_result_row", return_value=existing
         ),
     ):
         with pytest.raises(AppError) as exc:
@@ -636,9 +636,9 @@ def test_update_test_result_rederives_percentage_and_validates() -> None:
 
     # Empty update -> 422.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_test_result_row", return_value=existing
+            "app.repositories.academics.results.get_test_result_row", return_value=existing
         ),
     ):
         with pytest.raises(AppError) as exc:
@@ -647,8 +647,8 @@ def test_update_test_result_rederives_percentage_and_validates() -> None:
 
     # 404 for an unknown row.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.repositories.results.get_test_result_row", return_value=None),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.repositories.academics.results.get_test_result_row", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             results_svc.update_test_result(
@@ -661,12 +661,12 @@ def test_update_test_result_revalidates_changed_section() -> None:
     db = MagicMock()
     existing = _test_result_row()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_test_result_row", return_value=existing
+            "app.repositories.academics.results.get_test_result_row", return_value=existing
         ),
         patch(
-            "app.repositories.results.update_test_result_row",
+            "app.repositories.academics.results.update_test_result_row",
             return_value=existing,
         ),
         _patch_section_context(None),
@@ -681,8 +681,8 @@ def test_update_test_result_revalidates_changed_section() -> None:
 def test_delete_test_result_404_and_delete() -> None:
     db = MagicMock()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.repositories.results.get_test_result_row", return_value=None),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.repositories.academics.results.get_test_result_row", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             results_svc.delete_test_result(TEST_RESULT_ID)
@@ -690,11 +690,11 @@ def test_delete_test_result_404_and_delete() -> None:
 
     existing = _test_result_row()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_test_result_row", return_value=existing
+            "app.repositories.academics.results.get_test_result_row", return_value=existing
         ),
-        patch("app.repositories.results.delete_test_result_row") as delete_mock,
+        patch("app.repositories.academics.results.delete_test_result_row") as delete_mock,
     ):
         row = results_svc.delete_test_result(TEST_RESULT_ID)
     assert row["test_result_id"] == TEST_RESULT_ID
@@ -712,10 +712,10 @@ def test_duplicate_test_result_maps_to_stable_conflict() -> None:
     other = Exception('insert or update on table "test_results" violates FK')
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
         patch(
-            "app.repositories.results.insert_test_result", side_effect=duplicate
+            "app.repositories.academics.results.insert_test_result", side_effect=duplicate
         ),
     ):
         with pytest.raises(AppError) as exc:
@@ -725,9 +725,9 @@ def test_duplicate_test_result_maps_to_stable_conflict() -> None:
 
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
-        patch("app.repositories.results.insert_test_result", side_effect=other),
+        patch("app.repositories.academics.results.insert_test_result", side_effect=other),
     ):
         with pytest.raises(AppError) as exc:
             results_svc.create_test_result(_test_result_create())
@@ -764,14 +764,14 @@ def test_concurrent_duplicate_creation_is_handled_safely() -> None:
 
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         p_student,
         p_year,
         p_sem,
         p_course,
         p_prog,
         patch(
-            "app.repositories.results.insert_test_result",
+            "app.repositories.academics.results.insert_test_result",
             side_effect=fake_insert,
         ),
     ):
@@ -823,9 +823,9 @@ def test_create_result_derives_tenant_server_side() -> None:
     created = _result_row()
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.insert_student_result",
+            "app.repositories.academics.results.insert_student_result",
             return_value=created,
         ) as insert_mock,
     p_student, p_year, p_sem, p_course, p_prog,
@@ -843,9 +843,9 @@ def test_create_result_validates_items_and_normalizes_grades() -> None:
     # Unknown item course -> 404 (fail closed).
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
-        patch("app.repositories.results.get_course_institution", return_value=None),
+        patch("app.repositories.academics.results.get_course_institution", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             results_svc.create_result(_result_create())
@@ -854,13 +854,13 @@ def test_create_result_validates_items_and_normalizes_grades() -> None:
     # Happy path: item grade normalized and linked to the created result.
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.insert_student_result",
+            "app.repositories.academics.results.insert_student_result",
             return_value=_result_row(),
         ),
         patch(
-            "app.repositories.results.insert_student_result_items",
+            "app.repositories.academics.results.insert_student_result_items",
             return_value=stored_items,
         ) as items_mock,
     p_student, p_year, p_sem, p_course, p_prog,
@@ -886,18 +886,18 @@ def test_create_result_rejects_bad_program_and_context() -> None:
     semester = {"semester_id": SEM_ID, "academic_year_id": AY_ID}
     # Unknown program (broken department chain) -> 404.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value=_student_context(),
         ),
         patch(
-            "app.repositories.results.get_academic_year_context", return_value=year
+            "app.repositories.academics.results.get_academic_year_context", return_value=year
         ),
         patch(
-            "app.repositories.results.get_semester_context", return_value=semester
+            "app.repositories.academics.results.get_semester_context", return_value=semester
         ),
-        patch("app.repositories.results.get_program_institution", return_value=None),
+        patch("app.repositories.academics.results.get_program_institution", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             results_svc.create_result(_result_create())
@@ -905,19 +905,19 @@ def test_create_result_rejects_bad_program_and_context() -> None:
 
     # Cross-tenant program -> 403.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value=_student_context(TENANT_A),
         ),
         patch(
-            "app.repositories.results.get_academic_year_context", return_value=year
+            "app.repositories.academics.results.get_academic_year_context", return_value=year
         ),
         patch(
-            "app.repositories.results.get_semester_context", return_value=semester
+            "app.repositories.academics.results.get_semester_context", return_value=semester
         ),
         patch(
-            "app.repositories.results.get_program_institution",
+            "app.repositories.academics.results.get_program_institution",
             return_value=TENANT_B,
         ),
     ):
@@ -940,10 +940,10 @@ def test_duplicate_result_maps_to_stable_conflict() -> None:
     db = MagicMock()
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
         patch(
-            "app.repositories.results.insert_student_result",
+            "app.repositories.academics.results.insert_student_result",
             side_effect=Exception(
                 "duplicate key value violates unique constraint"
             ),
@@ -960,9 +960,9 @@ def test_update_and_delete_result_validation() -> None:
     existing = _result_row()
     # Unknown result -> 404.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_result_row", return_value=None
+            "app.repositories.academics.results.get_student_result_row", return_value=None
         ),
     ):
         with pytest.raises(AppError) as exc:
@@ -971,9 +971,9 @@ def test_update_and_delete_result_validation() -> None:
 
     # Empty update -> 422.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_result_row",
+            "app.repositories.academics.results.get_student_result_row",
             return_value=existing,
         ),
     ):
@@ -983,9 +983,9 @@ def test_update_and_delete_result_validation() -> None:
 
     # Invalid status on update -> 422.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_result_row",
+            "app.repositories.academics.results.get_student_result_row",
             return_value=existing,
         ),
     ):
@@ -997,13 +997,13 @@ def test_update_and_delete_result_validation() -> None:
 
     # Successful update.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_result_row",
+            "app.repositories.academics.results.get_student_result_row",
             return_value=existing,
         ),
         patch(
-            "app.repositories.results.update_student_result_row",
+            "app.repositories.academics.results.update_student_result_row",
             return_value=existing,
         ) as update_mock,
     ):
@@ -1012,12 +1012,12 @@ def test_update_and_delete_result_validation() -> None:
 
     # Delete (items + summary) — hard delete per Admin-1 policy.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_result_with_items",
+            "app.repositories.academics.results.get_student_result_with_items",
             return_value=existing,
         ),
-        patch("app.repositories.results.delete_student_result") as delete_mock,
+        patch("app.repositories.academics.results.delete_student_result") as delete_mock,
     ):
         row = results_svc.delete_result(RESULT_ID)
     assert row["student_result_id"] == RESULT_ID
@@ -1097,8 +1097,8 @@ def test_tenantless_admin_cannot_create_test_results() -> None:
     db = _audit_db({"test_result_id": TEST_RESULT_ID})
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     p_student, p_year, p_sem, p_course, p_prog,
     ):
         response = client.post(
@@ -1112,7 +1112,7 @@ def test_tenant_admin_cannot_create_results_for_foreign_student() -> None:
     """Cross-tenant creation is rejected before any academic lookup."""
     _as(_user(tenant=TENANT_A))
     with patch(
-        "app.services.admin_academics.get_student",
+        "app.services.admin.admin_academics.get_student",
         return_value={"student_id": STUDENT_ID, "institution_id": TENANT_B},
     ):
         response = client.post(
@@ -1140,13 +1140,13 @@ def test_tenant_admin_cannot_touch_foreign_results_on_update_delete() -> None:
     db = MagicMock()
     foreign_student = {"student_id": STUDENT_ID, "institution_id": TENANT_B}
     with (
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=foreign_student,
         ),
         patch(
-            "app.services.results.get_test_result",
+            "app.services.academics.results.get_test_result",
             return_value=_test_result_row(institution_id=TENANT_B),
         ),
     ):
@@ -1161,13 +1161,13 @@ def test_tenant_admin_cannot_touch_foreign_results_on_update_delete() -> None:
         assert response.json()["error"]["code"] == "TENANT_MISMATCH"
 
     with (
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=foreign_student,
         ),
         patch(
-            "app.services.results.get_result",
+            "app.services.academics.results.get_result",
             return_value=_result_row(institution_id=TENANT_B),
         ),
     ):
@@ -1181,10 +1181,10 @@ def test_tenant_admin_can_manage_own_tenant_results() -> None:
     db = _audit_db({"test_result_id": TEST_RESULT_ID})
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(),
         ),
     p_student, p_year, p_sem, p_course, p_prog,
@@ -1202,10 +1202,10 @@ def test_result_creation_is_audited() -> None:
     db = _audit_db({"student_result_id": RESULT_ID})
     p_student, p_year, p_sem, p_course, p_prog = _context_patches()
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(),
         ),
     p_student, p_year, p_sem, p_course, p_prog,
@@ -1293,11 +1293,11 @@ def test_student_can_retrieve_own_published_result() -> None:
     row = {**_result_row(), "items": [{"course_id": COURSE_ID}]}
     with (
         patch(
-            "app.services.student_data.get_own_student",
+            "app.services.students.student_data.get_own_student",
             return_value=_own_student(),
         ),
         patch(
-            "app.repositories.results.get_student_result_with_items",
+            "app.repositories.academics.results.get_student_result_with_items",
             return_value=row,
         ),
     ):
@@ -1315,11 +1315,11 @@ def test_student_cannot_retrieve_another_students_result() -> None:
     foreign = {**_result_row(), "student_id": OTHER_STUDENT_ID}
     with (
         patch(
-            "app.services.student_data.get_own_student",
+            "app.services.students.student_data.get_own_student",
             return_value=_own_student(),
         ),
         patch(
-            "app.repositories.results.get_student_result_with_items",
+            "app.repositories.academics.results.get_student_result_with_items",
             return_value=foreign,
         ),
     ):
@@ -1330,11 +1330,11 @@ def test_student_cannot_retrieve_another_students_result() -> None:
     # Genuinely missing row -> identical response.
     with (
         patch(
-            "app.services.student_data.get_own_student",
+            "app.services.students.student_data.get_own_student",
             return_value=_own_student(),
         ),
         patch(
-            "app.repositories.results.get_student_result_with_items",
+            "app.repositories.academics.results.get_student_result_with_items",
             return_value=None,
         ),
     ):
@@ -1350,11 +1350,11 @@ def test_student_cannot_retrieve_unpublished_result() -> None:
         row = {**_result_row(), "status": status}
         with (
             patch(
-                "app.services.student_data.get_own_student",
+                "app.services.students.student_data.get_own_student",
                 return_value=_own_student(),
             ),
             patch(
-                "app.repositories.results.get_student_result_with_items",
+                "app.repositories.academics.results.get_student_result_with_items",
                 return_value=row,
             ),
         ):
@@ -1368,7 +1368,7 @@ def test_student_self_service_fails_safely_without_profile() -> None:
     leak of another student's data."""
     _as_student()
     with patch(
-        "app.services.student_data.get_own_student",
+        "app.services.students.student_data.get_own_student",
         side_effect=AppError(
             "No student profile is linked to this account",
             status_code=404,
@@ -1387,11 +1387,11 @@ def test_student_self_service_tenant_guard() -> None:
     row = _result_row(institution_id=TENANT_A)
     with (
         patch(
-            "app.services.student_data.get_own_student",
+            "app.services.students.student_data.get_own_student",
             return_value=_own_student(),
         ),
         patch(
-            "app.repositories.results.get_student_result_with_items",
+            "app.repositories.academics.results.get_student_result_with_items",
             return_value=row,
         ),
     ):

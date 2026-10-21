@@ -20,7 +20,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { useAuth } from '../auth/AuthProvider.tsx'
+import { useAuth } from '../auth/session/AuthProvider.tsx'
 import { useChat } from '../../hooks/useChat.ts'
 import { useConversationHistory } from '../../hooks/useConversationHistory.ts'
 import ChatInput from './ChatInput.tsx'

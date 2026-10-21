@@ -39,7 +39,7 @@
  * but have NO frontend manager today, so no navigation entry is added).
  */
 
-import { hasPermission } from '../auth/permissions.ts'
+import { hasPermission } from '../auth/access/permissions.ts'
 
 /** The only role that renders the admin shell (App.tsx gates on this too). */
 const ADMIN_SHELL_ROLES: readonly string[] = ['admin']

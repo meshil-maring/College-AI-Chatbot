@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from app.core.errors import AppError
 from app.main import app
-from app.services.ingestion import _validate
+from app.services.knowledge.ingestion import _validate
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -71,7 +71,7 @@ def _auth_headers():
 
 
 def _patch_auth():
-    p1 = patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS)
+    p1 = patch("app.core.security.tokens.verify_jwt", return_value=FAKE_CLAIMS)
     p2 = patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=FAKE_USER))
     return p1, p2
 
@@ -79,9 +79,9 @@ def _patch_auth():
 @pytest.fixture(autouse=True)
 def _active_institution_authorization():
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
             return_value={"status": "active", "is_active": True},
         ),
     ):
@@ -139,10 +139,10 @@ def _post_ingest(
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=r2),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=r2),
     ):
         return client.post(
             "/api/v1/documents/ingest",
@@ -251,13 +251,13 @@ def test_ingest_checksum_stored_with_prefix():
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=_make_r2_mock()),
-        patch("app.services.ingestion.create_document_version", side_effect=_spy),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=_make_r2_mock()),
+        patch("app.services.knowledge.ingestion.create_document_version", side_effect=_spy),
         patch(
-            "app.services.ingestion.create_processing_run",
+            "app.services.knowledge.ingestion.create_processing_run",
             return_value={"processing_run_id": RUN_ID},
         ),
     ):
@@ -334,17 +334,17 @@ def _post_ingest_as(role: str | None):
             else []
         ),
     }
-    p1 = patch("app.core.security.verify_jwt", return_value=claims)
+    p1 = patch("app.core.security.tokens.verify_jwt", return_value=claims)
     p2 = patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user))
     db = _make_db_mock()
     r2 = _make_r2_mock()
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=r2),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=r2),
     ):
         return client.post(
             "/api/v1/documents/ingest",
@@ -401,13 +401,13 @@ def test_document_version_fields():
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=_make_r2_mock()),
-        patch("app.services.ingestion.create_document_version", side_effect=_spy),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=_make_r2_mock()),
+        patch("app.services.knowledge.ingestion.create_document_version", side_effect=_spy),
         patch(
-            "app.services.ingestion.create_processing_run",
+            "app.services.knowledge.ingestion.create_processing_run",
             return_value={"processing_run_id": RUN_ID},
         ),
     ):
@@ -442,11 +442,11 @@ def test_processing_run_created_with_queued_status():
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=_make_r2_mock()),
-        patch("app.services.ingestion.create_processing_run", side_effect=_spy),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=_make_r2_mock()),
+        patch("app.services.knowledge.ingestion.create_processing_run", side_effect=_spy),
     ):
         response = client.post(
             "/api/v1/documents/ingest",
@@ -471,11 +471,11 @@ def test_processing_run_includes_processor_metadata():
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_admin_client", return_value=_make_db_mock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=_make_r2_mock()),
-        patch("app.services.ingestion.create_processing_run", side_effect=_spy),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=_make_db_mock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=_make_r2_mock()),
+        patch("app.services.knowledge.ingestion.create_processing_run", side_effect=_spy),
     ):
         client.post(
             "/api/v1/documents/ingest",
@@ -501,10 +501,10 @@ def test_r2_upload_failure_returns_500_no_db_records():
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=r2),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=r2),
     ):
         response = client.post(
             "/api/v1/documents/ingest",
@@ -537,10 +537,10 @@ def test_db_failure_after_r2_upload_triggers_r2_cleanup():
     with (
         p1,
         p2,
-        patch("app.services.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_knowledge_source", return_value=FAKE_KS),
-        patch("app.services.ingestion.get_r2_client", return_value=r2),
+        patch("app.services.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=FAKE_KS),
+        patch("app.services.knowledge.ingestion.get_r2_client", return_value=r2),
     ):
         response = client.post(
             "/api/v1/documents/ingest",

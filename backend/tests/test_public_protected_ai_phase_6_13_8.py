@@ -45,8 +45,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.core.errors import AppError
-from app.schemas.chat import ChatRequest
-from app.schemas.session import SessionContext
+from app.schemas.ai.chat import ChatRequest
+from app.schemas.ai.session import SessionContext
 
 PUBLIC_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 
@@ -373,9 +373,9 @@ def _make_chat_request(
 def _patch_get_admin_client(fake_client: FakeClient) -> None:
     """Patch get_admin_client in all the modules the public chat uses."""
     targets = [
-        "app.services.public_chat.get_admin_client",
-        "app.services.retrieval.get_admin_client",
-        "app.services.authorization.get_admin_client",
+        "app.services.ai.public_chat.get_admin_client",
+        "app.services.knowledge.retrieval.get_admin_client",
+        "app.services.auth.authorization.get_admin_client",
         "app.db.supabase.get_admin_client",
     ]
     patchers = []
@@ -392,7 +392,7 @@ class _NoopProvider:
     """GenerationProvider that returns a fixed answer so the pipeline can complete."""
 
     def generate(self, context, *, answer_model=None):
-        from app.schemas.generation import GenerationResult
+        from app.schemas.ai.generation import GenerationResult
 
         return GenerationResult(
             answer="Test answer from public AI",
@@ -409,9 +409,9 @@ def _run_public_chat(request: ChatRequest, fake_client: FakeClient) -> Any:
     service calls our fake client exactly as it would call the real Supabase
     client in production.
     """
-    from app.services.session import resolve_session_context
-    from app.services.public_chat import process_chat_request
-    from app.schemas.session import SessionContextRequest
+    from app.services.auth.session import resolve_session_context
+    from app.services.ai.public_chat import process_chat_request
+    from app.schemas.ai.session import SessionContextRequest
 
     session_ctx = resolve_session_context(
         SessionContextRequest(session_id=request.session_id)
@@ -434,7 +434,7 @@ class TestPublicChatNoAuth:
 
     def test_public_chat_requires_no_authentication(self) -> None:
         """1. public chat without authentication"""
-        from app.services.public_chat import process_chat_request
+        from app.services.ai.public_chat import process_chat_request
 
         source = inspect.getsource(process_chat_request)
         assert 'get_current_user' not in source
@@ -445,7 +445,7 @@ class TestPublicChatNoAuth:
         self,
     ) -> None:
         """2. public institution resolution"""
-        from app.services.public_chat import _validate_public_institution
+        from app.services.ai.public_chat import _validate_public_institution
 
         fake = FakeClient()
         fake.seed()
@@ -454,7 +454,7 @@ class TestPublicChatNoAuth:
 
     def test_inactive_institution_denied(self) -> None:
         """3. inactive institution denied"""
-        from app.services.public_chat import _validate_public_institution
+        from app.services.ai.public_chat import _validate_public_institution
 
         fake = FakeClient()
         fake.seed()
@@ -464,7 +464,7 @@ class TestPublicChatNoAuth:
 
     def test_pending_institution_denied(self) -> None:
         """4. pending institution denied"""
-        from app.services.public_chat import _validate_public_institution
+        from app.services.ai.public_chat import _validate_public_institution
 
         fake = FakeClient()
         fake.seed()
@@ -474,7 +474,7 @@ class TestPublicChatNoAuth:
 
     def test_rejected_institution_denied(self) -> None:
         """5. rejected institution denied"""
-        from app.services.public_chat import _validate_public_institution
+        from app.services.ai.public_chat import _validate_public_institution
 
         fake = FakeClient()
         fake.seed()
@@ -495,7 +495,7 @@ class TestPublicChatNoAuth:
         self,
     ) -> None:
         """6. public retrieval limited to selected institution"""
-        from app.services.public_chat import (
+        from app.services.ai.public_chat import (
             _build_allowed_public_knowledge_source_ids,
             _resolve_chunk_knowledge_sources,
             _filter_to_public_chunks,
@@ -515,7 +515,7 @@ class TestPublicChatNoAuth:
         self,
     ) -> None:
         """7. Institution A cannot retrieve Institution B public documents"""
-        from app.services.public_chat import (
+        from app.services.ai.public_chat import (
             _build_allowed_public_knowledge_source_ids,
             _resolve_chunk_knowledge_sources,
             _filter_to_public_chunks,
@@ -541,7 +541,7 @@ class TestPublicChatNoAuth:
         self,
     ) -> None:
         """8. private documents excluded from public retrieval"""
-        from app.services.public_chat import (
+        from app.services.ai.public_chat import (
             _build_allowed_public_knowledge_source_ids,
             _resolve_chunk_knowledge_sources,
             _filter_to_public_chunks,
@@ -567,7 +567,7 @@ class TestPublicChatNoAuth:
         self,
     ) -> None:
         """9. student records excluded from public retrieval"""
-        from app.services.public_chat import PUBLIC_SOURCE_TYPES
+        from app.services.ai.public_chat import PUBLIC_SOURCE_TYPES
 
         assert 'student_record' not in PUBLIC_SOURCE_TYPES
         assert 'attendance' not in PUBLIC_SOURCE_TYPES
@@ -575,13 +575,13 @@ class TestPublicChatNoAuth:
 
     def test_attendance_excluded_from_public_retrieval(self) -> None:
         """10. attendance excluded from public retrieval"""
-        from app.services.public_chat import PUBLIC_SOURCE_TYPES
+        from app.services.ai.public_chat import PUBLIC_SOURCE_TYPES
 
         assert 'attendance' not in PUBLIC_SOURCE_TYPES
 
     def test_results_excluded_from_public_retrieval(self) -> None:
         """11. exam results excluded from public retrieval"""
-        from app.services.public_chat import PUBLIC_SOURCE_TYPES
+        from app.services.ai.public_chat import PUBLIC_SOURCE_TYPES
 
         assert 'result' not in PUBLIC_SOURCE_TYPES
 
@@ -606,12 +606,12 @@ class TestProtectedAIChatAuth:
 
     def test_authenticated_student_can_access_authorized_data(self) -> None:
         """13. authenticated student can access authorized data"""
-        from app.services.authorization import resolve_authorization_context
+        from app.services.auth.authorization import resolve_authorization_context
         from unittest.mock import patch
 
         fake = FakeClient()
         fake.seed()
-        with patch("app.services.authorization.get_admin_client", return_value=fake):
+        with patch("app.services.auth.authorization.get_admin_client", return_value=fake):
             ctx = {
                 "user_id": "user-student-a",
                 "email": "student-a@example.com",
@@ -623,7 +623,7 @@ class TestProtectedAIChatAuth:
 
     def test_student_cannot_access_another_student_data(self) -> None:
         """14. student cannot access another student's data"""
-        from app.services.authorization import user_institution_id
+        from app.services.auth.authorization import user_institution_id
 
         ctx = {'user_id': 'user-student-a', 'roles': ['student'], 'institution_id': INST_A1}
         inst = user_institution_id(ctx)
@@ -631,7 +631,7 @@ class TestProtectedAIChatAuth:
 
     def test_student_cannot_access_another_institution_data(self) -> None:
         """15. student cannot access another institution's data"""
-        from app.services.authorization import user_institution_id
+        from app.services.auth.authorization import user_institution_id
 
         ctx = {'user_id': 'user-student-a', 'roles': ['student'], 'institution_id': INST_A1}
         inst = user_institution_id(ctx)
@@ -640,12 +640,12 @@ class TestProtectedAIChatAuth:
 
     def test_faculty_scope_enforcement(self) -> None:
         """16. faculty scope enforcement"""
-        from app.services.authorization import resolve_authorization_context
+        from app.services.auth.authorization import resolve_authorization_context
         from unittest.mock import patch
 
         fake = FakeClient()
         fake.seed()
-        with patch("app.services.authorization.get_admin_client", return_value=fake):
+        with patch("app.services.auth.authorization.get_admin_client", return_value=fake):
             ctx = {
                 "user_id": "user-faculty-a",
                 "roles": ["faculty"],
@@ -656,12 +656,12 @@ class TestProtectedAIChatAuth:
 
     def test_staff_scope_enforcement(self) -> None:
         """17. staff scope enforcement"""
-        from app.services.authorization import resolve_authorization_context
+        from app.services.auth.authorization import resolve_authorization_context
         from unittest.mock import patch
 
         fake = FakeClient()
         fake.seed()
-        with patch("app.services.authorization.get_admin_client", return_value=fake):
+        with patch("app.services.auth.authorization.get_admin_client", return_value=fake):
             ctx = {
                 "user_id": "user-staff-a",
                 "roles": ["staff"],
@@ -672,12 +672,12 @@ class TestProtectedAIChatAuth:
 
     def test_institution_admin_scope_enforcement(self) -> None:
         """18. institution-admin scope enforcement"""
-        from app.services.authorization import resolve_authorization_context
+        from app.services.auth.authorization import resolve_authorization_context
         from unittest.mock import patch
 
         fake = FakeClient()
         fake.seed()
-        with patch("app.services.authorization.get_admin_client", return_value=fake):
+        with patch("app.services.auth.authorization.get_admin_client", return_value=fake):
             ctx = {
                 "user_id": "user-inst-a-admin",
                 "roles": ["admin"],
@@ -689,12 +689,12 @@ class TestProtectedAIChatAuth:
 
     def test_organization_admin_scope_enforcement(self) -> None:
         """19. organization-admin scope enforcement"""
-        from app.services.authorization import resolve_authorization_context
+        from app.services.auth.authorization import resolve_authorization_context
         from unittest.mock import patch
 
         fake = FakeClient()
         fake.seed()
-        with patch("app.services.authorization.get_admin_client", return_value=fake):
+        with patch("app.services.auth.authorization.get_admin_client", return_value=fake):
             ctx = {
                 "user_id": "user-org-a-admin",
                 "roles": ["admin"],
@@ -712,7 +712,7 @@ class TestClientOverrideDenial:
 
     def test_client_institution_id_override_denied(self) -> None:
         """20. client institution ID override denied"""
-        from app.services.public_chat import _validate_public_institution
+        from app.services.ai.public_chat import _validate_public_institution
 
         fake = FakeClient()
         fake.seed()
@@ -725,7 +725,7 @@ class TestClientOverrideDenial:
 
     def test_client_organization_id_override_denied(self) -> None:
         """21. client organization ID override denied"""
-        from app.services.public_chat import _validate_public_institution
+        from app.services.ai.public_chat import _validate_public_institution
 
         fake = FakeClient()
         fake.seed()
@@ -736,7 +736,7 @@ class TestClientOverrideDenial:
 
     def test_client_student_id_override_denied(self) -> None:
         """22. client student ID override denied"""
-        from app.services.public_chat import _reject_personal_query_if_needed
+        from app.services.ai.public_chat import _reject_personal_query_if_needed
 
         req = _make_chat_request(
             user_query='What is my attendance?',
@@ -756,7 +756,7 @@ class TestUnauthorizedAccessDenial:
 
     def test_unauthorized_private_data_request_denied(self) -> None:
         """23. unauthorized private-data request denied"""
-        from app.services.public_chat import _reject_personal_query_if_needed
+        from app.services.ai.public_chat import _reject_personal_query_if_needed
 
         for question in [
             'What is my attendance?',
@@ -770,7 +770,7 @@ class TestUnauthorizedAccessDenial:
 
     def test_unauthenticated_personalized_request_denied(self) -> None:
         """24. unauthenticated personalized request denied"""
-        from app.services.public_chat import _reject_personal_query_if_needed
+        from app.services.ai.public_chat import _reject_personal_query_if_needed
 
         req = _make_chat_request(
             user_query='What is my attendance?',
@@ -791,7 +791,7 @@ class TestRegression:
 
     def test_existing_public_chat_regression(self) -> None:
         """25. existing public chat regression"""
-        from app.services.public_chat import process_chat_request, PUBLIC_USER_ID
+        from app.services.ai.public_chat import process_chat_request, PUBLIC_USER_ID
 
         source = inspect.getsource(process_chat_request)
         assert 'PUBLIC_USER_ID' in source
@@ -811,9 +811,9 @@ class TestRegression:
 
     def test_phase_6_13_1_through_6_13_7_regression(self) -> None:
         """27. Phase 6.13.1-6.13.7 regression"""
-        from app.services import authorization as authz
-        from app.services import public_chat
-        from app.repositories import tenancy as tenancy_repo
+        from app.services.auth import authorization as authz
+        from app.services.ai import public_chat
+        from app.repositories.platform import tenancy as tenancy_repo
 
         assert hasattr(authz, 'resolve_authorization_context')
         assert hasattr(authz, 'user_institution_id')

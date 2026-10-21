@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from app.config import settings
-from app.schemas.retrieval import RetrievalRequest
-from app.services.retrieval import retrieve
+from app.schemas.knowledge.retrieval import RetrievalRequest
+from app.services.knowledge.retrieval import retrieve
 
 SUPPORTED_CATEGORIES = ("direct", "multi-chunk", "distractor", "scope/filter")
 REPORT_K_VALUES = (1, 3, 5, 10)

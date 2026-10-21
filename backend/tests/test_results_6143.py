@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services import student_results as svc
+from app.services.students import student_results as svc
 TC = TestClient(app, raise_server_exceptions=False)
 TA = "a1111111-0000-0000-0000-000000000001"
 TB = "b2222222-0000-0000-0000-000000000002"
@@ -200,17 +200,17 @@ def test_13_legacy_unchanged():
     (db.table.return_value.select.return_value.eq.return_value
      .maybe_single.return_value.execute).return_value = MagicMock(
         data=_P())
-    with patch("app.services.student_data.get_admin_client",
+    with patch("app.services.students.student_data.get_admin_client",
                return_value=db):
-        with patch("app.repositories.admin_academics.list_student_results",
+        with patch("app.repositories.admin.admin_academics.list_student_results",
                    return_value=rows):
             r = TC.get("/api/v1/students/me/results")
     assert r.status_code == 200
     assert r.json()[0]["student_id"] == SID
     trows = [_TR()]
-    with patch("app.services.student_data.get_admin_client",
+    with patch("app.services.students.student_data.get_admin_client",
                return_value=db):
-        with patch("app.repositories.admin_academics.list_test_results",
+        with patch("app.repositories.admin.admin_academics.list_test_results",
                    return_value=trows):
             r2 = TC.get("/api/v1/students/me/test-results")
     assert r2.status_code == 200

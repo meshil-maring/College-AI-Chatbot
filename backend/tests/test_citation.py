@@ -5,12 +5,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.generation import SourceReference
-from app.schemas.retrieval import RetrievalResponse, RetrievalResult
-from app.schemas.session import SessionContext
-from app.services.chat import _persist_in_background, process_chat_request
-from app.services.generation_provider import GenerationProvider, GenerationResult
+from app.schemas.ai.chat import ChatRequest, ChatResponse
+from app.schemas.ai.generation import SourceReference
+from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
+from app.schemas.ai.session import SessionContext
+from app.services.ai.chat import _persist_in_background, process_chat_request
+from app.services.ai.generation_provider import GenerationProvider, GenerationResult
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +25,7 @@ def _sync_background_persistence(monkeypatch):
     ``get_admin_client``).
     """
     monkeypatch.setattr(
-        "app.services.chat._start_background_persistence",
+        "app.services.ai.chat._start_background_persistence",
         lambda **kwargs: _persist_in_background(**kwargs),
     )
 
@@ -94,9 +94,9 @@ def _process(request, provider, client, retrieval=None):
     """Run process_chat_request with mocked dependencies."""
     session_context = SessionContext(session_id=uuid4())
     with (
-        patch("app.services.chat.get_admin_client", return_value=client),
-        patch("app.services.conversation_history.get_admin_client", return_value=client),
-        patch("app.services.chat.retrieve", return_value=retrieval or _retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=client),
+        patch("app.services.ai.chat.retrieve", return_value=retrieval or _retrieval_chunks()),
     ):
         return process_chat_request(request, session_context, provider, TEST_USER_ID), session_context
 
@@ -287,9 +287,9 @@ def test_citations_belong_to_correct_assistant_message():
     request1 = _chat_request()
     session_ctx = SessionContext(session_id=conversation_id)
     with (
-        patch("app.services.chat.get_admin_client", return_value=mc1),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc1),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mc1),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc1),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response1 = process_chat_request(request1, session_ctx, provider1, TEST_USER_ID)
 
@@ -323,9 +323,9 @@ def test_citations_belong_to_correct_assistant_message():
 
     request2 = _chat_request(user_query="Follow-up question")
     with (
-        patch("app.services.chat.get_admin_client", return_value=mc2),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc2),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mc2),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc2),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response2 = process_chat_request(request2, session_ctx, provider2, TEST_USER_ID)
 
@@ -359,10 +359,10 @@ def test_general_knowledge_skips_retrieval_and_creates_no_citations():
 
     session_context = SessionContext(session_id=uuid4())
     with (
-        patch("app.services.chat.get_admin_client", return_value=mc),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc),
-        patch("app.services.chat.retrieve", return_value=retrieval) as retrieve,
-        patch("app.services.chat._start_background_persistence"),
+        patch("app.services.ai.chat.get_admin_client", return_value=mc),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc),
+        patch("app.services.ai.chat.retrieve", return_value=retrieval) as retrieve,
+        patch("app.services.ai.chat._start_background_persistence"),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -413,9 +413,9 @@ def test_conversation_reuse_with_citations():
     ]
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mc1),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc1),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mc1),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc1),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         r1 = process_chat_request(_chat_request(), session_ctx, provider1, TEST_USER_ID)
 
@@ -449,9 +449,9 @@ def test_conversation_reuse_with_citations():
     ]
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mc2),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc2),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mc2),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc2),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         r2 = process_chat_request(_chat_request(user_query="Follow-up"), session_ctx, provider2, TEST_USER_ID)
 
@@ -471,7 +471,7 @@ def test_generation_provider_file_unchanged():
     import hashlib
     import pathlib
 
-    provider_path = pathlib.Path(__file__).resolve().parent.parent / "app" / "services" / "generation_provider.py"
+    provider_path = pathlib.Path(__file__).resolve().parent.parent / "app" / "services" / "ai" / "generation_provider.py"
     content = provider_path.read_text(encoding="utf-8")
 
     # Verify key provider characteristics remain intact

@@ -17,11 +17,11 @@ import inspect
 import pytest
 
 from app.core.errors import AppError
-from app.repositories import admin_academics as repo
-from app.services import student_academic_context as ctxsvc
-from app.services import student_academic_profile as psvc
-from app.services import student_attendance as asvc
-from app.services import student_results as rsvc
+from app.repositories.admin import admin_academics as repo
+from app.services.students import student_academic_context as ctxsvc
+from app.services.students import student_academic_profile as psvc
+from app.services.students import student_attendance as asvc
+from app.services.students import student_results as rsvc
 
 TA = "a1111111-0000-0000-0000-000000000001"
 TB = "b2222222-0000-0000-0000-000000000002"

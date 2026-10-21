@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services import admin_memberships as service
-from app.services import platform_admin_invitations as invitation_service
+from app.services.admin import admin_memberships as service
+from app.services.invitations import platform_admin_invitations as invitation_service
 from supabase_auth.errors import AuthApiError
 
 INST_A = UUID("40000000-0000-0000-0000-000000000001")

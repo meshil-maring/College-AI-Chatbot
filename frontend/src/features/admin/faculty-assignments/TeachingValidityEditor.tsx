@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { updateFacultyTeachingValidity } from '../../../services/adminApi.ts'
+import { updateFacultyTeachingValidity } from '../../../services/admin/adminApi.ts'
 import { localDateTime } from './FacultyResponsibilityManager.tsx'
 import { buttonClass, controlClass, FieldError, periodError, primaryClass, RequestFeedback } from './facultyAssignmentUi.tsx'
 

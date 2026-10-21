@@ -79,7 +79,7 @@ def _active_institution_authorization():
             "is_active": True,
         }
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
         yield
 
 AUTH_HEADERS = {"Authorization": "Bearer valid.token.here"}
@@ -95,7 +95,7 @@ def _patch_faculty_auth(user=FACULTY_USER):
     """Authenticate every request as the faculty principal."""
     with ExitStack() as stack:
         stack.enter_context(
-            patch("app.core.security.verify_jwt", return_value=FACULTY_CLAIMS)
+            patch("app.core.security.tokens.verify_jwt", return_value=FACULTY_CLAIMS)
         )
         stack.enter_context(
             patch(
@@ -141,13 +141,13 @@ def test_auth_me_faculty_multi_role_precedence_unchanged():
 
 def _assert_faculty_denied_on_student_endpoint(path: str) -> None:
     with _patch_faculty_auth(), patch(
-        "app.repositories.admin_academics.get_student_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_by_user_id",
         return_value=None,
     ), patch(
-        "app.repositories.admin_academics.get_student_academic_profile_row",
+        "app.repositories.admin.admin_academics.get_student_academic_profile_row",
         return_value=None,
     ), patch(
-        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_approval_row_by_user_id",
         return_value=None,
     ):
         response = client.get(path, headers=AUTH_HEADERS)
@@ -191,10 +191,10 @@ def test_faculty_identity_parameters_cannot_widen_student_scope():
     mechanism: the student identity chain ignores them and still fails
     closed for a faculty principal (no student profile)."""
     with _patch_faculty_auth(), patch(
-        "app.repositories.admin_academics.get_student_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_by_user_id",
         return_value=None,
     ), patch(
-        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_approval_row_by_user_id",
         return_value=None,
     ):
         response = client.get(
@@ -290,7 +290,7 @@ def test_faculty_can_list_own_conversations():
     """Conversations authenticate with get_current_user (any role) and scope
     to the authenticated user_id server-side."""
     with _patch_faculty_auth(), patch(
-        "app.api.conversations.get_user_conversations",
+        "app.api.ai.conversations.get_user_conversations",
         return_value=[],
     ) as conversations_mock:
         response = client.get("/api/v1/conversations", headers=AUTH_HEADERS)
@@ -308,7 +308,7 @@ def _ingest_with_tenant(ks_institution: str | None):
     """POST /documents/ingest as faculty against a knowledge source whose
     tenant is controlled by the test. The downstream pipeline is stubbed so
     the test isolates ONLY the role + tenant authorization gate."""
-    from app.schemas.ingestion import IngestResponse
+    from app.schemas.knowledge.ingestion import IngestResponse
 
     claims = dict(FACULTY_CLAIMS)
     user = dict(FACULTY_USER, institution_id=INSTITUTION_A)
@@ -322,12 +322,12 @@ def _ingest_with_tenant(ks_institution: str | None):
         storage_object_key="k",
     )
     with (
-        patch("app.core.security.verify_jwt", return_value=claims),
+        patch("app.core.security.tokens.verify_jwt", return_value=claims),
         patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user)),
-        patch("app.api.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_knowledge_source", return_value=ks),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=ks),
         patch(
-            "app.api.ingestion.ingest_document",
+            "app.api.knowledge.ingestion.ingest_document",
             new=AsyncMock(return_value=stub_response),
         ),
     ):

@@ -4,11 +4,14 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api import admin
+from app.api.admin import common, student_workspace
 from app.core.security import get_current_user
 from app.main import app
-from app.services import authorization, faculty_responsibilities, faculty_students, student_registrations
-from app.services import faculty_attendance_reporting as reporting
+from app.services.auth import authorization
+from app.services.faculty import faculty_responsibilities
+from app.services.faculty import faculty_students
+from app.services.students import student_registrations
+from app.services.faculty import faculty_attendance_reporting as reporting
 
 TENANT = '11111111-1111-4111-8111-111111111111'
 FOREIGN = '11111111-1111-4111-8111-111111111112'
@@ -66,11 +69,11 @@ def api(monkeypatch):
     db.tables['faculty_attendance_rosters'] = [{'institution_id': TENANT, 'section_id': SECTION, 'roster_id': ROSTER,
         'register_number': 'CS002', 'student_name': 'Ben Rao', 'university_roll_number': None, 'email': None,
         'roster_status': 'PENDING_APPROVAL', 'linked_student_id': None, 'created_at': '2026-10-19T08:00:00Z'}]
-    for module in (admin, authorization, student_registrations, reporting, faculty_students, faculty_responsibilities):
+    for module in (common, authorization, student_registrations, reporting, faculty_students, faculty_responsibilities):
         monkeypatch.setattr(module, 'get_admin_client', lambda: db)
     monkeypatch.setattr(authorization.tenancy_repo, 'get_institution_by_id', lambda *_: {'status': 'active', 'is_active': True})
-    monkeypatch.setattr(admin, '_active_sections', lambda tenant: [SCOPE] if str(tenant) == TENANT else [])
-    monkeypatch.setattr(faculty_responsibilities, '_active_sections', admin._active_sections)
+    monkeypatch.setattr(student_workspace, '_active_sections', lambda tenant: [SCOPE] if str(tenant) == TENANT else [])
+    monkeypatch.setattr(faculty_responsibilities, '_active_sections', student_workspace._active_sections)
     app.dependency_overrides[get_current_user] = lambda: user
     try:
         yield TestClient(app), db, user
@@ -177,7 +180,7 @@ def test_create_permission_and_batch_are_rechecked_server_side(api):
 
 
 def test_invitation_route_uses_the_existing_registration_permission_and_server_actor(api, monkeypatch):
-    from app.services import student_registration_invitations
+    from app.services.invitations import student_registration_invitations
     client, _, user = api
     calls = []
     def send(actor, section, registration, **kwargs):

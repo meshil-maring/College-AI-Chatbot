@@ -1,30 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import {
-  PlatformInstitutionError,
-  cancelInvitation,
-  createInvitation,
-  getAdminRoster,
-  resendInvitation,
-  revokeInstitutionAdmin,
-} from '../../services/platformInstitutionsApi.ts'
-import type {
-  AdminInvitationCreated,
-  AdminInvitationResend,
-  AdminRoster,
-  AdminRosterEntry,
-} from '../../types/platform.ts'
-import { useAuth } from '../auth/AuthProvider.tsx'
-import {
-  InvitationLinkNotice,
-  ResendConfirmation,
-  RevokeConfirmation,
-  RosterTable,
-} from './AdminRosterViews.tsx'
-
-const inputClass =
-  'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400'
-const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400'
-
+import { cancelInvitation, resendInvitation, revokeInstitutionAdmin } from '../../services/platform/platformInstitutionsApi.ts'
+import { InvitationLinkNotice, ResendConfirmation, RevokeConfirmation, RosterTable } from './AdminRosterViews.tsx'
 /**
  * Phase 7.14 University Admin roster: invite, cancel and revoke.
  *
@@ -37,104 +12,41 @@ const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide tex
  * creation, with a controlled copy action. It is never persisted to storage and
  * never logged. Losing it means cancelling and reissuing the invitation.
  */
-export default function AdminRosterPanel({
-  institutionId,
-  institutionCode,
-  onChanged,
-}: {
-  institutionId: string
-  institutionCode: string
-  /** Let the parent refresh its institution detail (admin_count) afterwards. */
-  onChanged?: () => void
-}) {
-  const { accessToken } = useAuth()
-  const token = accessToken ?? ''
 
-  const [roster, setRoster] = useState<AdminRoster | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState<'invite' | 'cancel' | 'resend' | 'revoke' | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
-
-  const [showInvite, setShowInvite] = useState(false)
-  const [email, setEmail] = useState('')
-  const [created, setCreated] = useState<AdminInvitationCreated | null>(null)
-  // Phase 7.15: the same one-time-link reveal, reused after a resend so an
-  // operator who loses the emailed message still has a fallback link.
-  const [resent, setResent] = useState<AdminInvitationResend | null>(null)
-  const [copied, setCopied] = useState(false)
-  const [confirmRevoke, setConfirmRevoke] = useState<AdminRosterEntry | null>(null)
-  const [confirmResend, setConfirmResend] = useState<AdminRosterEntry | null>(null)
-
-  const refresh = useCallback(async (): Promise<void> => {
-    if (token === '') return
-    setLoading(true)
-    try {
-      setRoster(await getAdminRoster(token, institutionId))
-    } catch (err) {
-      setError(
-        err instanceof PlatformInstitutionError
-          ? err.message
-          : 'Could not load the admin roster. Please try again.',
-      )
-    } finally {
-      setLoading(false)
-    }
-  }, [token, institutionId])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
-
-  const run = useCallback(
-    async (
-      action: 'invite' | 'cancel' | 'resend' | 'revoke',
-      operation: () => Promise<string>,
-    ): Promise<void> => {
-      setBusy(action)
-      setError(null)
-      setNotice(null)
-      try {
-        setNotice(await operation())
-        await refresh()
-        onChanged?.()
-      } catch (err) {
-        setError(
-          err instanceof PlatformInstitutionError
-            ? err.message
-            : 'Something went wrong. Please try again.',
-        )
-      } finally {
-        setBusy(null)
-      }
-    },
-    [refresh, onChanged],
-  )
-
-  const invite = (): Promise<void> =>
-    run('invite', async () => {
-      const result = await createInvitation(token, institutionId, { email: email.trim() })
-      // Raw-link fallback is limited to responses from the explicit local/test
-      // capture providers. A production provider response never renders it.
-      setCreated(
-        result.email_delivery?.provider === 'local' || result.email_delivery?.provider === 'test'
-          ? result
-          : null,
-      )
-      setCopied(false)
-      setEmail('')
-      setShowInvite(false)
-      if (result.email_delivery?.status === 'pending') return 'Invitation email queued'
-      return result.email_delivery?.status === 'sent'
-        ? 'Invitation sent'
-        : 'Invitation could not be delivered. Try again later.'
-    })
+import { inputClass, labelClass, useAdminRoster } from './roster/useAdminRoster.ts'
+export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster>[0]) {
+  const model = useAdminRoster(props)
+  const {
+    institutionId,
+    institutionCode,
+    token,
+    roster,
+    loading,
+    busy,
+    error,
+    setError,
+    notice,
+    setNotice,
+    showInvite,
+    setShowInvite,
+    email,
+    setEmail,
+    created,
+    setCreated,
+    resent,
+    setResent,
+    copied,
+    setCopied,
+    confirmRevoke,
+    setConfirmRevoke,
+    confirmResend,
+    setConfirmResend,
+    run,
+    invite,
+  } = model
 
   return (
-    <section
-      aria-labelledby="admin-roster-heading"
-      className="rounded-2xl border border-slate-700 bg-slate-900 p-6"
-    >
+    <section aria-labelledby="admin-roster-heading" className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 id="admin-roster-heading" className="font-semibold text-white">
           University Admins
@@ -174,7 +86,10 @@ export default function AdminRosterPanel({
           created={created}
           copied={copied}
           setCopied={setCopied}
-          onDone={() => { setCreated(null); setCopied(false) }}
+          onDone={() => {
+            setCreated(null)
+            setCopied(false)
+          }}
         />
       ) : null}
 
@@ -183,7 +98,9 @@ export default function AdminRosterPanel({
           created={resent}
           copied={copied}
           setCopied={setCopied}
-          onDone={() => { setResent(null) }}
+          onDone={() => {
+            setResent(null)
+          }}
         />
       ) : null}
 
@@ -204,13 +121,15 @@ export default function AdminRosterPanel({
             type="email"
             className={inputClass}
             value={email}
-            onChange={(event) => { setEmail(event.target.value) }}
+            onChange={(event) => {
+              setEmail(event.target.value)
+            }}
             placeholder="dean@university.example"
             required
           />
           <p className="mt-2 text-xs text-slate-500">
-            Invitation expires in 24 hours. No password is set here — the invited person
-            creates their own when they open the link.
+            Invitation expires in 24 hours. No password is set here — the invited person creates their own when they
+            open the link.
           </p>
           <div className="mt-4 flex items-center gap-3">
             <button
@@ -222,7 +141,9 @@ export default function AdminRosterPanel({
             </button>
             <button
               type="button"
-              onClick={() => { setShowInvite(false) }}
+              onClick={() => {
+                setShowInvite(false)
+              }}
               className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
             >
               Cancel
@@ -230,7 +151,7 @@ export default function AdminRosterPanel({
           </div>
         </form>
       ) : null}
-{loading ? (
+      {loading ? (
         <p role="status" className="mt-4 text-sm text-slate-400">
           Loading admin roster...
         </p>
@@ -241,14 +162,8 @@ export default function AdminRosterPanel({
           busy={busy}
           onCancel={(entry) =>
             void run('cancel', async () => {
-              const result = await cancelInvitation(
-                token,
-                institutionId,
-                entry.invitation_id as string,
-              )
-              return result.already_applied
-                ? `The invitation for ${entry.email} was already closed.`
-                : result.message
+              const result = await cancelInvitation(token, institutionId, entry.invitation_id as string)
+              return result.already_applied ? `The invitation for ${entry.email} was already closed.` : result.message
             })
           }
           onResend={(entry) => {
@@ -268,23 +183,19 @@ export default function AdminRosterPanel({
         <ResendConfirmation
           entry={confirmResend}
           busy={busy === 'resend'}
-          onCancel={() => { setConfirmResend(null) }}
+          onCancel={() => {
+            setConfirmResend(null)
+          }}
           onConfirm={() => {
             const target = confirmResend
             setConfirmResend(null)
             void run('resend', async () => {
-              const result = await resendInvitation(
-                token,
-                institutionId,
-                target.invitation_id as string,
-              )
+              const result = await resendInvitation(token, institutionId, target.invitation_id as string)
               // The new one-time link is surfaced here, exactly as on creation,
               // so the operator has a fallback if the email does not arrive. It
               // is held in component state only — never persisted or logged.
               setResent(
-                result.email_delivery.provider === 'local' || result.email_delivery.provider === 'test'
-                  ? result
-                  : null,
+                result.email_delivery.provider === 'local' || result.email_delivery.provider === 'test' ? result : null,
               )
               setCopied(false)
               if (result.email_delivery.status === 'pending') return 'Invitation email queued'
@@ -300,16 +211,14 @@ export default function AdminRosterPanel({
         <RevokeConfirmation
           entry={confirmRevoke}
           busy={busy === 'revoke'}
-          onCancel={() => { setConfirmRevoke(null) }}
+          onCancel={() => {
+            setConfirmRevoke(null)
+          }}
           onConfirm={() => {
             const target = confirmRevoke
             setConfirmRevoke(null)
             void run('revoke', async () => {
-              const result = await revokeInstitutionAdmin(
-                token,
-                institutionId,
-                target.user_id as string,
-              )
+              const result = await revokeInstitutionAdmin(token, institutionId, target.user_id as string)
               return result.revoked
                 ? `${target.email} is no longer a University Admin of this institution.`
                 : result.message

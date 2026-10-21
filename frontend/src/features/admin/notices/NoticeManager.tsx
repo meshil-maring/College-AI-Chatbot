@@ -6,13 +6,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
-import { useAuth } from '../../auth/AuthProvider.tsx'
+import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import {
   createNotice,
   deleteNotice,
   listNotices,
   updateNotice,
-} from '../../../services/adminApi.ts'
+} from '../../../services/admin/adminApi.ts'
 import type { Notice, NoticeCreate } from '../../../types/admin.ts'
 
 export default function NoticeManager() {

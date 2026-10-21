@@ -148,11 +148,11 @@ def test_super_admin_can_list_institutions() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.list_platform_institutions",
+            "app.services.platform.platform_institutions.platform_repo.list_platform_institutions",
             return_value=[INSTITUTION_ROW],
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.list_institution_admin_counts",
+            "app.services.platform.platform_institutions.platform_repo.list_institution_admin_counts",
             return_value={INSTITUTION_ID: 2},
         ),
     ):
@@ -180,11 +180,11 @@ def test_super_admin_can_read_institution_detail() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=INSTITUTION_ROW,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.count_institution_admins",
+            "app.services.platform.platform_institutions.platform_repo.count_institution_admins",
             return_value=1,
         ),
     ):
@@ -205,22 +205,22 @@ def test_super_admin_can_create_institution() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.institution_code_taken",
+            "app.services.platform.platform_institutions.platform_repo.institution_code_taken",
             return_value=False,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_organization_id",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_organization_id",
             return_value="50000000-0000-0000-0000-000000000001",
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.insert_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.insert_platform_institution",
             return_value=INSTITUTION_ROW,
         ) as insert,
         patch(
-            "app.services.platform_institutions.platform_repo.record_institution_audit"
+            "app.services.platform.platform_institutions.platform_repo.record_institution_audit"
         ) as audit,
         patch(
-            "app.services.platform_institutions.platform_repo.count_institution_admins",
+            "app.services.platform.platform_institutions.platform_repo.count_institution_admins",
             return_value=0,
         ),
     ):
@@ -244,18 +244,18 @@ def test_super_admin_can_update_institution_configuration() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=INSTITUTION_ROW,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.update_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.update_platform_institution",
             return_value=updated,
         ) as update,
         patch(
-            "app.services.platform_institutions.platform_repo.record_institution_audit"
+            "app.services.platform.platform_institutions.platform_repo.record_institution_audit"
         ) as audit,
         patch(
-            "app.services.platform_institutions.platform_repo.count_institution_admins",
+            "app.services.platform.platform_institutions.platform_repo.count_institution_admins",
             return_value=0,
         ),
     ):
@@ -282,15 +282,15 @@ def test_super_admin_can_suspend_and_activate_institution() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=INSTITUTION_ROW,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.set_institution_status",
+            "app.services.platform.platform_institutions.platform_repo.set_institution_status",
             return_value=suspended,
         ) as set_status,
         patch(
-            "app.services.platform_institutions.platform_repo.record_institution_audit"
+            "app.services.platform.platform_institutions.platform_repo.record_institution_audit"
         ) as audit,
     ):
         response = client.post(f"/api/v1/platform/institutions/{INSTITUTION_ID}/suspend")
@@ -309,15 +309,15 @@ def test_super_admin_can_suspend_and_activate_institution() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=suspended,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.set_institution_status",
+            "app.services.platform.platform_institutions.platform_repo.set_institution_status",
             return_value=INSTITUTION_ROW,
         ) as set_status,
         patch(
-            "app.services.platform_institutions.platform_repo.record_institution_audit"
+            "app.services.platform.platform_institutions.platform_repo.record_institution_audit"
         ) as audit,
     ):
         response = client.post(f"/api/v1/platform/institutions/{INSTITUTION_ID}/activate")
@@ -334,14 +334,14 @@ def test_suspension_is_idempotent_and_audited_as_already_applied() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=suspended,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.set_institution_status"
+            "app.services.platform.platform_institutions.platform_repo.set_institution_status"
         ) as set_status,
         patch(
-            "app.services.platform_institutions.platform_repo.record_institution_audit"
+            "app.services.platform.platform_institutions.platform_repo.record_institution_audit"
         ) as audit,
     ):
         response = client.post(f"/api/v1/platform/institutions/{INSTITUTION_ID}/suspend")
@@ -358,7 +358,7 @@ def test_unknown_institution_is_a_clean_404_for_every_platform_route() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=None,
         ),
     ):
@@ -392,7 +392,7 @@ def test_duplicate_institution_code_is_rejected_case_insensitively(payload) -> N
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.institution_code_taken",
+            "app.services.platform.platform_institutions.platform_repo.institution_code_taken",
             return_value=True,
         ),
     ):
@@ -528,26 +528,26 @@ def test_super_admin_can_assign_existing_account_as_university_admin() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=INSTITUTION_ROW,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.get_user_by_email",
+            "app.services.platform.platform_institutions.platform_repo.get_user_by_email",
             return_value=user_row,
         ) as lookup,
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_organization_id",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_organization_id",
             return_value="50000000-0000-0000-0000-000000000001",
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.has_institution_admin_grant",
+            "app.services.platform.platform_institutions.platform_repo.has_institution_admin_grant",
             return_value=False,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.assign_institution_admin"
+            "app.services.platform.platform_institutions.platform_repo.assign_institution_admin"
         ) as assign,
         patch(
-            "app.services.platform_institutions.platform_repo.record_institution_audit"
+            "app.services.platform.platform_institutions.platform_repo.record_institution_audit"
         ) as audit,
     ):
         response = client.post(
@@ -578,26 +578,26 @@ def test_assignment_is_idempotent_for_an_already_assigned_admin() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=INSTITUTION_ROW,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.get_user_by_email",
+            "app.services.platform.platform_institutions.platform_repo.get_user_by_email",
             return_value=user_row,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_organization_id",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_organization_id",
             return_value="50000000-0000-0000-0000-000000000001",
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.has_institution_admin_grant",
+            "app.services.platform.platform_institutions.platform_repo.has_institution_admin_grant",
             return_value=True,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.assign_institution_admin"
+            "app.services.platform.platform_institutions.platform_repo.assign_institution_admin"
         ) as assign,
         patch(
-            "app.services.platform_institutions.platform_repo.record_institution_audit"
+            "app.services.platform.platform_institutions.platform_repo.record_institution_audit"
         ) as audit,
     ):
         response = client.post(
@@ -617,15 +617,15 @@ def test_assignment_never_creates_an_auth_account() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=INSTITUTION_ROW,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.get_user_by_email",
+            "app.services.platform.platform_institutions.platform_repo.get_user_by_email",
             return_value=None,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.assign_institution_admin"
+            "app.services.platform.platform_institutions.platform_repo.assign_institution_admin"
         ) as assign,
     ):
         response = client.post(
@@ -643,11 +643,11 @@ def test_assignment_rejects_an_inactive_account() -> None:
     with (
         _allow_super_admin(),
         patch(
-            "app.services.platform_institutions.platform_repo.get_platform_institution",
+            "app.services.platform.platform_institutions.platform_repo.get_platform_institution",
             return_value=INSTITUTION_ROW,
         ),
         patch(
-            "app.services.platform_institutions.platform_repo.get_user_by_email",
+            "app.services.platform.platform_institutions.platform_repo.get_user_by_email",
             return_value={"id": TARGET_USER_ID, "email": "x@y.example", "status": "inactive"},
         ),
     ):
@@ -665,7 +665,7 @@ def test_assignment_rejects_an_inactive_account() -> None:
 
 
 def test_identity_and_scope_columns_are_not_mutable() -> None:
-    from app.repositories.platform_institutions import MUTABLE_INSTITUTION_FIELDS
+    from app.repositories.platform.platform_institutions import MUTABLE_INSTITUTION_FIELDS
 
     assert "institution_id" not in MUTABLE_INSTITUTION_FIELDS
     assert "organization_id" not in MUTABLE_INSTITUTION_FIELDS
@@ -675,7 +675,7 @@ def test_identity_and_scope_columns_are_not_mutable() -> None:
 
 
 def test_platform_projection_excludes_organization_and_contact_columns() -> None:
-    from app.repositories.platform_institutions import PLATFORM_INSTITUTION_COLUMNS
+    from app.repositories.platform.platform_institutions import PLATFORM_INSTITUTION_COLUMNS
 
     for sensitive in (
         "organization_id",
@@ -691,7 +691,7 @@ def test_audit_record_never_accepts_credential_fields() -> None:
     """The audit signature only accepts non-sensitive summary data."""
     import inspect
 
-    from app.repositories.platform_institutions import record_institution_audit
+    from app.repositories.platform.platform_institutions import record_institution_audit
 
     params = set(inspect.signature(record_institution_audit).parameters)
     assert params == {
@@ -716,7 +716,7 @@ def test_admin_role_projection_uses_the_real_roles_primary_key() -> None:
     """
     from unittest.mock import MagicMock
 
-    from app.repositories.platform_institutions import _admin_role
+    from app.repositories.platform.platform_institutions import _admin_role
 
     db = MagicMock()
     roles = db.table.return_value
@@ -725,7 +725,7 @@ def test_admin_role_projection_uses_the_real_roles_primary_key() -> None:
         "name": "admin",
         "is_active": True,
     }
-    with patch("app.repositories.platform_institutions.Client", return_value=db):
+    with patch("app.repositories.platform.platform_institutions.Client", return_value=db):
         role = _admin_role(db)
 
     assert role is not None

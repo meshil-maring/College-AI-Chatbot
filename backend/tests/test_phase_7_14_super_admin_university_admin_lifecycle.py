@@ -28,7 +28,7 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services.invitation_abuse_controls import reset_invitation_abuse_state
+from app.services.invitations.invitation_abuse_controls import reset_invitation_abuse_state
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -128,14 +128,14 @@ def _isolated_invitation_controls():
 def _invitation_repo_patch(**kwargs):
     """Patch the invitation repository used by the service module."""
     return patch.multiple(
-        "app.services.platform_admin_invitations.invite_repo", **kwargs
+        "app.services.invitations.platform_admin_invitations.invite_repo", **kwargs
     )
 
 
 def _platform_repo_patch(**kwargs):
     """Patch the institution repository used by the service module."""
     return patch.multiple(
-        "app.services.platform_admin_invitations.platform_repo", **kwargs
+        "app.services.invitations.platform_admin_invitations.platform_repo", **kwargs
     )
 
 
@@ -237,7 +237,7 @@ def test_invitation_request_cannot_smuggle_role_or_scope_fields() -> None:
 
 def test_invitation_role_is_always_the_server_constant() -> None:
     """The repository writes 'admin'; no caller can influence role_name."""
-    from app.repositories import platform_admin_invitations as repo
+    from app.repositories.invitations import platform_admin_invitations as repo
 
     assert repo.INVITED_ROLE == "admin"
     assert "INVITED_ROLE" in inspect.getsource(repo.insert_invitation)
@@ -341,22 +341,22 @@ def _accept_patches(
             assign_institution_admin=assign if assign is not None else MagicMock(),
             record_institution_audit=audit if audit is not None else MagicMock(),
         ),
-        patch("app.services.platform_admin_invitations.get_admin_client", return_value=MagicMock()),
-        patch("app.services.platform_admin_invitations.tenancy_repo.get_user_by_email", return_value=None),
+        patch("app.services.invitations.platform_admin_invitations.get_admin_client", return_value=MagicMock()),
+        patch("app.services.invitations.platform_admin_invitations.tenancy_repo.get_user_by_email", return_value=None),
         patch(
-            "app.services.platform_admin_invitations.student_svc._create_auth_account",
+            "app.services.invitations.platform_admin_invitations.student_svc._create_auth_account",
             MagicMock(return_value="30000000-0000-0000-0000-000000000001"),
         ),
         patch(
-            "app.services.platform_admin_invitations.student_svc._create_public_user",
+            "app.services.invitations.platform_admin_invitations.student_svc._create_public_user",
             MagicMock(return_value=TARGET_USER_ID),
         ),
         patch(
-            "app.services.platform_admin_invitations.student_svc._try_delete_user_row",
+            "app.services.invitations.platform_admin_invitations.student_svc._try_delete_user_row",
             MagicMock(),
         ),
         patch(
-            "app.services.platform_admin_invitations.student_svc._try_delete_auth_user",
+            "app.services.invitations.platform_admin_invitations.student_svc._try_delete_auth_user",
             MagicMock(),
         ),
     ]
@@ -841,7 +841,7 @@ def test_revocation_of_an_unknown_account_is_a_clean_404() -> None:
 
 def test_revocation_delete_re_asserts_user_role_and_scope() -> None:
     """The DELETE re-checks every component, so it cannot widen by accident."""
-    from app.repositories import platform_institutions as repo
+    from app.repositories.platform import platform_institutions as repo
 
     db = MagicMock()
     table = db.table.return_value
@@ -919,7 +919,7 @@ def test_super_admin_can_read_the_audit_ledger() -> None:
             ),
         ),
         patch(
-            "app.services.platform_admin_invitations._institution_name_index",
+            "app.services.invitations.platform_admin_invitations._institution_name_index",
             MagicMock(
                 return_value=[
                     {"institution_id": INSTITUTION_ID, "name": "Unico University"}
@@ -1002,7 +1002,7 @@ def test_no_audit_mutation_endpoint_exists_anywhere() -> None:
 
 
 def test_tokens_are_cryptographically_random_and_long_enough() -> None:
-    from app.repositories import platform_admin_invitations as repo
+    from app.repositories.invitations import platform_admin_invitations as repo
 
     tokens = {repo.generate_invitation_token() for _ in range(200)}
     # No collisions across a large sample.
@@ -1015,7 +1015,7 @@ def test_tokens_are_cryptographically_random_and_long_enough() -> None:
 
 
 def test_only_the_sha256_digest_is_ever_persisted_or_looked_up() -> None:
-    from app.repositories import platform_admin_invitations as repo
+    from app.repositories.invitations import platform_admin_invitations as repo
 
     digest = repo.hash_invitation_token(RAW_TOKEN)
     assert digest == RAW_TOKEN_HASH
@@ -1032,7 +1032,7 @@ def test_only_the_sha256_digest_is_ever_persisted_or_looked_up() -> None:
 
 
 def test_the_claim_rpc_carries_the_exact_validated_generation_and_reservation() -> None:
-    from app.repositories import platform_admin_invitations as repo
+    from app.repositories.invitations import platform_admin_invitations as repo
 
     db = MagicMock()
     db.rpc.return_value.execute.return_value.data = {"accepted": True}
@@ -1050,7 +1050,7 @@ def test_the_claim_rpc_carries_the_exact_validated_generation_and_reservation() 
 
 
 def test_cancel_and_expire_delegate_to_guarded_recovery_rpc() -> None:
-    from app.repositories import platform_admin_invitations as repo
+    from app.repositories.invitations import platform_admin_invitations as repo
     db = MagicMock()
     db.rpc.return_value.execute.return_value.data = {"closed":True,"audit_persisted":True,"already_applied":False}
     assert repo.cancel_invitation(db,INVITATION_ID) is True

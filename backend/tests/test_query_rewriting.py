@@ -2,10 +2,10 @@
 
 from unittest.mock import MagicMock
 
-from app.schemas.generation import AIContext, ConversationTurn
-from app.services.generation_provider import GenerationResult
-from app.services.chat import _is_self_contained_question
-from app.services.query_rewriting import (
+from app.schemas.ai.generation import AIContext, ConversationTurn
+from app.services.ai.generation_provider import GenerationResult
+from app.services.ai.chat import _is_self_contained_question
+from app.services.ai.query_rewriting import (
     REWRITE_SYSTEM_INSTRUCTIONS,
     build_rewrite_context,
     compact_history,

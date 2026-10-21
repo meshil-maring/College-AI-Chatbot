@@ -67,7 +67,7 @@ describe('frontend environment configuration', () => {
   it('keeps the API base URL default same-origin (/api), not localhost', () => {
     // The services resolve: (import.meta.env?.VITE_API_BASE_URL ?? '/api')
     // Verify the fallback literal is the same-origin path, not a host URL.
-    const api = readFileSync(join(SRC_ROOT, 'services', 'api.ts'), 'utf8')
+    const api = readFileSync(join(SRC_ROOT, 'services', 'chat', 'api.ts'), 'utf8')
     expect(api).toMatch(/VITE_API_BASE_URL\s*\?\? *['"]\/api['"]/)
     expect(api).not.toMatch(/localhost|127\.0\.0\.1/)
   })

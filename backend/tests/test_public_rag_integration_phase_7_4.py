@@ -14,10 +14,10 @@ from fastapi.testclient import TestClient
 
 from app.config import settings
 from app.main import app
-from app.schemas.generation import RetrievedChunk
-from app.services.generation_provider import GenerationResult
-from app.services.public_chat import _bound_public_context
-from app.services.public_knowledge_policy import PublicKnowledgePolicy
+from app.schemas.ai.generation import RetrievedChunk
+from app.services.ai.generation_provider import GenerationResult
+from app.services.ai.public_chat import _bound_public_context
+from app.services.knowledge.public_knowledge_policy import PublicKnowledgePolicy
 
 INST_A = "11000000-0000-0000-0000-000000000001"
 INST_B = "11000000-0000-0000-0000-000000000002"
@@ -221,9 +221,9 @@ class _CapturingProvider:
 
 def _post(client: _Client, provider: _CapturingProvider, message: str = "Programs?"):
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=client),
-        patch("app.services.retrieval.get_admin_client", return_value=client),
-        patch("app.services.retrieval.embed_query", return_value=[0.25] * 1536) as embed,
+        patch("app.services.ai.public_chat.get_admin_client", return_value=client),
+        patch("app.services.knowledge.retrieval.get_admin_client", return_value=client),
+        patch("app.services.knowledge.retrieval.embed_query", return_value=[0.25] * 1536) as embed,
         patch("app.main.OpenRouterGenerationProvider", return_value=provider),
     ):
         response = TestClient(app, raise_server_exceptions=False).post(
@@ -374,25 +374,25 @@ def test_public_dependency_failures_return_sanitized_errors(dependency, expected
     provider = _CapturingProvider()
     secret = "SELECT api_key FROM private_table at C:\\secret\\app.py"
     patches = [
-        patch("app.services.public_chat.get_admin_client", return_value=client),
-        patch("app.services.retrieval.get_admin_client", return_value=client),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=client),
+        patch("app.services.knowledge.retrieval.get_admin_client", return_value=client),
         patch("app.main.OpenRouterGenerationProvider", return_value=provider),
     ]
     if dependency == "embedding":
-        patches.append(patch("app.services.retrieval.embed_query", side_effect=RuntimeError(secret)))
+        patches.append(patch("app.services.knowledge.retrieval.embed_query", side_effect=RuntimeError(secret)))
     else:
-        patches.append(patch("app.services.retrieval.embed_query", return_value=[0.25] * 1536))
+        patches.append(patch("app.services.knowledge.retrieval.embed_query", return_value=[0.25] * 1536))
     if dependency == "rpc":
         client.rpc_error = RuntimeError(secret)
     elif dependency == "provenance":
         patches.append(
             patch(
-                "app.repositories.public_knowledge.get_chunk_provenance",
+                "app.repositories.knowledge.public_knowledge.get_chunk_provenance",
                 side_effect=RuntimeError(secret),
             )
         )
     elif dependency == "context":
-        patches.append(patch("app.services.public_chat.assemble_context", side_effect=RuntimeError(secret)))
+        patches.append(patch("app.services.ai.public_chat.assemble_context", side_effect=RuntimeError(secret)))
 
     with ExitStack() as stack:
         for dependency_patch in patches:
@@ -457,7 +457,7 @@ def test_public_path_never_calls_generic_authenticated_vector_search():
     client = _Client()
     provider = _CapturingProvider()
     with patch(
-        "app.services.retrieval.search_chunks",
+        "app.services.knowledge.retrieval.search_chunks",
         side_effect=AssertionError("generic authenticated retrieval used"),
     ) as generic:
         response, _ = _post(client, provider)

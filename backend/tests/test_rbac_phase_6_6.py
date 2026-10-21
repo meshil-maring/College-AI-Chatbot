@@ -14,8 +14,9 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import _ADMIN, _APPROVAL
-from app.api.ingestion import _INGEST_ALLOWED
+from app.api.admin.dependencies import _ADMIN
+from app.api.admin.dependencies import _APPROVAL
+from app.api.knowledge.ingestion import _INGEST_ALLOWED
 from app.core.security import get_current_user
 from app.main import app
 
@@ -54,9 +55,9 @@ def _user(tenant=None, roles=("admin",)):
 @pytest.fixture(autouse=True)
 def _active_scope_lookup():
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
             side_effect=lambda _db, institution_id: {
                 "institution_id": str(institution_id),
                 "status": "active",
@@ -151,7 +152,7 @@ def test_institution_admin_cannot_cross_tenant_on_admin_list():
     _as(_user(TENANT_A, roles=("admin",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.list_students"
+            "app.services.admin.admin_academics.list_students"
         ) as list_students:
             resp = client.get(
                 f"/api/v1/admin/students?institution_id={TENANT_B}"
@@ -167,7 +168,7 @@ def test_institution_admin_forced_to_own_institution():
     _as(_user(TENANT_A, roles=("admin",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.list_students", return_value=[]
+            "app.services.admin.admin_academics.list_students", return_value=[]
         ) as list_students:
             resp = client.get(
                 f"/api/v1/admin/students?institution_id={TENANT_A}"
@@ -182,7 +183,7 @@ def test_tenantless_ordinary_admin_has_no_global_authority():
     _as(_user(None, roles=("admin",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.list_students", return_value=[]
+            "app.services.admin.admin_academics.list_students", return_value=[]
         ) as list_students:
             resp = client.get(
                 f"/api/v1/admin/students?institution_id={TENANT_B}"
@@ -200,10 +201,10 @@ def test_staff_can_approve_own_tenant_student():
     try:
         with (
             patch(
-                "app.api.admin.admin_academics.approve_student",
+                "app.services.admin.admin_academics.approve_student",
                 return_value=row,
             ) as approve,
-            patch("app.api.admin._record_audit"),
+            patch("app.api.admin.common.record_audit"),
         ):
             resp = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
     finally:
@@ -229,7 +230,7 @@ def test_platform_staff_cannot_obtain_platform_admin_authority():
     _as(_user(None, roles=("staff",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.approve_student"
+            "app.services.admin.admin_academics.approve_student"
         ) as approve:
             r1 = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
             r2 = client.get("/api/v1/admin/students/pending")
@@ -266,7 +267,7 @@ def test_faculty_can_reach_permitted_ingestion_operation():
         },
     }
     claims = {"sub": faculty["auth_user_id"], "email": faculty["email"]}
-    p1 = patch("app.core.security.verify_jwt", return_value=claims)
+    p1 = patch("app.core.security.tokens.verify_jwt", return_value=claims)
     p2 = patch(
         "app.db.supabase.get_user_by_auth_id",
         new=AsyncMock(return_value=faculty),
@@ -274,19 +275,19 @@ def test_faculty_can_reach_permitted_ingestion_operation():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.api.ingestion.get_processing_run_with_version",
+            "app.api.knowledge.ingestion.get_processing_run_with_version",
             return_value=run,
         ),
         patch(
-            "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+            "app.api.knowledge.ingestion.knowledge_repo.get_knowledge_source_detail",
             return_value={"knowledge_source_id": KS_ID, "institution_id": TENANT_A},
         ),
-        patch("app.api.ingestion.get_extracted_text", return_value="text"),
-        patch("app.api.ingestion.delete_chunks_for_run"),
-        patch("app.api.ingestion.insert_chunks"),
-        patch("app.api.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.get_extracted_text", return_value="text"),
+        patch("app.api.knowledge.ingestion.delete_chunks_for_run"),
+        patch("app.api.knowledge.ingestion.insert_chunks"),
+        patch("app.api.knowledge.ingestion.update_run_status"),
     ):
         resp = client.post(
             f"/api/v1/documents/{RUN_ID}/chunk",
@@ -336,7 +337,7 @@ def test_faculty_cannot_cross_tenant_on_ingest():
     }
     ks = {"knowledge_source_id": KS_ID, "institution_id": TENANT_B}
     claims = {"sub": faculty["auth_user_id"], "email": faculty["email"]}
-    p1 = patch("app.core.security.verify_jwt", return_value=claims)
+    p1 = patch("app.core.security.tokens.verify_jwt", return_value=claims)
     p2 = patch(
         "app.db.supabase.get_user_by_auth_id",
         new=AsyncMock(return_value=faculty),
@@ -344,8 +345,8 @@ def test_faculty_cannot_cross_tenant_on_ingest():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=ks),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=ks),
     ):
         resp = client.post(
             "/api/v1/documents/ingest",
@@ -381,7 +382,7 @@ def test_student_can_access_own_profile():
     chain.maybe_single.return_value.execute.return_value = MagicMock(data=row)
     try:
         with patch(
-            "app.services.student_data.get_admin_client", return_value=db
+            "app.services.students.student_data.get_admin_client", return_value=db
         ):
             resp = client.get("/api/v1/students/me/profile")
     finally:
@@ -408,7 +409,7 @@ def test_student_cannot_access_ingestion_operations():
         "email": claims["email"],
         "roles": ["student"],
     }
-    p1 = patch("app.core.security.verify_jwt", return_value=claims)
+    p1 = patch("app.core.security.tokens.verify_jwt", return_value=claims)
     p2 = patch(
         "app.db.supabase.get_user_by_auth_id",
         new=AsyncMock(return_value=user),
@@ -448,10 +449,10 @@ def test_student_cannot_access_another_students_resource():
     _as(user_a)
     try:
         with patch(
-            "app.services.conversation_history.get_admin_client",
+            "app.services.ai.conversation_history.get_admin_client",
             return_value=MagicMock(),
         ), patch(
-            "app.services.conversation_history.get_conversation",
+            "app.services.ai.conversation_history.get_conversation",
             return_value={
                 "conversation_id": str(uuid4()),
                 "user_id": "10000000-0000-0000-0000-000000000002",
@@ -521,10 +522,10 @@ def test_approval_body_tampering_is_inert():
     try:
         with (
             patch(
-                "app.api.admin.admin_academics.approve_student",
+                "app.services.admin.admin_academics.approve_student",
                 return_value=row,
             ) as approve,
-            patch("app.api.admin._record_audit"),
+            patch("app.api.admin.common.record_audit"),
         ):
             resp = client.post(
                 f"/api/v1/admin/students/{STUDENT_A}/approve",
@@ -544,7 +545,7 @@ def test_foreign_institution_id_query_is_rejected_for_bound_admin():
     _as(_user(TENANT_A, roles=("admin",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.list_students"
+            "app.services.admin.admin_academics.list_students"
         ) as list_students:
             resp = client.get(
                 f"/api/v1/admin/students?institution_id={TENANT_B}"
@@ -565,7 +566,7 @@ def test_tenant_bound_user_cannot_access_foreign_tenant_object():
     }
     try:
         with patch(
-            "app.api.admin.admin_academics.get_student", return_value=foreign
+            "app.services.admin.admin_academics.get_student", return_value=foreign
         ):
             resp = client.get(f"/api/v1/admin/students/{STUDENT_A}")
     finally:
@@ -578,7 +579,7 @@ def test_forbidden_never_runs_protected_operation():
     _as(_user(TENANT_A, roles=("student",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.list_students"
+            "app.services.admin.admin_academics.list_students"
         ) as list_students:
             resp = client.get("/api/v1/admin/students")
     finally:

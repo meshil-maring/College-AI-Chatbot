@@ -15,7 +15,7 @@ import httpx
 
 from app.config import settings
 from app.db.supabase import get_admin_client
-from app.services.storage import get_r2_client
+from app.services.knowledge.storage import get_r2_client
 
 
 def _check(label: str, operation: Callable[[], object]) -> bool:

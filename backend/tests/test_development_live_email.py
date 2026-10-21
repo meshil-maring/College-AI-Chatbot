@@ -2,7 +2,7 @@ import httpx
 import pytest
 
 from app.config import settings
-from app.services import email_delivery as delivery
+from app.services.email import email_delivery as delivery
 
 
 @pytest.fixture

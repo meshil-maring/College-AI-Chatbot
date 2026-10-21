@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { lookupInstitution, RegistrationError, registrationErrorMessage } from '../../services/registration.ts'
+import { lookupInstitution, RegistrationError, registrationErrorMessage } from '../../services/registration/registration.ts'
 
 const INSTITUTION_CODE_PATTERN = /^[A-Z0-9][A-Z0-9_-]{0,31}$/
 

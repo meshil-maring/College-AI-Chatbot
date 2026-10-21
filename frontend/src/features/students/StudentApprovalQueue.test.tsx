@@ -2,11 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StudentApprovalQueue from './StudentApprovalQueue.tsx'
-import { approvePendingStudent, listPendingStudents, rejectPendingStudent } from '../../services/adminApi.ts'
+import { approvePendingStudent, listPendingStudents, rejectPendingStudent } from '../../services/admin/adminApi.ts'
 import type { PendingStudent } from '../../types/admin.ts'
 
-vi.mock('../../services/adminApi.ts', async (original) => ({
-  ...await original<typeof import('../../services/adminApi.ts')>(),
+vi.mock('../../services/admin/adminApi.ts', async (original) => ({
+  ...await original<typeof import('../../services/admin/adminApi.ts')>(),
   listPendingStudents: vi.fn(), approvePendingStudent: vi.fn(), rejectPendingStudent: vi.fn(),
 }))
 

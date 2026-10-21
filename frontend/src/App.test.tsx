@@ -14,19 +14,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import App from './App.tsx'
-import * as adminApi from './services/adminApi.ts'
-import * as platformApi from './services/platformApi.ts'
-import * as platformInstitutionsApi from './services/platformInstitutionsApi.ts'
+import * as adminApi from './services/admin/adminApi.ts'
+import * as platformApi from './services/platform/platformApi.ts'
+import * as platformInstitutionsApi from './services/platform/platformInstitutionsApi.ts'
 import type { DashboardSummary } from './types/admin.ts'
 import { emptyDashboardSummary } from './test/adminDashboardFixtures.ts'
-import { getMyAcademicProfile } from './services/studentApi.ts'
-import { PROFILE } from './features/student/studentTestFixtures.ts'
+import { getMyAcademicProfile } from './services/students/studentApi.ts'
+import { PROFILE } from './features/student/__tests__/studentTestFixtures.ts'
 
-vi.mock('./services/adminApi.ts')
-vi.mock('./services/studentApi.ts')
-vi.mock('./services/platformApi.ts')
-vi.mock('./services/platformInstitutionsApi.ts')
-vi.mock('./services/devAuth.ts', () => ({
+vi.mock('./services/admin/adminApi.ts')
+vi.mock('./services/students/studentApi.ts')
+vi.mock('./services/platform/platformApi.ts')
+vi.mock('./services/platform/platformInstitutionsApi.ts')
+vi.mock('./services/auth/devAuth.ts', () => ({
   fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
 }))
 
@@ -43,7 +43,7 @@ const authState = vi.hoisted(() => ({
   logout: vi.fn(),
 }))
 
-vi.mock('./features/auth/AuthProvider.tsx', () => ({
+vi.mock('./features/auth/session/AuthProvider.tsx', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => authState,
 }))

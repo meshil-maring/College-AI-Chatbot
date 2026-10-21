@@ -20,25 +20,25 @@ from app.core.security import (
     resolve_primary_role,
     scope_tenant,
 )
-from app.api.platform import router as platform_router
-from app.api.admin_invitations import router as admin_invitations_router
-from app.api.super_admin_registration import router as super_admin_registration_router
-from app.api.mailgun_webhooks import router as mailgun_webhooks_router
-from app.api.ingestion import router as ingestion_router
-from app.api.auth import router as auth_router
-from app.api.registration import router as registration_router
-from app.api.conversations import router as conversations_router
-from app.api.admin import router as admin_router
-from app.api.academic_setup import router as academic_setup_router
-from app.api.organizations import router as organizations_router
-from app.api.institutions import router as institutions_router
-from app.api.users import router as users_router
-from app.api.student_auth import router as student_auth_router
-from app.api.students import router as students_router
-from app.api.student_notifications import router as student_notifications_router
-from app.api.dev_auth import router as dev_auth_router
-from app.api.faculty import router as faculty_router
-from app.schemas.chat import (
+from app.api.platform.platform import router as platform_router
+from app.api.invitations.admin_invitations import router as admin_invitations_router
+from app.api.invitations.super_admin_registration import router as super_admin_registration_router
+from app.api.email.mailgun_webhooks import router as mailgun_webhooks_router
+from app.api.knowledge.ingestion import router as ingestion_router
+from app.api.auth.auth import router as auth_router
+from app.api.auth.registration import router as registration_router
+from app.api.ai.conversations import router as conversations_router
+from app.api.admin.admin import router as admin_router
+from app.api.academics.academic_setup import router as academic_setup_router
+from app.api.platform.organizations import router as organizations_router
+from app.api.platform.institutions import router as institutions_router
+from app.api.auth.users import router as users_router
+from app.api.auth.student_auth import router as student_auth_router
+from app.api.students.students import router as students_router
+from app.api.students.student_notifications import router as student_notifications_router
+from app.api.auth.dev_auth import router as dev_auth_router
+from app.api.faculty.faculty import router as faculty_router
+from app.schemas.ai.chat import (
     AuthenticatedChatRequest,
     ChatRequest,
     ChatResponse,
@@ -46,18 +46,18 @@ from app.schemas.chat import (
     PublicChatRequest,
     PublicChatResponse,
 )
-from app.schemas.session import SessionContextRequest
-from app.services.chat import process_chat_request
-from app.services.public_chat import process_public_request
-from app.services.generation_provider import OpenRouterGenerationProvider
-from app.services.session import resolve_session_context
+from app.schemas.ai.session import SessionContextRequest
+from app.services.ai.chat import process_chat_request
+from app.services.ai.public_chat import process_public_request
+from app.services.ai.generation_provider import OpenRouterGenerationProvider
+from app.services.auth.session import resolve_session_context
 from app.core.startup_validation import run_startup_configuration_validation
 from app.middleware.public_body_limit import PublicChatBodyLimitMiddleware
 from app.middleware.request_limits import RequestSizeLimitMiddleware
 from app.middleware.api_rate_limit import ApiRateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.db.supabase import get_admin_client
-from app.services.public_abuse_controls import (
+from app.services.auth.public_abuse_controls import (
     acquire_concurrency,
     enforce_rate_limit,
 )
@@ -447,8 +447,8 @@ async def auth_me(current_user: dict = Depends(get_current_user)):
         "effective_permissions": current_user.get("effective_permissions", []),
     }
     if payload["role"] == "faculty" and current_user.get("permissions_resolved") is True:
-        from app.services.faculty_responsibilities import faculty_context
-        from app.services.authorization import resolve_institution_authorization_context
+        from app.services.faculty.faculty_responsibilities import faculty_context
+        from app.services.auth.authorization import resolve_institution_authorization_context
         context = resolve_institution_authorization_context(current_user, allowed_roles=("faculty",))
         try:
             payload["faculty_context"] = faculty_context({**current_user, "institution_id": str(context.institution_id)})

@@ -2,19 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App.tsx'
-import { ACCESS_TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY } from './features/auth/AuthProvider.tsx'
-import { authenticate, fetchCurrentUser, revokeSession } from './services/auth.ts'
+import { ACCESS_TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY } from './features/auth/session/AuthProvider.tsx'
+import { authenticate, fetchCurrentUser, revokeSession } from './services/auth/auth.ts'
 import type { AuthRole, CurrentUser } from './types/auth.ts'
 
-vi.mock('./services/auth.ts', async (importOriginal) => ({
-  ...await importOriginal<typeof import('./services/auth.ts')>(),
+vi.mock('./services/auth/auth.ts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('./services/auth/auth.ts')>(),
   authenticate: vi.fn(),
   fetchCurrentUser: vi.fn(),
   revokeSession: vi.fn(),
 }))
 vi.mock('./features/admin/AdminShell.tsx', () => ({ default: () => <div>Admin workspace</div> }))
-vi.mock('./features/student/StudentShell.tsx', () => ({ default: () => <div>Student workspace</div> }))
-vi.mock('./features/faculty/FacultyShell.tsx', () => ({ default: () => <div>Faculty workspace</div> }))
+vi.mock('./features/student/workspace/StudentShell.tsx', () => ({ default: () => <div>Student workspace</div> }))
+vi.mock('./features/faculty/workspace/FacultyShell.tsx', () => ({ default: () => <div>Faculty workspace</div> }))
 vi.mock('./features/staff/StaffShell.tsx', () => ({ default: () => <div>Staff workspace</div> }))
 
 const invitationPath = '/login/student?institution=QUEST123&register=1'

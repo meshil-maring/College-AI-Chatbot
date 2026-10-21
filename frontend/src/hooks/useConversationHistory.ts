@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ApiError, getConversationMessages, listConversations } from '../services/api.ts'
+import { ApiError, getConversationMessages, listConversations } from '../services/chat/api.ts'
 import { queryClient } from '../lib/queryClient.ts'
 import type { ConversationSummary, MessageSummary } from '../types/conversation.ts'
 

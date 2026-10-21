@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import user_registration as reg_service
+from app.services.auth import user_registration as reg_service
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -649,9 +649,9 @@ def test_25_phase_6131_to_6134_regression():
     """Earlier registration primitives used by this endpoint are intact:
     code lookup, active gate, auth/public-user helpers, and the
     membership-request ledger entry point all still resolve."""
-    import app.repositories.tenancy as repo
-    import app.services.student_registration as sreg
-    import app.services.tenancy as tsvc
+    import app.repositories.platform.tenancy as repo
+    import app.services.auth.student_registration as sreg
+    import app.services.platform.tenancy as tsvc
 
     assert callable(repo.get_institution_by_code)
     assert callable(repo.insert_membership_request)

@@ -171,7 +171,7 @@ def test_forgot_password_success():
     admin_client.auth.admin.list_users.return_value = [
         _fake_user("uid-1", "student@college.edu")
     ]
-    with patch("app.api.dev_auth.get_admin_client", return_value=admin_client):
+    with patch("app.api.auth.dev_auth.get_admin_client", return_value=admin_client):
         response = client.post(
             "/api/v1/dev/auth/forgot-password",
             json={
@@ -207,13 +207,13 @@ def test_forgot_password_does_not_reveal_account_existence():
     known_client.auth.admin.list_users.return_value = [
         _fake_user("uid-1", "student@college.edu")
     ]
-    with patch("app.api.dev_auth.get_admin_client", return_value=known_client):
+    with patch("app.api.auth.dev_auth.get_admin_client", return_value=known_client):
         known = client.post("/api/v1/dev/auth/forgot-password", json=body)
 
     # Unknown email → generic response, nothing updated.
     unknown_client = MagicMock()
     unknown_client.auth.admin.list_users.return_value = []
-    with patch("app.api.dev_auth.get_admin_client", return_value=unknown_client):
+    with patch("app.api.auth.dev_auth.get_admin_client", return_value=unknown_client):
         unknown = client.post(
             "/api/v1/dev/auth/forgot-password",
             json={**body, "email": "nobody@college.edu"},
@@ -243,8 +243,8 @@ def test_change_password_success():
     admin_client.auth.admin.list_users.return_value = [
         _fake_user("uid-2", "student@college.edu")
     ]
-    with patch("app.api.dev_auth.create_supabase_client", return_value=auth_client), patch(
-        "app.api.dev_auth.get_admin_client", return_value=admin_client
+    with patch("app.api.auth.dev_auth.create_supabase_client", return_value=auth_client), patch(
+        "app.api.auth.dev_auth.get_admin_client", return_value=admin_client
     ):
         response = client.post(
             "/api/v1/dev/auth/change-password",
@@ -270,7 +270,7 @@ def test_change_password_rejects_wrong_current_password():
     auth_client.auth.sign_in_with_password.side_effect = AuthApiError(
         "Invalid login credentials", 400, "invalid_grant"
     )
-    with patch("app.api.dev_auth.create_supabase_client", return_value=auth_client):
+    with patch("app.api.auth.dev_auth.create_supabase_client", return_value=auth_client):
         response = client.post(
             "/api/v1/dev/auth/change-password",
             json={
@@ -325,7 +325,7 @@ def test_admin_reset_success_for_admin():
     admin_client.auth.admin.list_users.return_value = [
         _fake_user("uid-3", "student@college.edu")
     ]
-    with patch("app.api.dev_auth.get_admin_client", return_value=admin_client):
+    with patch("app.api.auth.dev_auth.get_admin_client", return_value=admin_client):
         response = client.post(
             "/api/v1/dev/auth/admin/reset-student-password",
             json={

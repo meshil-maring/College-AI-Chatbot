@@ -17,7 +17,8 @@ from app.config import Settings, settings
 from app.core.errors import AppError
 from app.core.startup_validation import run_startup_configuration_validation
 from app.main import app
-from app.services import email_delivery, mailgun_webhooks
+from app.services.email import email_delivery
+from app.services.email import mailgun_webhooks
 
 SIGNING_KEY = "phase718-test-only-signing-material"
 TOKEN = "T" * 50
@@ -307,7 +308,7 @@ def test_duplicate_and_unknown_events_are_acknowledged_without_extra_actions(mon
         ]
     )
     monkeypatch.setattr(mailgun_webhooks, "reconcile", reconcile)
-    monkeypatch.setattr("app.api.mailgun_webhooks.get_admin_client", lambda: MagicMock())
+    monkeypatch.setattr("app.api.email.mailgun_webhooks.get_admin_client", lambda: MagicMock())
     client = TestClient(app, raise_server_exceptions=False)
     first = client.post("/api/v1/webhooks/mailgun", json=payload)
     second = client.post("/api/v1/webhooks/mailgun", json=payload)

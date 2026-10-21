@@ -212,7 +212,7 @@ class Settings(BaseSettings):
     # DEVELOPMENT / TESTING ONLY.
     #
     # Gates the dev-only password recovery/reset feature (see
-    # app/api/dev_auth.py). Must be `False` (the default) everywhere except
+    # app/api/auth/dev_auth.py). Must be `False` (the default) everywhere except
     # a local development/testing environment. Never enable in production.
     # ------------------------------------------------------------------
     dev_test_mode: bool = False
@@ -229,7 +229,7 @@ class Settings(BaseSettings):
         outside a local development/testing environment (Phase 6.15.7).
 
         ``DEV_TEST_MODE=true`` exposes the development-only password
-        recovery/reset endpoints (``app/api/dev_auth.py``) and the matching
+        recovery/reset endpoints (``app/api/auth/dev_auth.py``) and the matching
         frontend UI. A misconfigured deployment must NOT silently ship those
         endpoints, so the application refuses to start instead of running in
         an unsafe state. The check is allowlist-based: only the explicit local

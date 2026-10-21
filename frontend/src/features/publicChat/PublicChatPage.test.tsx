@@ -1,25 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import './__tests__/PublicChatPage.support.tsx'
+import { authProviderSpy } from './__tests__/PublicChatPage.support.tsx'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../App.tsx'
-import { publicChat } from '../../services/publicChat.ts'
+import { publicChat } from '../../services/chat/publicChat.ts'
 import { publicChatStorageKey, writePublicChatHistory } from './publicChatStorage.ts'
-
-vi.mock('../../services/publicChat.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../services/publicChat.ts')>()
-  return { ...actual, publicChat: vi.fn() }
-})
-
-const authProviderSpy = vi.fn(({ children }: { children: React.ReactNode }) => <>{children}</>)
-vi.mock('../auth/AuthProvider.tsx', () => ({
-  AuthProvider: (props: { children: React.ReactNode }) => authProviderSpy(props),
-  useAuth: () => { throw new Error('Public chat must not use authentication') },
-}))
-
-vi.mock('../../services/devAuth.ts', () => ({
-  fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
-}))
-
 describe('public chat route and conversation', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -68,7 +54,12 @@ describe('public chat route and conversation', () => {
 
   it('shows loading, prevents duplicate submission, and retries without duplicating the user message', async () => {
     let rejectRequest: ((reason: Error) => void) | undefined
-    vi.mocked(publicChat).mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectRequest = reject }))
+    vi.mocked(publicChat).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRequest = reject
+        }),
+    )
     render(<App />)
     const input = screen.getByLabelText('Ask a public college question')
     await userEvent.type(input, 'When are applications open?')
@@ -87,7 +78,9 @@ describe('public chat route and conversation', () => {
   })
 
   it.each([429, 503])('handles overload %s safely and retries only after user action', async (status) => {
-    vi.mocked(publicChat).mockRejectedValueOnce(new (await import('../../services/publicChat.ts')).PublicChatError('busy', status))
+    vi.mocked(publicChat).mockRejectedValueOnce(
+      new (await import('../../services/chat/publicChat.ts')).PublicChatError('busy', status),
+    )
     render(<App />)
     const input = screen.getByLabelText('Ask a public college question')
     await userEvent.type(input, 'When are applications open?{enter}')
@@ -99,7 +92,11 @@ describe('public chat route and conversation', () => {
     expect(screen.getAllByText('When are applications open?')).toHaveLength(1)
     expect(screen.queryByText('Thinking…')).not.toBeInTheDocument()
 
-    vi.mocked(publicChat).mockResolvedValueOnce({ answer: 'Applications open in June.', status: 'success', sources: [] })
+    vi.mocked(publicChat).mockResolvedValueOnce({
+      answer: 'Applications open in June.',
+      status: 'success',
+      sources: [],
+    })
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
     expect(await screen.findByText('Applications open in June.')).toBeInTheDocument()
     expect(screen.getAllByText('When are applications open?')).toHaveLength(1)
@@ -218,7 +215,9 @@ describe('public chat route and conversation', () => {
       { id: 'interrupted-u', role: 'user', content: 'Interrupted question', createdAt: 1 },
     ])
     vi.mocked(publicChat).mockResolvedValueOnce({
-      answer: 'Recovered answer', status: 'success', sources: [],
+      answer: 'Recovered answer',
+      status: 'success',
+      sources: [],
     })
     render(<App />)
     expect(screen.getByRole('alert')).toHaveTextContent('previous request was interrupted')
@@ -227,25 +226,5 @@ describe('public chat route and conversation', () => {
     expect(await screen.findByText('Recovered answer')).toBeInTheDocument()
     expect(screen.getAllByText('Interrupted question')).toHaveLength(1)
     expect(publicChat).toHaveBeenCalledTimes(1)
-  })
-
-  it('hydrates malicious stored content as inert text', () => {
-    writePublicChatHistory('GIT', [
-      { id: 'xss-u', role: 'user', content: '<img src=x onerror=alert(1)>', createdAt: 1 },
-      { id: 'xss-a', role: 'assistant', content: '<script>alert(1)</script>', createdAt: 2 },
-    ])
-    render(<App />)
-    expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument()
-    expect(screen.getByText('<script>alert(1)</script>')).toBeInTheDocument()
-    expect(document.querySelector('img')).toBeNull()
-    expect(document.querySelector('script')).toBeNull()
-  })
-
-  it('keeps the incomplete public route outside authentication', () => {
-    window.history.replaceState({}, '', '/public-chat')
-    render(<App />)
-    expect(screen.getByRole('heading', { name: 'Public chat link incomplete' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Go to platform gateway' })).toHaveAttribute('href', '/')
-    expect(authProviderSpy).not.toHaveBeenCalled()
   })
 })

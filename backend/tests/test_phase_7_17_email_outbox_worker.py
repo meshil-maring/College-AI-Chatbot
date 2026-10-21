@@ -8,9 +8,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.config import settings
-from app.repositories import email_outbox as outbox_repo
-from app.services import email_delivery, email_outbox_crypto
-from app.services.email_outbox_worker import EmailOutboxWorker
+from app.repositories.email import email_outbox as outbox_repo
+from app.services.email import email_delivery
+from app.services.email import email_outbox_crypto
+from app.services.email.email_outbox_worker import EmailOutboxWorker
 
 MIGRATION = (
     Path(__file__).parents[2]

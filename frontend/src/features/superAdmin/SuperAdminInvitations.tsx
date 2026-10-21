@@ -6,9 +6,9 @@ import {
   createSuperAdminInvitation,
   listSuperAdminInvitations,
   type SuperAdminInvitation,
-} from '../../services/superAdminInvitationApi.ts'
-import { useAuth } from '../auth/AuthProvider.tsx'
-import { hasPermission } from '../auth/permissions.ts'
+} from '../../services/invitations/superAdminInvitationApi.ts'
+import { useAuth } from '../auth/session/AuthProvider.tsx'
+import { hasPermission } from '../auth/access/permissions.ts'
 
 /** Invite additional Super Admins. The server enforces authorization. */
 export default function SuperAdminInvitations() {

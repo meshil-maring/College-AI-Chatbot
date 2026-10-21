@@ -5,12 +5,12 @@
  * below was verified against the backend schema before writing; no field is
  * guessed and no dashboard-only field is invented.
  *
- *   GET /api/v1/students/me/academic-profile   (app/schemas/student_profile.py)
- *   GET /api/v1/students/me/attendance/summary (app/schemas/student_attendance.py)
- *   GET /api/v1/students/me/results/summary    (app/schemas/student_results.py)
- *   GET /api/v1/students/me/test-results/summary (app/schemas/student_results.py)
- *   GET /api/v1/students/me/notices            (app/schemas/student_notices.py)
- *   GET /api/v1/students/me/resources          (app/schemas/student_resources.py)
+ *   GET /api/v1/students/me/academic-profile   (app/schemas/students/student_profile.py)
+ *   GET /api/v1/students/me/attendance/summary (app/schemas/students/student_attendance.py)
+ *   GET /api/v1/students/me/results/summary    (app/schemas/students/student_results.py)
+ *   GET /api/v1/students/me/test-results/summary (app/schemas/students/student_results.py)
+ *   GET /api/v1/students/me/notices            (app/schemas/students/student_notices.py)
+ *   GET /api/v1/students/me/resources          (app/schemas/students/student_resources.py)
  *
  * Data handling rules honoured by these types:
  *  - no internal database identifiers other than the stable list keys the

@@ -7,23 +7,23 @@ import pytest
 from pydantic import ValidationError
 from app.config import settings
 from app.core.errors import AppError
-from app.schemas.chat import ChatRequest
-from app.schemas.generation import AIContext, ConversationTurn, RetrievedChunk
-from app.schemas.personalized_context import InstitutionalKnowledge, PersonalizedContext
-from app.schemas.retrieval import RetrievalResponse, RetrievalResult
-from app.schemas.session import SessionContext
-from app.schemas.student_academic_context import (StudentAcademicContext, StudentAcademicIdentity, StudentAcademicInstitution, StudentContextResults)
-from app.schemas.student_attendance import (StudentAttendanceRecord, StudentAttendanceSummary, StudentOwnAttendance)
-from app.schemas.student_results import (StudentAcademicResultRecord, StudentOwnResults, StudentOwnResultsSummary, StudentOwnTestResults, StudentOwnTestResultsSummary, StudentTestResultRecord)
-from app.schemas.conversation import MessageSummary
-from app.services import ai_context_builder as builder_svc
-from app.services import chat as chat_svc
-from app.services import personalized_retrieval as pr_svc
-from app.services import public_chat as pub_svc
-from app.services import student_academic_context as acad_svc
-from app.services import student_attendance as att_svc
-from app.services import student_results as res_svc
-from app.services.generation_provider import GenerationProvider, GenerationResult
+from app.schemas.ai.chat import ChatRequest
+from app.schemas.ai.generation import AIContext, ConversationTurn, RetrievedChunk
+from app.schemas.ai.personalized_context import InstitutionalKnowledge, PersonalizedContext
+from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
+from app.schemas.ai.session import SessionContext
+from app.schemas.students.student_academic_context import (StudentAcademicContext, StudentAcademicIdentity, StudentAcademicInstitution, StudentContextResults)
+from app.schemas.students.student_attendance import (StudentAttendanceRecord, StudentAttendanceSummary, StudentOwnAttendance)
+from app.schemas.students.student_results import (StudentAcademicResultRecord, StudentOwnResults, StudentOwnResultsSummary, StudentOwnTestResults, StudentOwnTestResultsSummary, StudentTestResultRecord)
+from app.schemas.ai.conversation import MessageSummary
+from app.services.ai import ai_context_builder as builder_svc
+from app.services.ai import chat as chat_svc
+from app.services.ai import personalized_retrieval as pr_svc
+from app.services.ai import public_chat as pub_svc
+from app.services.students import student_academic_context as acad_svc
+from app.services.students import student_attendance as att_svc
+from app.services.students import student_results as res_svc
+from app.services.ai.generation_provider import GenerationProvider, GenerationResult
 TENANT_A="a1111111-0000-0000-0000-000000000001"
 TENANT_B="b2222222-0000-0000-0000-000000000002"
 USER_A="71000000-0000-0000-0000-000000000001"
@@ -59,7 +59,7 @@ def _session(): return SessionContext(session_id=uuid4())
 def _run_chat(monkeypatch,query=PERSONAL_Q,user=None,provider=None,tenant=TENANT_A,retrieved=()):
  user=user or _user();provider=provider or _FakeProvider()
  import app.db.supabase as supabase_mod
- from app.schemas.retrieval import RetrievalResponse
+ from app.schemas.knowledge.retrieval import RetrievalResponse
  monkeypatch.setattr(supabase_mod,"get_admin_client",lambda:object())
  monkeypatch.setattr(chat_svc,"get_conversation",lambda c,i:{"conversation_id":str(i),"user_id":str(user["user_id"])})
  monkeypatch.setattr(chat_svc,"create_conversation",lambda c,d:{"conversation_id":str(uuid4())})
@@ -223,8 +223,8 @@ class TestPublicChatIsolation:
   full=inspect.getsource(pub_svc)
   assert "personalized academic data requires authentication" in full
  def test_13_public_attendance_query_gets_no_academic_context(self):
-  from app.services.context import assemble_context
-  from app.schemas.generation import AIRequest,RetrievalScope
+  from app.services.ai.context import assemble_context
+  from app.schemas.ai.generation import AIRequest,RetrievalScope
   req=ChatRequest(user_query="Show me my attendance.",institution_id=UUID(TENANT_A))
   with pytest.raises(AppError) as exc: pub_svc._reject_personal_query_if_needed(req)
   assert exc.value.status_code==401
@@ -246,7 +246,7 @@ class TestRoleIsolation:
    called["personalized"]=True;return _pctx()
   monkeypatch.setattr(chat_svc,"get_personalized_context",fake_personalized)
   monkeypatch.setattr(chat_svc,"build_personalization_context",lambda *a,**k:None)
-  from app.schemas.retrieval import RetrievalResult
+  from app.schemas.knowledge.retrieval import RetrievalResult
   rr=RetrievalResult(chunk_id=UUID(CHUNK_A),document_id=UUID(DOC_A),document_version_id=None,text="General handbook.",similarity_score=0.9,metadata={})
   resp,provider=_run_chat(monkeypatch,PERSONAL_Q,_user(roles=(role,)),retrieved=[rr])
   assert called["personalized"] is False
@@ -273,12 +273,12 @@ class TestGeneralVsPersonalRouting:
   monkeypatch.setattr(chat_svc,"get_personalized_context",fail_if_personalized)
   monkeypatch.setattr(chat_svc,"build_personalized_ai_context",fail_if_personalized)
   monkeypatch.setattr(chat_svc,"build_personalization_context",lambda *a,**k:None)
-  from app.schemas.retrieval import RetrievalResult as _RR
+  from app.schemas.knowledge.retrieval import RetrievalResult as _RR
   rr=_RR(chunk_id=UUID(CHUNK_A),document_id=UUID(DOC_A),document_version_id=None,text="General handbook.",similarity_score=0.9,metadata={})
   resp,provider=_run_chat(monkeypatch,GENERAL_Q,_user(),retrieved=[rr])
   assert provider.contexts[0].student_context is None
  def test_20_general_syllabus_variants_stay_general(self,monkeypatch):
-  from app.schemas.retrieval import RetrievalResult as _RR2
+  from app.schemas.knowledge.retrieval import RetrievalResult as _RR2
   for q in ("Explain normalization.","What is the exam syllabus?","What is machine learning?"):
    monkeypatch.setattr(chat_svc,"build_personalization_context",lambda *a,**k:None)
    rr=_RR2(chunk_id=UUID(CHUNK_A),document_id=UUID(DOC_A),document_version_id=None,text="General handbook.",similarity_score=0.9,metadata={})

@@ -20,20 +20,20 @@ from app.config import settings as app_settings
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.generation import AIContext
-from app.schemas.personalization import StudentIdentity
-from app.schemas.retrieval import RetrievalResponse, RetrievalResult
-from app.schemas.student_academic_context import StudentAcademicContext
-from app.schemas.session import SessionContext
-from app.services import personalization as personalization_service
-from app.services.chat import process_chat_request
-from app.services.context import (
+from app.schemas.ai.chat import ChatRequest, ChatResponse
+from app.schemas.ai.generation import AIContext
+from app.schemas.ai.personalization import StudentIdentity
+from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
+from app.schemas.students.student_academic_context import StudentAcademicContext
+from app.schemas.ai.session import SessionContext
+from app.services.ai import personalization as personalization_service
+from app.services.ai.chat import process_chat_request
+from app.services.ai.context import (
     GROUNDING_INSTRUCTIONS,
     STUDENT_DATA_GUIDANCE,
     SYSTEM_INSTRUCTIONS,
 )
-from app.services.generation_provider import (
+from app.services.ai.generation_provider import (
     GenerationProvider,
     GenerationResult,
     _build_user_content,
@@ -59,7 +59,7 @@ KNOWLEDGE_SOURCE_ID = "90000000-0000-0000-0000-000000000001"
 @pytest.fixture(autouse=True)
 def _cleanup_dependency_overrides():
     with patch(
-        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
         side_effect=lambda _db, institution_id: {
             "institution_id": str(institution_id),
             "status": "active",
@@ -223,7 +223,7 @@ def _institution_row() -> dict:
 def _derived_percentage(row: dict):
     """Percentage stored on the row, or derived server-side from marks.
 
-    Mirrors ``app.services.personalization`` / Phase 6.14.3 semantics: the
+    Mirrors ``app.services.ai.personalization`` / Phase 6.14.3 semantics: the
     backend value is authoritative and is never recomputed by the model.
     """
     percentage = row.get("percentage")
@@ -245,24 +245,24 @@ def _student_academic_context(
     """Build the Phase 6.14.4 StudentAcademicContext the resolver would return.
 
     Phases 6.14.7: the chat pipeline obtains the student's academic data through
-    ``app.services.personalized_retrieval.get_personalized_context`` ->
-    ``app.services.student_academic_context.get_student_academic_context``. The
+    ``app.services.ai.personalized_retrieval.get_personalized_context`` ->
+    ``app.services.students.student_academic_context.get_student_academic_context``. The
     tests mock that 6.14.4 boundary (its own suite covers the authorization
     chain) and convert the same raw row fixtures the Phase 6.10 tests already
     used into the 6.14 contracts, so the REAL 6.14.6 builder/renderer and the
     unchanged generation pipeline still run.
     """
-    from app.schemas.student_academic_context import (
+    from app.schemas.students.student_academic_context import (
         StudentAcademicIdentity,
         StudentAcademicInstitution,
         StudentContextResults,
     )
-    from app.schemas.student_attendance import (
+    from app.schemas.students.student_attendance import (
         StudentAttendanceRecord,
         StudentAttendanceSummary,
         StudentOwnAttendance,
     )
-    from app.schemas.student_results import (
+    from app.schemas.students.student_results import (
         StudentAcademicResultRecord,
         StudentOwnResultsSummary,
         StudentOwnTestResultsSummary,
@@ -463,25 +463,25 @@ def _run_chat(
         )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mc),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc),
+        patch("app.services.ai.chat.get_admin_client", return_value=mc),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc),
         # Non-personalized (general-question / non-student) path.
-        patch("app.services.chat.retrieve", side_effect=retrieve_side),
+        patch("app.services.ai.chat.retrieve", side_effect=retrieve_side),
         # Phase 6.14.7 personalized path: the REAL 6.14.5 boundary runs, with only
         # its tenant/institution lookup and its data-access edges mocked. The
         # server-side tenant resolution still runs from ``current_user``.
-        patch("app.repositories.tenancy.get_institution_by_id", return_value=_institution_row()),
+        patch("app.repositories.platform.tenancy.get_institution_by_id", return_value=_institution_row()),
         patch(
-            "app.services.personalized_retrieval._build_authorized_knowledge_source_ids",
+            "app.services.ai.personalized_retrieval._build_authorized_knowledge_source_ids",
             return_value={KNOWLEDGE_SOURCE_ID},
         ),
         patch(
-            "app.services.personalized_retrieval._resolve_chunk_knowledge_sources",
+            "app.services.ai.personalized_retrieval._resolve_chunk_knowledge_sources",
             return_value={PROCESSING_RUN_ID: KNOWLEDGE_SOURCE_ID},
         ),
-        patch("app.services.personalized_retrieval.retrieve", side_effect=retrieve_side),
+        patch("app.services.ai.personalized_retrieval.retrieve", side_effect=retrieve_side),
         patch(
-            "app.services.student_academic_context.get_student_academic_context",
+            "app.services.students.student_academic_context.get_student_academic_context",
             side_effect=academic_side,
         ),
     ):
@@ -698,34 +698,34 @@ def _build_context(
     captured: dict = {}
     with (
         patch(
-            "app.services.student_context.get_student_context",
+            "app.services.students.student_context.get_student_context",
             return_value=student_ctx if student_ctx is not None else _student_context(),
         ) as captured["get_student_context"],
-        patch("app.services.student_context.assert_student_context_tenant") as captured["tenant_guard"],
+        patch("app.services.students.student_context.assert_student_context_tenant") as captured["tenant_guard"],
         patch(
-            "app.services.student_data.get_own_profile",
+            "app.services.students.student_data.get_own_profile",
             return_value=profile if profile is not None else _profile(),
         ) as captured["get_own_profile"],
         patch(
-            "app.services.student_data.get_own_attendance",
+            "app.services.students.student_data.get_own_attendance",
             return_value=attendance if attendance is not None else [],
         ) as captured["get_own_attendance"],
         patch(
-            "app.services.student_data.get_own_test_results",
+            "app.services.students.student_data.get_own_test_results",
             return_value=test_results if test_results is not None else [],
         ) as captured["get_own_test_results"],
         patch(
-            "app.services.student_data.get_own_results",
+            "app.services.students.student_data.get_own_results",
             return_value=results if results is not None else [],
         ) as captured["get_own_results"],
         patch(
-            "app.services.student_data.get_own_result",
+            "app.services.students.student_data.get_own_result",
             return_value=result_with_items,
         ) as captured["get_own_result"],
-        patch("app.repositories.personalization.get_program_label", return_value=None),
-        patch("app.repositories.personalization.get_academic_year_label", return_value=None),
-        patch("app.repositories.personalization.get_current_semester_label", return_value=None),
-        patch("app.repositories.personalization.get_course_labels", return_value={}),
+        patch("app.repositories.ai.personalization.get_program_label", return_value=None),
+        patch("app.repositories.ai.personalization.get_academic_year_label", return_value=None),
+        patch("app.repositories.ai.personalization.get_current_semester_label", return_value=None),
+        patch("app.repositories.ai.personalization.get_course_labels", return_value={}),
     ):
         captured["context"] = personalization_service.build_personalization_context(
             current_user if current_user is not None else _student_user(),
@@ -828,19 +828,19 @@ def test_student_a_cannot_receive_student_b_data():
 
     with (
         patch(
-            "app.services.student_context.get_student_context",
+            "app.services.students.student_context.get_student_context",
             side_effect=lambda user: _student_context(
                 user_id=user["user_id"],
                 student_id=STUDENT_ID if user["user_id"] == STUDENT_USER_ID else OTHER_STUDENT_ID,
                 student_number="STU100" if user["user_id"] == STUDENT_USER_ID else "STU200",
             ),
         ),
-        patch("app.services.student_context.assert_student_context_tenant"),
-        patch("app.services.student_data.get_own_profile", side_effect=profile_side),
-        patch("app.services.student_data.get_own_attendance", side_effect=attendance_side),
-        patch("app.repositories.personalization.get_program_label", return_value=None),
-        patch("app.repositories.personalization.get_academic_year_label", return_value=None),
-        patch("app.repositories.personalization.get_current_semester_label", return_value=None),
+        patch("app.services.students.student_context.assert_student_context_tenant"),
+        patch("app.services.students.student_data.get_own_profile", side_effect=profile_side),
+        patch("app.services.students.student_data.get_own_attendance", side_effect=attendance_side),
+        patch("app.repositories.ai.personalization.get_program_label", return_value=None),
+        patch("app.repositories.ai.personalization.get_academic_year_label", return_value=None),
+        patch("app.repositories.ai.personalization.get_current_semester_label", return_value=None),
     ):
         ctx_a = personalization_service.build_personalization_context(
             _student_user(), "What is my attendance?", client=MagicMock()
@@ -879,7 +879,7 @@ def test_cross_tenant_student_data_cannot_enter_prompt_context():
 def test_general_questions_do_not_load_student_data():
     """Scenario 16."""
     with patch(
-        "app.services.student_context.get_student_context",
+        "app.services.students.student_context.get_student_context",
         side_effect=AssertionError("student data must not be loaded"),
     ):
         context = personalization_service.build_personalization_context(
@@ -932,7 +932,7 @@ def test_missing_student_profile_fails_safely():
     """Scenario 14: Phase 6.9 404 behavior is preserved (fail-safe, no
     profile creation)."""
     with patch(
-        "app.services.student_context.get_student_context",
+        "app.services.students.student_context.get_student_context",
         side_effect=AppError(
             "No student profile is linked to this account",
             status_code=404,
@@ -950,7 +950,7 @@ def test_missing_student_profile_fails_safely():
 def test_ineligible_student_follows_phase69_rules():
     """Scenario 15: unapproved / inactive students get the Phase 6.9 403s."""
     with patch(
-        "app.services.student_context.get_student_context",
+        "app.services.students.student_context.get_student_context",
         side_effect=AppError(
             "Student account is not approved", status_code=403, code="STUDENT_NOT_APPROVED"
         ),
@@ -967,7 +967,7 @@ def test_unauthorized_users_cannot_access_personalization():
     """Scenario 13: administrative privileges never grant student data."""
     admin_user = _student_user(user_id=OTHER_USER_ID, roles=["admin"])
     with patch(
-        "app.services.student_context.get_student_context",
+        "app.services.students.student_context.get_student_context",
         side_effect=AppError(
             "No student profile is linked to this account",
             status_code=404,
@@ -1223,10 +1223,10 @@ class TestChatPipelinePersonalization:
         )
         mc = _mock_client(sid)
         with (
-            patch("app.services.chat.get_admin_client", return_value=mc),
-            patch("app.services.conversation_history.get_admin_client", return_value=mc),
-            patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
-            patch("app.repositories.tenancy.get_institution_by_id", return_value=_institution_row()),
+            patch("app.services.ai.chat.get_admin_client", return_value=mc),
+            patch("app.services.ai.conversation_history.get_admin_client", return_value=mc),
+            patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
+            patch("app.repositories.platform.tenancy.get_institution_by_id", return_value=_institution_row()),
         ):
             response = process_chat_request(request, SessionContext(session_id=sid), provider, STUDENT_USER_ID)
         assert response.status == "success"
@@ -1294,11 +1294,11 @@ class TestHttpBoundary:
         )
         mc = _mock_client(uuid4(), conversation_user_id=OTHER_USER_ID)
         with (
-            patch("app.services.chat.get_admin_client", return_value=mc),
-            patch("app.services.conversation_history.get_admin_client", return_value=mc),
-            patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+            patch("app.services.ai.chat.get_admin_client", return_value=mc),
+            patch("app.services.ai.conversation_history.get_admin_client", return_value=mc),
+            patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
             patch(
-                "app.services.student_context.get_student_context",
+                "app.services.students.student_context.get_student_context",
                 side_effect=AppError(
                     "No student profile is linked to this account",
                     status_code=404,
@@ -1323,11 +1323,11 @@ class TestHttpBoundary:
         provider.generate.return_value = GenerationResult(answer="General answer.")
         with (
             patch("app.main.OpenRouterGenerationProvider", return_value=provider),
-            patch("app.services.chat.get_admin_client", return_value=mc),
-            patch("app.services.conversation_history.get_admin_client", return_value=mc),
-            patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+            patch("app.services.ai.chat.get_admin_client", return_value=mc),
+            patch("app.services.ai.conversation_history.get_admin_client", return_value=mc),
+            patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
             patch(
-                "app.services.student_context.get_student_context",
+                "app.services.students.student_context.get_student_context",
                 side_effect=AppError(
                     "No student profile is linked to this account",
                     status_code=404,

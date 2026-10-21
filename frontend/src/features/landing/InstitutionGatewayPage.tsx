@@ -1,5 +1,5 @@
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
-import { lookupInstitution, RegistrationError, registrationErrorMessage } from '../../services/registration.ts'
+import { lookupInstitution, RegistrationError, registrationErrorMessage } from '../../services/registration/registration.ts'
 import type { InstitutionLookupResponse } from '../../types/registration.ts'
 import { createInstitutionBranding } from './institutionBranding.ts'
 

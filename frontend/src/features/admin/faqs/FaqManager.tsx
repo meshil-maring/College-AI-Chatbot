@@ -6,13 +6,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
-import { useAuth } from '../../auth/AuthProvider.tsx'
+import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import {
   createFaq,
   deleteFaq,
   listFaqs,
   updateFaq,
-} from '../../../services/adminApi.ts'
+} from '../../../services/admin/adminApi.ts'
 import type { Faq, FaqCreate } from '../../../types/admin.ts'
 
 export default function FaqManager() {

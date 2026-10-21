@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Mail } from 'lucide-react'
-import { AdminApiError } from '../../services/adminApi.ts'
-import type { ClassStudentRegistration, StudentInvitationDelivery } from '../../services/studentRegistrationApi.ts'
+import { AdminApiError } from '../../services/admin/adminApi.ts'
+import type { ClassStudentRegistration, StudentInvitationDelivery } from '../../services/students/studentRegistrationApi.ts'
 import { useStudentWorkspaceApi } from './StudentWorkspaceContext.tsx'
 
 const done = (status?: StudentInvitationDelivery['status']) => status === 'sent' || status === 'already_sent'

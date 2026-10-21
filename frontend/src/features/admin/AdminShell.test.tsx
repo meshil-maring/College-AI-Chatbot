@@ -1,68 +1,12 @@
-/**
- * AdminShell component tests (Phase 6.19).
- *
- * Identity is read from the canonical AuthProvider state (resolved by
- * GET /auth/me); the shell NEVER probes GET /admin/me for role detection
- * and navigation is derived from the fail-closed adminNavigation model.
- * Security: no token material or internal identifiers may appear in the DOM.
- */
-
-/// <reference types="vitest/globals" />
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import './__tests__/AdminShell.support.tsx'
+import { authState } from './__tests__/AdminShell.support.tsx'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import AdminShell from './AdminShell.tsx'
-import * as adminApi from '../../services/adminApi.ts'
-import type { DashboardSummary } from '../../types/admin.ts'
+import { expect, it, vi } from 'vitest'
+import * as adminApi from '../../services/admin/adminApi.ts'
+import { buildDashboardSummary } from '../../test/adminDashboardFixtures.ts'
 import type { AcademicCatalogue } from '../../types/academicSetup.ts'
-import { adminStudentWorkspaceApi as studentApi } from '../../services/adminStudentWorkspaceApi.ts'
-import {
-  buildDashboardSummary,
-  emptyDashboardSummary,
-} from '../../test/adminDashboardFixtures.ts'
-
-vi.mock('../../services/adminApi.ts')
-vi.mock('../../services/adminStudentWorkspaceApi.ts')
-vi.mock('../chat/ChatShell.tsx', () => ({ default: () => <div>AI Assistant chat</div> }))
-
-const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
-
-/** Mutable auth context so each test can drive the canonical role. */
-const authState = vi.hoisted(() => ({
-  status: 'authenticated',
-  user: {
-    authenticated: true,
-    user_id: 'u1',
-    auth_user_id: 'a1',
-    email: 'admin@test.com',
-    role: 'admin' as const,
-    institution_id: 'inst-1',
-    effective_permissions: ['*'] as string[],
-  },
-  role: 'admin' as string | null,
-  accessToken: 'test-token' as string | null,
-  logout: vi.fn(),
-}))
-
-vi.mock('../auth/AuthProvider.tsx', () => ({
-  useAuth: () => authState,
-}))
-
-beforeEach(() => {
-  authState.role = 'admin'
-  authState.accessToken = 'test-token'
-  authState.logout.mockReset()
-  authState.user.effective_permissions = ['*']
-  vi.mocked(adminApi.getAdminIdentity).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
-  vi.mocked(studentApi.getSections).mockResolvedValue([{ can_manage: true, assignment_id: 'section-1', assigned_at: '', section_id: 'section-1', academic_year_id: 'year-1', semester_id: 'semester-1', section: { section_id: 'section-1', name: 'Section A', code: 'A', program_id: 'program-1', program: { program_id: 'program-1', name: 'Computer Science', degree_type: 'B.Tech' }, course: { name: 'Data Mining', code: 'CS501' } } }])
-  vi.mocked(studentApi.getStudents).mockResolvedValue({ items: [], total: 0 })
-  vi.mocked(studentApi.getRegistrations).mockResolvedValue({ items: [], total: 0 })
-  vi.mocked(studentApi.getBatches).mockResolvedValue([])
-  vi.mocked(studentApi.getHistory).mockResolvedValue({ items: [], total: 0 })
-})
-
+import AdminShell from './AdminShell.tsx'
 describe('AdminShell', () => {
   it('renders the admin panel with the canonical identity from auth state', () => {
     render(<AdminShell />)
@@ -126,9 +70,7 @@ describe('AdminShell', () => {
   it('lands on the Dashboard by default and routes quick actions to real views', async () => {
     // Phase 7.21: Dashboard is the default landing view, and a quick action
     // switches the shell to the EXISTING screen it names — no second dashboard.
-    vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(
-      buildDashboardSummary(),
-    )
+    vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(buildDashboardSummary())
     vi.mocked(adminApi.listPendingStudents).mockReset()
     vi.mocked(adminApi.listPendingStudents).mockResolvedValue([])
     const user = userEvent.setup()
@@ -136,16 +78,10 @@ describe('AdminShell', () => {
     await waitFor(() => {
       expect(screen.getByRole('region', { name: 'Key metrics' })).toBeInTheDocument()
     })
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
+    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
     await user.click(screen.getByRole('button', { name: /Approve Student/ }))
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Waiting approval' })).toHaveAttribute(
-        'aria-current',
-        'page',
-      )
+      expect(screen.getByRole('link', { name: 'Waiting approval' })).toHaveAttribute('aria-current', 'page')
     })
     // Exactly one Dashboard navigation entry still exists.
     expect(screen.getAllByRole('button', { name: 'Dashboard' })).toHaveLength(1)
@@ -164,7 +100,11 @@ describe('AdminShell', () => {
     const first = render(<AdminShell />)
     await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
     const pages = screen.getByRole('navigation', { name: 'Students pages' })
-    expect(within(pages).getAllByRole('link').map((link) => link.textContent)).toEqual(['Roster', 'Record history', 'Waiting approval', 'Register'])
+    expect(
+      within(pages)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Roster', 'Record history', 'Waiting approval', 'Register'])
     expect(screen.queryByRole('button', { name: 'Student Approvals' })).not.toBeInTheDocument()
     await user.click(within(pages).getByRole('link', { name: 'Register', exact: true }))
     await user.click(screen.getByRole('tab', { name: 'Bulk Registration' }))
@@ -172,9 +112,13 @@ describe('AdminShell', () => {
     expect(screen.getByRole('link', { name: 'Register', exact: true })).toHaveAttribute('aria-current', 'page')
     expect(within(pages).queryByRole('link', { name: 'Bulk Import' })).not.toBeInTheDocument()
     act(() => window.history.back())
-    await waitFor(() => expect(screen.getByRole('tab', { name: 'Individual Registration' })).toHaveAttribute('aria-selected', 'true'))
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Individual Registration' })).toHaveAttribute('aria-selected', 'true'),
+    )
     act(() => window.history.forward())
-    await waitFor(() => expect(screen.getByRole('tab', { name: 'Bulk Registration' })).toHaveAttribute('aria-selected', 'true'))
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Bulk Registration' })).toHaveAttribute('aria-selected', 'true'),
+    )
     first.unmount()
     render(<AdminShell />)
     expect(await screen.findByRole('tab', { name: 'Bulk Registration' })).toHaveAttribute('aria-selected', 'true')
@@ -192,17 +136,24 @@ describe('AdminShell', () => {
 
   function mockAcademicNavigation() {
     const catalogue: AcademicCatalogue = {
-      institution_id: 'inst-1', manageable: ['departments'],
+      institution_id: 'inst-1',
+      manageable: ['departments'],
       records: { departments: [{ department_id: 'department-1', name: 'Science', code: 'SCI', is_active: true }] },
     }
     vi.mocked(adminApi.getAcademicCatalogue).mockReset().mockResolvedValue(catalogue)
-    vi.mocked(adminApi.getFacultyAssignments).mockReset().mockResolvedValue({ faculty: [], sections: [], assignments: [] })
-    vi.mocked(adminApi.getFacultyResponsibilityManagement).mockReset().mockResolvedValue({ faculty: [], definitions: [], departments: [], sections: [], responsibilities: [] })
+    vi.mocked(adminApi.getFacultyAssignments)
+      .mockReset()
+      .mockResolvedValue({ faculty: [], sections: [], assignments: [] })
+    vi.mocked(adminApi.getFacultyResponsibilityManagement)
+      .mockReset()
+      .mockResolvedValue({ faculty: [], definitions: [], departments: [], sections: [], responsibilities: [] })
     return catalogue
   }
 
   function navigate(label: string) {
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Admin navigation' })).getByRole('button', { name: label }))
+    fireEvent.click(
+      within(screen.getByRole('navigation', { name: 'Admin navigation' })).getByRole('button', { name: label }),
+    )
   }
 
   it('reuses academic and faculty data when navigating between their screens', async () => {
@@ -253,7 +204,10 @@ describe('AdminShell', () => {
     render(<AdminShell />)
     navigate('Academic Setup')
     await screen.findByText('SCI · Science')
-    vi.mocked(adminApi.getAcademicCatalogue).mockResolvedValue({ ...catalogue, records: { departments: [{ department_id: 'department-1', name: 'New Science', code: 'SCI', is_active: true }] } })
+    vi.mocked(adminApi.getAcademicCatalogue).mockResolvedValue({
+      ...catalogue,
+      records: { departments: [{ department_id: 'department-1', name: 'New Science', code: 'SCI', is_active: true }] },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Refresh academic setup' }))
     expect(await screen.findByText('SCI · New Science')).toBeInTheDocument()
     expect(adminApi.getAcademicCatalogue).toHaveBeenCalledTimes(2)

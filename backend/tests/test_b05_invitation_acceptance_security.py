@@ -14,17 +14,17 @@ import pytest
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories import platform_admin_invitations as repo
-from app.repositories import tenancy
-from app.schemas.admin_invitations import AdminInvitationAcceptRequest
-from app.services import admin_memberships as memberships
-from app.services import platform_admin_invitations as svc
-from app.services import student_registration
+from app.repositories.invitations import platform_admin_invitations as repo
+from app.repositories.platform import tenancy
+from app.schemas.invitations.admin_invitations import AdminInvitationAcceptRequest
+from app.services.admin import admin_memberships as memberships
+from app.services.invitations import platform_admin_invitations as svc
+from app.services.auth import student_registration
 
 
 @pytest.mark.parametrize("role", ["staff", "faculty", "admin"])
 def test_self_or_cross_tenant_role_assignment_cannot_use_platform_route(monkeypatch, role):
-    from app.services import platform_institutions
+    from app.services.platform import platform_institutions
 
     assign = MagicMock()
     monkeypatch.setattr(platform_institutions.platform_repo, "assign_institution_admin", assign)
@@ -45,7 +45,7 @@ def test_self_or_cross_tenant_role_assignment_cannot_use_platform_route(monkeypa
 
 def test_assignment_body_cannot_forge_actor_identity(monkeypatch):
     from app.db import supabase
-    from app.services import platform_institutions
+    from app.services.platform import platform_institutions
 
     assign = MagicMock()
     monkeypatch.setattr(platform_institutions.platform_repo, "assign_institution_admin", assign)

@@ -9,7 +9,7 @@ institution-owned parent), and the audit feed has been REMOVED because raw
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
-from app.services import admin_dashboard as svc
+from app.services.admin import admin_dashboard as svc
 
 TABLE_COUNTS = {
     "knowledge_sources": 4,
@@ -49,7 +49,7 @@ def _db(counts: dict[str, int] | None = None):
 def _no_notices():
     """Stub the shared notice-listing repository used for recent notices."""
     return patch(
-        "app.services.admin_dashboard.knowledge_repo.list_notices",
+        "app.services.admin.admin_dashboard.knowledge_repo.list_notices",
         return_value=[],
     )
 
@@ -107,7 +107,7 @@ def test_dashboard_summary_bounds_recent_notices() -> None:
     """The dashboard is a summary: the recent list must stay bounded."""
     db = _db()
     with patch(
-        "app.services.admin_dashboard.knowledge_repo.list_notices",
+        "app.services.admin.admin_dashboard.knowledge_repo.list_notices",
         return_value=[],
     ) as notices_mock:
         svc.get_dashboard_summary(
@@ -182,7 +182,7 @@ def test_institution_summary_projects_only_safe_display_fields() -> None:
         "is_active": True,
     }
     with patch(
-        "app.services.admin_dashboard.tenancy_repo.get_institution_by_id",
+        "app.services.admin.admin_dashboard.tenancy_repo.get_institution_by_id",
         return_value=row,
     ) as read_mock:
         institution = svc._institution_summary(db, institution_id)
@@ -212,7 +212,7 @@ def test_recent_notices_are_projected_without_identifiers() -> None:
         }
     ]
     with patch(
-        "app.services.admin_dashboard.knowledge_repo.list_notices", return_value=rows
+        "app.services.admin.admin_dashboard.knowledge_repo.list_notices", return_value=rows
     ):
         communication = svc._communication_summary(db, "inst-1", 5)
     assert communication.recent_notices[0].model_dump() == {

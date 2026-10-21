@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from app.repositories import embeddings
+from app.repositories.knowledge import embeddings
 
 
 RUN_ID = "pr000000-0000-0000-0000-000000000001"

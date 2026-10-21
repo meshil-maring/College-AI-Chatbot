@@ -7,10 +7,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import FaqManager from './FaqManager.tsx'
-import * as adminApi from '../../../services/adminApi.ts'
+import * as adminApi from '../../../services/admin/adminApi.ts'
 
-vi.mock('../../../services/adminApi.ts')
-vi.mock('../../auth/AuthProvider.tsx', () => ({
+vi.mock('../../../services/admin/adminApi.ts')
+vi.mock('../../auth/session/AuthProvider.tsx', () => ({
   useAuth: () => ({ accessToken: 'test-token', user: null, logout: vi.fn() }),
 }))
 

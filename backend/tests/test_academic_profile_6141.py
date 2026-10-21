@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services import student_academic_profile as psvc
+from app.services.students import student_academic_profile as psvc
 TC = TestClient(app, raise_server_exceptions=False)
 TA = "a1111111-0000-0000-0000-000000000001"
 TB = "b2222222-0000-0000-0000-000000000002"

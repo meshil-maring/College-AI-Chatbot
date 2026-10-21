@@ -5,8 +5,8 @@ from uuid import uuid4
 
 import pytest
 
-from app.repositories import admin_knowledge as repo
-from app.schemas.admin import (
+from app.repositories.admin import admin_knowledge as repo
+from app.schemas.admin.admin import (
     DocumentVersionCreate,
     FaqCreate,
     FaqUpdate,

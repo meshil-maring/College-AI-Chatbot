@@ -10,13 +10,14 @@ from fastapi.testclient import TestClient
 from postgrest.exceptions import APIError
 from pydantic import ValidationError
 
-from app.api import faculty
+from app.api.faculty import faculty
 from app.core.errors import AppError
 from app.core.security import SUPPORTED_ROLES, get_current_user, has_permission, resolve_primary_role
 from app.main import app
-from app.schemas.faculty_responsibilities import AssignmentValidity, ResponsibilityCreate
-from app.services import faculty_attendance, faculty_responsibilities as service
-from app.services.authorization import academic_scope_contains, assignment_is_active, effective_authorization
+from app.schemas.faculty.faculty_responsibilities import AssignmentValidity, ResponsibilityCreate
+from app.services.faculty import faculty_attendance
+from app.services.faculty import faculty_responsibilities as service
+from app.services.auth.authorization import academic_scope_contains, assignment_is_active, effective_authorization
 
 TENANT = '30000000-0000-0000-0000-000000000001'
 OTHER_TENANT = '30000000-0000-0000-0000-000000000002'
@@ -295,7 +296,7 @@ def test_forged_or_revoked_responsibility_report_denies(monkeypatch):
 
 
 def test_auth_me_adds_faculty_context_without_widening_existing_permissions(monkeypatch):
-    import app.services.authorization as authz
+    import app.services.auth.authorization as authz
     expected = {'responsibilities': [], 'teaching_assignments': [], 'responsibility_permissions': []}
     monkeypatch.setattr(authz, 'resolve_institution_authorization_context', lambda *_args, **_kw: SimpleNamespace(institution_id=UUID(TENANT)))
     monkeypatch.setattr(service, 'faculty_context', lambda _user: expected)
@@ -308,7 +309,7 @@ def test_auth_me_adds_faculty_context_without_widening_existing_permissions(monk
 
 
 def test_faculty_login_succeeds_when_responsibility_table_is_missing(monkeypatch, caplog):
-    import app.services.authorization as authz
+    import app.services.auth.authorization as authz
 
     db = MagicMock()
     query = db.table.return_value
@@ -377,7 +378,7 @@ def test_unrelated_database_failures_are_not_treated_as_missing_faculty_schema(c
 
 @pytest.mark.parametrize('source', ['institution', 'faculty'])
 def test_login_schema_fallback_does_not_bypass_authorization_denial(source, monkeypatch):
-    import app.services.authorization as authz
+    import app.services.auth.authorization as authz
 
     resolver = MagicMock(return_value=SimpleNamespace(institution_id=UUID(TENANT)))
     context = MagicMock(return_value={})
@@ -484,7 +485,7 @@ def test_removing_mapped_permission_immediately_denies_report(monkeypatch):
 
 
 def test_report_query_pagination_preserves_rows_beyond_rest_limit():
-    from app.repositories.query_pages import read_all, read_one
+    from app.repositories.shared.query_pages import read_all, read_one
     rows = [{'id': index} for index in range(1201)]
     assert read_all(MemoryQuery(rows)) == rows
     with pytest.raises(AppError, match='projection'):

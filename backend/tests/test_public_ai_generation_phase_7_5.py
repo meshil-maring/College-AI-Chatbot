@@ -12,16 +12,16 @@ from pydantic import ValidationError
 
 from app.config import settings
 from app.core.errors import AppError
-from app.schemas.chat import ChatRequest
-from app.schemas.chat_response import StructuredSource
-from app.schemas.generation import AIContext, RetrievedChunk
-from app.services.context import SYSTEM_INSTRUCTIONS
-from app.services.generation import AIGenerationService
-from app.services.generation_provider import (
+from app.schemas.ai.chat import ChatRequest
+from app.schemas.ai.chat_response import StructuredSource
+from app.schemas.ai.generation import AIContext, RetrievedChunk
+from app.services.ai.context import SYSTEM_INSTRUCTIONS
+from app.services.ai.generation import AIGenerationService
+from app.services.ai.generation_provider import (
     GenerationResult,
     OpenRouterGenerationProvider,
 )
-from app.services.public_chat import (
+from app.services.ai.public_chat import (
     PUBLIC_GENERATION_INSTRUCTIONS,
     _reject_personal_query_if_needed,
     _project_public_sources,
@@ -151,7 +151,7 @@ def test_openrouter_receives_server_output_limit_and_timeout():
     provider = OpenRouterGenerationProvider(client=client, timeout=17.0)
     try:
         with patch.multiple(
-            "app.services.generation_provider.settings",
+            "app.services.ai.generation_provider.settings",
             openrouter_api_key="test-key",
             openrouter_model="server/model",
             openrouter_base_url="https://provider.example/v1",

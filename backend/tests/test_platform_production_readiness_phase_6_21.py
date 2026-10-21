@@ -22,7 +22,7 @@ from app.core.security import (
     scope_tenant,
 )
 from app.main import app
-from app.services.ingestion import _safe_filename, _validate
+from app.services.knowledge.ingestion import _safe_filename, _validate
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -62,7 +62,7 @@ def _active_institution_authorization():
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
         data={"institution_id": TENANT_A, "status": "active", "is_active": True}
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
         yield
 
 
@@ -70,7 +70,7 @@ def _active_institution_authorization():
 def _auth(role="student", tenant=TENANT_A):
     principal = _user(role, tenant)
     with ExitStack() as stack:
-        stack.enter_context(patch("app.core.security.verify_jwt", return_value=dict(CLAIMS)))
+        stack.enter_context(patch("app.core.security.tokens.verify_jwt", return_value=dict(CLAIMS)))
         stack.enter_context(
             patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=principal))
         )
@@ -124,7 +124,7 @@ def test_empty_bearer_token_is_401():
 
 
 def test_invalid_token_is_401_without_internals():
-    with patch("app.core.security.verify_jwt",
+    with patch("app.core.security.tokens.verify_jwt",
                side_effect=AppError("Invalid token", status_code=401, code="INVALID_TOKEN")):
         r = client.get("/api/v1/auth/me", headers=AUTH_HEADERS)
     assert r.status_code == 401
@@ -133,7 +133,7 @@ def test_invalid_token_is_401_without_internals():
 
 
 def test_expired_token_is_401_token_expired():
-    with patch("app.core.security.verify_jwt",
+    with patch("app.core.security.tokens.verify_jwt",
                side_effect=AppError("Token has expired", status_code=401, code="TOKEN_EXPIRED")):
         r = client.get("/api/v1/auth/me", headers=AUTH_HEADERS)
     assert r.status_code == 401
@@ -160,7 +160,7 @@ def test_auth_me_shape_is_stable_and_minimal():
 
 
 def test_expired_token_on_conversations_is_401():
-    with patch("app.core.security.verify_jwt",
+    with patch("app.core.security.tokens.verify_jwt",
                side_effect=AppError("Token has expired", status_code=401, code="TOKEN_EXPIRED")):
         r = client.get("/api/v1/conversations", headers=AUTH_HEADERS)
     assert r.status_code == 401
@@ -283,7 +283,7 @@ def test_registration_rejects_approval_status_field():
 
 
 def test_registration_unexpected_failure_is_safe_500():
-    with patch("app.services.student_registration._register_student",
+    with patch("app.services.auth.student_registration._register_student",
                side_effect=RuntimeError("SELECT FROM users WHERE boom")):
         r = client.post("/api/v1/registration",
                         json={"institution_id": TENANT_A, "email": "n@college.edu",
@@ -296,7 +296,7 @@ def test_registration_unexpected_failure_is_safe_500():
 
 
 def test_duplicate_registration_is_409():
-    with patch("app.services.student_registration._register_student",
+    with patch("app.services.auth.student_registration._register_student",
                side_effect=AppError("dup", status_code=409,
                                     code="EMAIL_ALREADY_REGISTERED")):
         r = client.post("/api/v1/registration",
@@ -332,7 +332,7 @@ def test_stale_approval_decision_is_409_without_write():
             "student_id": STUDENT_A, "user_id": USER_ID,
             "institution_id": TENANT_A, "approval_status": "approved"}
     with (_auth("admin", TENANT_A),
-          patch("app.services.admin_academics.get_admin_client", return_value=db)):
+          patch("app.services.admin.admin_academics.get_admin_client", return_value=db)):
         r = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve",
                         headers=AUTH_HEADERS)
     assert r.status_code == 409
@@ -348,7 +348,7 @@ def test_cross_tenant_approval_is_403_before_state_read():
             "student_id": STUDENT_B, "user_id": USER_ID,
             "institution_id": TENANT_B, "approval_status": "pending"}
     with (_auth("admin", TENANT_A),
-          patch("app.services.admin_academics.get_admin_client", return_value=db)):
+          patch("app.services.admin.admin_academics.get_admin_client", return_value=db)):
         r = client.post(f"/api/v1/admin/students/{STUDENT_B}/approve",
                         headers=AUTH_HEADERS)
     assert r.status_code == 403
@@ -399,7 +399,7 @@ def test_upload_validation_enforces_size_limit():
 
 def test_ingest_object_key_is_tenant_scoped_and_sanitized():
     import asyncio
-    from app.services import ingestion as ingestion_svc
+    from app.services.knowledge import ingestion as ingestion_svc
     db = MagicMock()
     db.table.return_value.select.return_value.eq.return_value \
         .maybe_single.return_value.execute.return_value.data = {
@@ -436,13 +436,13 @@ def test_extraction_failure_response_carries_no_internals():
                                  "storage_bucket": "b", "storage_object_key": "k",
                                  "file_type": "pdf"}}
     with (_auth("admin", TENANT_A),
-          patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-          patch("app.api.ingestion.get_processing_run_with_version", return_value=run),
-          patch("app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+          patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+          patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=run),
+          patch("app.api.knowledge.ingestion.knowledge_repo.get_knowledge_source_detail",
                 return_value={"knowledge_source_id": "ks-1", "institution_id": TENANT_A}),
-          patch("app.api.ingestion.update_run_status"),
-          patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-          patch("app.api.ingestion.download_file", return_value=b"not a pdf %%%")):
+          patch("app.api.knowledge.ingestion.update_run_status"),
+          patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+          patch("app.api.knowledge.ingestion.download_file", return_value=b"not a pdf %%%")):
         r = client.post(f"/api/v1/documents/{run_id}/extract", headers=AUTH_HEADERS)
     assert r.status_code == 500
     error = _envelope(r)
@@ -452,8 +452,8 @@ def test_extraction_failure_response_carries_no_internals():
 
 
 def test_retrieval_forwards_caller_tenant():
-    from app.schemas.retrieval import RetrievalRequest
-    from app.services import retrieval as retrieval_svc
+    from app.schemas.knowledge.retrieval import RetrievalRequest
+    from app.services.knowledge import retrieval as retrieval_svc
     captured = {}
 
     def _fake_search(query_embedding, *, top_k, institution_id=None, **kwargs):
@@ -466,7 +466,7 @@ def test_retrieval_forwards_caller_tenant():
 
 
 def test_malformed_embedding_is_422_not_500():
-    from app.services.retrieval import retrieve_chunks
+    from app.services.knowledge.retrieval import retrieve_chunks
     with pytest.raises(AppError) as exc:
         retrieve_chunks([0.0] * 8, institution_id=TENANT_A)
     assert exc.value.status_code == 422
@@ -481,8 +481,8 @@ def test_chat_requires_authentication():
 
 def test_provider_timeout_maps_to_safe_envelope():
     import httpx
-    from app.schemas.generation import AIContext
-    from app.services.generation_provider import OpenRouterGenerationProvider
+    from app.schemas.ai.generation import AIContext
+    from app.services.ai.generation_provider import OpenRouterGenerationProvider
     ctx = AIContext(user_question="fees?", system_instructions="sys",
                     grounding_instructions="ground", retrieved_knowledge=[],
                     conversation_history=[])
@@ -491,7 +491,7 @@ def test_provider_timeout_maps_to_safe_envelope():
         raise httpx.TimeoutException("timed out", request=request)
     provider = OpenRouterGenerationProvider(
         client=httpx.Client(transport=httpx.MockTransport(_timeout)))
-    with patch("app.services.generation_provider.settings") as ms:
+    with patch("app.services.ai.generation_provider.settings") as ms:
         ms.openrouter_api_key = "k"
         ms.openrouter_model = "m"
         ms.openrouter_base_url = "https://openrouter.ai/api/v1"
@@ -508,14 +508,14 @@ def test_provider_timeout_maps_to_safe_envelope():
 
 def test_rate_limit_maps_to_429_envelope():
     import httpx
-    from app.schemas.generation import AIContext
-    from app.services.generation_provider import OpenRouterGenerationProvider
+    from app.schemas.ai.generation import AIContext
+    from app.services.ai.generation_provider import OpenRouterGenerationProvider
     ctx = AIContext(user_question="q", system_instructions="sys",
                     grounding_instructions="ground", retrieved_knowledge=[],
                     conversation_history=[])
     transport = httpx.MockTransport(lambda request: httpx.Response(429, json={}))
     provider = OpenRouterGenerationProvider(client=httpx.Client(transport=transport))
-    with patch("app.services.generation_provider.settings") as ms:
+    with patch("app.services.ai.generation_provider.settings") as ms:
         ms.openrouter_api_key = "k"
         ms.openrouter_model = "m"
         ms.openrouter_base_url = "https://openrouter.ai/api/v1"
@@ -542,10 +542,10 @@ def test_chat_generation_failure_is_safe_500():
 
 def test_foreign_conversation_messages_are_404():
     from uuid import UUID
-    from app.services import conversation_history as history
-    with (patch("app.services.conversation_history.get_admin_client",
+    from app.services.ai import conversation_history as history
+    with (patch("app.services.ai.conversation_history.get_admin_client",
                 return_value=MagicMock()),
-          patch("app.services.conversation_history.get_conversation",
+          patch("app.services.ai.conversation_history.get_conversation",
                 return_value={"conversation_id": "c", "user_id": STUDENT_B})):
         with pytest.raises(AppError) as exc:
             history.get_conversation_messages(uuid4(), UUID(STUDENT_A))
@@ -561,9 +561,9 @@ def test_conversation_routes_require_authentication():
 def test_user_a_cannot_read_user_b_conversation_via_api():
     other = str(uuid4())
     with (_auth("student", TENANT_A),
-          patch("app.services.conversation_history.get_admin_client",
+          patch("app.services.ai.conversation_history.get_admin_client",
                 return_value=MagicMock()),
-          patch("app.services.conversation_history.get_conversation",
+          patch("app.services.ai.conversation_history.get_conversation",
                 return_value={"conversation_id": other, "user_id": STUDENT_B})):
         r = client.get(f"/api/v1/conversations/{other}/messages", headers=AUTH_HEADERS)
     assert r.status_code == 404
@@ -573,8 +573,8 @@ def test_user_a_cannot_read_user_b_conversation_via_api():
 def test_duplicate_error_mapping_hides_sqlstate():
     # Postgres unique-violation (23505) must be mapped to a business 409 whose
     # message never echoes the SQLSTATE, constraint name, or SQL text.
-    from app.services import attendance as attendance_svc
-    from app.services import results as results_svc
+    from app.services.academics import attendance as attendance_svc
+    from app.services.academics import results as results_svc
     for mapper, expected in (
         (attendance_svc._duplicate_error, "ATTENDANCE_DUPLICATE"),
         (results_svc._result_duplicate_error, "RESULT_DUPLICATE"),
@@ -590,7 +590,7 @@ def test_duplicate_error_mapping_hides_sqlstate():
 
 def test_failed_upload_compensates_orphaned_object():
     import asyncio
-    from app.services import ingestion as ingestion_svc
+    from app.services.knowledge import ingestion as ingestion_svc
     db = MagicMock()
     db.table.return_value.select.return_value.eq.return_value \
         .maybe_single.return_value.execute.return_value.data = {
@@ -621,7 +621,7 @@ def test_dev_routes_hidden_outside_dev_mode():
     # The dev password-recovery router is gated at ROUTER level, so with
     # DEV_TEST_MODE=false every path answers a flat 404 (feature existence is
     # not disclosed) regardless of payload shape.
-    with patch("app.api.dev_auth.settings") as ms:
+    with patch("app.api.auth.dev_auth.settings") as ms:
         ms.dev_test_mode = False
         for path in ("/api/v1/dev/auth/forgot-password",
                      "/api/v1/dev/auth/change-password",
@@ -633,8 +633,8 @@ def test_dev_routes_hidden_outside_dev_mode():
 
 
 def test_embedding_failure_message_redacts_api_key():
-    from app.services.embeddings import _safe_error_message
-    with patch("app.services.embeddings.settings") as ms:
+    from app.services.knowledge.embeddings import _safe_error_message
+    with patch("app.services.knowledge.embeddings.settings") as ms:
         ms.openrouter_api_key = "sk-or-SECRETVALUE"
         cleaned = _safe_error_message(Exception("boom sk-or-SECRETVALUE end"))
     assert "sk-or-SECRETVALUE" not in cleaned

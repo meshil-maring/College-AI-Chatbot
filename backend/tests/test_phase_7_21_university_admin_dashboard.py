@@ -18,7 +18,8 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import _ADMIN, _APPROVAL
+from app.api.admin.dependencies import _ADMIN
+from app.api.admin.dependencies import _APPROVAL
 from app.core.security import get_current_user
 from app.main import app
 from tests.dashboard_contract import build_dashboard
@@ -149,20 +150,20 @@ def _authenticated(
         )
 
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
             return_value=institution,
         ),
         patch(
-            "app.services.admin_dashboard.get_admin_client", return_value=MagicMock()
+            "app.services.admin.admin_dashboard.get_admin_client", return_value=MagicMock()
         ),
         patch(
-            "app.services.admin_dashboard.knowledge_repo.list_notices",
+            "app.services.admin.admin_dashboard.knowledge_repo.list_notices",
             return_value=[],
         ),
         patch(
-            "app.api.admin.admin_dashboard.get_dashboard_summary",
+            "app.services.admin.admin_dashboard.get_dashboard_summary",
             side_effect=dashboard_response or _tenant_scoped_dashboard,
         ) as service,
     ):
@@ -396,7 +397,7 @@ def test_super_admin_platform_surface_is_unchanged() -> None:
             ),
         ),
         patch(
-            "app.services.platform_institutions.get_admin_client", return_value=db
+            "app.services.platform.platform_institutions.get_admin_client", return_value=db
         ),
     ):
         response = client.get("/api/v1/platform/institutions", headers=AUTH_HEADERS)
@@ -577,22 +578,22 @@ class _RecordingClient:
 def _real_service(db: _RecordingClient | None = None, notices=None):
     """Stub ONLY the data layer so the REAL dashboard service executes.
 
-    ``app.services.authorization`` and ``app.services.admin_dashboard`` both hold
-    a reference to the SAME ``app.repositories.tenancy`` module, so a single
+    ``app.services.auth.authorization`` and ``app.services.admin.admin_dashboard`` both hold
+    a reference to the SAME ``app.repositories.platform.tenancy`` module, so a single
     patch covers both: the row must satisfy the authorization lifecycle check
     (``status``/``is_active``) AND carry the display fields the dashboard reads.
     """
     db = db if db is not None else _RecordingClient()
     app.dependency_overrides[get_current_user] = lambda: ADMIN_A_USER
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.repositories.tenancy.get_institution_by_id",
+            "app.repositories.platform.tenancy.get_institution_by_id",
             return_value=_institution_row(),
         ),
-        patch("app.services.admin_dashboard.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_dashboard.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_dashboard.knowledge_repo.list_notices",
+            "app.services.admin.admin_dashboard.knowledge_repo.list_notices",
             return_value=notices if notices is not None else [],
         ),
     ):
@@ -656,7 +657,7 @@ def test_real_service_issues_bounded_queries_for_one_institution() -> None:
     db = _RecordingClient()
     # Capture the recent-notice call so the bound can be asserted.
     with _real_service(db), patch(
-        "app.services.admin_dashboard.knowledge_repo.list_notices",
+        "app.services.admin.admin_dashboard.knowledge_repo.list_notices",
         return_value=[],
     ) as notices_mock:
         first = client.get("/api/v1/admin/dashboard", headers=AUTH_HEADERS)
@@ -681,7 +682,7 @@ def test_real_service_issues_bounded_queries_for_one_institution() -> None:
 
 def test_quick_actions_reference_existing_admin_capabilities() -> None:
     """Every quick action must be a real, already-implemented admin surface."""
-    from app.services.admin_dashboard import QUICK_ACTIONS
+    from app.services.admin.admin_dashboard import QUICK_ACTIONS
 
     existing_views = {
         "approvals",
@@ -707,16 +708,10 @@ def test_quick_actions_reference_existing_admin_capabilities() -> None:
 
 
 def _dashboard_routes() -> list:
-    """Return the admin dashboard routes from the admin router itself.
+    """Inspect the feature router; the public prefix is checked in OpenAPI."""
+    from app.api.admin.overview import router
 
-    FastAPI's ``include_router`` wraps routes in ``_IncludedRouter`` objects
-    that are not part of the public route model, so the admin router is
-    inspected directly. This is the authoritative registration point for the
-    endpoint contract.
-    """
-    from app.api.admin import router as admin_router
-
-    return [route for route in admin_router.routes if route.path.endswith("/dashboard")]
+    return [route for route in router.routes if route.path.endswith("/dashboard")]
 
 
 def test_dashboard_is_the_only_dashboard_endpoint() -> None:
@@ -735,7 +730,7 @@ def test_dashboard_is_the_only_dashboard_endpoint() -> None:
 
 def test_dashboard_route_declares_an_explicit_response_model() -> None:
     """§18 — explicit response schema, never an arbitrary row."""
-    from app.schemas.admin_dashboard import DashboardResponse
+    from app.schemas.admin.admin_dashboard import DashboardResponse
 
     (route,) = _dashboard_routes()
     assert route.response_model is DashboardResponse

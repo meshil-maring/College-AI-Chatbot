@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services import student_context
-from app.services import student_data
+from app.services.students import student_context
+from app.services.students import student_data
 client = TestClient(app, raise_server_exceptions=False)
 TENANT_A = "a1111111-0000-0000-0000-000000000001"
 TENANT_B = "b2222222-0000-0000-0000-000000000002"
@@ -50,7 +50,7 @@ def _db_without_profile():
 def cleanup():
     # The legacy routes now use the canonical eligibility guard as well.
     # Point that guard at each test's existing offline profile fixture.
-    with patch("app.services.student_context.get_admin_client", side_effect=lambda: student_data.get_admin_client()):
+    with patch("app.services.students.student_context.get_admin_client", side_effect=lambda: student_data.get_admin_client()):
         yield
     app.dependency_overrides.pop(get_current_user, None)
 
@@ -60,7 +60,7 @@ class TestStudentContextResolution:
     def test_resolves_student_context_from_jwt_user_id(self):
         """1. Authenticated student context resolves correctly."""
         db = _db_with_student_profile()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             context = student_context.get_student_context(_student_user())
         assert context["student_id"] == STUDENT_ID
         assert context["user_id"] == STUDENT_USER_ID
@@ -72,7 +72,7 @@ class TestStudentContextResolution:
     def test_context_contains_only_safe_fields(self):
         """Context only exposes whitelisted fields, no sensitive data."""
         db = _db_with_student_profile()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             context = student_context.get_student_context(_student_user())
         allowed_fields = set(student_context.CONTEXT_FIELDS)
         assert set(context.keys()) == allowed_fields
@@ -82,7 +82,7 @@ class TestStudentContextResolution:
     def test_returns_404_when_no_profile(self):
         """3. Missing student profile fails safely."""
         db = _db_without_profile()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 student_context.get_student_context(_student_user())
         assert exc.value.status_code == 404
@@ -91,7 +91,7 @@ class TestStudentContextResolution:
     def test_pending_student_not_eligible(self):
         """19. Inactive/unapproved students follow intended access rule."""
         db = _db_with_student_profile(_student_profile(approval_status="pending"))
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 student_context.get_student_context(_student_user())
         assert exc.value.status_code == 403
@@ -100,7 +100,7 @@ class TestStudentContextResolution:
     def test_inactive_student_not_eligible(self):
         """19. Inactive students cannot access data."""
         db = _db_with_student_profile(_student_profile(is_active=False))
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 student_context.get_student_context(_student_user())
         assert exc.value.status_code == 403
@@ -115,7 +115,7 @@ class TestStudentContextResolution:
         )
         admin_user["roles"] = ["admin"]
         db = _db_without_profile()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 student_context.get_student_context(admin_user)
         assert exc.value.code == "STUDENT_PROFILE_NOT_FOUND"
@@ -128,7 +128,7 @@ class TestProfileAccess:
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         profile = _student_profile()
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/profile")
         assert response.status_code == 200
         assert response.json()["student_id"] == STUDENT_ID
@@ -138,7 +138,7 @@ class TestProfileAccess:
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         profile = _student_profile()
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/profile", params={"student_id": OTHER_STUDENT_ID})
         assert response.status_code == 200
         assert response.json()["student_id"] == STUDENT_ID
@@ -147,7 +147,7 @@ class TestProfileAccess:
         """3. Missing student profile returns 404."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_without_profile()
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/profile")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "STUDENT_PROFILE_NOT_FOUND"
@@ -163,8 +163,8 @@ class TestAttendanceAccess:
         db = _db_with_student_profile(profile)
         rows = [{"student_attendance_id": str(uuid4()), "student_id": STUDENT_ID,
                 "institution_id": TENANT_A, "date": "2026-09-01", "status": "present"}]
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.admin_academics.list_student_attendance", return_value=rows) as ml:
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.admin.admin_academics.list_student_attendance", return_value=rows) as ml:
                 response = client.get("/api/v1/students/me/attendance")
         assert response.status_code == 200
         assert len(response.json()) == 1
@@ -177,8 +177,8 @@ class TestAttendanceAccess:
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         profile = _student_profile()
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.admin_academics.list_student_attendance", return_value=[]) as ml:
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.admin.admin_academics.list_student_attendance", return_value=[]) as ml:
                 response = client.get("/api/v1/students/me/attendance", params={"student_id": OTHER_STUDENT_ID})
         assert response.status_code == 200
         assert ml.call_args.args[1] == STUDENT_ID
@@ -187,7 +187,7 @@ class TestAttendanceAccess:
         """Missing student profile returns 404 for attendance."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_without_profile()
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/attendance")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "STUDENT_PROFILE_NOT_FOUND"
@@ -202,8 +202,8 @@ class TestResultsAccess:
         db = _db_with_student_profile(profile)
         rows = [{"student_result_id": str(uuid4()), "student_id": STUDENT_ID,
                 "institution_id": TENANT_A, "status": "published", "sgpa": 3.5}]
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.admin_academics.list_student_results", return_value=rows) as ml:
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.admin.admin_academics.list_student_results", return_value=rows) as ml:
                 response = client.get("/api/v1/students/me/results")
         assert response.status_code == 200
         assert len(response.json()) == 1
@@ -219,8 +219,8 @@ class TestResultsAccess:
         db = _db_with_student_profile(profile)
         other = {"student_result_id": result_id, "student_id": OTHER_STUDENT_ID,
                  "institution_id": TENANT_A, "status": "published"}
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.results.get_student_result_with_items", return_value=other):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.academics.results.get_student_result_with_items", return_value=other):
                 response = client.get(f"/api/v1/students/me/results/{result_id}")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "RESULT_NOT_FOUND"
@@ -231,8 +231,8 @@ class TestResultsAccess:
         profile = _student_profile()
         db = _db_with_student_profile(profile)
         other = [{"test_result_id": str(uuid4()), "student_id": OTHER_STUDENT_ID, "status": "published"}]
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.admin_academics.list_test_results", return_value=other) as ml:
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.admin.admin_academics.list_test_results", return_value=other) as ml:
                 response = client.get("/api/v1/students/me/test-results")
         assert response.status_code == 200
         assert ml.call_args.args[1] == STUDENT_ID
@@ -241,7 +241,7 @@ class TestResultsAccess:
         """Missing student profile returns 404 for results."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_without_profile()
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/results")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "STUDENT_PROFILE_NOT_FOUND"
@@ -254,8 +254,8 @@ class TestResultsAccess:
         all_r = [{"student_result_id": "1", "student_id": STUDENT_ID, "status": "published"},
                 {"student_result_id": "2", "student_id": STUDENT_ID, "status": "draft"},
                 {"student_result_id": "3", "student_id": STUDENT_ID, "status": "withheld"}]
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.admin_academics.list_student_results", return_value=all_r):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.admin.admin_academics.list_student_results", return_value=all_r):
                 response = client.get("/api/v1/students/me/results")
         assert response.status_code == 200
         data = response.json()
@@ -271,8 +271,8 @@ class TestCrossStudentSecurity:
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         profile = _student_profile()
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.admin_academics.list_student_results", return_value=[]) as ml:
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.admin.admin_academics.list_student_results", return_value=[]) as ml:
                 response = client.get("/api/v1/students/me/results", params={
                     "student_id": OTHER_STUDENT_ID,
                     "user_id": "71000000-0000-0000-0000-000000000099",
@@ -294,8 +294,8 @@ class TestCrossTenantSecurity:
         profile = _student_profile(institution_id=TENANT_A)
         result_id = str(uuid4())
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.results.get_student_result_with_items", return_value={
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.academics.results.get_student_result_with_items", return_value={
                 "student_result_id": result_id, "student_id": STUDENT_ID,
                 "institution_id": TENANT_B, "status": "published"}):
                 response = client.get(f"/api/v1/students/me/results/{result_id}")
@@ -307,7 +307,7 @@ class TestCrossTenantSecurity:
         app.dependency_overrides[get_current_user] = lambda: _student_user(tenant=TENANT_A)
         profile = _student_profile(institution_id=TENANT_B)
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/profile")
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "TENANT_MISMATCH"
@@ -319,7 +319,7 @@ class TestMalformedIds:
     def test_malformed_result_id_rejected(self):
         """21. Malformed IDs fail safely."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_data.get_admin_client", return_value=_db_with_student_profile()):
+        with patch("app.services.students.student_data.get_admin_client", return_value=_db_with_student_profile()):
             response = client.get("/api/v1/students/me/results/not-a-uuid")
         assert response.status_code == 422
 
@@ -331,7 +331,7 @@ class TestRoleBoundaries:
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         profile = _student_profile()
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             for path in ["/api/v1/students/me/profile", "/api/v1/students/me/results",
                          "/api/v1/students/me/test-results", "/api/v1/students/me/attendance"]:
                 response = client.get(path)
@@ -347,7 +347,7 @@ class TestRoleBoundaries:
         admin_user["roles"] = ["admin"]
         app.dependency_overrides[get_current_user] = lambda: admin_user
         db = _db_without_profile()
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/profile")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "STUDENT_PROFILE_NOT_FOUND"
@@ -364,8 +364,8 @@ class TestExistingSecurityContracts:
         rows = [{"student_result_id": "1", "student_id": STUDENT_ID, "status": "published"},
                 {"student_result_id": "2", "student_id": STUDENT_ID, "status": "draft"},
                 {"student_result_id": "3", "student_id": STUDENT_ID, "status": "withheld"}]
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.admin_academics.list_student_results", return_value=rows):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.admin.admin_academics.list_student_results", return_value=rows):
                 response = client.get("/api/v1/students/me/results")
         assert response.status_code == 200
         data = response.json()
@@ -378,8 +378,8 @@ class TestExistingSecurityContracts:
         profile = _student_profile(institution_id=TENANT_A)
         result_id = str(uuid4())
         db = _db_with_student_profile(profile)
-        with patch("app.services.student_data.get_admin_client", return_value=db):
-            with patch("app.repositories.results.get_student_result_with_items", return_value={
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
+            with patch("app.repositories.academics.results.get_student_result_with_items", return_value={
                 "student_result_id": result_id, "student_id": STUDENT_ID,
                 "institution_id": TENANT_B, "status": "published"}):
                 response = client.get(f"/api/v1/students/me/results/{result_id}")

@@ -32,11 +32,11 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories import student_dashboard as dashboard_repo
-from app.schemas.student_notices import StudentNotice, StudentNoticeList
-from app.schemas.student_resources import StudentResource, StudentResourceList
-from app.services import student_notices as notices_service
-from app.services import student_resources as resources_service
+from app.repositories.students import student_dashboard as dashboard_repo
+from app.schemas.students.student_notices import StudentNotice, StudentNoticeList
+from app.schemas.students.student_resources import StudentResource, StudentResourceList
+from app.services.students import student_notices as notices_service
+from app.services.students import student_resources as resources_service
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -425,7 +425,7 @@ class TestRepositoryPublicationFiltering:
 
     def test_excluded_source_types_match_the_locked_public_vocabulary(self):
         """Drift guard against the locked Phase 6.13.8 source-type vocabulary."""
-        from app.services.public_chat import PUBLIC_SOURCE_TYPES
+        from app.services.ai.public_chat import PUBLIC_SOURCE_TYPES
 
         assert set(dashboard_repo.EXCLUDED_RESOURCE_SOURCE_TYPES) <= set(
             PUBLIC_SOURCE_TYPES
@@ -484,7 +484,7 @@ class TestRepositoryProjections:
 class TestServiceIdentityResolution:
     def test_notices_use_the_authenticated_students_own_institution(self):
         db = _db_for_student(institution_id=TENANT_A)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(
                 dashboard_repo, "list_published_notices", return_value=[_notice_row()]
             ) as repo:
@@ -494,7 +494,7 @@ class TestServiceIdentityResolution:
 
     def test_resources_use_the_authenticated_students_own_institution(self):
         db = _db_for_student(institution_id=TENANT_B)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(
                 dashboard_repo, "list_published_resources", return_value=[]
             ) as repo:
@@ -529,7 +529,7 @@ class TestServiceEligibilityAndEdges:
         db = MagicMock()
         chain = db.table.return_value.select.return_value.eq.return_value
         chain.maybe_single.return_value.execute.return_value = MagicMock(data=None)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 resources_service.get_own_resources(_student_user(), client=db)
         assert exc.value.status_code == 404
@@ -537,7 +537,7 @@ class TestServiceEligibilityAndEdges:
 
     def test_unapproved_student_is_rejected(self):
         db = _db_for_student(approval_status="pending")
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 notices_service.get_own_notices(_student_user(), client=db)
         assert exc.value.status_code == 403
@@ -545,7 +545,7 @@ class TestServiceEligibilityAndEdges:
 
     def test_inactive_student_is_rejected(self):
         db = _db_for_student(is_active=False)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 resources_service.get_own_resources(_student_user(), client=db)
         assert exc.value.status_code == 403
@@ -553,7 +553,7 @@ class TestServiceEligibilityAndEdges:
 
     def test_student_without_a_tenant_fails_closed(self):
         db = _db_for_student(institution_id=None)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with pytest.raises(AppError) as exc:
                 notices_service.get_own_notices(_student_user(tenant=None), client=db)
         assert exc.value.status_code == 403
@@ -561,7 +561,7 @@ class TestServiceEligibilityAndEdges:
 
     def test_empty_data_is_an_empty_list_not_an_error(self):
         db = _db_for_student()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(dashboard_repo, "list_published_notices", return_value=[]):
                 notices = notices_service.get_own_notices(_student_user(), client=db)
             with patch.object(dashboard_repo, "list_published_resources", return_value=[]):
@@ -661,7 +661,7 @@ class TestStudentDashboardEndpoints:
     def test_notices_return_only_the_authenticated_students_institution(self):
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_for_student(institution_id=TENANT_A)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(
                 dashboard_repo,
                 "list_published_notices",
@@ -676,7 +676,7 @@ class TestStudentDashboardEndpoints:
     def test_resources_return_only_the_authenticated_students_institution(self):
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_for_student(institution_id=TENANT_A)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(
                 dashboard_repo,
                 "list_published_resources",
@@ -692,7 +692,7 @@ class TestStudentDashboardEndpoints:
         """A smuggled institution_id query value is ignored, not honoured."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_for_student(institution_id=TENANT_A)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(
                 dashboard_repo, "list_published_notices", return_value=[]
             ) as repo:
@@ -712,7 +712,7 @@ class TestStudentDashboardEndpoints:
     def test_empty_institution_returns_an_empty_list_not_an_error(self):
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_for_student()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(dashboard_repo, "list_published_notices", return_value=[]):
                 with patch.object(
                     dashboard_repo, "list_published_resources", return_value=[]
@@ -727,7 +727,7 @@ class TestStudentDashboardEndpoints:
     def test_responses_never_leak_storage_keys_tokens_or_internal_ids(self):
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_for_student()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(
                 dashboard_repo, "list_published_resources", return_value=[_resource_row()]
             ):
@@ -746,7 +746,7 @@ class TestStudentDashboardEndpoints:
     def test_unapproved_student_gets_403_not_data(self):
         app.dependency_overrides[get_current_user] = lambda: _student_user()
         db = _db_for_student(approval_status="pending")
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/notices")
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "STUDENT_NOT_APPROVED"

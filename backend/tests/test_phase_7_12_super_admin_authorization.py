@@ -51,7 +51,7 @@ def test_auth_me_exposes_server_resolved_super_admin_role() -> None:
     principal = _principal("super_admin")
     with (
         patch(
-            "app.core.security.verify_jwt",
+            "app.core.security.tokens.verify_jwt",
             return_value={"sub": principal["auth_user_id"], "email": principal["email"]},
         ),
         patch(

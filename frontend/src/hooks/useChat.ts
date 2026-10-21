@@ -21,15 +21,15 @@
  *   - session_id / conversation_id are never invented: the first request
  *     omits them; later requests reuse exactly the values the backend returned.
  *   - The institution_id is the established demo institution constant.
- *   - No frontend-network path other than services/api.ts is used.
+ *   - No frontend-network path other than services/chat/api.ts is used.
  */
 
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { queryClient } from '../lib/queryClient.ts'
-import { ApiError, chat } from '../services/api.ts'
+import { ApiError, chat } from '../services/chat/api.ts'
 import { DEMO_INSTITUTION_ID } from '../features/chat/institution.ts'
-import { useAuth } from '../features/auth/AuthProvider.tsx'
+import { useAuth } from '../features/auth/session/AuthProvider.tsx'
 import type {
   ChatRequest,
   ChatResponse,

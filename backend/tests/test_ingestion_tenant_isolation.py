@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api import ingestion
+from app.api.knowledge import ingestion
 from app.core.security import get_current_user
 from app.main import app
 
@@ -53,9 +53,9 @@ def processing(request):
     try:
         with ExitStack() as stack:
             db = MagicMock()
-            stack.enter_context(patch("app.services.authorization.get_admin_client", return_value=db))
+            stack.enter_context(patch("app.services.auth.authorization.get_admin_client", return_value=db))
             stack.enter_context(patch(
-                "app.services.authorization.tenancy_repo.get_institution_by_id",
+                "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
                 return_value={"status": "active", "is_active": True},
             ))
             stack.enter_context(patch.object(ingestion, "get_admin_client", return_value=db))

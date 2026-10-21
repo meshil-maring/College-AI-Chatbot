@@ -20,9 +20,9 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.config import settings
-from app.schemas.generation import AIContext, RetrievedChunk
-from app.services.generation import AIGenerationService
-from app.services.generation_provider import OpenRouterGenerationProvider
+from app.schemas.ai.generation import AIContext, RetrievedChunk
+from app.services.ai.generation import AIGenerationService
+from app.services.ai.generation_provider import OpenRouterGenerationProvider
 from app.core.errors import AppError
 
 

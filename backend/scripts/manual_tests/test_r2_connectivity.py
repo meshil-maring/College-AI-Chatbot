@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from app.config import settings
-from app.services.storage import get_r2_client
+from app.services.knowledge.storage import get_r2_client
 
 
 def main() -> None:

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.repositories.vector_search import search_similar_chunks
+from app.repositories.knowledge.vector_search import search_similar_chunks
 
 
 QUERY = [0.25] * 1536

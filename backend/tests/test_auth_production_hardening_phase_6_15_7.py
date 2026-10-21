@@ -34,9 +34,9 @@ from supabase_auth.errors import AuthApiError
 from app.config import DEV_TEST_ENVIRONMENTS, Settings, settings
 from app.core.security import get_current_user
 from app.main import app
-from app.services.auth_security import reset_auth_abuse_state
-from app.schemas.tenancy import InstitutionLookupResponse
-from app.schemas.users import UserRegistrationResponse
+from app.services.auth.auth_security import reset_auth_abuse_state
+from app.schemas.platform.tenancy import InstitutionLookupResponse
+from app.schemas.auth.users import UserRegistrationResponse
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -65,7 +65,7 @@ def _dev_flag_off_and_no_overrides():
     settings.dev_test_mode = False
     app.dependency_overrides.pop(get_current_user, None)
     reset_auth_abuse_state()
-    with patch("app.api.auth.record_auth_security_event"):
+    with patch("app.api.auth.common.record_auth_security_event"):
         yield
     reset_auth_abuse_state()
     settings.dev_test_mode = original
@@ -170,8 +170,8 @@ def test_disabled_dev_routes_handle_malformed_bodies_without_side_effects(route)
     In both cases the dev handler never runs and no Supabase client is built.
     """
     malformed = None
-    with patch("app.api.dev_auth.create_supabase_client") as auth_client, patch(
-        "app.api.dev_auth.get_admin_client"
+    with patch("app.api.auth.dev_auth.create_supabase_client") as auth_client, patch(
+        "app.api.auth.dev_auth.get_admin_client"
     ) as admin_client:
         malformed = client.post(
             route,
@@ -217,7 +217,7 @@ def test_auth_me_exposes_only_the_documented_fields():
         "roles": ["student"],
         "institution_id": "30000000-0000-0000-0000-000000000001",
     }
-    with patch("app.core.security.verify_jwt", return_value=_fake_claims()), patch(
+    with patch("app.core.security.tokens.verify_jwt", return_value=_fake_claims()), patch(
         "app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user)
     ):
         response = client.get(
@@ -273,9 +273,9 @@ def test_login_response_is_minimal_and_never_echoes_the_password():
         "approval_status": None,
         "student_is_active": None,
     }
-    with patch("app.api.auth.create_supabase_client", return_value=auth_client), patch(
-        "app.api.auth.get_sign_in_context", new=AsyncMock(return_value=account)
-    ), patch("app.api.auth.get_admin_client", return_value=MagicMock()):
+    with patch("app.api.auth.common.create_supabase_client", return_value=auth_client), patch(
+        "app.api.auth.common.get_sign_in_context", new=AsyncMock(return_value=account)
+    ), patch("app.api.auth.common.get_admin_client", return_value=MagicMock()):
         response = client.post(
             "/api/v1/auth/login",
             json={"email": "admin@college.edu", "password": SUBMITTED_PASSWORD},
@@ -344,7 +344,7 @@ def test_institution_lookup_projection_is_exactly_the_public_triple():
 def test_unhandled_exception_returns_a_sanitized_500():
     """No traceback, exception name, file path, or internal value on a 500."""
     with patch(
-        "app.api.auth.create_supabase_client",
+        "app.api.auth.common.create_supabase_client",
         side_effect=RuntimeError("secret-internal-dsn-and-stack-detail"),
     ):
         response = client.post(
@@ -372,7 +372,7 @@ def test_rejected_login_is_generic_and_never_echoes_the_password():
     auth_client.auth.sign_in_with_password.side_effect = AuthApiError(
         "Invalid login credentials", 400, "invalid_grant"
     )
-    with patch("app.api.auth.create_supabase_client", return_value=auth_client):
+    with patch("app.api.auth.common.create_supabase_client", return_value=auth_client):
         response = client.post(
             "/api/v1/auth/login",
             json={"email": "unknown@college.edu", "password": SUBMITTED_PASSWORD},
@@ -407,8 +407,8 @@ def test_validation_failure_detail_never_echoes_submitted_values():
 @pytest.mark.parametrize("route", DEV_ROUTES)
 def test_disabled_dev_routes_never_create_a_supabase_client(route):
     """Fail closed: a disabled route must not touch auth infrastructure."""
-    with patch("app.api.dev_auth.create_supabase_client") as auth_client, patch(
-        "app.api.dev_auth.get_admin_client"
+    with patch("app.api.auth.dev_auth.create_supabase_client") as auth_client, patch(
+        "app.api.auth.dev_auth.get_admin_client"
     ) as admin_client:
         response = client.post(
             route,

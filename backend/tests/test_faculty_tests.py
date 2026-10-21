@@ -11,15 +11,15 @@ from fastapi.testclient import TestClient
 from postgrest.exceptions import APIError
 from pydantic import ValidationError
 
-from app.api.faculty_tests import faculty
+from app.api.faculty.faculty_tests import faculty
 from app.core.errors import AppError
 from app.main import app
-from app.schemas.faculty_tests import Correction, MarkInput, MarksCommand, Transition
-from app.schemas.faculty_tests import TestInput as AssessmentInput
-from app.services import faculty_tests as svc
-from app.services import student_results
-from app.services.authorization import effective_authorization
-from app.services.faculty_attendance import ParsedRows
+from app.schemas.faculty.faculty_tests import Correction, MarkInput, MarksCommand, Transition
+from app.schemas.faculty.faculty_tests import TestInput as AssessmentInput
+from app.services.faculty import faculty_tests as svc
+from app.services.students import student_results
+from app.services.auth.authorization import effective_authorization
+from app.services.faculty.faculty_attendance import ParsedRows
 
 TENANT = '11111111-1111-4111-8111-111111111111'
 SECTION = '22222222-2222-4222-8222-222222222222'
@@ -267,7 +267,7 @@ def test_binary_xls_formula_records_are_rejected(monkeypatch, opcode):
     import xlrd
     import xlrd.compdoc
 
-    from app.services.faculty_attendance import parse_attendance_file
+    from app.services.faculty.faculty_attendance import parse_attendance_file
     compound = MagicMock()
     compound.get_named_stream.return_value = struct.pack('<HH', opcode, 0)
     monkeypatch.setattr(xlrd.compdoc, 'CompDoc', lambda _: compound)
@@ -310,7 +310,7 @@ def test_commit_revalidates_stored_rows_before_transaction(monkeypatch):
 
 @pytest.mark.parametrize('race', [False, True])
 def test_existing_roster_deletion_preserves_assessment_history(monkeypatch, race):
-    from app.services import faculty_attendance
+    from app.services.faculty import faculty_attendance
     db = MagicMock()
     monkeypatch.setattr(faculty_attendance, 'get_admin_client', lambda: db)
     monkeypatch.setattr(faculty_attendance, 'read_one', lambda _: {'section_id': SECTION})

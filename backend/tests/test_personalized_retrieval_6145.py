@@ -23,16 +23,16 @@ import pytest
 
 from app.config import settings
 from app.core.errors import AppError
-from app.repositories import admin_academics as repo
-from app.repositories import tenancy as tenancy_repo
-from app.schemas.retrieval import RetrievalRequest
-from app.services import personalized_retrieval as prsvc
-from app.services import public_chat as public_chat_svc
-from app.services import retrieval as retrieval_svc
-from app.services import student_academic_context as ctxsvc
-from app.services import student_academic_profile as psvc
-from app.services import student_attendance as asvc
-from app.services import student_results as rsvc
+from app.repositories.admin import admin_academics as repo
+from app.repositories.platform import tenancy as tenancy_repo
+from app.schemas.knowledge.retrieval import RetrievalRequest
+from app.services.ai import personalized_retrieval as prsvc
+from app.services.ai import public_chat as public_chat_svc
+from app.services.knowledge import retrieval as retrieval_svc
+from app.services.students import student_academic_context as ctxsvc
+from app.services.students import student_academic_profile as psvc
+from app.services.students import student_attendance as asvc
+from app.services.students import student_results as rsvc
 
 ORG_A = "11111111-0000-0000-0000-00000000000a"
 ORG_B = "22222222-0000-0000-0000-00000000000b"
@@ -637,7 +637,7 @@ def test_23_phase_6144_regression():
 
 def test_24_phase_6137_scope_regression():
     """The locked Phase 6.13.7 guard is unchanged and keeps its semantics."""
-    from app.services import authorization as authz
+    from app.services.auth import authorization as authz
 
     params = list(inspect.signature(
         authz.assert_active_tenant_context).parameters)

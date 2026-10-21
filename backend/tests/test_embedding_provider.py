@@ -4,7 +4,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from app.services.embedding_provider import OPENROUTER_EMBEDDINGS_URL, OpenRouterEmbeddingProvider
+from app.services.knowledge.embedding_provider import OPENROUTER_EMBEDDINGS_URL, OpenRouterEmbeddingProvider
 
 MODEL = "qwen/qwen3-embedding-8b"
 DIMENSIONS = 1536
@@ -29,7 +29,7 @@ def test_success_request_contract():
 
     instance, client = provider(handler)
     try:
-        with patch("app.services.embedding_provider.settings.openrouter_api_key", API_KEY):
+        with patch("app.services.knowledge.embedding_provider.settings.openrouter_api_key", API_KEY):
             result = instance.embed(["first chunk"])
     finally:
         client.close()
@@ -97,7 +97,7 @@ def test_http_error_does_not_expose_secret():
     )
     try:
         with (
-            patch("app.services.embedding_provider.settings.openrouter_api_key", API_KEY),
+            patch("app.services.knowledge.embedding_provider.settings.openrouter_api_key", API_KEY),
             pytest.raises(RuntimeError, match="401") as error,
         ):
             instance.embed(["input"])

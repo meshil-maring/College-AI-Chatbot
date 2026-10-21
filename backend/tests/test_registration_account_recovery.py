@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.core.errors import AppError
-from app.schemas.users import UserRegistrationRequest
-from app.services import student_registration as student
-from app.services import user_registration as unified
+from app.schemas.auth.users import UserRegistrationRequest
+from app.services.auth import student_registration as student
+from app.services.auth import user_registration as unified
 
 INST = "a1111111-0000-0000-0000-000000000001"
 

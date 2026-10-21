@@ -11,8 +11,9 @@ from uuid import uuid4
 import pytest
 
 from app.core.errors import AppError
-from app.services import admin_faq, admin_notices
-from app.schemas.admin import FaqCreate, FaqUpdate, NoticeCreate, NoticeUpdate
+from app.services.admin import admin_faq
+from app.services.admin import admin_notices
+from app.schemas.admin.admin import FaqCreate, FaqUpdate, NoticeCreate, NoticeUpdate
 
 FAQ_ID = str(uuid4())
 NOTICE_ID = str(uuid4())
@@ -69,9 +70,9 @@ def test_create_faq_stays_out_of_rag_until_published() -> None:
     db = MagicMock()
     faq = _faq(is_published=False)
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.create_faq", return_value=faq),
-        patch("app.services.admin_faq.sync_canonical_text_record") as sync_mock,
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.create_faq", return_value=faq),
+        patch("app.services.admin.admin_faq.sync_canonical_text_record") as sync_mock,
     ):
         result = admin_faq.create_faq(
             FaqCreate(institution_id=uuid4(), question="Q?", answer="A"), ACTOR
@@ -84,10 +85,10 @@ def test_create_faq_stays_out_of_rag_until_published() -> None:
 def test_publish_faq_wraps_sync_failure() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_faq", return_value=_faq()),
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_faq", return_value=_faq()),
         patch(
-            "app.services.admin_faq.sync_canonical_text_record",
+            "app.services.admin.admin_faq.sync_canonical_text_record",
             side_effect=RuntimeError("pipeline down"),
         ),
     ):
@@ -99,10 +100,10 @@ def test_update_faq_reactivates_with_resync() -> None:
     db = MagicMock()
     updated = _faq(answer="Updated answer")
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_faq", return_value=_faq()),
-        patch("app.repositories.admin_knowledge.update_faq", return_value=updated),
-        patch("app.services.admin_faq.sync_canonical_text_record") as sync_mock,
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_faq", return_value=_faq()),
+        patch("app.repositories.admin.admin_knowledge.update_faq", return_value=updated),
+        patch("app.services.admin.admin_faq.sync_canonical_text_record") as sync_mock,
     ):
         result = admin_faq.update_faq(FAQ_ID, FaqUpdate(answer="Updated answer"), ACTOR)
 
@@ -114,16 +115,16 @@ def test_update_faq_reactivates_with_resync() -> None:
 def test_update_faq_deactivation_removes_retrievable_content() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_faq", return_value=_faq()),
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_faq", return_value=_faq()),
         patch(
-            "app.repositories.admin_knowledge.update_faq",
+            "app.repositories.admin.admin_knowledge.update_faq",
             return_value=_faq(is_active=False),
         ),
         patch(
-            "app.services.admin_faq.remove_canonical_text_record", return_value=True
+            "app.services.admin.admin_faq.remove_canonical_text_record", return_value=True
         ) as remove_mock,
-        patch("app.services.admin_faq.sync_canonical_text_record") as sync_mock,
+        patch("app.services.admin.admin_faq.sync_canonical_text_record") as sync_mock,
     ):
         admin_faq.update_faq(FAQ_ID, FaqUpdate(is_active=False), ACTOR)
 
@@ -134,8 +135,8 @@ def test_update_faq_deactivation_removes_retrievable_content() -> None:
 def test_update_faq_404_when_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_faq", return_value=None),
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_faq", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             admin_faq.update_faq(FAQ_ID, FaqUpdate(answer="x"), ACTOR)
@@ -145,11 +146,11 @@ def test_update_faq_404_when_missing() -> None:
 def test_delete_faq_removes_record_and_rag_content() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_faq", return_value=_faq()),
-        patch("app.repositories.admin_knowledge.delete_faq") as delete_mock,
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_faq", return_value=_faq()),
+        patch("app.repositories.admin.admin_knowledge.delete_faq") as delete_mock,
         patch(
-            "app.services.admin_faq.remove_canonical_text_record", return_value=True
+            "app.services.admin.admin_faq.remove_canonical_text_record", return_value=True
         ) as remove_mock,
     ):
         result = admin_faq.delete_faq(FAQ_ID)
@@ -162,8 +163,8 @@ def test_delete_faq_removes_record_and_rag_content() -> None:
 def test_delete_faq_404_when_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_faq", return_value=None),
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_faq", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             admin_faq.delete_faq(FAQ_ID)
@@ -189,11 +190,11 @@ def test_create_notice_stays_out_of_rag_until_published() -> None:
     db = MagicMock()
     notice = _notice(is_published=False)
     with (
-        patch("app.services.admin_notices.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_notices.get_admin_client", return_value=db),
         patch(
-            "app.repositories.admin_knowledge.create_notice", return_value=notice
+            "app.repositories.admin.admin_knowledge.create_notice", return_value=notice
         ) as create_mock,
-        patch("app.services.admin_notices.sync_canonical_text_record") as sync_mock,
+        patch("app.services.admin.admin_notices.sync_canonical_text_record") as sync_mock,
     ):
         result = admin_notices.create_notice(
             NoticeCreate(title="Exam schedule", content="Midterms start Monday."), ACTOR
@@ -207,17 +208,17 @@ def test_create_notice_stays_out_of_rag_until_published() -> None:
 def test_update_notice_deactivation_removes_retrievable_content() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_notices.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_notice", return_value=_notice()),
+        patch("app.services.admin.admin_notices.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_notice", return_value=_notice()),
         patch(
-            "app.repositories.admin_knowledge.update_notice",
+            "app.repositories.admin.admin_knowledge.update_notice",
             return_value=_notice(is_active=False),
         ),
         patch(
-            "app.services.admin_notices.remove_canonical_text_record",
+            "app.services.admin.admin_notices.remove_canonical_text_record",
             return_value=True,
         ) as remove_mock,
-        patch("app.services.admin_notices.sync_canonical_text_record") as sync_mock,
+        patch("app.services.admin.admin_notices.sync_canonical_text_record") as sync_mock,
     ):
         admin_notices.update_notice(
             NOTICE_ID, NoticeUpdate(is_active=False), ACTOR
@@ -231,10 +232,10 @@ def test_update_notice_resyncs_on_content_change() -> None:
     db = MagicMock()
     updated = _notice(content="Midterms moved to Tuesday.")
     with (
-        patch("app.services.admin_notices.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_notice", return_value=_notice()),
-        patch("app.repositories.admin_knowledge.update_notice", return_value=updated),
-        patch("app.services.admin_notices.sync_canonical_text_record") as sync_mock,
+        patch("app.services.admin.admin_notices.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_notice", return_value=_notice()),
+        patch("app.repositories.admin.admin_knowledge.update_notice", return_value=updated),
+        patch("app.services.admin.admin_notices.sync_canonical_text_record") as sync_mock,
     ):
         admin_notices.update_notice(
             NOTICE_ID, NoticeUpdate(content="Midterms moved to Tuesday."), ACTOR
@@ -247,11 +248,11 @@ def test_update_notice_resyncs_on_content_change() -> None:
 def test_delete_notice_removes_record_and_rag_content() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_notices.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_notice", return_value=_notice()),
-        patch("app.repositories.admin_knowledge.delete_notice") as delete_mock,
+        patch("app.services.admin.admin_notices.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_notice", return_value=_notice()),
+        patch("app.repositories.admin.admin_knowledge.delete_notice") as delete_mock,
         patch(
-            "app.services.admin_notices.remove_canonical_text_record",
+            "app.services.admin.admin_notices.remove_canonical_text_record",
             return_value=True,
         ) as remove_mock,
     ):
@@ -265,8 +266,8 @@ def test_delete_notice_removes_record_and_rag_content() -> None:
 def test_delete_notice_404_when_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_notices.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_notice", return_value=None),
+        patch("app.services.admin.admin_notices.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_notice", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             admin_notices.delete_notice(NOTICE_ID)

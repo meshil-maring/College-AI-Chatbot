@@ -33,10 +33,10 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories import attendance as attendance_repo
-from app.repositories.admin_academics import STUDENT_ATTENDANCE_COLUMNS
-from app.services import attendance as attendance_svc
-from app.services.admin_academics import (
+from app.repositories.academics import attendance as attendance_repo
+from app.repositories.admin.admin_academics import STUDENT_ATTENDANCE_COLUMNS
+from app.services.academics import attendance as attendance_svc
+from app.services.admin.admin_academics import (
     ATTENDANCE_STATUSES,
     AttendanceCreate,
     AttendanceUpdate,
@@ -96,7 +96,7 @@ def _active_institution_authorization():
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
         data={"institution_id": TENANT_A, "status": "active", "is_active": True}
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
         yield
 
 
@@ -171,11 +171,11 @@ def _audit_db():
 def _context_patches(institution_id=TENANT_A, ay_id=AY_ID, sem_id=SEM_ID, section=None, student=None):
     return (
         patch(
-            "app.repositories.attendance.get_student_context",
+            "app.repositories.academics.attendance.get_student_context",
             return_value=student or _student_context(STUDENT_A, institution_id),
         ),
         patch(
-            "app.repositories.attendance.get_section_academic_context",
+            "app.repositories.academics.attendance.get_section_academic_context",
             return_value=section if section is not None else _section_context(institution_id, ay_id, sem_id),
         ),
     )
@@ -236,11 +236,11 @@ def test_create_attendance_derives_tenant_server_side() -> None:
     created = _attendance_row()
     p_student, p_section = _context_patches(institution_id=TENANT_A)
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         p_student,
         p_section,
         patch(
-            "app.repositories.attendance.insert_attendance",
+            "app.repositories.academics.attendance.insert_attendance",
             return_value=created,
         ) as insert_mock,
     ):
@@ -268,9 +268,9 @@ def test_create_attendance_rejects_invalid_status() -> None:
 def test_create_attendance_student_not_found() -> None:
     db = MagicMock()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
-        patch("app.repositories.attendance.get_student_context", return_value=None),
-        patch("app.repositories.attendance.insert_attendance") as insert_mock,
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
+        patch("app.repositories.academics.attendance.get_student_context", return_value=None),
+        patch("app.repositories.academics.attendance.insert_attendance") as insert_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.create_attendance(
@@ -284,13 +284,13 @@ def test_create_attendance_student_not_found() -> None:
 def test_create_attendance_section_not_found() -> None:
     db = MagicMock()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.get_student_context",
+            "app.repositories.academics.attendance.get_student_context",
             return_value=_student_context(STUDENT_A, TENANT_A),
         ),
-        patch("app.repositories.attendance.get_section_academic_context", return_value=None),
-        patch("app.repositories.attendance.insert_attendance") as insert_mock,
+        patch("app.repositories.academics.attendance.get_section_academic_context", return_value=None),
+        patch("app.repositories.academics.attendance.insert_attendance") as insert_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.create_attendance(
@@ -305,13 +305,13 @@ def test_create_attendance_section_with_unresolvable_context_is_rejected() -> No
     db = MagicMock()
     # Section exists but the offering chain is broken -> fail closed.
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.get_student_context",
+            "app.repositories.academics.attendance.get_student_context",
             return_value=_student_context(STUDENT_A, TENANT_A),
         ),
         patch(
-            "app.repositories.attendance.get_section_academic_context",
+            "app.repositories.academics.attendance.get_section_academic_context",
             return_value={
                 "section_id": SECTION_A,
                 "section_code": "X",
@@ -322,7 +322,7 @@ def test_create_attendance_section_with_unresolvable_context_is_rejected() -> No
                 "institution_id": None,
             },
         ),
-        patch("app.repositories.attendance.insert_attendance") as insert_mock,
+        patch("app.repositories.academics.attendance.insert_attendance") as insert_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.create_attendance(AttendanceCreate(**_create_payload()))
@@ -337,10 +337,10 @@ def test_create_attendance_rejects_cross_institution_section() -> None:
         student=_student_context(STUDENT_A, TENANT_A), section=_section_context(TENANT_B)
     )
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         p_student,
         p_section,
-        patch("app.repositories.attendance.insert_attendance") as insert_mock,
+        patch("app.repositories.academics.attendance.insert_attendance") as insert_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.create_attendance(AttendanceCreate(**_create_payload()))
@@ -356,10 +356,10 @@ def test_create_attendance_rejects_academic_context_mismatch() -> None:
     other_sem = "a0000000-0000-0000-0000-0000000000b2"
     p_student, p_section = _context_patches(institution_id=TENANT_A)
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         p_student,
         p_section,
-        patch("app.repositories.attendance.insert_attendance") as insert_mock,
+        patch("app.repositories.academics.attendance.insert_attendance") as insert_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.create_attendance(
@@ -374,11 +374,11 @@ def test_create_attendance_duplicate_maps_to_conflict() -> None:
     db = MagicMock()
     p_student, p_section = _context_patches(institution_id=TENANT_A)
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         p_student,
         p_section,
         patch(
-            "app.repositories.attendance.insert_attendance",
+            "app.repositories.academics.attendance.insert_attendance",
             side_effect=Exception(
                 'duplicate key value violates unique constraint '
                 '"student_attendance_student_section_date_key" (SQLSTATE 23505)'
@@ -395,11 +395,11 @@ def test_create_attendance_other_insert_errors_are_generic_conflict() -> None:
     db = MagicMock()
     p_student, p_section = _context_patches(institution_id=TENANT_A)
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         p_student,
         p_section,
         patch(
-            "app.repositories.attendance.insert_attendance",
+            "app.repositories.academics.attendance.insert_attendance",
             side_effect=Exception("some unrelated database failure"),
         ),
     ):
@@ -411,10 +411,10 @@ def test_create_attendance_other_insert_errors_are_generic_conflict() -> None:
 
 def test_admin_academics_create_attendance_delegates_to_phase67_service() -> None:
     """Backward-compat entrypoint used by the Phase Admin-3 surface."""
-    from app.services import admin_academics as legacy
+    from app.services.admin import admin_academics as legacy
 
     created = _attendance_row()
-    with patch("app.services.attendance.create_attendance", return_value=created) as svc_mock:
+    with patch("app.services.academics.attendance.create_attendance", return_value=created) as svc_mock:
         result = legacy.create_attendance(AttendanceCreate(**_create_payload()))
     assert result == created
     svc_mock.assert_called_once()
@@ -429,9 +429,9 @@ def test_get_attendance_returns_row() -> None:
     db = MagicMock()
     row = _attendance_row()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.get_attendance_row",
+            "app.repositories.academics.attendance.get_attendance_row",
             return_value=row,
         ) as get_mock,
     ):
@@ -443,8 +443,8 @@ def test_get_attendance_returns_row() -> None:
 def test_get_attendance_404_when_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
-        patch("app.repositories.attendance.get_attendance_row", return_value=None),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
+        patch("app.repositories.academics.attendance.get_attendance_row", return_value=None),
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.get_attendance(ATTENDANCE_ID)
@@ -456,9 +456,9 @@ def test_list_attendance_for_student_delegates_with_filters() -> None:
     db = MagicMock()
     rows = [_attendance_row()]
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.list_attendance",
+            "app.repositories.academics.attendance.list_attendance",
             return_value=rows,
         ) as list_mock,
     ):
@@ -481,13 +481,13 @@ def test_update_attendance_updates_status_and_notes_only() -> None:
     existing = _attendance_row()
     updated = _attendance_row(status="absent", notes="updated")
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.get_attendance_row",
+            "app.repositories.academics.attendance.get_attendance_row",
             return_value=existing,
         ),
         patch(
-            "app.repositories.attendance.update_attendance_row",
+            "app.repositories.academics.attendance.update_attendance_row",
             return_value=updated,
         ) as upd_mock,
     ):
@@ -504,9 +504,9 @@ def test_update_attendance_updates_status_and_notes_only() -> None:
 def test_update_attendance_404_when_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
-        patch("app.repositories.attendance.get_attendance_row", return_value=None),
-        patch("app.repositories.attendance.update_attendance_row") as upd_mock,
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
+        patch("app.repositories.academics.attendance.get_attendance_row", return_value=None),
+        patch("app.repositories.academics.attendance.update_attendance_row") as upd_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.update_attendance(ATTENDANCE_ID, AttendanceUpdate(status="absent"))
@@ -518,12 +518,12 @@ def test_update_attendance_404_when_missing() -> None:
 def test_update_attendance_empty_payload_rejected() -> None:
     db = MagicMock()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.get_attendance_row",
+            "app.repositories.academics.attendance.get_attendance_row",
             return_value=_attendance_row(),
         ),
-        patch("app.repositories.attendance.update_attendance_row") as upd_mock,
+        patch("app.repositories.academics.attendance.update_attendance_row") as upd_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.update_attendance(ATTENDANCE_ID, AttendanceUpdate())
@@ -535,12 +535,12 @@ def test_update_attendance_empty_payload_rejected() -> None:
 def test_update_attendance_invalid_status_rejected() -> None:
     db = MagicMock()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.get_attendance_row",
+            "app.repositories.academics.attendance.get_attendance_row",
             return_value=_attendance_row(),
         ),
-        patch("app.repositories.attendance.update_attendance_row") as upd_mock,
+        patch("app.repositories.academics.attendance.update_attendance_row") as upd_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.update_attendance(ATTENDANCE_ID, AttendanceUpdate(status="bogus"))
@@ -553,12 +553,12 @@ def test_delete_attendance_deletes_existing() -> None:
     db = MagicMock()
     existing = _attendance_row()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         patch(
-            "app.repositories.attendance.get_attendance_row",
+            "app.repositories.academics.attendance.get_attendance_row",
             return_value=existing,
         ),
-        patch("app.repositories.attendance.delete_attendance_row") as del_mock,
+        patch("app.repositories.academics.attendance.delete_attendance_row") as del_mock,
     ):
         result = attendance_svc.delete_attendance(ATTENDANCE_ID)
     assert result == existing
@@ -568,9 +568,9 @@ def test_delete_attendance_deletes_existing() -> None:
 def test_delete_attendance_404_when_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
-        patch("app.repositories.attendance.get_attendance_row", return_value=None),
-        patch("app.repositories.attendance.delete_attendance_row") as del_mock,
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
+        patch("app.repositories.academics.attendance.get_attendance_row", return_value=None),
+        patch("app.repositories.academics.attendance.delete_attendance_row") as del_mock,
     ):
         with pytest.raises(AppError) as exc:
             attendance_svc.delete_attendance(ATTENDANCE_ID)
@@ -615,10 +615,10 @@ def test_concurrent_duplicate_creates_single_record() -> None:
 
     p_student, p_section = _context_patches(institution_id=TENANT_A)
     with (
-        patch("app.services.attendance.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
         p_student,
         p_section,
-        patch("app.repositories.attendance.insert_attendance", side_effect=fake_insert),
+        patch("app.repositories.academics.attendance.insert_attendance", side_effect=fake_insert),
     ):
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = sorted(pool.map(lambda _: attempt(), range(2)))
@@ -648,7 +648,7 @@ def test_unauthenticated_attendance_endpoints_are_401() -> None:
 
 def test_staff_cannot_manage_attendance() -> None:
     _as(_user(TENANT_A, roles=("staff",)))
-    with patch("app.api.admin.attendance.create_attendance") as create_mock:
+    with patch("app.services.academics.attendance.create_attendance") as create_mock:
         try:
             r1 = client.post("/api/v1/admin/attendance", json=_create_payload())
             r2 = client.get(f"/api/v1/admin/students/{STUDENT_A}/attendance")
@@ -664,7 +664,7 @@ def test_staff_cannot_manage_attendance() -> None:
 
 def test_faculty_cannot_manage_attendance() -> None:
     _as(_user(TENANT_A, roles=("faculty",)))
-    with patch("app.api.admin.attendance.create_attendance") as create_mock:
+    with patch("app.services.academics.attendance.create_attendance") as create_mock:
         try:
             r1 = client.post("/api/v1/admin/attendance", json=_create_payload())
             r2 = client.get(f"/api/v1/admin/students/{STUDENT_A}/attendance")
@@ -676,7 +676,7 @@ def test_faculty_cannot_manage_attendance() -> None:
 
 def test_student_cannot_manage_attendance() -> None:
     _as(_user(TENANT_A, roles=("student",)))
-    with patch("app.api.admin.attendance.create_attendance") as create_mock:
+    with patch("app.services.academics.attendance.create_attendance") as create_mock:
         try:
             r1 = client.post("/api/v1/admin/attendance", json=_create_payload())
             r2 = client.get(f"/api/v1/admin/students/{STUDENT_A}/attendance")
@@ -699,11 +699,11 @@ def test_admin_can_create_own_tenant_attendance() -> None:
     db = _audit_db()
     with (
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_A, TENANT_A),
         ),
-        patch("app.api.admin.attendance.create_attendance", return_value=created),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.create_attendance", return_value=created),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         try:
             resp = client.post("/api/v1/admin/attendance", json=_create_payload())
@@ -725,10 +725,10 @@ def test_admin_cannot_create_foreign_tenant_student() -> None:
     _as(_user(TENANT_A, roles=("admin",)))
     with (
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_B, TENANT_B),
         ),
-        patch("app.api.admin.attendance.create_attendance") as create_mock,
+        patch("app.services.academics.attendance.create_attendance") as create_mock,
     ):
         try:
             resp = client.post(
@@ -746,10 +746,10 @@ def test_admin_cannot_list_foreign_tenant_student() -> None:
     _as(_user(TENANT_A, roles=("admin",)))
     with (
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_B, TENANT_B),
         ),
-        patch("app.api.admin.attendance.list_attendance_for_student") as list_mock,
+        patch("app.services.academics.attendance.list_attendance_for_student") as list_mock,
     ):
         try:
             resp = client.get(f"/api/v1/admin/students/{STUDENT_B}/attendance")
@@ -764,12 +764,12 @@ def test_admin_cannot_update_foreign_tenant_attendance() -> None:
     _as(_user(TENANT_A, roles=("admin",)))
     foreign_row = _attendance_row(student_id=STUDENT_B)
     with (
-        patch("app.api.admin.attendance.get_attendance", return_value=foreign_row),
+        patch("app.services.academics.attendance.get_attendance", return_value=foreign_row),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_B, TENANT_B),
         ),
-        patch("app.api.admin.attendance.update_attendance") as update_mock,
+        patch("app.services.academics.attendance.update_attendance") as update_mock,
     ):
         try:
             resp = client.patch(
@@ -786,12 +786,12 @@ def test_admin_cannot_delete_foreign_tenant_attendance() -> None:
     _as(_user(TENANT_A, roles=("admin",)))
     foreign_row = _attendance_row(student_id=STUDENT_B)
     with (
-        patch("app.api.admin.attendance.get_attendance", return_value=foreign_row),
+        patch("app.services.academics.attendance.get_attendance", return_value=foreign_row),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_B, TENANT_B),
         ),
-        patch("app.api.admin.attendance.delete_attendance") as delete_mock,
+        patch("app.services.academics.attendance.delete_attendance") as delete_mock,
     ):
         try:
             resp = client.delete(f"/api/v1/admin/attendance/{ATTENDANCE_ID}")
@@ -808,13 +808,13 @@ def test_admin_can_update_own_tenant_attendance() -> None:
     updated = _attendance_row(status="excused")
     db = _audit_db()
     with (
-        patch("app.api.admin.attendance.get_attendance", return_value=row),
+        patch("app.services.academics.attendance.get_attendance", return_value=row),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_A, TENANT_A),
         ),
-        patch("app.api.admin.attendance.update_attendance", return_value=updated),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.update_attendance", return_value=updated),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         try:
             resp = client.patch(
@@ -831,13 +831,13 @@ def test_admin_can_delete_own_tenant_attendance() -> None:
     row = _attendance_row()
     db = _audit_db()
     with (
-        patch("app.api.admin.attendance.get_attendance", return_value=row),
+        patch("app.services.academics.attendance.get_attendance", return_value=row),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_A, TENANT_A),
         ),
-        patch("app.api.admin.attendance.delete_attendance", return_value=row),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.delete_attendance", return_value=row),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         try:
             resp = client.delete(f"/api/v1/admin/attendance/{ATTENDANCE_ID}")
@@ -851,7 +851,7 @@ def test_tenantless_admin_cannot_use_global_attendance_authority() -> None:
     """Phase 7.20: a tenant-less ordinary admin has no institution authority."""
     _as(_user(None, roles=("admin",)))
     with patch(
-        "app.api.admin.attendance.list_attendance_for_student"
+        "app.services.academics.attendance.list_attendance_for_student"
     ) as list_mock:
         try:
             resp = client.get(f"/api/v1/admin/students/{STUDENT_B}/attendance")
@@ -864,7 +864,7 @@ def test_tenantless_admin_cannot_use_global_attendance_authority() -> None:
 
 def test_platform_staff_does_not_gain_global_attendance_authority() -> None:
     _as(_user(None, roles=("staff",)))
-    with patch("app.api.admin.attendance.list_attendance_for_student") as list_mock:
+    with patch("app.services.academics.attendance.list_attendance_for_student") as list_mock:
         try:
             resp = client.get(f"/api/v1/admin/students/{STUDENT_B}/attendance")
         finally:
@@ -881,7 +881,7 @@ def test_platform_staff_does_not_gain_global_attendance_authority() -> None:
 
 def test_create_rejects_malformed_uuids() -> None:
     _as(_user(TENANT_A, roles=("admin",)))
-    with patch("app.api.admin.attendance.create_attendance") as create_mock:
+    with patch("app.services.academics.attendance.create_attendance") as create_mock:
         try:
             resp = client.post(
                 "/api/v1/admin/attendance",
@@ -895,7 +895,7 @@ def test_create_rejects_malformed_uuids() -> None:
 
 def test_create_rejects_invalid_date() -> None:
     _as(_user(TENANT_A, roles=("admin",)))
-    with patch("app.api.admin.attendance.create_attendance") as create_mock:
+    with patch("app.services.academics.attendance.create_attendance") as create_mock:
         try:
             resp = client.post(
                 "/api/v1/admin/attendance",
@@ -909,7 +909,7 @@ def test_create_rejects_invalid_date() -> None:
 
 def test_create_rejects_missing_required_fields() -> None:
     _as(_user(TENANT_A, roles=("admin",)))
-    with patch("app.api.admin.attendance.create_attendance") as create_mock:
+    with patch("app.services.academics.attendance.create_attendance") as create_mock:
         try:
             resp = client.post(
                 "/api/v1/admin/attendance",
@@ -925,7 +925,7 @@ def test_create_rejects_unexpected_control_fields() -> None:
     """institution_id / role / created_by / approval_status are control fields
     that must be server-derived; any client attempt is rejected outright."""
     _as(_user(TENANT_A, roles=("admin",)))
-    with patch("app.api.admin.attendance.create_attendance") as create_mock:
+    with patch("app.services.academics.attendance.create_attendance") as create_mock:
         try:
             resp = client.post(
                 "/api/v1/admin/attendance",
@@ -947,8 +947,8 @@ def test_update_rejects_ownership_injection() -> None:
     section_id injection attempts are schema-rejected."""
     _as(_user(TENANT_A, roles=("admin",)))
     with (
-        patch("app.api.admin.attendance.get_attendance", return_value=_attendance_row()),
-        patch("app.api.admin.attendance.update_attendance") as update_mock,
+        patch("app.services.academics.attendance.get_attendance", return_value=_attendance_row()),
+        patch("app.services.academics.attendance.update_attendance") as update_mock,
     ):
         try:
             resp_ownership = client.patch(
@@ -973,14 +973,14 @@ def test_update_rejects_empty_payload() -> None:
     row = _attendance_row()
     db = MagicMock()
     with (
-        patch("app.api.admin.attendance.get_attendance", return_value=row),
+        patch("app.services.academics.attendance.get_attendance", return_value=row),
         patch(
-            "app.services.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value=_student_context(STUDENT_A, TENANT_A),
         ),
-        patch("app.services.attendance.get_admin_client", return_value=db),
-        patch("app.repositories.attendance.get_attendance_row", return_value=row),
-        patch("app.repositories.attendance.update_attendance_row") as upd_mock,
+        patch("app.services.academics.attendance.get_admin_client", return_value=db),
+        patch("app.repositories.academics.attendance.get_attendance_row", return_value=row),
+        patch("app.repositories.academics.attendance.update_attendance_row") as upd_mock,
     ):
         try:
             resp = client.patch(f"/api/v1/admin/attendance/{ATTENDANCE_ID}", json={})
@@ -997,9 +997,9 @@ def test_attendance_404_when_missing_on_read_path() -> None:
         "Attendance record not found", status_code=404, code="ATTENDANCE_NOT_FOUND"
     )
     with (
-        patch("app.api.admin.attendance.get_attendance", side_effect=missing),
-        patch("app.api.admin.attendance.update_attendance") as update_mock,
-        patch("app.api.admin.attendance.delete_attendance") as delete_mock,
+        patch("app.services.academics.attendance.get_attendance", side_effect=missing),
+        patch("app.services.academics.attendance.update_attendance") as update_mock,
+        patch("app.services.academics.attendance.delete_attendance") as delete_mock,
     ):
         try:
             resp_update = client.patch(
@@ -1057,9 +1057,9 @@ def test_student_can_read_own_attendance() -> None:
     db = _resolved_db()
     rows = [_attendance_row()]
     with (
-        patch("app.services.student_data.get_admin_client", return_value=db),
+        patch("app.services.students.student_data.get_admin_client", return_value=db),
         patch(
-            "app.repositories.admin_academics.list_student_attendance",
+            "app.repositories.admin.admin_academics.list_student_attendance",
             return_value=rows,
         ) as list_mock,
     ):
@@ -1078,9 +1078,9 @@ def test_student_me_attendance_ignores_client_supplied_identity() -> None:
     _as(_student_user())
     db = _resolved_db()
     with (
-        patch("app.services.student_data.get_admin_client", return_value=db),
+        patch("app.services.students.student_data.get_admin_client", return_value=db),
         patch(
-            "app.repositories.admin_academics.list_student_attendance",
+            "app.repositories.admin.admin_academics.list_student_attendance",
             return_value=[],
         ) as list_mock,
     ):
@@ -1109,7 +1109,7 @@ def test_student_me_attendance_404_without_profile() -> None:
     (
         db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
     ).return_value = MagicMock(data=None)
-    with patch("app.services.student_data.get_admin_client", return_value=db):
+    with patch("app.services.students.student_data.get_admin_client", return_value=db):
         try:
             resp = client.get("/api/v1/students/me/attendance")
         finally:
@@ -1126,7 +1126,7 @@ def test_student_user_cannot_read_another_students_attendance() -> None:
     (
         db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
     ).return_value = MagicMock(data=None)
-    with patch("app.services.student_data.get_admin_client", return_value=db):
+    with patch("app.services.students.student_data.get_admin_client", return_value=db):
         try:
             resp = client.get("/api/v1/students/me/attendance")
         finally:

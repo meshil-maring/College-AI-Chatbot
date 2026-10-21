@@ -12,8 +12,8 @@ from app.config import settings
 from app.core.errors import AppError
 from app.main import app
 from app.middleware.public_body_limit import PublicChatBodyLimitMiddleware
-from app.schemas.chat import PublicChatResponse
-from app.services.public_abuse_controls import (
+from app.schemas.ai.chat import PublicChatResponse
+from app.services.auth.public_abuse_controls import (
     SlidingWindowRateLimiter,
     concurrency_gate,
     reset_public_abuse_state,

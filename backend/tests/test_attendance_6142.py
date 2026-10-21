@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services import student_attendance as svc
+from app.services.students import student_attendance as svc
 TC = TestClient(app, raise_server_exceptions=False)
 TA = "a1111111-0000-0000-0000-000000000001"
 TB = "b2222222-0000-0000-0000-000000000002"
@@ -162,9 +162,9 @@ def test_11_existing_attendance_unchanged():
     (db.table.return_value.select.return_value.eq.return_value
      .maybe_single.return_value.execute).return_value = MagicMock(
          data=_P())
-    with patch("app.services.student_data.get_admin_client",
+    with patch("app.services.students.student_data.get_admin_client",
                return_value=db):
-        with patch("app.repositories.admin_academics.list_student_attendance",
+        with patch("app.repositories.admin.admin_academics.list_student_attendance",
                    return_value=rows):
             r = TC.get("/api/v1/students/me/attendance")
     assert r.status_code == 200

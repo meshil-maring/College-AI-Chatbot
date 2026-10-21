@@ -19,8 +19,8 @@ from uuid import uuid4
 import pytest
 
 from app.core.errors import AppError
-from app.repositories import admin_academics as repo
-from app.services import admin_academics as svc
+from app.repositories.admin import admin_academics as repo
+from app.services.admin import admin_academics as svc
 
 
 # ============================================================================
@@ -374,7 +374,7 @@ def test_create_student_normalizes_email_and_numbers() -> None:
             "is_active": True,
         }
     )
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.create_student(
             svc.StudentCreate(
                 user_id=USER_A,
@@ -406,7 +406,7 @@ def test_create_student_drops_whitespace_only_identity_values() -> None:
             "status": "active",
         }
     )
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.create_student(
             svc.StudentCreate(
                 user_id=USER_A,
@@ -434,7 +434,7 @@ def test_create_student_without_identity_is_valid() -> None:
             "status": "active",
         }
     )
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.create_student(
             svc.StudentCreate(
                 user_id=USER_A,
@@ -461,7 +461,7 @@ def test_update_student_normalizes_identity_fields() -> None:
             }
         ],
     )
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.update_student(
             STUDENT_ID_A,
             svc.StudentUpdate(
@@ -489,7 +489,7 @@ def test_approval_statuses_enum() -> None:
 def test_admin_provisioning_defaults_to_approved() -> None:
     """An admin creating the account is the approving action itself."""
     db = _make_mock_insert({**STUDENT_ROW_A, "approval_status": "approved"})
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.create_student(
             svc.StudentCreate(
                 user_id=USER_A,
@@ -505,7 +505,7 @@ def test_admin_provisioning_defaults_to_approved() -> None:
 def test_pending_approval_is_storable() -> None:
     """pending is valid for self-registration (future phase)."""
     db = _make_mock_insert({**STUDENT_ROW_A, "approval_status": "pending"})
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.create_student(
             svc.StudentCreate(
                 user_id=USER_A,
@@ -521,7 +521,7 @@ def test_pending_approval_is_storable() -> None:
 def test_rejected_is_storable() -> None:
     """rejected is a valid terminal approval state."""
     db = _make_mock_insert({**STUDENT_ROW_A, "approval_status": "rejected"})
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.create_student(
             svc.StudentCreate(
                 user_id=USER_A,
@@ -537,7 +537,7 @@ def test_rejected_is_storable() -> None:
 def test_create_student_rejects_invalid_approval_status() -> None:
     """Unknown approval values are rejected at the service boundary."""
     db = _make_mock_insert({**STUDENT_ROW_A, "approval_status": "bogus"})
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         with pytest.raises(AppError) as exc_info:
             svc.create_student(
                 svc.StudentCreate(
@@ -558,7 +558,7 @@ def test_update_student_rejects_invalid_approval_status() -> None:
         get_student_row=STUDENT_ROW_A,
         update_rows=[{**STUDENT_ROW_A, "approval_status": "bogus"}],
     )
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         with pytest.raises(AppError) as exc_info:
             svc.update_student(
                 STUDENT_ID_A,
@@ -591,7 +591,7 @@ def test_archive_student_preserves_identity_fields() -> None:
         "is_active": False,
     }
     db = _make_mock_update(get_student_row=STUDENT_ROW_A, update_rows=[archived])
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         student = svc.archive_student(STUDENT_ID_A)
     assert student["status"] == "inactive"
     assert student["is_active"] is False
@@ -617,7 +617,7 @@ def test_list_students_still_returns_institution_rows() -> None:
 def test_create_student_requires_institution() -> None:
     """institution_id stays mandatory — the tenant key is never optional."""
     db = _make_mock_insert({**STUDENT_ROW_A, "institution_id": INSTITUTION_A})
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         payload = svc.StudentCreate(
             user_id=USER_A,
             institution_id=INSTITUTION_A,

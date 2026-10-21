@@ -38,10 +38,10 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories import tenancy as tenancy_repo
-from app.services import authorization as authz
-from app.services import student_registration as student_svc
-from app.services import tenancy as tenancy_svc
+from app.repositories.platform import tenancy as tenancy_repo
+from app.services.auth import authorization as authz
+from app.services.auth import student_registration as student_svc
+from app.services.platform import tenancy as tenancy_svc
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -240,7 +240,7 @@ def _role_rows(scope_type, scope_id, org_id, role="admin"):
 def _authz_patches(user_id: str, rows: list):
     """Resolve the authorization context FOR REAL from the mocked role rows."""
     return (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_A)
@@ -414,7 +414,7 @@ def test_4_repeated_organization_decision_is_safe():
 
 def test_5_pending_organization_access_denied():
     """A pending organization accepts no institution join requests."""
-    from app.schemas.tenancy import InstitutionRegistrationRequest
+    from app.schemas.platform.tenancy import InstitutionRegistrationRequest
 
     state = _base_state()  # organization ORG_A is 'pending'
     payload = InstitutionRegistrationRequest(
@@ -594,7 +594,7 @@ def test_12b_unknown_join_request_is_404():
 
 
 def _staff_payload(institution_code: str):
-    from app.schemas.tenancy import StaffFacultyRegistrationRequest
+    from app.schemas.platform.tenancy import StaffFacultyRegistrationRequest
 
     return StaffFacultyRegistrationRequest(
         institution_code=institution_code,

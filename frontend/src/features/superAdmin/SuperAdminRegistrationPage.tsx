@@ -5,7 +5,7 @@ import {
   registerSuperAdmin,
   recoverSuperAdminAccount,
   type SuperAdminInvitePublicView,
-} from '../../services/superAdminInvitationApi.ts'
+} from '../../services/invitations/superAdminInvitationApi.ts'
 
 type Phase =
   | { readonly kind: 'loading' }

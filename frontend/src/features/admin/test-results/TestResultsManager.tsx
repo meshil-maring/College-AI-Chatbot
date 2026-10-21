@@ -6,8 +6,8 @@
 
 import { useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
-import { useAuth } from '../../auth/AuthProvider.tsx'
-import { listTestResults } from '../../../services/adminApi.ts'
+import { useAuth } from '../../auth/session/AuthProvider.tsx'
+import { listTestResults } from '../../../services/admin/adminApi.ts'
 import type { TestResult } from '../../../types/admin.ts'
 
 export default function TestResultsManager() {

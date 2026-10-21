@@ -65,7 +65,7 @@ The page now distinguishes permission/session errors, unavailable schema, networ
 | Browser interactions | Search/clear and teaching-editor validation/cancel passed; no runtime page errors. The desktop table and smaller-screen cards expose exactly one visible set of management actions. |
 | Static checks | `git diff --check` passed. No frontend lint command or ESLint configuration is present; strict TypeScript is the configured source static check. |
 
-Frontend logs are retained locally as `frontend/faculty-assignments-focused-tests.log`, `frontend/faculty-assignments-full-tests.log`, `frontend/faculty-assignments-typescript.log`, and `frontend/faculty-assignments-build.log`. The temporary browser harness used only intercepted test responses, was removed after verification, and is absent from the production application. Screenshots are in the system temporary directory.
+Frontend logs are retained locally as `logs/frontend/faculty-assignments-focused-tests.log`, `logs/frontend/faculty-assignments-full-tests.log`, `logs/frontend/faculty-assignments-typescript.log`, and `logs/frontend/faculty-assignments-build.log`. The temporary browser harness used only intercepted test responses, was removed after verification, and is absent from the production application. Screenshots are in the system temporary directory.
 
 ## Remaining limitations
 

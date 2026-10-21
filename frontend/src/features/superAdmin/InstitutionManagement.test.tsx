@@ -18,7 +18,7 @@ const createInvitationSpy = vi.hoisted(() => vi.fn())
 const cancelInvitationSpy = vi.hoisted(() => vi.fn())
 const revokeAdminSpy = vi.hoisted(() => vi.fn())
 
-vi.mock('../../services/platformInstitutionsApi.ts', () => ({
+vi.mock('../../services/platform/platformInstitutionsApi.ts', () => ({
   PlatformInstitutionError: class extends Error {},
   listInstitutions: listSpy,
   getInstitution: getSpy,
@@ -34,7 +34,7 @@ vi.mock('../../services/platformInstitutionsApi.ts', () => ({
   revokeInstitutionAdmin: revokeAdminSpy,
 }))
 
-vi.mock('../auth/AuthProvider.tsx', () => ({
+vi.mock('../auth/session/AuthProvider.tsx', () => ({
   useAuth: () => ({ accessToken: 'session-token' }),
 }))
 

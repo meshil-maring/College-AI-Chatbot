@@ -9,7 +9,7 @@
  * The backend is authoritative:
  *     backend/app/api/auth.py        (AuthRequest, /login handler)
  *     backend/app/main.py            (/api/v1/auth/me handler)
- *     backend/app/core/security.py   (get_current_user dependency)
+ *     backend/app/core/security/identity.py (get_current_user dependency)
  *     backend/app/core/errors.py     (AppError JSON error envelope)
  *
  * Only fields the backend actually returns are declared. `access_token` is a
@@ -34,7 +34,7 @@ export interface LoginRequest {
 
 /**
  * Request body accepted by POST /api/v1/auth/student/login (Phase 6.5,
- * mirrors backend `StudentLoginRequest` in app/schemas/student_auth.py).
+ * mirrors backend `StudentLoginRequest` in app/schemas/auth/student_auth.py).
  *
  * `identifier` is the backend's UNIFIED identifier field: it may be an email
  * address, a register number, or a university roll number — the backend
@@ -71,7 +71,7 @@ export interface LoginResponse {
 /**
  * Phase 6.15.4 — canonical authenticated role.
  *
- * Mirrors the backend's canonical role names (app/core/security.py
+ * Mirrors the backend's canonical role names (app/core/security/roles.py
  * `SUPPORTED_ROLES` — the same names the Phase 6.6 RBAC `require_roles`
  * primitive and the `roles` table use). Phase 7.11 adds `super_admin` as a
  * platform-level identity contract without granting tenant API access; `null`

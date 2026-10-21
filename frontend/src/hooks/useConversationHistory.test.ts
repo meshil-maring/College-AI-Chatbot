@@ -5,9 +5,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useConversationHistory } from './useConversationHistory.ts'
-import { ApiError } from '../services/api.ts'
+import { ApiError } from '../services/chat/api.ts'
 
-vi.mock('../services/api.ts', () => ({
+vi.mock('../services/chat/api.ts', () => ({
   ApiError: class extends Error {
     status: number
     details: unknown
@@ -22,7 +22,7 @@ vi.mock('../services/api.ts', () => ({
   getConversationMessages: vi.fn(),
 }))
 
-import { getConversationMessages, listConversations } from '../services/api.ts'
+import { getConversationMessages, listConversations } from '../services/chat/api.ts'
 
 describe('useConversationHistory', () => {
   beforeEach(() => {

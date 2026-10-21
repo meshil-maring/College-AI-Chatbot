@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.generation import (
+from app.schemas.ai.generation import (
     AIContext,
     AIRequest,
     AIResponse,

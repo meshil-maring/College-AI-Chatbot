@@ -47,10 +47,10 @@ from app.core.security import (
     require_roles,
     scope_tenant,
 )
-from app.repositories import tenancy as tenancy_repo
-from app.services import authorization as authz
-from app.services import public_chat
-from app.services.student_auth import SafeAuthFailure, _assert_institution_active
+from app.repositories.platform import tenancy as tenancy_repo
+from app.services.auth import authorization as authz
+from app.services.ai import public_chat
+from app.services.auth.student_auth import SafeAuthFailure, _assert_institution_active
 
 _ROOT = Path(__file__).resolve().parents[2]
 PHASE_6_13_MIGRATION = (
@@ -312,7 +312,7 @@ def test_resolve_authorization_context_links_user_to_organization_and_institutio
         }
     ]
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_A)
@@ -348,7 +348,7 @@ def test_resolve_authorization_context_prefers_the_widest_privilege_scope() -> N
         },
     ]
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
     ):
         context = authz.resolve_authorization_context(
@@ -381,7 +381,7 @@ def test_organization_scope_is_taken_from_the_database_not_the_request() -> None
         "organization_id": ORG_B,
     }
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_A)
@@ -408,7 +408,7 @@ def test_institution_scope_organization_comes_from_the_institution_row() -> None
         }
     ]
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_A)
@@ -500,7 +500,7 @@ def test_platform_scope_keeps_its_unrestricted_authority() -> None:
 def test_org_admin_manages_only_institutions_of_its_own_organization() -> None:
     context = _context(scope_type=authz.ORGANIZATION, organization_id=ORG_A)
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_A)
         ),
@@ -508,7 +508,7 @@ def test_org_admin_manages_only_institutions_of_its_own_organization() -> None:
         authz.assert_can_manage_institution({"user_id": USER_ID}, context, INST_A1)
 
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_B)
         ),
@@ -548,7 +548,7 @@ def test_institution_admin_manages_only_its_own_institution() -> None:
 def test_org_b_admin_cannot_manage_org_a_institutions() -> None:
     context = _context(scope_type=authz.ORGANIZATION, organization_id=ORG_B)
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_A)
         ),
@@ -723,7 +723,7 @@ def test_get_current_user_projects_the_authoritative_contract() -> None:
 
     with (
         patch(
-            "app.core.security.verify_jwt",
+            "app.core.security.tokens.verify_jwt",
             return_value={"sub": "auth-1", "email": "user@example.com"},
         ),
         patch(
@@ -803,13 +803,13 @@ def test_locked_tenant_helpers_still_reject_cross_institution() -> None:
 
 def test_student_authentication_still_gated_by_institution_is_active() -> None:
     with patch(
-        "app.services.student_auth._get_institution",
+        "app.services.auth.student_auth._get_institution",
         return_value={"is_active": True},
     ):
         _assert_institution_active(MagicMock(), UUID(INST_A1))
 
     for inactive in ({"is_active": False}, None):
-        with patch("app.services.student_auth._get_institution", return_value=inactive):
+        with patch("app.services.auth.student_auth._get_institution", return_value=inactive):
             with pytest.raises(SafeAuthFailure):
                 _assert_institution_active(MagicMock(), UUID(INST_A1))
 
@@ -866,7 +866,7 @@ def test_public_chat_institution_id_is_now_validated_server_side() -> None:
 def test_public_chat_is_now_exposed_as_an_http_route() -> None:
     """Phase 6.13.8: public chat is exposed at POST /api/v1/chat/public.
 
-    The public chat service (``app.services.public_chat.process_chat_request``)
+    The public chat service (``app.services.ai.public_chat.process_chat_request``)
     was already wired in Phase 6.13.1; this phase adds the unauthenticated
     HTTP route so public AI is reachable without a login, while the protected
     endpoint remains ``POST /api/v1/generation/chat`` (authenticated).

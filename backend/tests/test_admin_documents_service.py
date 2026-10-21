@@ -12,8 +12,8 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.core.errors import AppError
-from app.schemas.ingestion import IngestResponse
-from app.services import admin_documents as svc
+from app.schemas.knowledge.ingestion import IngestResponse
+from app.services.admin import admin_documents as svc
 
 DOC_ID = str(uuid4())
 V1_ID = str(uuid4())
@@ -60,7 +60,7 @@ def test_process_run_executes_extraction_chunking_embedding_in_order() -> None:
 
     with (
         patch(
-            "app.services.admin_documents.get_processing_run_with_version",
+            "app.services.admin.admin_documents.get_processing_run_with_version",
             side_effect=lambda db_, run_id: calls.append("get_run")
             or {
                 "processing_run_id": run_id,
@@ -74,36 +74,36 @@ def test_process_run_executes_extraction_chunking_embedding_in_order() -> None:
             },
         ),
         patch(
-            "app.services.admin_documents.update_run_status",
+            "app.services.admin.admin_documents.update_run_status",
             side_effect=lambda *a, **k: calls.append("status"),
         ),
         patch(
-            "app.services.admin_documents.get_r2_client",
+            "app.services.admin.admin_documents.get_r2_client",
             side_effect=lambda: calls.append("r2") or MagicMock(),
         ),
         patch(
-            "app.services.admin_documents.download_file",
+            "app.services.admin.admin_documents.download_file",
             side_effect=lambda *a: calls.append("download") or b"data",
         ),
         patch(
-            "app.services.admin_documents.extract_text",
+            "app.services.admin.admin_documents.extract_text",
             side_effect=lambda data, ft: calls.append("extract") or "hello world",
         ),
         patch(
-            "app.services.admin_documents.store_extracted_text",
+            "app.services.admin.admin_documents.store_extracted_text",
             side_effect=lambda *a: calls.append("store"),
         ),
         patch(
-            "app.services.admin_documents.chunk_text",
+            "app.services.admin.admin_documents.chunk_text",
             side_effect=lambda text: calls.append("chunk")
             or [{"chunk_sequence": 0, "content_text": text, "token_count": 2}],
         ),
         patch(
-            "app.services.admin_documents.insert_chunks",
+            "app.services.admin.admin_documents.insert_chunks",
             side_effect=lambda *a: calls.append("insert_chunks") or 1,
         ),
         patch(
-            "app.services.admin_documents.embed_processing_run",
+            "app.services.admin.admin_documents.embed_processing_run",
             side_effect=lambda run_id: calls.append("embed") or 1,
         ),
     ):
@@ -131,7 +131,7 @@ def test_process_run_executes_extraction_chunking_embedding_in_order() -> None:
 def test_process_run_404_when_run_missing() -> None:
     db = MagicMock()
     with patch(
-        "app.services.admin_documents.get_processing_run_with_version",
+        "app.services.admin.admin_documents.get_processing_run_with_version",
         return_value=None,
     ):
         with pytest.raises(AppError) as exc:
@@ -142,7 +142,7 @@ def test_process_run_404_when_run_missing() -> None:
 def test_process_run_409_when_not_queued() -> None:
     db = MagicMock()
     with patch(
-        "app.services.admin_documents.get_processing_run_with_version",
+        "app.services.admin.admin_documents.get_processing_run_with_version",
         return_value={
             "status": "ready",
             "document_versions": {"document_version_id": V1_ID},
@@ -159,7 +159,7 @@ def test_process_run_rejects_empty_extraction() -> None:
     db = MagicMock()
     with (
         patch(
-            "app.services.admin_documents.get_processing_run_with_version",
+            "app.services.admin.admin_documents.get_processing_run_with_version",
             return_value={
                 "processing_run_id": RUN1_ID,
                 "status": "queued",
@@ -171,13 +171,13 @@ def test_process_run_rejects_empty_extraction() -> None:
                 },
             },
         ),
-        patch("app.services.admin_documents.update_run_status") as status_mock,
-        patch("app.services.admin_documents.get_r2_client", return_value=MagicMock()),
-        patch("app.services.admin_documents.download_file", return_value=b"data"),
-        patch("app.services.admin_documents.extract_text", return_value="   \n  "),
-        patch("app.services.admin_documents.store_extracted_text"),
-        patch("app.services.admin_documents.chunk_text") as chunk_mock,
-        patch("app.services.admin_documents.embed_processing_run") as embed_mock,
+        patch("app.services.admin.admin_documents.update_run_status") as status_mock,
+        patch("app.services.admin.admin_documents.get_r2_client", return_value=MagicMock()),
+        patch("app.services.admin.admin_documents.download_file", return_value=b"data"),
+        patch("app.services.admin.admin_documents.extract_text", return_value="   \n  "),
+        patch("app.services.admin.admin_documents.store_extracted_text"),
+        patch("app.services.admin.admin_documents.chunk_text") as chunk_mock,
+        patch("app.services.admin.admin_documents.embed_processing_run") as embed_mock,
     ):
         with pytest.raises(AppError) as exc:
             svc.process_run_to_retrieval(RUN1_ID, db)
@@ -195,7 +195,7 @@ def test_process_run_marks_run_failed_when_embedding_fails() -> None:
     db = MagicMock()
     with (
         patch(
-            "app.services.admin_documents.get_processing_run_with_version",
+            "app.services.admin.admin_documents.get_processing_run_with_version",
             return_value={
                 "processing_run_id": RUN1_ID,
                 "status": "queued",
@@ -207,20 +207,20 @@ def test_process_run_marks_run_failed_when_embedding_fails() -> None:
                 },
             },
         ),
-        patch("app.services.admin_documents.update_run_status") as status_mock,
-        patch("app.services.admin_documents.get_r2_client", return_value=MagicMock()),
-        patch("app.services.admin_documents.store_extracted_text"),
-        patch("app.services.admin_documents.download_file", return_value=b"data"),
-        patch("app.services.admin_documents.extract_text", return_value="hello world"),
+        patch("app.services.admin.admin_documents.update_run_status") as status_mock,
+        patch("app.services.admin.admin_documents.get_r2_client", return_value=MagicMock()),
+        patch("app.services.admin.admin_documents.store_extracted_text"),
+        patch("app.services.admin.admin_documents.download_file", return_value=b"data"),
+        patch("app.services.admin.admin_documents.extract_text", return_value="hello world"),
         patch(
-            "app.services.admin_documents.chunk_text",
+            "app.services.admin.admin_documents.chunk_text",
             return_value=[
                 {"chunk_sequence": 1, "content_text": "hello world", "token_count": 3}
             ],
         ),
-        patch("app.services.admin_documents.insert_chunks", return_value=1),
+        patch("app.services.admin.admin_documents.insert_chunks", return_value=1),
         patch(
-            "app.services.admin_documents.embed_processing_run",
+            "app.services.admin.admin_documents.embed_processing_run",
             side_effect=AppError("boom", status_code=500, code="EMBEDDING_FAILED"),
         ),
     ):
@@ -235,7 +235,7 @@ def test_process_run_marks_failed_on_extraction_error() -> None:
     db = MagicMock()
     with (
         patch(
-            "app.services.admin_documents.get_processing_run_with_version",
+            "app.services.admin.admin_documents.get_processing_run_with_version",
             return_value={
                 "status": "queued",
                 "document_versions": {
@@ -247,13 +247,13 @@ def test_process_run_marks_failed_on_extraction_error() -> None:
             },
         ),
         patch(
-            "app.services.admin_documents.update_run_status"
+            "app.services.admin.admin_documents.update_run_status"
         ) as status_mock,
         patch(
-            "app.services.admin_documents.get_r2_client", return_value=MagicMock()
+            "app.services.admin.admin_documents.get_r2_client", return_value=MagicMock()
         ),
         patch(
-            "app.services.admin_documents.download_file",
+            "app.services.admin.admin_documents.download_file",
             side_effect=Exception("boom"),
         ),
     ):
@@ -277,11 +277,11 @@ def test_upload_document_delegates_to_ingest_and_processes_pipeline() -> None:
     )
     with (
         patch(
-            "app.services.admin_documents.ingest_document",
+            "app.services.admin.admin_documents.ingest_document",
             new=AsyncMock(return_value=ingest_response),
         ),
         patch(
-            "app.services.admin_documents.process_run_to_retrieval",
+            "app.services.admin.admin_documents.process_run_to_retrieval",
             return_value={"status": "embedded"},
         ) as process_mock,
     ):
@@ -307,32 +307,32 @@ def test_update_document_uses_next_version_helper_and_purges_stale_content() -> 
     db = MagicMock()
     doc = _run_doc([_version(V1_ID, 1)])
     with (
-        patch("app.services.admin_documents.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_documents.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_documents.get_document_with_versions",
+            "app.services.admin.admin_documents.get_document_with_versions",
             return_value=doc,
         ),
         patch(
-            "app.services.admin_documents.purge_version_retrieval_content",
+            "app.services.admin.admin_documents.purge_version_retrieval_content",
             return_value=[RUN1_ID],
         ) as purge_mock,
         patch(
-            "app.services.admin_documents.get_r2_client", return_value=MagicMock()
+            "app.services.admin.admin_documents.get_r2_client", return_value=MagicMock()
         ),
-        patch("app.services.admin_documents.upload_file") as upload_mock,
+        patch("app.services.admin.admin_documents.upload_file") as upload_mock,
         patch(
-            "app.services.admin_documents.create_next_document_version"
+            "app.services.admin.admin_documents.create_next_document_version"
         ) as next_version_mock,
         patch(
-            "app.services.admin_documents.create_processing_run",
+            "app.services.admin.admin_documents.create_processing_run",
             return_value={"processing_run_id": RUN1_ID},
         ),
         patch(
-            "app.services.admin_documents.process_run_to_retrieval",
+            "app.services.admin.admin_documents.process_run_to_retrieval",
             return_value={"chunks_created": 3, "status": "embedded"},
         ) as process_mock,
         patch(
-            "app.services.admin_documents.update_document_version_lifecycle"
+            "app.services.admin.admin_documents.update_document_version_lifecycle"
         ) as lifecycle_mock,
     ):
         next_version_mock.return_value = {
@@ -363,9 +363,9 @@ def test_update_document_uses_next_version_helper_and_purges_stale_content() -> 
 def test_update_document_404_when_document_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_documents.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_documents.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_documents.get_document_with_versions",
+            "app.services.admin.admin_documents.get_document_with_versions",
             return_value=None,
         ),
     ):
@@ -382,19 +382,19 @@ def test_delete_document_removes_retrieval_content_rows_and_storage() -> None:
     db = MagicMock()
     doc = _run_doc([_version(V1_ID, 1)])
     with (
-        patch("app.services.admin_documents.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_documents.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_documents.get_document_with_versions",
+            "app.services.admin.admin_documents.get_document_with_versions",
             return_value=doc,
         ),
         patch(
-            "app.services.admin_documents.purge_version_retrieval_content",
+            "app.services.admin.admin_documents.purge_version_retrieval_content",
             return_value=[RUN1_ID],
         ) as purge_mock,
         patch(
-            "app.services.admin_documents.get_r2_client", return_value=MagicMock()
+            "app.services.admin.admin_documents.get_r2_client", return_value=MagicMock()
         ),
-        patch("app.services.admin_documents.delete_file") as delete_file_mock,
+        patch("app.services.admin.admin_documents.delete_file") as delete_file_mock,
     ):
         result = svc.delete_document(DOC_ID, client=db)
 
@@ -409,9 +409,9 @@ def test_delete_document_removes_retrieval_content_rows_and_storage() -> None:
 def test_delete_document_404_when_missing() -> None:
     db = MagicMock()
     with (
-        patch("app.services.admin_documents.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_documents.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_documents.get_document_with_versions",
+            "app.services.admin.admin_documents.get_document_with_versions",
             return_value=None,
         ),
     ):
@@ -427,9 +427,9 @@ def test_purge_version_retrieval_content_removes_embeddings_chunks_runs() -> Non
     ).return_value = MagicMock(data=[{"processing_run_id": RUN1_ID}])
     with (
         patch(
-            "app.services.admin_documents.delete_embeddings_for_run"
+            "app.services.admin.admin_documents.delete_embeddings_for_run"
         ) as emb_mock,
-        patch("app.services.admin_documents.delete_chunks_for_run") as chunks_mock,
+        patch("app.services.admin.admin_documents.delete_chunks_for_run") as chunks_mock,
     ):
         run_ids = svc.purge_version_retrieval_content(db, [V1_ID])
 
@@ -479,10 +479,10 @@ def test_sync_creates_new_document_for_first_time_record() -> None:
     db.table.side_effect = table
 
     with (
-        patch("app.services.admin_documents.get_r2_client", return_value=MagicMock()),
-        patch("app.services.admin_documents.upload_file") as upload_mock,
+        patch("app.services.admin.admin_documents.get_r2_client", return_value=MagicMock()),
+        patch("app.services.admin.admin_documents.upload_file") as upload_mock,
         patch(
-            "app.services.admin_documents.create_next_document_version",
+            "app.services.admin.admin_documents.create_next_document_version",
             return_value={
                 "document_version_id": version_id,
                 "version_number": 1,
@@ -490,15 +490,15 @@ def test_sync_creates_new_document_for_first_time_record() -> None:
             },
         ) as next_version_mock,
         patch(
-            "app.services.admin_documents.create_processing_run",
+            "app.services.admin.admin_documents.create_processing_run",
             return_value={"processing_run_id": run_id},
         ),
         patch(
-            "app.services.admin_documents.process_run_to_retrieval",
+            "app.services.admin.admin_documents.process_run_to_retrieval",
             return_value={"chunks_created": 2, "status": "embedded"},
         ) as process_mock,
         patch(
-            "app.services.admin_documents.update_document_version_lifecycle"
+            "app.services.admin.admin_documents.update_document_version_lifecycle"
         ) as lifecycle_mock,
     ):
         result = svc.sync_canonical_text_record(
@@ -547,19 +547,19 @@ def test_sync_update_supersedes_and_purges_stale_content() -> None:
 
     with (
         patch(
-            "app.services.admin_documents.get_document_with_versions",
+            "app.services.admin.admin_documents.get_document_with_versions",
             return_value=_run_doc([_version(stale_version_id, 1)]),
         ),
         patch(
-            "app.services.admin_documents.purge_version_retrieval_content",
+            "app.services.admin.admin_documents.purge_version_retrieval_content",
             return_value=[RUN1_ID],
         ) as purge_mock,
         patch(
-            "app.services.admin_documents.get_r2_client", return_value=MagicMock()
+            "app.services.admin.admin_documents.get_r2_client", return_value=MagicMock()
         ),
-        patch("app.services.admin_documents.upload_file"),
+        patch("app.services.admin.admin_documents.upload_file"),
         patch(
-            "app.services.admin_documents.create_next_document_version",
+            "app.services.admin.admin_documents.create_next_document_version",
             return_value={
                 "document_version_id": new_version_id,
                 "version_number": 2,
@@ -567,14 +567,14 @@ def test_sync_update_supersedes_and_purges_stale_content() -> None:
             },
         ),
         patch(
-            "app.services.admin_documents.create_processing_run",
+            "app.services.admin.admin_documents.create_processing_run",
             return_value={"processing_run_id": run_id},
         ),
         patch(
-            "app.services.admin_documents.process_run_to_retrieval",
+            "app.services.admin.admin_documents.process_run_to_retrieval",
             return_value={"chunks_created": 2, "status": "embedded"},
         ),
-        patch("app.services.admin_documents.update_document_version_lifecycle"),
+        patch("app.services.admin.admin_documents.update_document_version_lifecycle"),
     ):
         result = svc.sync_canonical_text_record(
             institution_id=None,
@@ -596,11 +596,11 @@ def test_remove_canonical_text_record_deletes_document() -> None:
     existing_doc_id = str(uuid4())
     with (
         patch(
-            "app.services.admin_documents.find_document_by_marker",
+            "app.services.admin.admin_documents.find_document_by_marker",
             return_value=existing_doc_id,
         ),
         patch(
-            "app.services.admin_documents.delete_document",
+            "app.services.admin.admin_documents.delete_document",
             return_value={"deleted": True},
         ) as delete_mock,
     ):
@@ -613,7 +613,7 @@ def test_remove_canonical_text_record_deletes_document() -> None:
 def test_remove_canonical_text_record_returns_false_when_absent() -> None:
     db = MagicMock()
     with patch(
-        "app.services.admin_documents.find_document_by_marker", return_value=None
+        "app.services.admin.admin_documents.find_document_by_marker", return_value=None
     ):
         removed = svc.remove_canonical_text_record("faq:none", client=db)
     assert removed is False

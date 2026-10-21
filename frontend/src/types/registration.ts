@@ -6,9 +6,9 @@
  *     POST /api/v1/users/register        (backend/app/api/users.py)
  *
  * The backend is authoritative:
- *     backend/app/schemas/tenancy.py    (InstitutionLookupResponse — SAFE
+ *     backend/app/schemas/platform/tenancy.py    (InstitutionLookupResponse — SAFE
  *                                        public projection: id/code/name only)
- *     backend/app/schemas/users.py      (UserRegistrationRequest/Response)
+ *     backend/app/schemas/auth/users.py      (UserRegistrationRequest/Response)
  *     backend/app/core/errors.py        (AppError `{error:{code,message}}`)
  *
  * Design invariant (backend-enforced): the public registration payload never

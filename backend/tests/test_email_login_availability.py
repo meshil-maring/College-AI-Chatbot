@@ -26,12 +26,12 @@ def login_dependencies():
         "user_id": "test-app-user", "status": "active", "institution_id": None,
     })
     with (
-        patch("app.api.auth.enforce_auth_rate_limit"),
-        patch("app.api.auth.create_supabase_client", return_value=provider),
-        patch("app.api.auth.get_admin_client"),
-        patch("app.api.auth.get_sign_in_context", context),
-        patch("app.api.auth.tenancy_repo.get_pending_membership_request_for_user", return_value=None) as membership,
-        patch("app.api.auth.record_auth_security_event") as audit,
+        patch("app.api.auth.common.enforce_auth_rate_limit"),
+        patch("app.api.auth.common.create_supabase_client", return_value=provider),
+        patch("app.api.auth.common.get_admin_client"),
+        patch("app.api.auth.common.get_sign_in_context", context),
+        patch("app.repositories.platform.tenancy.get_pending_membership_request_for_user", return_value=None) as membership,
+        patch("app.api.auth.common.record_auth_security_event") as audit,
     ):
         yield SimpleNamespace(provider=provider, context=context, membership=membership, audit=audit)
 

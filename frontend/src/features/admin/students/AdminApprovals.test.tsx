@@ -30,7 +30,7 @@ const adminApi = vi.hoisted(() => ({
   rejectPendingStudent: vi.fn(),
 }))
 
-vi.mock('../../../services/adminApi.ts', () => adminApi)
+vi.mock('../../../services/admin/adminApi.ts', () => adminApi)
 
 const PENDING: PendingStudent = {
   student_id: 's-1',

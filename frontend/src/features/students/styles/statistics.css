@@ -1,0 +1,79 @@
+.students-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0 20px;
+}
+.students-stat {
+  --status-color: #bdcceb;
+  --status-rgb: 114, 147, 203;
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 105px;
+  padding: 15px;
+  border: 1px solid rgba(var(--status-rgb), 0.22);
+  border-radius: 9px;
+  background: linear-gradient(115deg, rgba(var(--status-rgb), 0.12), rgba(var(--status-rgb), 0.06));
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.students-stat:hover,
+.students-stat.is-selected {
+  border-color: rgba(var(--status-rgb), 0.65);
+}
+.students-stat-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(var(--status-rgb), 0.16);
+  color: var(--status-color);
+}
+.students-stat-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2;
+}
+.students-stat > span:last-child {
+  min-width: 0;
+}
+.students-stat strong {
+  display: block;
+  font-size: 24px;
+  line-height: 1.25;
+  color: var(--status-color);
+  font-weight: 700;
+}
+.students-stat b {
+  display: block;
+  margin-top: 2px;
+  color: #eef2fb;
+  font-size: 13px;
+  font-weight: 550;
+}
+.students-stat small {
+  display: block;
+  margin-top: 4px;
+  color: #a5b8d2;
+  font-size: 11px;
+}
+.valid {
+  --status-color: #75dfb5;
+  --status-rgb: 30, 176, 113;
+}
+.duplicate {
+  --status-color: #6eafff;
+  --status-rgb: 35, 111, 233;
+}
+.invalid {
+  --status-color: #ffca37;
+  --status-rgb: 215, 163, 12;
+}
+.conflicting {
+  --status-color: #ff626a;
+  --status-rgb: 222, 61, 73;
+}

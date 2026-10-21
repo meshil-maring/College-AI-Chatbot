@@ -1,114 +1,20 @@
-/// <reference types="vitest/globals" />
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ReactNode } from 'react'
-import AdminRosterPanel from './AdminRosterPanel.tsx'
-import PlatformAuditView from './PlatformAuditView.tsx'
-import type { AdminRoster, PlatformAuditPage } from '../../types/platform.ts'
-
-const rosterSpy = vi.hoisted(() => vi.fn())
-const createInvitationSpy = vi.hoisted(() => vi.fn())
-const cancelInvitationSpy = vi.hoisted(() => vi.fn())
-const resendInvitationSpy = vi.hoisted(() => vi.fn())
-const revokeAdminSpy = vi.hoisted(() => vi.fn())
-const auditSpy = vi.hoisted(() => vi.fn())
-
-const PlatformInstitutionError = vi.hoisted(
-  () =>
-    class extends Error {
-      readonly status: number
-      constructor(status: number, message: string) {
-        super(message)
-        this.status = status
-      }
-    },
-)
-
-vi.mock('../../services/platformInstitutionsApi.ts', () => ({
+import './__tests__/AdminLifecycle.support.tsx'
+import {
+  cancelInvitationSpy,
+  createInvitationSpy,
   PlatformInstitutionError,
-  getAdminRoster: rosterSpy,
-  createInvitation: createInvitationSpy,
-  cancelInvitation: cancelInvitationSpy,
-  resendInvitation: resendInvitationSpy,
-  revokeInstitutionAdmin: revokeAdminSpy,
-  listPlatformAudit: auditSpy,
-}))
-
-vi.mock('../auth/AuthProvider.tsx', () => ({
-  useAuth: () => ({ accessToken: 'session-token' }),
-}))
-
-function Wrapper({ children }: { children: ReactNode }) {
-  return <>{children}</>
-}
-
-const ROSTER: AdminRoster = {
-  institution_id: 'inst-1',
-  admin_count: 1,
-  admins: [
-    {
-      email: 'dean@unico.example',
-      kind: 'admin',
-      status: 'active',
-      user_id: 'user-1',
-      invitation_id: null,
-      institution_id: 'inst-1',
-      expires_at: null,
-    },
-  ],
-  pending_invitations: [
-    {
-      email: 'owner@unico.example',
-      kind: 'invitation',
-      status: 'invited',
-      user_id: null,
-      invitation_id: 'inv-1',
-      institution_id: 'inst-1',
-      email_delivery_status: 'sent',
-      email_delivery_attempts: 1,
-      email_verified: false,
-      resend_count: 0,
-      expires_at: '2099-01-01T00:00:00+00:00',
-    },
-  ],
-}
-
-const AUDIT_PAGE: PlatformAuditPage = {
-  total: 1,
-  limit: 25,
-  offset: 0,
-  entries: [
-    {
-      audit_id: 'audit-1',
-      actor_user_id: 'user-9',
-      actor_email: 'root@platform.test',
-      action: 'institution_admin_invited',
-      institution_id: 'inst-1',
-      institution_name: 'Unico University',
-      target_user_id: null,
-      result: 'success',
-      details: {},
-      performed_at: '2026-10-01T00:00:00+00:00',
-    },
-  ],
-}
-
-beforeEach(() => {
-  rosterSpy.mockResolvedValue(ROSTER)
-  auditSpy.mockResolvedValue(AUDIT_PAGE)
-})
-
-afterEach(() => {
-  cleanup()
-  vi.clearAllMocks()
-})
+  revokeAdminSpy,
+  rosterSpy,
+  Wrapper,
+} from './__tests__/AdminLifecycle.support.tsx'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it } from 'vitest'
+import type { AdminRoster } from '../../types/platform.ts'
+import AdminRosterPanel from './AdminRosterPanel.tsx'
 describe('Phase 7.14 admin roster', () => {
   it('shows accepted admins and pending invitations with their real status', async () => {
-    render(
-      <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
-      { wrapper: Wrapper },
-    )
+    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, { wrapper: Wrapper })
 
     expect(await screen.findByText('dean@unico.example')).toBeDefined()
     expect(screen.getByText('owner@unico.example')).toBeDefined()
@@ -124,10 +30,7 @@ describe('Phase 7.14 admin roster', () => {
       pending_invitations: [],
       admin_count: 0,
     })
-    render(
-      <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
-      { wrapper: Wrapper },
-    )
+    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, { wrapper: Wrapper })
 
     expect(await screen.findByText(/No University Admins yet/i)).toBeDefined()
   })
@@ -149,10 +52,7 @@ describe('Phase 7.14 admin roster', () => {
       expires_in_hours: 24,
       email_delivery: { status: 'sent', provider: 'local', detail: null },
     })
-    render(
-      <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
-      { wrapper: Wrapper },
-    )
+    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, { wrapper: Wrapper })
 
     await userEvent.click(await screen.findByRole('button', { name: '+ Invite Admin' }))
     await userEvent.type(screen.getByLabelText('Email'), 'dean@unico.example')
@@ -176,10 +76,7 @@ describe('Phase 7.14 admin roster', () => {
     createInvitationSpy.mockRejectedValue(
       new PlatformInstitutionError(409, 'An active invitation already exists for this email address'),
     )
-    render(
-      <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
-      { wrapper: Wrapper },
-    )
+    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, { wrapper: Wrapper })
 
     await userEvent.click(await screen.findByRole('button', { name: '+ Invite Admin' }))
     await userEvent.type(screen.getByLabelText('Email'), 'dean@unico.example')
@@ -198,10 +95,7 @@ describe('Phase 7.14 admin roster', () => {
       already_revoked: false,
       message: 'ok',
     })
-    render(
-      <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
-      { wrapper: Wrapper },
-    )
+    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, { wrapper: Wrapper })
 
     await userEvent.click(await screen.findByRole('button', { name: 'Revoke' }))
     // The dialog must state what is and is not removed.
@@ -218,10 +112,7 @@ describe('Phase 7.14 admin roster', () => {
   })
 
   it('abandons the revocation when the operator keeps the admin', async () => {
-    render(
-      <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
-      { wrapper: Wrapper },
-    )
+    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, { wrapper: Wrapper })
 
     await userEvent.click(await screen.findByRole('button', { name: 'Revoke' }))
     await userEvent.click(screen.getByRole('button', { name: 'Keep admin' }))
@@ -238,10 +129,7 @@ describe('Phase 7.14 admin roster', () => {
       already_applied: false,
       message: 'Invitation cancelled.',
     })
-    render(
-      <AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />,
-      { wrapper: Wrapper },
-    )
+    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, { wrapper: Wrapper })
 
     await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }))
 
@@ -250,6 +138,7 @@ describe('Phase 7.14 admin roster', () => {
     })
   })
 })
+
 describe('Phase 7.15 invitation delivery and resend', () => {
   function rosterWith(entry: Record<string, unknown>): AdminRoster {
     return {
@@ -295,9 +184,7 @@ describe('Phase 7.15 invitation delivery and resend', () => {
   })
 
   it('shows an expired invitation as resendable but not cancellable', async () => {
-    rosterSpy.mockResolvedValue(
-      rosterWith({ ...PENDING, status: 'expired', expires_at: '2000-01-01T00:00:00+00:00' }),
-    )
+    rosterSpy.mockResolvedValue(rosterWith({ ...PENDING, status: 'expired', expires_at: '2000-01-01T00:00:00+00:00' }))
     render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, {
       wrapper: Wrapper,
     })
@@ -308,9 +195,7 @@ describe('Phase 7.15 invitation delivery and resend', () => {
   })
 
   it('never offers a resend for a cancelled invitation', async () => {
-    rosterSpy.mockResolvedValue(
-      rosterWith({ ...PENDING, status: 'cancelled', expires_at: null }),
-    )
+    rosterSpy.mockResolvedValue(rosterWith({ ...PENDING, status: 'cancelled', expires_at: null }))
     render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, {
       wrapper: Wrapper,
     })
@@ -319,153 +204,5 @@ describe('Phase 7.15 invitation delivery and resend', () => {
     // Reissuing would silently undo an explicit operator decision.
     expect(screen.queryByRole('button', { name: 'Resend' })).toBeNull()
     expect(screen.getByText('No action')).toBeDefined()
-  })
-
-it('resends through the server and reveals the new one-time link', async () => {
-    resendInvitationSpy.mockResolvedValue({
-      invitation: { ...PENDING, resend_count: 1 },
-      invitation_token: 'b'.repeat(64),
-      invitation_url: `/admin-invite/${'b'.repeat(64)}`,
-      expires_in_hours: 24,
-      email_delivery: { status: 'sent', provider: 'local', detail: null },
-      previous_token_invalidated: true,
-      message: 'A new invitation link has been issued and emailed.',
-    })
-    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, {
-      wrapper: Wrapper,
-    })
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Resend' }))
-    // The confirmation explains that the previous link dies.
-    const dialog = await screen.findByRole('alertdialog')
-    expect(dialog.textContent).toMatch(/previous link stops working/i)
-
-    await userEvent.click(screen.getByRole('button', { name: 'Send new link' }))
-    await waitFor(() => {
-      expect(resendInvitationSpy).toHaveBeenCalledWith('session-token', 'inst-1', 'inv-1')
-    })
-
-    const link = await screen.findByTestId('invitation-link')
-    expect(link.textContent).toContain('/admin-invite/')
-    // The revealed link is the NEW one, and it is shown only once.
-    expect(link.textContent).not.toContain('a'.repeat(64))
-    expect(screen.getByText(/shown only once/i)).toBeDefined()
-  })
-
-  it('abandons a resend when the operator keeps the current link', async () => {
-    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, {
-      wrapper: Wrapper,
-    })
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Resend' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Keep current link' }))
-
-    expect(screen.queryByRole('alertdialog')).toBeNull()
-    expect(resendInvitationSpy).not.toHaveBeenCalled()
-  })
-
-  it('reports a rate-limit refusal without pretending the resend happened', async () => {
-    resendInvitationSpy.mockRejectedValue(
-      new PlatformInstitutionError(
-        429,
-        'Too many invitation requests. Please wait a moment and try again.',
-      ),
-    )
-    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, {
-      wrapper: Wrapper,
-    })
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Resend' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Send new link' }))
-
-    expect(await screen.findByRole('alert')).toBeDefined()
-    expect(screen.getByText(/Too many invitation requests/i)).toBeDefined()
-    // No link is revealed, because no new token was issued.
-    expect(screen.queryByTestId('invitation-link')).toBeNull()
-  })
-
-  it('says plainly when the email could not be sent', async () => {
-    resendInvitationSpy.mockResolvedValue({
-      invitation: { ...PENDING, email_delivery_status: 'failed' },
-      invitation_token: 'b'.repeat(64),
-      invitation_url: `/admin-invite/${'b'.repeat(64)}`,
-      expires_in_hours: 24,
-      email_delivery: {
-        status: 'failed',
-        provider: 'production',
-        detail: 'DELIVERY_TEMPORARY_FAILURE',
-      },
-      previous_token_invalidated: true,
-      message: 'A new invitation link was issued, but the email could not be sent.',
-    })
-    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, {
-      wrapper: Wrapper,
-    })
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Resend' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Send new link' }))
-
-    expect(await screen.findByText(/Invitation could not be delivered/i)).toBeDefined()
-    // The failure is never dressed up as success.
-    expect(screen.queryByText(/emailed to the invited address/i)).toBeNull()
-  })
-
-  it('never renders a token or credential in the roster', async () => {
-    render(<AdminRosterPanel institutionId="inst-1" institutionCode="UNICO" />, {
-      wrapper: Wrapper,
-    })
-    await screen.findByText('owner@unico.example')
-    expect(document.body.textContent).not.toMatch(/password|token_hash|api_key/i)
-  })
-})
-
-describe('Phase 7.14 platform audit view', () => {
-  it('renders the audit timeline read-only', async () => {
-    render(<PlatformAuditView />, { wrapper: Wrapper })
-
-    expect(await screen.findByText('Invited admin')).toBeDefined()
-    expect(screen.getByText('root@platform.test')).toBeDefined()
-    expect(screen.getByText('Unico University')).toBeDefined()
-    // There is NO mutation control anywhere in this view.
-    const labels = screen.getAllByRole('button').map((b) => b.textContent ?? '')
-    expect(labels.some((l) => /delete|remove|edit|create/i.test(l))).toBe(false)
-  })
-
-  it('filters by action through a server-side query parameter', async () => {
-    render(<PlatformAuditView />, { wrapper: Wrapper })
-    await screen.findByText('Invited admin')
-
-    await userEvent.selectOptions(
-      screen.getByLabelText('Filter by action'),
-      'institution_admin_revoked',
-    )
-
-    await waitFor(() => {
-      expect(auditSpy).toHaveBeenLastCalledWith('session-token', {
-        limit: 25,
-        offset: 0,
-        action: 'institution_admin_revoked',
-      })
-    })
-  })
-
-  it('shows an honest empty state', async () => {
-    auditSpy.mockResolvedValue({ total: 0, limit: 25, offset: 0, entries: [] })
-    render(<PlatformAuditView />, { wrapper: Wrapper })
-
-    expect(await screen.findByText(/No audit records match/i)).toBeDefined()
-  })
-
-  it('surfaces an authorization error instead of pretending the ledger is empty', async () => {
-    auditSpy.mockRejectedValue(
-      new PlatformInstitutionError(
-        403,
-        'You do not have permission to perform this action',
-      ),
-    )
-    render(<PlatformAuditView />, { wrapper: Wrapper })
-
-    expect(await screen.findByRole('alert')).toBeDefined()
-    expect(screen.getByText(/do not have permission/i)).toBeDefined()
   })
 })

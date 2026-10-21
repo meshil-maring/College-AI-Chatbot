@@ -9,18 +9,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.chat_response import ChatUsage, StructuredSource
-from app.schemas.generation import SourceReference
-from app.schemas.retrieval import RetrievalResponse, RetrievalResult
-from app.schemas.session import SessionContext
-from app.services.chat import (
+from app.schemas.ai.chat import ChatRequest, ChatResponse
+from app.schemas.ai.chat_response import ChatUsage, StructuredSource
+from app.schemas.ai.generation import SourceReference
+from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
+from app.schemas.ai.session import SessionContext
+from app.services.ai.chat import (
     _build_chat_usage,
     _build_structured_sources,
     _enrich_source_titles,
     process_chat_request,
 )
-from app.services.generation_provider import GenerationProvider, GenerationResult
+from app.services.ai.generation_provider import GenerationProvider, GenerationResult
 
 
 INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
@@ -87,9 +87,9 @@ def _process(request, provider, client, retrieval=None):
     """Run process_chat_request with mocked dependencies."""
     session_context = SessionContext(session_id=uuid4())
     with (
-        patch("app.services.chat.get_admin_client", return_value=client),
-        patch("app.services.conversation_history.get_admin_client", return_value=client),
-        patch("app.services.chat.retrieve", return_value=retrieval or _retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=client),
+        patch("app.services.ai.chat.retrieve", return_value=retrieval or _retrieval_chunks()),
     ):
         return process_chat_request(request, session_context, provider, TEST_USER_ID), session_context
 
@@ -415,10 +415,10 @@ def test_general_knowledge_uses_direct_generation_without_college_retrieval():
 
     session_context = SessionContext(session_id=uuid4())
     with (
-        patch("app.services.chat.get_admin_client", return_value=mc),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc),
-        patch("app.services.chat.retrieve", return_value=retrieval) as retrieve,
-        patch("app.services.chat._start_background_persistence"),
+        patch("app.services.ai.chat.get_admin_client", return_value=mc),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc),
+        patch("app.services.ai.chat.retrieve", return_value=retrieval) as retrieve,
+        patch("app.services.ai.chat._start_background_persistence"),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -540,7 +540,7 @@ def test_generation_provider_file_unchanged():
     """generation_provider.py must not have been modified for Phase 4.4."""
     import pathlib
 
-    provider_path = pathlib.Path(__file__).resolve().parent.parent / "app" / "services" / "generation_provider.py"
+    provider_path = pathlib.Path(__file__).resolve().parent.parent / "app" / "services" / "ai" / "generation_provider.py"
     content = provider_path.read_text(encoding="utf-8")
 
     # Verify key provider characteristics remain intact

@@ -40,7 +40,7 @@ FAKE_USER = {
 
 
 def _patch_verify(claims=FAKE_CLAIMS):
-    return patch("app.core.security.verify_jwt", return_value=claims)
+    return patch("app.core.security.tokens.verify_jwt", return_value=claims)
 
 
 def _patch_db(user=FAKE_USER):
@@ -205,7 +205,7 @@ def test_invalid_token():
 def test_expired_token():
     from jwt import ExpiredSignatureError
     with patch(
-        "app.core.security._get_jwks_client",
+        "app.core.security.tokens._get_jwks_client",
         side_effect=ExpiredSignatureError("expired"),
     ):
         response = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer fake.expired.token"})

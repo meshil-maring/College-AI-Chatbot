@@ -7,10 +7,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.core.errors import AppError
-from app.repositories import platform_admin_invitations as token_repo
-from app.schemas.super_admin_registration import SuperAdminRegisterRequest
-from app.services import invitation_abuse_controls as abuse
-from app.services import super_admin_registration as svc
+from app.repositories.invitations import platform_admin_invitations as token_repo
+from app.schemas.invitations.super_admin_registration import SuperAdminRegisterRequest
+from app.services.invitations import invitation_abuse_controls as abuse
+from app.services.invitations import super_admin_registration as svc
 
 
 class FakeQuery:

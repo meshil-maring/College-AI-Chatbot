@@ -16,12 +16,15 @@ Browser (React/Vite :5173)
 
 ## Repository layout
 
+Backend file placement and naming follow the [backend structure rules](backend/STRUCTURE.md).
+
 | Path | Contents |
 | --- | --- |
 | `backend/app/` | FastAPI application: API routers, services, repositories, schemas, core security/config |
 | `backend/tests/` | Pytest suite (unit, API and integration tests over the `app` package) |
 | `backend/evaluation/` | Retrieval evaluation harness (`evaluator.py`) |
 | `backend/scripts/` | Manual debugging and physical-validation scripts (see `backend/scripts/README.md`) |
+| `logs/backend/` | Local backend test and diagnostic output (ignored by Git) |
 | `frontend/` | React + TypeScript + Tailwind UI, Vitest tests |
 | `supabase/` | `config.toml` and the ordered SQL migrations in `supabase/migrations/` |
 | `docs/` | Phase locks, status notes, reports, schema export, MCP notes, evidence JSON â€” see `docs/README.md` |

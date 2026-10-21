@@ -13,7 +13,7 @@ import pytest
 
 from app.config import Settings, settings
 from app.core.startup_validation import run_startup_configuration_validation
-from app.services import email_delivery as delivery
+from app.services.email import email_delivery as delivery
 
 RAW_TOKEN = "phase-7-16-raw-secret-token"
 
@@ -213,7 +213,7 @@ def test_logs_never_leak_url_token_hash_password_or_provider_key(caplog) -> None
     token_hash = "f" * 64
     password = "DoNotLogThisPassword!"
     transport = _Transport([TimeoutError(), TimeoutError(), TimeoutError()])
-    with caplog.at_level(logging.INFO, logger="app.services.email_delivery"):
+    with caplog.at_level(logging.INFO, logger="app.services.email.email_delivery"):
         result = delivery.deliver_invitation_email(
             _provider(transport),
             to_email="admin@example.edu",

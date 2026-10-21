@@ -2,9 +2,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from fastapi.routing import iter_route_contexts
 
-from app.api.admin import _ADMIN_ROUTE_PERMISSIONS, router as admin_router
-from app.api.platform import _PLATFORM_ROUTE_PERMISSIONS, router as platform_router
+from app.api.admin.dependencies import _ADMIN_ROUTE_PERMISSIONS
+from app.api.admin.admin import router as admin_router
+from app.api.platform.platform import _PLATFORM_ROUTE_PERMISSIONS, router as platform_router
 from app.core.errors import AppError
 from app.core.permissions import (
     DEFAULT_ROLE_PERMISSIONS,
@@ -191,13 +193,12 @@ def test_every_admin_and_platform_route_has_an_explicit_permission_policy(
     policies: dict[tuple[str, str], tuple[str, ...]],
     marker: str,
 ) -> None:
-    protected_routes = [
-        route
-        for route in router.routes
-        if getattr(route, "path", "").startswith(marker)
+    protected_operations = [
+        (method, route.path[route.path.rfind(marker):])
+        for route in iter_route_contexts(router.routes)
+        if route.path and route.path.startswith(marker)
+        for method in (route.methods or set()) - {"HEAD", "OPTIONS"}
     ]
-    assert protected_routes
-    for route in protected_routes:
-        normalized_path = route.path[route.path.rfind(marker):]
-        for method in route.methods - {"HEAD", "OPTIONS"}:
-            assert (method, normalized_path) in policies
+    assert protected_operations
+    for operation in protected_operations:
+        assert operation in policies

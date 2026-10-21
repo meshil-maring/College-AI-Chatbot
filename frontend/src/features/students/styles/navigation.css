@@ -1,0 +1,95 @@
+.students-page-links {
+  position: relative;
+  margin-top: 6px;
+  padding-bottom: 6px;
+}
+
+.students-page-links::before {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 21px;
+  width: 1px;
+  background: #293341;
+  content: '';
+  pointer-events: none;
+}
+
+.students-page-links a,
+.students-page-links > span {
+  position: relative;
+  display: block;
+  padding: 12px 12px 12px 43px;
+  border-radius: 8px;
+  color: #b9c3d1;
+  font-size: 13px;
+  line-height: 20px;
+  text-decoration: none;
+}
+
+.students-page-links a:hover {
+  background: #162333;
+  color: #fff;
+}
+
+.students-page-links [aria-current='page'] {
+  background: #242d39;
+  color: #fff;
+}
+
+.students-page-links [aria-current='page']::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  background: #ffc72c;
+  content: '';
+}
+
+.students-page-links [aria-disabled='true'] {
+  color: #7c899a;
+  cursor: not-allowed;
+}
+
+.students-page-links a:focus-visible {
+  outline: 2px solid #ffc72c;
+  outline-offset: -2px;
+}
+
+.students-scope button:not(:disabled),
+.students-page-links a {
+  cursor: pointer;
+}
+.students-scope button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.students-approval-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.students-queue-status {
+  min-height: 1.5rem;
+  margin-bottom: 12px;
+}
+.students-queue-status p {
+  margin: 0;
+}
+.students-approval-table {
+  min-width: 820px;
+}
+.students-approval-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.students-approval-table .students-approval-actions {
+  white-space: nowrap;
+}
+.students-page-links {
+  padding-inline: 0;
+}
+.admin-sidebar nav.students-page-links {
+  padding: 0 0 6px;
+}

@@ -13,11 +13,11 @@ from fastapi.testclient import TestClient
 
 from app.core.errors import AppError
 from app.main import app
-from app.schemas.chat import PublicChatRequest
-from app.schemas.generation import RetrievedChunk
-from app.schemas.retrieval import RetrievalResponse, RetrievalResult
-from app.services.public_chat import _build_allowed_public_knowledge_source_ids
-from app.services.public_knowledge_policy import (
+from app.schemas.ai.chat import PublicChatRequest
+from app.schemas.ai.generation import RetrievedChunk
+from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
+from app.services.ai.public_chat import _build_allowed_public_knowledge_source_ids
+from app.services.knowledge.public_knowledge_policy import (
     PublicKnowledgePolicy,
     is_public_provenance,
     is_public_source,
@@ -303,18 +303,18 @@ def test_http_public_boundary_filters_private_context_and_projects_safe_response
 
     message_calls = iter(({"message_id": MESSAGE}, {"message_id": MESSAGE}))
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
-        patch("app.services.public_chat.get_conversation", return_value=None),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.get_conversation", return_value=None),
         patch(
-            "app.services.public_chat.create_conversation",
+            "app.services.ai.public_chat.create_conversation",
             return_value={"conversation_id": CONVERSATION},
         ),
-        patch("app.services.public_chat.get_conversation_messages", return_value=[]),
-        patch("app.services.public_chat.get_next_message_sequence", return_value=1),
-        patch("app.services.public_chat.create_message", side_effect=message_calls),
-        patch("app.services.public_chat.retrieve", return_value=retrieved),
-        patch("app.services.public_chat.AIGenerationService.generate", new=generate),
-        patch("app.services.public_chat._start_background_persistence"),
+        patch("app.services.ai.public_chat.get_conversation_messages", return_value=[]),
+        patch("app.services.ai.public_chat.get_next_message_sequence", return_value=1),
+        patch("app.services.ai.public_chat.create_message", side_effect=message_calls),
+        patch("app.services.ai.public_chat.retrieve", return_value=retrieved),
+        patch("app.services.ai.public_chat.AIGenerationService.generate", new=generate),
+        patch("app.services.ai.public_chat._start_background_persistence"),
     ):
         response = TestClient(app).post(
             "/api/v1/chat/public",

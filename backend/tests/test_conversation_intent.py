@@ -4,17 +4,17 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.core.errors import AppError
-from app.schemas.chat import PublicChatRequest
-from app.schemas.generation import ConversationTurn
-from app.schemas.session import SessionContext
-from app.services.conversation_intent import (
+from app.schemas.ai.chat import PublicChatRequest
+from app.schemas.ai.generation import ConversationTurn
+from app.schemas.ai.session import SessionContext
+from app.services.ai.conversation_intent import (
     ConversationIntent,
     classify_conversation_intent,
     contextual_personalization_query,
     direct_identity_response,
 )
-from app.services.generation_provider import GenerationResult
-from app.services.public_chat import process_public_request
+from app.services.ai.generation_provider import GenerationResult
+from app.services.ai.public_chat import process_public_request
 
 
 INSTITUTION_ID = UUID("21000000-0000-0000-0000-000000000001")
@@ -137,17 +137,17 @@ def test_public_general_question_uses_direct_generation_without_rag():
     )
 
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=MagicMock()),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.public_chat.tenancy_repo.get_institution_by_code",
+            "app.services.ai.public_chat.tenancy_repo.get_institution_by_code",
             return_value={"institution_id": str(INSTITUTION_ID)},
         ),
         patch(
-            "app.services.public_chat._validate_public_institution",
+            "app.services.ai.public_chat._validate_public_institution",
             return_value=INSTITUTION_ID,
         ),
-        patch("app.services.public_chat._build_allowed_public_knowledge_source_ids") as sources,
-        patch("app.services.public_chat.retrieve") as retrieve,
+        patch("app.services.ai.public_chat._build_allowed_public_knowledge_source_ids") as sources,
+        patch("app.services.ai.public_chat.retrieve") as retrieve,
     ):
         response = process_public_request(
             request,
@@ -174,17 +174,17 @@ def test_public_identity_question_is_answered_without_rag_or_provider():
     provider = MagicMock()
 
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=MagicMock()),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.public_chat.tenancy_repo.get_institution_by_code",
+            "app.services.ai.public_chat.tenancy_repo.get_institution_by_code",
             return_value={"institution_id": str(INSTITUTION_ID)},
         ),
         patch(
-            "app.services.public_chat._validate_public_institution",
+            "app.services.ai.public_chat._validate_public_institution",
             return_value=INSTITUTION_ID,
         ),
-        patch("app.services.public_chat._build_allowed_public_knowledge_source_ids") as sources,
-        patch("app.services.public_chat.retrieve") as retrieve,
+        patch("app.services.ai.public_chat._build_allowed_public_knowledge_source_ids") as sources,
+        patch("app.services.ai.public_chat.retrieve") as retrieve,
     ):
         response = process_public_request(
             request,
@@ -215,16 +215,16 @@ def test_public_personal_record_requests_still_require_authentication(message):
     provider = MagicMock()
 
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=MagicMock()),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.public_chat.tenancy_repo.get_institution_by_code",
+            "app.services.ai.public_chat.tenancy_repo.get_institution_by_code",
             return_value={"institution_id": str(INSTITUTION_ID)},
         ),
         patch(
-            "app.services.public_chat._validate_public_institution",
+            "app.services.ai.public_chat._validate_public_institution",
             return_value=INSTITUTION_ID,
         ),
-        patch("app.services.public_chat.retrieve") as retrieve,
+        patch("app.services.ai.public_chat.retrieve") as retrieve,
     ):
         with pytest.raises(AppError) as caught:
             process_public_request(

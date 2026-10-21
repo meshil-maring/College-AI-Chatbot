@@ -11,11 +11,11 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.core.errors import AppError
-from app.schemas.faculty_attendance import ManualAttendanceRequest, RosterUpdateRequest
-from app.services import faculty_attendance as service
-from app.services import faculty_attendance_extraction as extraction
-from app.services import faculty_attendance_reporting as reporting
-from app.services.authorization import effective_authorization
+from app.schemas.faculty.faculty_attendance import ManualAttendanceRequest, RosterUpdateRequest
+from app.services.faculty import faculty_attendance as service
+from app.services.faculty import faculty_attendance_extraction as extraction
+from app.services.faculty import faculty_attendance_reporting as reporting
+from app.services.auth.authorization import effective_authorization
 
 TENANT = '11111111-1111-4111-8111-111111111111'
 SECTION = '22222222-2222-4222-8222-222222222222'
@@ -302,7 +302,7 @@ def test_migration_has_atomic_audit_identity_and_owner_guards():
 @pytest.mark.parametrize('path,method', [(f'/sections/{SECTION}/overview','get'), (f'/sections/{SECTION}/students','get'),
     (f'/sections/{SECTION}/sessions','get'), (f'/roster/{ROSTER}/profile','get')])
 def test_api_forged_academic_resources_fail_safely(monkeypatch, path, method):
-    from app.api import faculty as api
+    from app.api.faculty import faculty as api
     from app.main import app
     monkeypatch.setattr(reporting, 'authorize_section', lambda *_args: (_ for _ in ()).throw(AppError('Denied', 403, 'FACULTY_SCOPE_DENIED')))
     monkeypatch.setattr(reporting, 'get_admin_client', lambda: Database({'faculty_attendance_rosters': []}))

@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StaffFacultyManager from './StaffFacultyManager.tsx'
-import * as api from '../../../services/adminApi.ts'
+import * as api from '../../../services/admin/adminApi.ts'
 
-vi.mock('../../../services/adminApi.ts', () => ({
+vi.mock('../../../services/admin/adminApi.ts', () => ({
   listMembershipRequests: vi.fn(),
   listMembershipRoster: vi.fn(),
   decideMembershipRequest: vi.fn(),

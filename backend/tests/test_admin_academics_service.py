@@ -6,8 +6,8 @@ from uuid import uuid4
 import pytest
 
 from app.core.errors import AppError
-from app.services import admin_academics as svc
-from app.services.admin_academics import (
+from app.services.admin import admin_academics as svc
+from app.services.admin.admin_academics import (
     AttendanceCreate,
     CsvUploadResult,
     ResultCreate,
@@ -52,7 +52,7 @@ def _csv_rows(*rows: str) -> bytes:
 def _run_csv(content: bytes, students=None, db=None):
     if db is None:
         db = _csv_db(students=students)
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         result = upload_results_csv(content, INSTITUTION_ID)
     return result, db
 
@@ -118,7 +118,7 @@ def test_csv_upload_never_corrupts_existing_data_on_duplicate_insert() -> None:
 
 def test_csv_upload_rejects_missing_required_columns() -> None:
     db = _csv_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         with pytest.raises(AppError) as exc:
             upload_results_csv(b"student_number,sgpa\nS001,8.5\n", INSTITUTION_ID)
     assert exc.value.code == "CSV_MISSING_COLUMNS"
@@ -127,7 +127,7 @@ def test_csv_upload_rejects_missing_required_columns() -> None:
 
 def test_csv_upload_rejects_empty_file() -> None:
     db = _csv_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         with pytest.raises(AppError) as exc:
             upload_results_csv(b"", INSTITUTION_ID)
     assert exc.value.code == "CSV_EMPTY"
@@ -135,7 +135,7 @@ def test_csv_upload_rejects_empty_file() -> None:
 
 def test_csv_upload_rejects_non_utf8() -> None:
     db = _csv_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         with pytest.raises(AppError) as exc:
             upload_results_csv(b"\xff\xfe\x00bad", INSTITUTION_ID)
     assert exc.value.code == "CSV_INVALID_ENCODING"
@@ -165,7 +165,7 @@ def test_create_student_inserts_serialized_payload() -> None:
     (
         db.table.return_value.insert.return_value.execute
     ).return_value = MagicMock(data=[{"student_id": STUDENT_ID}])
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         result = svc.create_student(
             StudentCreate(
                 user_id=uuid4(),
@@ -198,9 +198,9 @@ def test_create_result_with_items_persists_both_tables() -> None:
     # Phase 6.8: creation validates the academic context (student / year /
     # semester / program / course chains) before writing.
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value={
                 "student_id": str(payload.student_id),
                 "institution_id": INSTITUTION_ID,
@@ -208,25 +208,25 @@ def test_create_result_with_items_persists_both_tables() -> None:
             },
         ),
         patch(
-            "app.repositories.results.get_academic_year_context",
+            "app.repositories.academics.results.get_academic_year_context",
             return_value={
                 "academic_year_id": str(payload.academic_year_id),
                 "institution_id": INSTITUTION_ID,
             },
         ),
         patch(
-            "app.repositories.results.get_semester_context",
+            "app.repositories.academics.results.get_semester_context",
             return_value={
                 "semester_id": str(payload.semester_id),
                 "academic_year_id": str(payload.academic_year_id),
             },
         ),
         patch(
-            "app.repositories.results.get_program_institution",
+            "app.repositories.academics.results.get_program_institution",
             return_value=INSTITUTION_ID,
         ),
         patch(
-            "app.repositories.results.get_course_institution",
+            "app.repositories.academics.results.get_course_institution",
             return_value=INSTITUTION_ID,
         ),
     ):

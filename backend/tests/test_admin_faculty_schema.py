@@ -7,10 +7,11 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest.exceptions import APIError
 
-from app.api import admin
+from app.api.admin.dependencies import _ADMIN
 from app.core.security import get_current_user
 from app.main import app
-from app.services import faculty_responsibilities, phase81_rbac
+from app.services.faculty import faculty_responsibilities
+from app.services.auth import phase81_rbac
 
 TENANT = "30000000-0000-0000-0000-000000000001"
 ACTOR = "10000000-0000-0000-0000-000000000001"
@@ -43,12 +44,12 @@ def admin_database(monkeypatch):
     monkeypatch.setattr(faculty_responsibilities, "get_admin_client", lambda: db)
     monkeypatch.setattr(phase81_rbac.admin_memberships, "list_roster", lambda *_args, **_kwargs: SimpleNamespace(members=[]))
     app.dependency_overrides[get_current_user] = lambda: actor
-    app.dependency_overrides[admin._ADMIN] = lambda: actor
+    app.dependency_overrides[_ADMIN] = lambda: actor
     try:
         yield db, query, actor
     finally:
         app.dependency_overrides.pop(get_current_user, None)
-        app.dependency_overrides.pop(admin._ADMIN, None)
+        app.dependency_overrides.pop(_ADMIN, None)
 
 
 def assert_schema_unavailable(response, diagnostic):

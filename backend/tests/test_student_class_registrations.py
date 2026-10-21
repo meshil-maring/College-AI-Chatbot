@@ -10,8 +10,8 @@ from pydantic import ValidationError
 from postgrest.exceptions import APIError
 
 from app.core.errors import AppError, app_error_handler
-from app.schemas.student_registrations import StudentRegistrationCreate
-from app.services import student_registrations as service
+from app.schemas.students.student_registrations import StudentRegistrationCreate
+from app.services.students import student_registrations as service
 
 TENANT = '11111111-1111-4111-8111-111111111111'
 SECTION = '22222222-2222-4222-8222-222222222222'
@@ -191,7 +191,7 @@ def test_duplicates_and_missing_migration_are_safe_client_errors(database):
 
 
 def test_class_registration_appears_in_history_before_any_subject_membership(monkeypatch, database):
-    from app.services import faculty_students
+    from app.services.faculty import faculty_students
     monkeypatch.setattr(faculty_students, 'get_admin_client', lambda: database)
     monkeypatch.setattr(faculty_students, 'authorize_section', lambda *_args: SCOPE)
     database.tables['student_registrations'] = [stored(created_at='2026-10-20T08:00:00Z'),
@@ -215,8 +215,8 @@ def test_cohort_and_server_owned_placement_are_validated(data):
 
 
 def test_registration_routes_validate_payloads_and_reuse_authenticated_scope(monkeypatch, database):
-    from app.api import faculty
-    import app.repositories.admin_audit as audit
+    from app.api.faculty import faculty
+    import app.repositories.admin.admin_audit as audit
     app = FastAPI()
     app.include_router(faculty.router, prefix='/api/v1')
     app.add_exception_handler(AppError, app_error_handler)

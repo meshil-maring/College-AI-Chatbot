@@ -17,8 +17,8 @@
 
 import { useCallback, useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
-import { useAuth } from '../../auth/AuthProvider.tsx'
-import { listStudentResults, uploadResultsCsv } from '../../../services/adminApi.ts'
+import { useAuth } from '../../auth/session/AuthProvider.tsx'
+import { listStudentResults, uploadResultsCsv } from '../../../services/admin/adminApi.ts'
 import type { StudentResult } from '../../../types/admin.ts'
 
 export default function ResultsManager() {

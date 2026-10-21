@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import _ADMIN
+from app.api.admin.dependencies import _ADMIN
 from app.core.errors import AppError
 from app.core.security import (
     assert_tenant_object,
@@ -27,7 +27,7 @@ from app.core.security import (
     user_tenant_id,
 )
 from app.main import app
-from app.schemas.chat import ChatResponse
+from app.schemas.ai.chat import ChatResponse
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -111,7 +111,7 @@ def _tenant_auth_override():
     """Bind the authenticated user to tenant A for the endpoint tests below."""
     app.dependency_overrides[get_current_user] = lambda: _user(TENANT_A)
     with patch(
-        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
         return_value={
             "institution_id": TENANT_A,
             "status": "active",
@@ -168,7 +168,7 @@ def tenant_admin_override():
 
 
 def test_admin_list_students_rejects_foreign_institution(tenant_admin_override):
-    with patch("app.api.admin.admin_academics.list_students") as list_students:
+    with patch("app.services.admin.admin_academics.list_students") as list_students:
         response = client.get(f"/api/v1/admin/students?institution_id={TENANT_B}")
 
     assert response.status_code == 403
@@ -178,7 +178,7 @@ def test_admin_list_students_rejects_foreign_institution(tenant_admin_override):
 
 def test_admin_list_students_forced_to_own_institution(tenant_admin_override):
     with patch(
-        "app.api.admin.admin_academics.list_students", return_value=[]
+        "app.services.admin.admin_academics.list_students", return_value=[]
     ) as list_students:
         response = client.get(f"/api/v1/admin/students?institution_id={TENANT_A}")
 
@@ -195,7 +195,7 @@ def test_tenantless_admin_cannot_list_any_institution():
     }
     try:
         with patch(
-            "app.api.admin.admin_academics.list_students", return_value=[]
+            "app.services.admin.admin_academics.list_students", return_value=[]
         ) as list_students:
             response = client.get(f"/api/v1/admin/students?institution_id={TENANT_B}")
     finally:

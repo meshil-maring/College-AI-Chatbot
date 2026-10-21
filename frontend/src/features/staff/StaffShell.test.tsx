@@ -24,7 +24,7 @@ const authState = vi.hoisted(() => ({
   logout: vi.fn(),
 }))
 
-vi.mock('../auth/AuthProvider.tsx', () => ({
+vi.mock('../auth/session/AuthProvider.tsx', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => authState,
 }))
@@ -37,7 +37,7 @@ vi.mock('../chat/ChatShell.tsx', () => ({
   },
 }))
 
-vi.mock('../../services/adminApi.ts', () => ({
+vi.mock('../../services/admin/adminApi.ts', () => ({
   AdminApiError: class AdminApiError extends Error {
     readonly status: number
     constructor(status: number, message: string) {

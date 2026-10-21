@@ -113,7 +113,7 @@ def _patch_admin_auth(user=ADMIN_USER):
     """Authenticate every request as the admin principal."""
     with ExitStack() as stack:
         stack.enter_context(
-            patch("app.core.security.verify_jwt", return_value=ADMIN_CLAIMS)
+            patch("app.core.security.tokens.verify_jwt", return_value=ADMIN_CLAIMS)
         )
         stack.enter_context(
             patch(
@@ -122,11 +122,11 @@ def _patch_admin_auth(user=ADMIN_USER):
             )
         )
         stack.enter_context(
-            patch("app.services.authorization.get_admin_client", return_value=MagicMock())
+            patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock())
         )
         stack.enter_context(
             patch(
-                "app.services.authorization.tenancy_repo.get_institution_by_id",
+                "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
                 return_value={
                     "institution_id": INSTITUTION_A,
                     "status": "active",
@@ -143,7 +143,7 @@ def _patch_role_auth(role: str):
     user = NON_ADMIN_USERS[role]
     claims = dict(ADMIN_CLAIMS, email=user["email"])
     with ExitStack() as stack:
-        stack.enter_context(patch("app.core.security.verify_jwt", return_value=claims))
+        stack.enter_context(patch("app.core.security.tokens.verify_jwt", return_value=claims))
         stack.enter_context(
             patch(
                 "app.db.supabase.get_user_by_auth_id",
@@ -151,11 +151,11 @@ def _patch_role_auth(role: str):
             )
         )
         stack.enter_context(
-            patch("app.services.authorization.get_admin_client", return_value=MagicMock())
+            patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock())
         )
         stack.enter_context(
             patch(
-                "app.services.authorization.tenancy_repo.get_institution_by_id",
+                "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
                 return_value={
                     "institution_id": INSTITUTION_A,
                     "status": "active",
@@ -225,7 +225,7 @@ def test_admin_me_returns_identity_and_status():
 
 def test_admin_dashboard_scoped_to_own_tenant():
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_dashboard.get_dashboard_summary",
+        "app.services.admin.admin_dashboard.get_dashboard_summary",
         return_value=build_dashboard(),
     ) as dash_mock:
         response = client.get("/api/v1/admin/dashboard", headers=AUTH_HEADERS)
@@ -236,7 +236,7 @@ def test_admin_dashboard_scoped_to_own_tenant():
 
 def test_admin_list_students_scoped_to_own_tenant():
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_academics.list_students", return_value=[]
+        "app.services.admin.admin_academics.list_students", return_value=[]
     ) as list_mock:
         response = client.get(
             "/api/v1/admin/students",
@@ -293,7 +293,7 @@ def test_staff_denied_admin_surfaces_except_approval_queue():
 
 def test_staff_approval_exception_remains_intact():
     with _patch_role_auth("staff"), patch(
-        "app.api.admin.admin_academics.list_pending_approvals",
+        "app.services.admin.admin_academics.list_pending_approvals",
         return_value=[PENDING_STUDENT_ROW],
     ):
         response = client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS)
@@ -308,7 +308,7 @@ def test_staff_approval_exception_remains_intact():
 
 def test_admin_lists_pending_students_scoped_to_own_tenant():
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_academics.list_pending_approvals",
+        "app.services.admin.admin_academics.list_pending_approvals",
         return_value=[PENDING_STUDENT_ROW],
     ) as list_mock:
         response = client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS)
@@ -320,7 +320,7 @@ def test_admin_lists_pending_students_scoped_to_own_tenant():
 def test_admin_foreign_institution_filter_rejected():
     """A foreign ?institution_id= can never widen the queue scope."""
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_academics.list_pending_approvals",
+        "app.services.admin.admin_academics.list_pending_approvals",
     ) as list_mock:
         response = client.get(
             "/api/v1/admin/students/pending",
@@ -335,12 +335,12 @@ def test_admin_foreign_institution_filter_rejected():
 def test_admin_approves_pending_student_within_own_tenant():
     db = MagicMock()
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_academics.approve_student",
+        "app.services.admin.admin_academics.approve_student",
         return_value=dict(PENDING_STUDENT_ROW, approval_status="approved"),
     ) as approve_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock, patch(
-        "app.api.admin.get_admin_client", return_value=db
+        "app.api.admin.common.get_admin_client", return_value=db
     ):
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_A}/approve", headers=AUTH_HEADERS
@@ -356,12 +356,12 @@ def test_admin_cannot_approve_cross_tenant_student():
     is enforced BEFORE any state change; no write happens."""
     foreign_student = dict(PENDING_STUDENT_ROW, institution_id=INSTITUTION_B)
     with _patch_admin_auth(), patch(
-        "app.services.admin_academics.get_admin_client", return_value=MagicMock()
+        "app.services.admin.admin_academics.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.services.admin_academics.academics_repo.get_student_for_approval",
+        "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
         return_value=foreign_student,
     ), patch(
-        "app.services.admin_academics.academics_repo.set_student_approval_status"
+        "app.services.admin.admin_academics.academics_repo.set_student_approval_status"
     ) as write_mock:
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_B}/approve", headers=AUTH_HEADERS
@@ -374,12 +374,12 @@ def test_admin_cannot_approve_cross_tenant_student():
 def test_admin_cannot_reject_cross_tenant_student():
     foreign_student = dict(PENDING_STUDENT_ROW, institution_id=INSTITUTION_B)
     with _patch_admin_auth(), patch(
-        "app.services.admin_academics.get_admin_client", return_value=MagicMock()
+        "app.services.admin.admin_academics.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.services.admin_academics.academics_repo.get_student_for_approval",
+        "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
         return_value=foreign_student,
     ), patch(
-        "app.services.admin_academics.academics_repo.set_student_approval_status"
+        "app.services.admin.admin_academics.academics_repo.set_student_approval_status"
     ) as write_mock:
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_B}/reject", headers=AUTH_HEADERS
@@ -392,7 +392,7 @@ def test_admin_cannot_reject_cross_tenant_student():
 def test_admin_cannot_read_cross_tenant_student():
     """Tenant A -> tenant B reads fail closed on the student surface."""
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_academics.get_student",
+        "app.services.admin.admin_academics.get_student",
         return_value=dict(PENDING_STUDENT_ROW, institution_id=INSTITUTION_B),
     ):
         response = client.get(
@@ -406,12 +406,12 @@ def test_admin_approval_identity_params_are_inert():
     """Approve bodies accept NO fields: client identity params never change
     the decision target or tenant (both come from path + JWT context)."""
     with _patch_admin_auth(), patch(
-        "app.api.admin.admin_academics.approve_student",
+        "app.services.admin.admin_academics.approve_student",
         return_value=dict(PENDING_STUDENT_ROW, approval_status="approved"),
     ) as approve_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.api.admin.common.record_admin_action"
     ), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ):
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_A}/approve",
@@ -431,9 +431,9 @@ def test_admin_csv_upload_foreign_institution_rejected():
     """The institution_id Form field is re-scoped SERVER-SIDE: a foreign
     value can never widen the upload target tenant."""
     with _patch_admin_auth(), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.api.admin.admin_academics.upload_results_csv"
+        "app.services.admin.admin_academics.upload_results_csv"
     ) as upload_mock:
         response = client.post(
             "/api/v1/admin/results/csv-upload",
@@ -448,11 +448,11 @@ def test_admin_csv_upload_foreign_institution_rejected():
 
 def test_admin_csv_upload_own_institution_scopes_correctly():
     with _patch_admin_auth(), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.api.admin.admin_academics.upload_results_csv"
+        "app.services.admin.admin_academics.upload_results_csv"
     ) as upload_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.api.admin.common.record_admin_action"
     ):
         response = client.post(
             "/api/v1/admin/results/csv-upload",

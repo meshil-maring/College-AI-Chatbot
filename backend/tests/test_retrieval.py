@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.core.errors import AppError
-from app.schemas.retrieval import RetrievalRequest
-from app.services import retrieval
+from app.schemas.knowledge.retrieval import RetrievalRequest
+from app.services.knowledge import retrieval
 
 
 QUERY = [0.25] * 1536
@@ -143,7 +143,7 @@ def test_service_does_not_call_embedding_provider_or_llm():
         patch.object(retrieval, "get_admin_client", return_value=MagicMock()),
         patch.object(retrieval, "search_similar_chunks", return_value=[]),
         patch(
-            "app.services.embedding_provider.get_embedding_provider"
+            "app.services.knowledge.embedding_provider.get_embedding_provider"
         ) as get_provider,
     ):
         retrieval.retrieve_chunks(QUERY, institution_id="institution-1")
@@ -278,7 +278,7 @@ def test_embedding_failure_is_wrapped():
 
 
 def test_invalid_query_embedding_is_rejected_by_embedding_service():
-    from app.services import embeddings
+    from app.services.knowledge import embeddings
 
     provider = MagicMock()
     provider.embed.return_value = [[0.1]]

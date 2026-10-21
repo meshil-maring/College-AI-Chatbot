@@ -45,13 +45,13 @@ def _auth_header(claims):
 
 def _patch_auth(user=FAKE_USER_A, claims=FAKE_CLAIMS_A):
     return (
-        patch("app.core.security.verify_jwt", return_value=claims),
+        patch("app.core.security.tokens.verify_jwt", return_value=claims),
         patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user)),
     )
 
 
 def _patch_admin(client_mock):
-    return patch("app.services.conversation_history.get_admin_client", return_value=client_mock)
+    return patch("app.services.ai.conversation_history.get_admin_client", return_value=client_mock)
 
 
 # ---------------------------------------------------------------------------

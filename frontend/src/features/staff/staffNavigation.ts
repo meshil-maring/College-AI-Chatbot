@@ -42,7 +42,7 @@
  * Management links do not exist in this list).
  */
 
-import { hasPermission } from '../auth/permissions.ts'
+import { hasPermission } from '../auth/access/permissions.ts'
 
 /** The only role that renders the staff shell. */
 const STAFF_SHELL_ROLES: readonly string[] = ['staff']

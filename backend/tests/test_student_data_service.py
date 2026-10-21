@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from app.core.errors import AppError
-from app.services import student_data as svc
+from app.services.students import student_data as svc
 
 USER_ID = "72000000-0000-0000-0000-000000000001"
 STUDENT_ID = str(uuid4())
@@ -55,7 +55,7 @@ def test_get_own_results_filters_to_published_only() -> None:
     ]
     with (
         patch(
-            "app.repositories.admin_academics.list_student_results",
+            "app.repositories.admin.admin_academics.list_student_results",
             return_value=rows,
         ) as list_mock,
     ):
@@ -71,7 +71,7 @@ def test_get_own_results_passes_term_filters() -> None:
     ay = str(uuid4())
     sem = str(uuid4())
     with patch(
-        "app.repositories.admin_academics.list_student_results", return_value=[]
+        "app.repositories.admin.admin_academics.list_student_results", return_value=[]
     ) as list_mock:
         svc.get_own_results(USER_ID, academic_year_id=ay, semester_id=sem, client=db)
     assert list_mock.call_args.kwargs["academic_year_id"] == ay
@@ -85,7 +85,7 @@ def test_get_own_test_results_filters_to_published_only() -> None:
         {"test_result_id": "2", "status": "withheld"},
     ]
     with patch(
-        "app.repositories.admin_academics.list_test_results", return_value=rows
+        "app.repositories.admin.admin_academics.list_test_results", return_value=rows
     ) as list_mock:
         result = svc.get_own_test_results(USER_ID, client=db)
     assert [r["test_result_id"] for r in result] == ["1"]
@@ -96,7 +96,7 @@ def test_get_own_attendance_returns_records_with_date_filters() -> None:
     db = _db_with_profile(_student())
     rows = [{"student_attendance_id": "a1", "status": "present"}]
     with patch(
-        "app.repositories.admin_academics.list_student_attendance",
+        "app.repositories.admin.admin_academics.list_student_attendance",
         return_value=rows,
     ) as list_mock:
         result = svc.get_own_attendance(
@@ -112,7 +112,7 @@ def test_every_me_lookup_resolves_own_student_first() -> None:
     """Each accessor calls get_student_by_user_id — no client-chosen student_id."""
     db = _db_with_profile(_student())
     with patch(
-        "app.repositories.admin_academics.list_student_attendance",
+        "app.repositories.admin.admin_academics.list_student_attendance",
         return_value=[],
     ) as list_mock:
         svc.get_own_attendance(USER_ID, client=list_mock and db)

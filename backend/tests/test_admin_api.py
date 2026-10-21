@@ -13,11 +13,12 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import _ADMIN, _APPROVAL
+from app.api.admin.dependencies import _ADMIN
+from app.api.admin.dependencies import _APPROVAL
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.schemas.admin_dashboard import DashboardRecentNotice
+from app.schemas.admin.admin_dashboard import DashboardRecentNotice
 from tests.dashboard_contract import build_dashboard
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -56,21 +57,21 @@ def admin_auth():
     app.dependency_overrides[_APPROVAL] = lambda: ADMIN_USER
     with (
         patch(
-            "app.api.admin.admin_academics.get_student",
+            "app.services.admin.admin_academics.get_student",
             return_value={
                 "student_id": STUDENT_ID,
                 "institution_id": INSTITUTION_ID,
             },
         ),
         patch(
-            "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+            "app.repositories.admin.admin_knowledge.get_knowledge_source_detail",
             return_value={
                 "knowledge_source_id": KS_ID,
                 "institution_id": INSTITUTION_ID,
             },
         ),
         patch(
-            "app.api.admin.knowledge_repo.get_document_with_versions",
+            "app.repositories.admin.admin_knowledge.get_document_with_versions",
             return_value={
                 "document_id": DOC_ID,
                 "knowledge_source_id": KS_ID,
@@ -166,7 +167,7 @@ def test_dashboard_returns_typed_institution_scoped_payload() -> None:
         results=60,
     )
     with patch(
-        "app.services.admin_dashboard.get_dashboard_summary", return_value=summary
+        "app.services.admin.admin_dashboard.get_dashboard_summary", return_value=summary
     ):
         response = client.get("/api/v1/admin/dashboard")
 
@@ -211,7 +212,7 @@ def test_dashboard_response_never_exposes_internal_identifiers() -> None:
         ],
     )
     with patch(
-        "app.services.admin_dashboard.get_dashboard_summary", return_value=summary
+        "app.services.admin.admin_dashboard.get_dashboard_summary", return_value=summary
     ):
         response = client.get("/api/v1/admin/dashboard")
 
@@ -246,7 +247,7 @@ def test_dashboard_ignores_client_supplied_institution_id() -> None:
     summary = build_dashboard(name="Alpha University", code="ALPHA", total_students=7)
     other_tenant = "30000000-0000-0000-0000-0000000000ff"
     with patch(
-        "app.services.admin_dashboard.get_dashboard_summary", return_value=summary
+        "app.services.admin.admin_dashboard.get_dashboard_summary", return_value=summary
     ) as svc:
         response = client.get(f"/api/v1/admin/dashboard?institution_id={other_tenant}")
 
@@ -262,7 +263,7 @@ def test_dashboard_ignores_client_supplied_institution_id() -> None:
 
 def test_create_knowledge_source_audits_mutation() -> None:
     db = _audit_db(first_insert={"knowledge_source_id": KS_ID})
-    with patch("app.api.admin.get_admin_client", return_value=db):
+    with patch("app.api.admin.common.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/knowledge-sources",
             json={
@@ -288,9 +289,9 @@ def test_update_knowledge_source_404_when_missing() -> None:
         MagicMock(data=[])
     )
     with (
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
         patch(
-            "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+            "app.repositories.admin.admin_knowledge.get_knowledge_source_detail",
             return_value=None,
         ),
     ):
@@ -316,10 +317,10 @@ def test_document_upload_endpoint_orchestrates_and_audits() -> None:
     db = _audit_db()
     with (
         patch(
-            "app.services.admin_documents.upload_document",
+            "app.services.admin.admin_documents.upload_document",
             new=AsyncMock(return_value=upload_result),
         ),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.post(
             "/api/v1/admin/documents",
@@ -345,10 +346,10 @@ def test_document_version_endpoint_uses_versioning_and_audits() -> None:
     db = _audit_db()
     with (
         patch(
-            "app.services.admin_documents.update_document",
+            "app.services.admin.admin_documents.update_document",
             new=AsyncMock(return_value=version_result),
         ),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.post(
             f"/api/v1/admin/documents/{DOC_ID}/versions",
@@ -367,10 +368,10 @@ def test_document_delete_endpoint_audits() -> None:
     db = _audit_db()
     with (
         patch(
-            "app.services.admin_documents.delete_document",
+            "app.services.admin.admin_documents.delete_document",
             return_value={"deleted": True, "document_id": DOC_ID},
         ),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.delete(f"/api/v1/admin/documents/{DOC_ID}")
 
@@ -400,11 +401,11 @@ def test_create_faq_endpoint_defers_rag_until_publish_and_audits() -> None:
     faq = _faq_row()
     db = _audit_db(first_insert=faq)
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_faq.sync_canonical_text_record"
+            "app.services.admin.admin_faq.sync_canonical_text_record"
         ) as sync_mock,
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.post(
             "/api/v1/admin/faqs",
@@ -429,13 +430,13 @@ def test_update_faq_deactivation_removes_retrievable_content() -> None:
     )
     get_faq_mock = MagicMock(return_value=_faq_row())
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
-        patch("app.repositories.admin_knowledge.get_faq", get_faq_mock),
-        patch("app.services.admin_faq.sync_canonical_text_record") as sync_mock,
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_knowledge.get_faq", get_faq_mock),
+        patch("app.services.admin.admin_faq.sync_canonical_text_record") as sync_mock,
         patch(
-            "app.services.admin_faq.remove_canonical_text_record"
+            "app.services.admin.admin_faq.remove_canonical_text_record"
         ) as remove_mock,
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.patch(
             f"/api/v1/admin/faqs/{FAQ_ID}", json={"is_active": False}
@@ -451,15 +452,15 @@ def test_update_faq_deactivation_removes_retrievable_content() -> None:
 def test_delete_faq_endpoint_removes_rag_content_and_audits() -> None:
     db = _audit_db()
     with (
-        patch("app.services.admin_faq.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_faq.get_admin_client", return_value=db),
         patch(
-            "app.repositories.admin_knowledge.get_faq",
+            "app.repositories.admin.admin_knowledge.get_faq",
             return_value=_faq_row(),
         ),
         patch(
-            "app.services.admin_faq.remove_canonical_text_record"
+            "app.services.admin.admin_faq.remove_canonical_text_record"
         ) as remove_mock,
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.delete(f"/api/v1/admin/faqs/{FAQ_ID}")
 
@@ -482,11 +483,11 @@ def test_create_notice_endpoint_defers_rag_until_publish_and_audits() -> None:
     }
     db = _audit_db(first_insert=notice)
     with (
-        patch("app.services.admin_notices.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_notices.get_admin_client", return_value=db),
         patch(
-            "app.services.admin_notices.sync_canonical_text_record"
+            "app.services.admin.admin_notices.sync_canonical_text_record"
         ) as sync_mock,
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.post(
             "/api/v1/admin/notices",
@@ -523,8 +524,8 @@ def _student_row() -> dict:
 def test_create_student_endpoint_audits() -> None:
     db = _audit_db(first_insert=_student_row())
     with (
-        patch("app.services.admin_academics.get_admin_client", return_value=db),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_academics.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.post(
             "/api/v1/admin/students",
@@ -544,7 +545,7 @@ def test_create_student_endpoint_audits() -> None:
 
 def test_create_student_rejects_invalid_status() -> None:
     db = _audit_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/students",
             json={
@@ -566,9 +567,9 @@ def test_archive_student_endpoint_soft_deletes_and_audits() -> None:
         MagicMock(data=[archived])
     )
     with (
-        patch("app.services.admin_academics.get_admin_client", return_value=db),
-        patch("app.repositories.admin_academics.get_student", return_value=_student_row()),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_academics.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_academics.get_student", return_value=_student_row()),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.delete(f"/api/v1/admin/students/{STUDENT_ID}")
 
@@ -583,10 +584,10 @@ def test_archive_student_endpoint_soft_deletes_and_audits() -> None:
 def test_create_result_with_items_audits() -> None:
     db = _audit_db(first_insert={"student_result_id": RESULT_ID})
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value={
                 "student_id": STUDENT_ID,
                 "institution_id": INSTITUTION_ID,
@@ -594,19 +595,19 @@ def test_create_result_with_items_audits() -> None:
             },
         ),
         patch(
-            "app.repositories.results.get_academic_year_context",
+            "app.repositories.academics.results.get_academic_year_context",
             return_value={"academic_year_id": AY_ID, "institution_id": INSTITUTION_ID},
         ),
         patch(
-            "app.repositories.results.get_semester_context",
+            "app.repositories.academics.results.get_semester_context",
             return_value={"semester_id": SEM_ID, "academic_year_id": AY_ID},
         ),
         patch(
-            "app.repositories.results.get_program_institution",
+            "app.repositories.academics.results.get_program_institution",
             return_value=INSTITUTION_ID,
         ),
         patch(
-            "app.repositories.results.get_course_institution",
+            "app.repositories.academics.results.get_course_institution",
             return_value=INSTITUTION_ID,
         ),
     ):
@@ -639,7 +640,7 @@ def test_create_result_with_items_audits() -> None:
 
 def test_create_result_rejects_invalid_result_type() -> None:
     db = _audit_db()
-    with patch("app.services.results.get_admin_client", return_value=db):
+    with patch("app.services.academics.results.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/results",
             json={
@@ -691,8 +692,8 @@ def test_csv_upload_inserts_valid_rows_and_reports_row_errors() -> None:
     )
     db = _csv_db()
     with (
-        patch("app.services.admin_academics.get_admin_client", return_value=db),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.admin.admin_academics.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.post(
             "/api/v1/admin/results/csv-upload",
@@ -719,7 +720,7 @@ def test_csv_upload_inserts_valid_rows_and_reports_row_errors() -> None:
 
 def test_csv_upload_rejects_missing_columns() -> None:
     db = _csv_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/results/csv-upload",
             files={"file": ("bad.csv", b"student_number,sgpa\nS001,8.5\n", "text/csv")},
@@ -736,10 +737,10 @@ def test_csv_upload_rejects_missing_columns() -> None:
 def test_create_test_result_audits() -> None:
     db = _audit_db(first_insert={"test_result_id": TEST_RESULT_ID})
     with (
-        patch("app.services.results.get_admin_client", return_value=db),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.results.get_admin_client", return_value=db),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
         patch(
-            "app.repositories.results.get_student_context",
+            "app.repositories.academics.results.get_student_context",
             return_value={
                 "student_id": STUDENT_ID,
                 "institution_id": INSTITUTION_ID,
@@ -747,15 +748,15 @@ def test_create_test_result_audits() -> None:
             },
         ),
         patch(
-            "app.repositories.results.get_academic_year_context",
+            "app.repositories.academics.results.get_academic_year_context",
             return_value={"academic_year_id": AY_ID, "institution_id": INSTITUTION_ID},
         ),
         patch(
-            "app.repositories.results.get_semester_context",
+            "app.repositories.academics.results.get_semester_context",
             return_value={"semester_id": SEM_ID, "academic_year_id": AY_ID},
         ),
         patch(
-            "app.repositories.results.get_course_institution",
+            "app.repositories.academics.results.get_course_institution",
             return_value=INSTITUTION_ID,
         ),
     ):
@@ -780,7 +781,7 @@ def test_create_test_result_audits() -> None:
 
 def test_create_test_result_rejects_scored_over_max() -> None:
     db = _audit_db()
-    with patch("app.services.results.get_admin_client", return_value=db):
+    with patch("app.services.academics.results.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/test-results",
             json={
@@ -800,7 +801,7 @@ def test_create_test_result_rejects_scored_over_max() -> None:
 
 def test_create_test_result_rejects_invalid_test_type() -> None:
     db = _audit_db()
-    with patch("app.services.admin_academics.get_admin_client", return_value=db):
+    with patch("app.services.admin.admin_academics.get_admin_client", return_value=db):
         response = client.post(
             "/api/v1/admin/test-results",
             json={
@@ -830,8 +831,8 @@ def test_create_attendance_audits_and_rejects_bad_status() -> None:
     db = _audit_db(first_insert={"student_attendance_id": ATTENDANCE_ID})
     created = {"student_attendance_id": ATTENDANCE_ID, "student_id": STUDENT_ID}
     with (
-        patch("app.api.admin.attendance.create_attendance", return_value=created),
-        patch("app.api.admin.get_admin_client", return_value=db),
+        patch("app.services.academics.attendance.create_attendance", return_value=created),
+        patch("app.api.admin.common.get_admin_client", return_value=db),
     ):
         response = client.post("/api/v1/admin/attendance", json=payload)
     assert response.status_code == 201
@@ -856,7 +857,7 @@ def test_create_attendance_reports_duplicate_as_conflict() -> None:
         "status": "present",
     }
     with patch(
-        "app.api.admin.attendance.create_attendance",
+        "app.services.academics.attendance.create_attendance",
         side_effect=AppError(
             "Attendance record already exists for this student, section, and date",
             status_code=409,
@@ -876,8 +877,8 @@ def test_create_attendance_reports_duplicate_as_conflict() -> None:
 def test_list_audit_logs_endpoint() -> None:
     entry = {"audit_id": str(uuid4()), "action": "faq.create", "table_name": "faqs"}
     with (
-        patch("app.api.admin.get_admin_client", return_value=MagicMock()),
-        patch("app.api.admin.list_audit_entries", return_value=[entry]) as audit,
+        patch("app.api.admin.common.get_admin_client", return_value=MagicMock()),
+        patch("app.api.admin.audit.list_audit_entries", return_value=[entry]) as audit,
     ):
         response = client.get("/api/v1/admin/audit-logs?action=faq.create")
 
@@ -891,7 +892,7 @@ def test_get_audit_log_404_when_missing() -> None:
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = (
         MagicMock(data=None)
     )
-    with patch("app.api.admin.get_admin_client", return_value=db):
+    with patch("app.api.admin.common.get_admin_client", return_value=db):
         response = client.get(f"/api/v1/admin/audit-logs/{uuid4()}")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "AUDIT_NOT_FOUND"

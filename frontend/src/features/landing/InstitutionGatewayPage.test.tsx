@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../../App.tsx'
-import { lookupInstitution, RegistrationError } from '../../services/registration.ts'
+import { lookupInstitution, RegistrationError } from '../../services/registration/registration.ts'
 
-vi.mock('../../services/registration.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../services/registration.ts')>()
+vi.mock('../../services/registration/registration.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../services/registration/registration.ts')>()
   return { ...actual, lookupInstitution: vi.fn() }
 })
 
-vi.mock('../auth/AuthProvider.tsx', () => ({
+vi.mock('../auth/session/AuthProvider.tsx', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => { throw new Error('Public institution routes must not use authentication') },
 }))

@@ -22,9 +22,9 @@ from app.config import settings
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services import email_delivery
-from app.services import platform_admin_invitations as service
-from app.services.invitation_abuse_controls import reset_invitation_abuse_state
+from app.services.email import email_delivery
+from app.services.invitations import platform_admin_invitations as service
+from app.services.invitations.invitation_abuse_controls import reset_invitation_abuse_state
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -107,12 +107,12 @@ def _allow_super_admin():
 
 
 def _invite_repo_patch(**kwargs):
-    return patch.multiple("app.services.platform_admin_invitations.invite_repo", **kwargs)
+    return patch.multiple("app.services.invitations.platform_admin_invitations.invite_repo", **kwargs)
 
 
 def _platform_repo_patch(**kwargs):
     return patch.multiple(
-        "app.services.platform_admin_invitations.platform_repo", **kwargs
+        "app.services.invitations.platform_admin_invitations.platform_repo", **kwargs
     )
 
 
@@ -354,7 +354,7 @@ def test_provider_credentials_never_leave_the_provider(monkeypatch) -> None:
 
 def test_provider_credentials_are_never_a_response_field() -> None:
     """No invitation/roster/audit schema has a field a credential could use."""
-    from app.schemas import admin_invitations as schemas
+    from app.schemas.invitations import admin_invitations as schemas
 
     fields: set[str] = set()
     for model in vars(schemas).values():
@@ -375,7 +375,7 @@ def test_provider_credentials_are_never_a_response_field() -> None:
 def test_provider_logs_never_contain_the_token_or_recipient(caplog) -> None:
     import logging
 
-    with caplog.at_level(logging.INFO, logger="app.services.email_delivery"):
+    with caplog.at_level(logging.INFO, logger="app.services.email.email_delivery"):
         email_delivery.deliver_invitation_email(
             email_delivery.LocalEmailProvider(),
             to_email="dean@unico.example",
@@ -388,7 +388,7 @@ def test_provider_logs_never_contain_the_token_or_recipient(caplog) -> None:
 
 
 def test_local_outbox_is_bounded() -> None:
-    from app.services.email_delivery import OUTBOX_MAX_MESSAGES
+    from app.services.email.email_delivery import OUTBOX_MAX_MESSAGES
 
     provider = email_delivery.LocalEmailProvider()
     for index in range(OUTBOX_MAX_MESSAGES + 10):
@@ -467,24 +467,24 @@ def _accept_patches(*, invitation, claim=True, audit=None, assign=None, existing
             assign_institution_admin=assign if assign is not None else MagicMock(),
             record_institution_audit=audit if audit is not None else MagicMock(),
         ),
-        patch("app.services.platform_admin_invitations.get_admin_client", return_value=MagicMock()),
-        patch("app.services.platform_admin_invitations.tenancy_repo.get_user_by_email", return_value=None),
+        patch("app.services.invitations.platform_admin_invitations.get_admin_client", return_value=MagicMock()),
+        patch("app.services.invitations.platform_admin_invitations.tenancy_repo.get_user_by_email", return_value=None),
         patch(
-            "app.services.platform_admin_invitations.student_svc._create_auth_account",
+            "app.services.invitations.platform_admin_invitations.student_svc._create_auth_account",
             create_auth
             if create_auth is not None
             else MagicMock(return_value="30000000-0000-0000-0000-000000000001"),
         ),
         patch(
-            "app.services.platform_admin_invitations.student_svc._create_public_user",
+            "app.services.invitations.platform_admin_invitations.student_svc._create_public_user",
             MagicMock(return_value=TARGET_USER_ID),
         ),
         patch(
-            "app.services.platform_admin_invitations.student_svc._try_delete_user_row",
+            "app.services.invitations.platform_admin_invitations.student_svc._try_delete_user_row",
             MagicMock(),
         ),
         patch(
-            "app.services.platform_admin_invitations.student_svc._try_delete_auth_user",
+            "app.services.invitations.platform_admin_invitations.student_svc._try_delete_auth_user",
             MagicMock(),
         ),
     ]
@@ -701,7 +701,7 @@ def test_resend_losing_the_race_sends_nothing() -> None:
 
 
 def test_resend_token_generator_is_fresh_and_high_entropy() -> None:
-    from app.repositories.platform_admin_invitations import generate_invitation_token
+    from app.repositories.invitations.platform_admin_invitations import generate_invitation_token
 
     tokens = {generate_invitation_token() for _ in range(3)}
     assert len(tokens) == 3
@@ -874,7 +874,7 @@ def test_acceptance_rate_limit_returns_a_safe_429(monkeypatch) -> None:
 
 def test_rate_limit_key_is_the_digest_never_the_raw_token(monkeypatch) -> None:
     """The limiter must not hold a usable credential as an in-memory key."""
-    from app.services import invitation_abuse_controls as controls
+    from app.services.invitations import invitation_abuse_controls as controls
 
     monkeypatch.setattr(settings, "invitation_accept_token_limit_requests", 1)
     monkeypatch.setattr(settings, "invitation_accept_ip_limit_requests", 100)
@@ -1104,7 +1104,7 @@ def test_sweep_route_runs_the_reusable_service_function() -> None:
 
 
 def test_sweep_page_size_is_bounded_by_the_repository() -> None:
-    from app.repositories.platform_admin_invitations import SWEEP_PAGE_MAX
+    from app.repositories.invitations.platform_admin_invitations import SWEEP_PAGE_MAX
 
     assert SWEEP_PAGE_MAX == 200
 
@@ -1133,11 +1133,11 @@ def _create_with_provider(provider, *, audit=None, record=None, attempts=None,
             assign_institution_admin=MagicMock(),
         ),
         patch(
-            "app.services.platform_admin_invitations.student_svc._create_auth_account",
+            "app.services.invitations.platform_admin_invitations.student_svc._create_auth_account",
             create_auth if create_auth is not None else MagicMock(),
         ),
         patch(
-            "app.services.email_delivery.get_email_provider",
+            "app.services.email.email_delivery.get_email_provider",
             MagicMock(return_value=provider),
         ),
     ]
@@ -1223,7 +1223,7 @@ def test_resend_delivery_failure_is_not_silently_successful() -> None:
     stack = _resend_patches(audit=audit)
     stack.append(
         patch(
-            "app.services.email_delivery.get_email_provider",
+            "app.services.email.email_delivery.get_email_provider",
             MagicMock(return_value=_FailingProvider()),
         )
     )
@@ -1319,7 +1319,7 @@ def test_acceptance_cannot_escalate_to_super_admin() -> None:
     """The grant primitive targets a hard-coded role, by construction."""
     import inspect as _inspect
 
-    from app.repositories.platform_institutions import assign_institution_admin
+    from app.repositories.platform.platform_institutions import assign_institution_admin
 
     source = _inspect.getsource(assign_institution_admin)
     assert "'admin'" in source

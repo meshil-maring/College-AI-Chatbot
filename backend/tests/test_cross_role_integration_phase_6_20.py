@@ -41,7 +41,7 @@ from fastapi.testclient import TestClient
 
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
 from app.main import app
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.ai.chat import ChatRequest, ChatResponse
 from tests.dashboard_contract import build_dashboard
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -107,7 +107,7 @@ def _active_institution_authorization():
             "is_active": True,
         }
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
         yield
 
 
@@ -160,7 +160,7 @@ def _auth(role: str, user: dict | None = None):
     principal = user if user is not None else USERS[role]
     claims = dict(CLAIMS, email=principal["email"])
     with ExitStack() as stack:
-        stack.enter_context(patch("app.core.security.verify_jwt", return_value=claims))
+        stack.enter_context(patch("app.core.security.tokens.verify_jwt", return_value=claims))
         stack.enter_context(
             patch(
                 "app.db.supabase.get_user_by_auth_id",
@@ -195,13 +195,13 @@ def _assert_student_chain_closed(path: str) -> None:
     """
     for role in ("faculty", "staff", "admin", "unsupported"):
         with _auth(role), patch(
-            "app.repositories.admin_academics.get_student_by_user_id",
+            "app.repositories.admin.admin_academics.get_student_by_user_id",
             return_value=None,
         ), patch(
-            "app.repositories.admin_academics.get_student_academic_profile_row",
+            "app.repositories.admin.admin_academics.get_student_academic_profile_row",
             return_value=None,
         ), patch(
-            "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+            "app.repositories.admin.admin_academics.get_student_approval_row_by_user_id",
             return_value=None,
         ):
             response = client.get(path, headers=AUTH_HEADERS)
@@ -379,8 +379,8 @@ def test_admin_only_matrix_is_closed_for_every_non_admin_role():
 def test_student_privileged_boundary_is_closed_server_side():
     """The student UI alone is not evidence — the backend must deny."""
     with _auth("student"), patch(
-        "app.api.admin.admin_academics.list_students"
-    ) as list_mock, patch("app.api.admin.get_admin_client") as client_mock:
+        "app.services.admin.admin_academics.list_students"
+    ) as list_mock, patch("app.api.admin.common.get_admin_client") as client_mock:
         response = client.get(
             "/api/v1/admin/students",
             params={"institution_id": INSTITUTION_A},
@@ -395,26 +395,26 @@ def test_student_privileged_boundary_is_closed_server_side():
 def test_admin_only_matrix_is_open_for_admin():
     """The same surfaces remain reachable for the admin role (read paths)."""
     with _auth("admin"), patch(
-        "app.api.admin.admin_dashboard.get_dashboard_summary",
+        "app.services.admin.admin_dashboard.get_dashboard_summary",
         return_value=build_dashboard(),
     ), patch(
-        "app.api.admin.admin_academics.list_students", return_value=[]
+        "app.services.admin.admin_academics.list_students", return_value=[]
     ), patch(
-        "app.api.admin.admin_academics.get_student", return_value=PENDING_STUDENT_ROW
+        "app.services.admin.admin_academics.get_student", return_value=PENDING_STUDENT_ROW
     ), patch(
-        "app.api.admin.admin_academics.list_results_for_student", return_value=[]
+        "app.services.admin.admin_academics.list_results_for_student", return_value=[]
     ), patch(
-        "app.api.admin.admin_academics.list_test_results_for_student", return_value=[]
+        "app.services.admin.admin_academics.list_test_results_for_student", return_value=[]
     ), patch(
-        "app.api.admin.attendance.list_attendance_for_student", return_value=[]
+        "app.services.academics.attendance.list_attendance_for_student", return_value=[]
     ), patch(
-        "app.api.admin.admin_notices.list_notices", return_value=[]
+        "app.services.admin.admin_notices.list_notices", return_value=[]
     ), patch(
-        "app.api.admin.admin_faq.list_faqs", return_value=[]
+        "app.services.admin.admin_faq.list_faqs", return_value=[]
     ), patch(
-        "app.api.admin.knowledge_repo.list_knowledge_sources", return_value=[]
+        "app.repositories.admin.admin_knowledge.list_knowledge_sources", return_value=[]
     ), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ):
         calls = (
             ("GET", "/api/v1/admin/me", {}),
@@ -459,7 +459,7 @@ def test_student_identity_chain_is_closed_for_every_other_role():
 def test_faculty_cannot_use_the_student_contract_even_with_client_identity_params():
     """Faculty -> /students/me/* stays closed; client identity fields are inert."""
     with _auth("faculty"), patch(
-        "app.repositories.admin_academics.get_student_by_user_id", return_value=None
+        "app.repositories.admin.admin_academics.get_student_by_user_id", return_value=None
     ) as by_user:
         response = client.get(
             "/api/v1/students/me/profile",
@@ -485,7 +485,7 @@ def test_faculty_cannot_use_the_student_contract_even_with_client_identity_param
 def test_approval_queue_is_allowed_for_staff_and_admin_only():
     """staff + admin may list/approve/reject; student + faculty get 403."""
     with _auth("staff"), patch(
-        "app.api.admin.admin_academics.list_pending_approvals",
+        "app.services.admin.admin_academics.list_pending_approvals",
         return_value=[PENDING_STUDENT_ROW],
     ) as list_mock:
         response = client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS)
@@ -494,7 +494,7 @@ def test_approval_queue_is_allowed_for_staff_and_admin_only():
     list_mock.assert_called_once_with(UUID(INSTITUTION_A), limit=100, offset=0)
 
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+        "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
     ):
         assert client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS).status_code == 200
 
@@ -508,13 +508,13 @@ def test_denied_approval_attempts_never_reach_the_handler_or_write():
     """403 happens in the dependency: no approval service call, no write."""
     for role in ("student", "faculty"):
         with _auth(role), patch(
-            "app.api.admin.admin_academics.approve_student"
+            "app.services.admin.admin_academics.approve_student"
         ) as approve_mock, patch(
-            "app.api.admin.admin_academics.reject_student"
+            "app.services.admin.admin_academics.reject_student"
         ) as reject_mock, patch(
-            "app.api.admin.record_admin_action"
+            "app.api.admin.common.record_admin_action"
         ) as audit_mock, patch(
-            "app.api.admin.get_admin_client"
+            "app.api.admin.common.get_admin_client"
         ) as client_mock:
             approve = client.post(
                 f"/api/v1/admin/students/{STUDENT_A}/approve", headers=AUTH_HEADERS
@@ -533,12 +533,12 @@ def test_denied_approval_attempts_never_reach_the_handler_or_write():
 def test_staff_and_admin_approve_within_their_own_tenant():
     for role in ("staff", "admin"):
         with _auth(role), patch(
-            "app.api.admin.admin_academics.approve_student",
+            "app.services.admin.admin_academics.approve_student",
             return_value=dict(PENDING_STUDENT_ROW, approval_status="approved"),
         ) as approve_mock, patch(
-            "app.api.admin.record_admin_action"
+            "app.api.admin.common.record_admin_action"
         ) as audit_mock, patch(
-            "app.api.admin.get_admin_client", return_value=MagicMock()
+            "app.api.admin.common.get_admin_client", return_value=MagicMock()
         ):
             response = client.post(
                 f"/api/v1/admin/students/{STUDENT_A}/approve", headers=AUTH_HEADERS
@@ -557,15 +557,15 @@ def test_stale_approval_decision_produces_the_documented_409():
     for role in ("staff", "admin"):
         for operation in ("approve", "reject"):
             with _auth(role), patch(
-                "app.services.admin_academics.get_admin_client",
+                "app.services.admin.admin_academics.get_admin_client",
                 return_value=MagicMock(),
             ), patch(
-                "app.services.admin_academics.academics_repo.get_student_for_approval",
+                "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
                 return_value=already_decided,
             ), patch(
-                "app.services.admin_academics.academics_repo.set_student_approval_status"
+                "app.services.admin.admin_academics.academics_repo.set_student_approval_status"
             ) as write_mock, patch(
-                "app.api.admin.record_admin_action"
+                "app.api.admin.common.record_admin_action"
             ) as audit_mock:
                 response = client.post(
                     f"/api/v1/admin/students/{STUDENT_A}/{operation}",
@@ -602,7 +602,7 @@ def test_platform_level_staff_and_faculty_hold_no_approval_authority():
 def test_admin_a_cannot_read_admin_b_student_records():
     foreign = dict(PENDING_STUDENT_ROW, institution_id=INSTITUTION_B, student_id=STUDENT_B)
     with _auth("admin", _user("admin", INSTITUTION_A)), patch(
-        "app.api.admin.admin_academics.get_student", return_value=foreign
+        "app.services.admin.admin_academics.get_student", return_value=foreign
     ):
         _assert_tenant_mismatch("admin", "GET", f"/api/v1/admin/students/{STUDENT_B}")
 
@@ -610,21 +610,21 @@ def test_admin_a_cannot_read_admin_b_student_records():
 def test_admin_a_cannot_read_admin_b_notice_faq_document_and_knowledge_source():
     """Every admin read surface re-checks the row's tenant (not just the query)."""
     with _auth("admin"), patch(
-        "app.api.admin.admin_notices.get_notice",
+        "app.services.admin.admin_notices.get_notice",
         return_value={"notice_id": NOTICE_B, "institution_id": INSTITUTION_B},
     ):
         _assert_tenant_mismatch("admin", "GET", f"/api/v1/admin/notices/{NOTICE_B}")
 
     with _auth("admin"), patch(
-        "app.api.admin.admin_faq.get_faq",
+        "app.services.admin.admin_faq.get_faq",
         return_value={"faq_id": FAQ_B, "institution_id": INSTITUTION_B},
     ):
         _assert_tenant_mismatch("admin", "GET", f"/api/v1/admin/faqs/{FAQ_B}")
 
     with _auth("admin"), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+        "app.repositories.admin.admin_knowledge.get_knowledge_source_detail",
         return_value={
             "knowledge_source_id": KNOWLEDGE_SOURCE_B,
             "institution_id": INSTITUTION_B,
@@ -635,12 +635,12 @@ def test_admin_a_cannot_read_admin_b_notice_faq_document_and_knowledge_source():
         )
 
     with _auth("admin"), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.api.admin.knowledge_repo.get_document_with_versions",
+        "app.repositories.admin.admin_knowledge.get_document_with_versions",
         return_value={"document_id": RESULT_B, "knowledge_source_id": KNOWLEDGE_SOURCE_B},
     ), patch(
-        "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+        "app.repositories.admin.admin_knowledge.get_knowledge_source_detail",
         return_value={
             "knowledge_source_id": KNOWLEDGE_SOURCE_B,
             "institution_id": INSTITUTION_B,
@@ -653,14 +653,14 @@ def test_staff_a_cannot_approve_or_reject_staff_bs_student():
     foreign_student = dict(PENDING_STUDENT_ROW, institution_id=INSTITUTION_B)
     for operation in ("approve", "reject"):
         with _auth("staff"), patch(
-            "app.services.admin_academics.get_admin_client", return_value=MagicMock()
+            "app.services.admin.admin_academics.get_admin_client", return_value=MagicMock()
         ), patch(
-            "app.services.admin_academics.academics_repo.get_student_for_approval",
+            "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
             return_value=foreign_student,
         ), patch(
-            "app.services.admin_academics.academics_repo.set_student_approval_status"
+            "app.services.admin.admin_academics.academics_repo.set_student_approval_status"
         ) as write_mock, patch(
-            "app.api.admin.record_admin_action"
+            "app.api.admin.common.record_admin_action"
         ) as audit_mock:
             response = client.post(
                 f"/api/v1/admin/students/{STUDENT_B}/{operation}", headers=AUTH_HEADERS
@@ -690,7 +690,7 @@ def test_student_a_cannot_reach_student_bs_academic_data():
         "institution_id": INSTITUTION_B,
     }
     with _auth("student"), patch(
-        "app.api.students.student_data.get_own_profile", return_value=foreign
+        "app.api.students.students.student_data.get_own_profile", return_value=foreign
     ):
         _assert_tenant_mismatch("student", "GET", "/api/v1/students/me/profile")
 
@@ -713,7 +713,7 @@ def test_platform_level_admin_gains_no_global_authority():
     institution-scoped ``user_roles`` grant.
     """
     with _auth("platform_admin"), patch(
-        "app.api.admin.admin_academics.list_students", return_value=[]
+        "app.services.admin.admin_academics.list_students", return_value=[]
     ) as list_mock:
         response = client.get(
             "/api/v1/admin/students",
@@ -753,7 +753,7 @@ def test_tenantless_privileged_accounts_gain_no_operational_authority():
 @pytest.mark.parametrize("role", ["staff", "faculty"])
 def test_inactive_institution_cannot_use_authenticated_chat(role: str):
     with _auth(role), patch(
-        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
         return_value={
             "institution_id": INSTITUTION_A,
             "status": "suspended",
@@ -780,11 +780,11 @@ def test_cross_tenant_student_management_mutations_write_nothing():
 
     # Create with a foreign institution_id in the payload.
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.create_student"
+        "app.services.admin.admin_academics.create_student"
     ) as create_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock, patch(
-        "app.api.admin.get_admin_client"
+        "app.api.admin.common.get_admin_client"
     ) as db_mock:
         response = client.post(
             "/api/v1/admin/students",
@@ -804,9 +804,9 @@ def test_cross_tenant_student_management_mutations_write_nothing():
 
     # Update a foreign student record.
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.get_student", return_value=foreign
-    ), patch("app.api.admin.admin_academics.update_student") as update_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.services.admin.admin_academics.get_student", return_value=foreign
+    ), patch("app.services.admin.admin_academics.update_student") as update_mock, patch(
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock:
         response = client.patch(
             f"/api/v1/admin/students/{STUDENT_B}",
@@ -820,9 +820,9 @@ def test_cross_tenant_student_management_mutations_write_nothing():
 
     # Delete a foreign student record.
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.get_student", return_value=foreign
-    ), patch("app.api.admin.admin_academics.archive_student") as delete_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.services.admin.admin_academics.get_student", return_value=foreign
+    ), patch("app.services.admin.admin_academics.archive_student") as delete_mock, patch(
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock:
         response = client.delete(
             f"/api/v1/admin/students/{STUDENT_B}", headers=AUTH_HEADERS
@@ -865,9 +865,9 @@ def test_cross_tenant_academic_mutations_write_nothing():
     }
 
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.get_student", return_value=foreign
-    ), patch("app.api.admin.attendance.create_attendance") as write_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.services.admin.admin_academics.get_student", return_value=foreign
+    ), patch("app.services.academics.attendance.create_attendance") as write_mock, patch(
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock:
         response = client.post(
             "/api/v1/admin/attendance", json=attendance_payload, headers=AUTH_HEADERS
@@ -878,9 +878,9 @@ def test_cross_tenant_academic_mutations_write_nothing():
     audit_mock.assert_not_called()
 
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.get_student", return_value=foreign
-    ), patch("app.api.admin.admin_academics.create_result") as write_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.services.admin.admin_academics.get_student", return_value=foreign
+    ), patch("app.services.admin.admin_academics.create_result") as write_mock, patch(
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock:
         response = client.post(
             "/api/v1/admin/results", json=result_payload, headers=AUTH_HEADERS
@@ -891,9 +891,9 @@ def test_cross_tenant_academic_mutations_write_nothing():
     audit_mock.assert_not_called()
 
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.get_student", return_value=foreign
-    ), patch("app.api.admin.admin_academics.create_test_result") as write_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.services.admin.admin_academics.get_student", return_value=foreign
+    ), patch("app.services.admin.admin_academics.create_test_result") as write_mock, patch(
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock:
         response = client.post(
             "/api/v1/admin/test-results", json=test_result_payload, headers=AUTH_HEADERS
@@ -917,8 +917,8 @@ def test_cross_tenant_notice_and_faq_mutations_write_nothing():
     }
 
     with _auth("admin"), patch(
-        "app.api.admin.admin_notices.create_notice"
-    ) as write_mock, patch("app.api.admin.record_admin_action") as audit_mock:
+        "app.services.admin.admin_notices.create_notice"
+    ) as write_mock, patch("app.api.admin.common.record_admin_action") as audit_mock:
         response = client.post(
             "/api/v1/admin/notices", json=notice_payload, headers=AUTH_HEADERS
         )
@@ -927,8 +927,8 @@ def test_cross_tenant_notice_and_faq_mutations_write_nothing():
     write_mock.assert_not_called()
     audit_mock.assert_not_called()
 
-    with _auth("admin"), patch("app.api.admin.admin_faq.create_faq") as write_mock, patch(
-        "app.api.admin.record_admin_action"
+    with _auth("admin"), patch("app.services.admin.admin_faq.create_faq") as write_mock, patch(
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock:
         response = client.post(
             "/api/v1/admin/faqs", json=faq_payload, headers=AUTH_HEADERS
@@ -941,9 +941,9 @@ def test_cross_tenant_notice_and_faq_mutations_write_nothing():
 
 def test_cross_tenant_knowledge_source_and_document_writes_create_nothing():
     with _auth("admin"), patch(
-        "app.api.admin.knowledge_repo.create_knowledge_source"
-    ) as create_mock, patch("app.api.admin.record_admin_action") as audit_mock, patch(
-        "app.api.admin.get_admin_client"
+        "app.repositories.admin.admin_knowledge.create_knowledge_source"
+    ) as create_mock, patch("app.api.admin.common.record_admin_action") as audit_mock, patch(
+        "app.api.admin.common.get_admin_client"
     ) as db_mock:
         response = client.post(
             "/api/v1/admin/knowledge-sources",
@@ -962,15 +962,15 @@ def test_cross_tenant_knowledge_source_and_document_writes_create_nothing():
 
     # Uploading a document into another institution's knowledge source.
     with _auth("admin"), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+        "app.repositories.admin.admin_knowledge.get_knowledge_source_detail",
         return_value={
             "knowledge_source_id": KNOWLEDGE_SOURCE_B,
             "institution_id": INSTITUTION_B,
         },
-    ), patch("app.api.admin.admin_documents.upload_document") as upload_mock, patch(
-        "app.api.admin.record_admin_action"
+    ), patch("app.services.admin.admin_documents.upload_document") as upload_mock, patch(
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock:
         response = client.post(
             "/api/v1/admin/documents",

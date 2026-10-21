@@ -7,8 +7,8 @@ import pytest
 
 from app.core.errors import AppError
 from app.config import Settings
-from app.schemas.generation import AIContext, RetrievedChunk
-from app.services.generation_provider import OpenRouterGenerationProvider
+from app.schemas.ai.generation import AIContext, RetrievedChunk
+from app.services.ai.generation_provider import OpenRouterGenerationProvider
 
 API_KEY = "test-openrouter-key"
 MODEL = "openai/gpt-4o-mini"
@@ -38,7 +38,7 @@ def provider(handler):
 
 def configured():
     return patch.multiple(
-        "app.services.generation_provider.settings",
+        "app.services.ai.generation_provider.settings",
         openrouter_api_key=API_KEY,
         openrouter_model=MODEL,
         openrouter_base_url=BASE_URL,
@@ -152,7 +152,7 @@ def test_missing_api_key_is_rejected_without_request():
     try:
         with (
             patch.multiple(
-                "app.services.generation_provider.settings",
+                "app.services.ai.generation_provider.settings",
                 openrouter_api_key="",
                 openrouter_model=MODEL,
                 openrouter_base_url=BASE_URL,
@@ -171,7 +171,7 @@ def test_invalid_configuration_is_rejected(field):
     values = {"openrouter_api_key": API_KEY, "openrouter_model": MODEL, "openrouter_base_url": BASE_URL}
     values[field] = "invalid" if field == "openrouter_base_url" else ""
     try:
-        with patch.multiple("app.services.generation_provider.settings", **values):
+        with patch.multiple("app.services.ai.generation_provider.settings", **values):
             with pytest.raises(AppError) as error:
                 instance.generate(context())
     finally:

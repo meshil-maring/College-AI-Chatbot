@@ -54,7 +54,7 @@ def fake_db(institution: dict | None):
 
 def test_valid_institution_code_resolves():
     with patch(
-        "app.services.tenancy.get_admin_client", return_value=fake_db(inst_row())
+        "app.services.platform.tenancy.get_admin_client", return_value=fake_db(inst_row())
     ):
         r = client.get("/api/v1/institutions/lookup", params={"code": "IMPHAL"})
     assert r.status_code == 200
@@ -68,7 +68,7 @@ def test_valid_institution_code_resolves():
 
 def test_code_lookup_is_case_insensitive_and_normalized():
     with patch(
-        "app.services.tenancy.get_admin_client", return_value=fake_db(inst_row())
+        "app.services.platform.tenancy.get_admin_client", return_value=fake_db(inst_row())
     ) as mocked:
         r = client.get("/api/v1/institutions/lookup", params={"code": "  imphal "})
     assert r.status_code == 200
@@ -79,7 +79,7 @@ def test_code_lookup_is_case_insensitive_and_normalized():
 
 def test_unknown_code_is_404_not_found():
     with patch(
-        "app.services.tenancy.get_admin_client", return_value=fake_db(None)
+        "app.services.platform.tenancy.get_admin_client", return_value=fake_db(None)
     ):
         r = client.get("/api/v1/institutions/lookup", params={"code": "NOPE99"})
     assert r.status_code == 404
@@ -99,7 +99,7 @@ def test_missing_code_is_rejected_with_validation_error():
 
 
 def test_blank_code_is_rejected_with_validation_error():
-    with patch("app.services.tenancy.get_admin_client") as mocked:
+    with patch("app.services.platform.tenancy.get_admin_client") as mocked:
         r = client.get("/api/v1/institutions/lookup", params={"code": "   "})
     assert r.status_code == 422
     assert r.json()["error"]["code"] == "VALIDATION_ERROR"
@@ -108,7 +108,7 @@ def test_blank_code_is_rejected_with_validation_error():
 
 def test_inactive_institution_is_not_joinable():
     with patch(
-        "app.services.tenancy.get_admin_client",
+        "app.services.platform.tenancy.get_admin_client",
         return_value=fake_db(inst_row(status="pending", is_active=False)),
     ):
         r = client.get("/api/v1/institutions/lookup", params={"code": "IMPHAL"})
@@ -120,7 +120,7 @@ def test_inactive_institution_is_not_joinable():
 
 def test_response_exposes_only_safe_public_fields():
     with patch(
-        "app.services.tenancy.get_admin_client", return_value=fake_db(inst_row())
+        "app.services.platform.tenancy.get_admin_client", return_value=fake_db(inst_row())
     ):
         r = client.get("/api/v1/institutions/lookup", params={"code": "IMPHAL"})
     assert r.status_code == 200
@@ -145,7 +145,7 @@ def test_response_exposes_only_safe_public_fields():
 def test_lookup_requires_no_authentication():
     # The endpoint is deliberately public: no Authorization header is sent.
     with patch(
-        "app.services.tenancy.get_admin_client", return_value=fake_db(inst_row())
+        "app.services.platform.tenancy.get_admin_client", return_value=fake_db(inst_row())
     ):
         r = client.get(
             "/api/v1/institutions/lookup",
@@ -161,7 +161,7 @@ def test_database_transport_failure_is_retryable_and_does_not_leak_details(error
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.side_effect = error_type(
         "[Errno 11001] getaddrinfo failed: private database host and credentials"
     )
-    with patch("app.services.tenancy.get_admin_client", return_value=db):
+    with patch("app.services.platform.tenancy.get_admin_client", return_value=db):
         # Expected dependency failures must not reach Starlette's unhandled-error handler.
         response = TestClient(app).get("/api/v1/institutions/lookup", params={"code": "GIT"})
     assert response.status_code == 503

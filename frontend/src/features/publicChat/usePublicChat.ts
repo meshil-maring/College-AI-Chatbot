@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { queryClient } from '../../lib/queryClient.ts'
-import { PublicChatError, publicChat, publicChatErrorMessage } from '../../services/publicChat.ts'
+import { PublicChatError, publicChat, publicChatErrorMessage } from '../../services/chat/publicChat.ts'
 import type { PublicChatMessage, PublicChatResponse, PublicConversation } from '../../types/publicChat.ts'
 import {
   boundPublicChatMessages,

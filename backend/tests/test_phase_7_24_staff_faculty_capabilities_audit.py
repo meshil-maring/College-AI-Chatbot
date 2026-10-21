@@ -42,7 +42,8 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import _ADMIN, _APPROVAL
+from app.api.admin.dependencies import _ADMIN
+from app.api.admin.dependencies import _APPROVAL
 from app.core.security import get_current_user
 from app.main import app
 
@@ -134,9 +135,9 @@ def _as(principal: dict, *, institution_active: bool = True):
         "is_active": institution_active,
     }
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
             return_value=institution,
         ),
         patch(
@@ -207,8 +208,8 @@ def test_student_is_denied_the_faculty_ingestion_capability() -> None:
     """The shared staff/faculty ingestion capability is not student-reachable."""
     with (
         _as(STUDENT_A_USER),
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=None),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=None),
     ):
         response = client.post(
             "/api/v1/documents/ingest",
@@ -250,7 +251,7 @@ def test_staff_cannot_redirect_the_approval_queue_to_another_institution() -> No
     """Staff A -> Institution B is denied at the query parameter."""
     with (
         _as(STAFF_A_USER),
-        patch("app.services.admin_academics.academics_repo.list_pending_students", return_value=[]) as repo,
+        patch("app.services.admin.admin_academics.academics_repo.list_pending_students", return_value=[]) as repo,
     ):
         response = client.get(
             "/api/v1/admin/students/pending",
@@ -270,9 +271,9 @@ def test_staff_cannot_approve_a_student_from_another_institution() -> None:
     """
     with (
         _as(STAFF_A_USER),
-        patch("app.services.admin_academics.get_admin_client", return_value=MagicMock()),
+        patch("app.services.admin.admin_academics.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.admin_academics.academics_repo.get_student_for_approval",
+            "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
             return_value={
                 "student_id": STUDENT_B_ROW,
                 "institution_id": INST_B,
@@ -281,7 +282,7 @@ def test_staff_cannot_approve_a_student_from_another_institution() -> None:
             },
         ) as target,
         patch(
-            "app.services.admin_academics.academics_repo.set_student_approval_status",
+            "app.services.admin.admin_academics.academics_repo.set_student_approval_status",
             return_value=None,
         ) as write,
     ):
@@ -298,7 +299,7 @@ def test_staff_cannot_list_students_at_all() -> None:
     """Staff is not an admin, so the role gate rejects before any query."""
     with (
         _as(STAFF_A_USER),
-        patch("app.services.admin_academics.academics_repo.list_students", return_value=[]) as repo,
+        patch("app.services.admin.admin_academics.academics_repo.list_students", return_value=[]) as repo,
     ):
         response = client.get(
             "/api/v1/admin/students",
@@ -321,9 +322,9 @@ def test_staff_and_faculty_cannot_ingest_into_another_institution(
     """Institution A staff/faculty -> Institution B knowledge source is denied."""
     with (
         _as(principal),
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=_source_row(INST_B)),
-        patch("app.api.ingestion.ingest_document", new=AsyncMock()) as ingest,
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=_source_row(INST_B)),
+        patch("app.api.knowledge.ingestion.ingest_document", new=AsyncMock()) as ingest,
     ):
         response = client.post(
             "/api/v1/documents/ingest",
@@ -384,7 +385,7 @@ def test_platform_scoped_principal_is_not_unrestricted_authority(role: str) -> N
     with (
         _as(_tenantless_principal(role)),
         patch(
-            "app.services.admin_academics.academics_repo.list_pending_students",
+            "app.services.admin.admin_academics.academics_repo.list_pending_students",
             return_value=[],
         ) as repo,
     ):
@@ -401,7 +402,7 @@ def test_suspended_institution_fails_closed_for_staff_and_faculty(role: str) -> 
     with (
         _as(principal, institution_active=False),
         patch(
-            "app.services.admin_academics.academics_repo.list_pending_students",
+            "app.services.admin.admin_academics.academics_repo.list_pending_students",
             return_value=[],
         ) as repo,
     ):
@@ -425,7 +426,7 @@ DEACTIVATED_USERS = [
 def test_deactivated_staff_cannot_use_the_approval_queue() -> None:
     with (
         _as(DEACTIVATED_STAFF_USER),
-        patch("app.services.admin_academics.academics_repo.list_pending_students", return_value=[]) as repo,
+        patch("app.services.admin.admin_academics.academics_repo.list_pending_students", return_value=[]) as repo,
     ):
         response = client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS)
     assert response.status_code == 403
@@ -437,7 +438,7 @@ def test_deactivated_staff_cannot_approve_a_student() -> None:
     with (
         _as(DEACTIVATED_STAFF_USER),
         patch(
-            "app.services.admin_academics.academics_repo.get_student_for_approval",
+            "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
             return_value={"student_id": STUDENT_A_ROW},
         ) as repo,
     ):
@@ -453,9 +454,9 @@ def test_deactivated_staff_cannot_approve_a_student() -> None:
 def test_deactivated_staff_and_faculty_cannot_ingest(principal: dict, label: str) -> None:
     with (
         _as(principal),
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_knowledge_source", return_value=_source_row(INST_A)),
-        patch("app.api.ingestion.ingest_document", new=AsyncMock()) as ingest,
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=_source_row(INST_A)),
+        patch("app.api.knowledge.ingestion.ingest_document", new=AsyncMock()) as ingest,
     ):
         response = client.post(
             "/api/v1/documents/ingest",
@@ -512,8 +513,8 @@ def test_super_admin_does_not_inherit_institution_staff_faculty_permissions(
 def test_super_admin_does_not_inherit_the_staff_faculty_ingestion_capability() -> None:
     with (
         _as(SUPER_ADMIN_USER),
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.ingest_document", new=AsyncMock()) as ingest,
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.ingest_document", new=AsyncMock()) as ingest,
     ):
         response = client.post(
             "/api/v1/documents/ingest",
@@ -613,7 +614,7 @@ def test_staff_and_faculty_cannot_reach_the_onboarding_lifecycle(
 
 def test_the_ingestion_dependency_allows_exactly_the_three_operational_roles() -> None:
     """`/documents/*` is the sole non-chat capability shared by staff + faculty."""
-    from app.api import ingestion
+    from app.api.knowledge import ingestion
 
     source = inspect.getsource(ingestion)
     match = re.search(
@@ -634,13 +635,13 @@ def test_staff_and_faculty_reach_ingestion_within_their_own_institution(
     """The shared knowledge capability IS implemented, not merely denied."""
     with (
         _as(principal),
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.api.ingestion.get_knowledge_source",
+            "app.api.knowledge.ingestion.get_knowledge_source",
             return_value=_source_row(INST_A),
         ),
         patch(
-            "app.api.ingestion.ingest_document",
+            "app.api.knowledge.ingestion.ingest_document",
             new=AsyncMock(
                 return_value={
                     "knowledge_source_id": KNOWLEDGE_SOURCE_A,
@@ -668,7 +669,7 @@ def test_ai_assistant_is_reachable_in_tenant_for_staff_and_faculty(
     principal: dict, label: str
 ) -> None:
     """The AI Assistant capability IS implemented and tenant-pinned."""
-    from app.schemas.chat import ChatResponse
+    from app.schemas.ai.chat import ChatResponse
 
     answer = ChatResponse(
         user_query="hello",
@@ -698,7 +699,7 @@ def test_staff_reaches_the_approval_queue_within_its_own_institution() -> None:
     with (
         _as(STAFF_A_USER),
         patch(
-            "app.services.admin_academics.academics_repo.list_pending_students",
+            "app.services.admin.admin_academics.academics_repo.list_pending_students",
             return_value=[],
         ) as repo,
     ):

@@ -1,6 +1,6 @@
 import { RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
-import type { FacultyAttendanceAssignment } from '../../services/facultyAttendanceApi.ts'
+import type { FacultyAttendanceAssignment } from '../../services/faculty/facultyAttendanceApi.ts'
 import { useStudentWorkspaceApi } from './StudentWorkspaceContext.tsx'
 
 const courseOf = (item: FacultyAttendanceAssignment) => item.section.program?.degree_type?.trim() ?? ''

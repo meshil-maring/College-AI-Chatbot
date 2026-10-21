@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { BookOpen, GraduationCap, Plus, RefreshCw, RotateCcw, Search, Settings, ShieldCheck, Trash2, UserRound, Users, Info, type LucideIcon } from 'lucide-react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
-import { createFacultyAssignment, getFacultyAssignments, revokeFacultyAssignment } from '../../../services/adminApi.ts'
+import { createFacultyAssignment, getFacultyAssignments, revokeFacultyAssignment } from '../../../services/admin/adminApi.ts'
 import { FacultyResponsibilityWorkspace, useFacultyResponsibilityManagement } from './FacultyResponsibilityManager.tsx'
 import TeachingValidityEditor from './TeachingValidityEditor.tsx'
 import { adminAcademicKeys, invalidateFacultyResponsibilities } from '../shared/adminAcademicQueries.ts'

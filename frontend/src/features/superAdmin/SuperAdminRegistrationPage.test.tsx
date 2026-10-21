@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SuperAdminRegistrationPage from './SuperAdminRegistrationPage.tsx'
 
 const api = vi.hoisted(() => ({ inspect: vi.fn(), register: vi.fn(), recover: vi.fn() }))
-vi.mock('../../services/superAdminInvitationApi.ts', () => ({
+vi.mock('../../services/invitations/superAdminInvitationApi.ts', () => ({
   SuperAdminInvitationError: class extends Error { isTerminal = false },
   inspectSuperAdminInvitation: api.inspect, registerSuperAdmin: api.register,
   recoverSuperAdminAccount: api.recover,

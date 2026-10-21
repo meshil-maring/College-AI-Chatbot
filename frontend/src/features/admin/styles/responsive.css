@@ -1,0 +1,88 @@
+@media (max-width: 1050px) {
+  .admin-sidebar {
+    width: 210px;
+  }
+  .admin-workspace-body {
+    margin-left: 210px;
+  }
+  .admin-main {
+    padding: 20px;
+  }
+  .admin-profile-label strong {
+    max-width: 150px;
+  }
+  .admin-global-search {
+    width: min(55%, 565px);
+  }
+  .admin-profile-label {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+    width: 230px;
+    transition: transform 0.2s;
+  }
+  .admin-sidebar.is-open {
+    transform: translateX(0);
+  }
+  .admin-workspace-body {
+    margin-left: 0;
+  }
+  .admin-mobile-toggle {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    padding: 6px;
+    color: #b8c8df;
+  }
+  .admin-mobile-toggle svg {
+    width: 21px;
+    height: 21px;
+  }
+  .admin-sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: #0009;
+  }
+  .admin-topbar {
+    gap: 10px;
+    padding: 10px 14px;
+  }
+  .admin-global-search {
+    flex: 1;
+    width: auto;
+  }
+  .admin-global-search kbd {
+    display: none;
+  }
+  .admin-topbar-account {
+    gap: 10px;
+  }
+  .admin-notice-button {
+    border: 0;
+    padding: 6px;
+  }
+  .admin-profile-button {
+    gap: 0;
+  }
+  .admin-profile-button > svg {
+    display: none;
+  }
+  .admin-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 12px;
+  }
+  .admin-main {
+    padding: 20px 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar,
+  .admin-nav-item {
+    transition: none;
+  }
+}

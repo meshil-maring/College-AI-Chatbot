@@ -51,8 +51,8 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
-import { useAuth } from '../auth/AuthProvider.tsx'
-import { usePermissions } from '../auth/usePermissions.ts'
+import { useAuth } from '../auth/session/AuthProvider.tsx'
+import { usePermissions } from '../auth/access/usePermissions.ts'
 import ChatShell from '../chat/ChatShell.tsx'
 import AdminDashboard from './dashboard/AdminDashboard.tsx'
 import AdminProfile from './profile/AdminProfile.tsx'

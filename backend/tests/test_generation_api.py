@@ -8,12 +8,12 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.core.security import get_current_user
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.generation import AIContext, RetrievedChunk
-from app.schemas.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult
-from app.schemas.session import SessionContext
-from app.services.chat import process_chat_request
-from app.services.generation_provider import GenerationProvider, GenerationResult
+from app.schemas.ai.chat import ChatRequest, ChatResponse
+from app.schemas.ai.generation import AIContext, RetrievedChunk
+from app.schemas.knowledge.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult
+from app.schemas.ai.session import SessionContext
+from app.services.ai.chat import process_chat_request
+from app.services.ai.generation_provider import GenerationProvider, GenerationResult
 
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -51,7 +51,7 @@ def override_auth_dependency():
     """Override get_current_user dependency for generation API tests, clean up after."""
     app.dependency_overrides[get_current_user] = _mock_get_current_user
     with patch(
-        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
         return_value={
             "institution_id": INSTITUTION_ID,
             "status": "active",
@@ -199,10 +199,10 @@ def test_retrieval_invocation_propagates_query_and_scope() -> None:
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=mock_retrieval_response) as mock_retrieve,
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=mock_retrieval_response) as mock_retrieve,
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -262,10 +262,10 @@ def test_empty_retrieval_returns_insufficient_context_without_calling_provider()
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=mock_retrieval_response) as mock_retrieve,
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=mock_retrieval_response) as mock_retrieve,
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -324,10 +324,10 @@ def test_successful_retrieval_reaches_generation_with_known_attendance_chunk() -
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=mock_retrieval_response) as mock_retrieve,
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=mock_retrieval_response) as mock_retrieve,
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -384,9 +384,9 @@ def test_caller_provided_chunks_bypass_retrieval() -> None:
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve") as mock_retrieve,
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve") as mock_retrieve,
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -461,9 +461,9 @@ def test_provider_does_not_populate_source_references():
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response = process_chat_request(
             _chat_request(), SessionContext(session_id=uuid4()), mock_provider, TEST_USER_ID
@@ -500,9 +500,9 @@ def test_unannotated_answer_produces_empty_source_references():
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response = process_chat_request(
             _chat_request(), SessionContext(session_id=uuid4()), mock_provider, TEST_USER_ID
@@ -538,9 +538,9 @@ def test_explicit_chunk_reference_maps_to_retrieved_chunk():
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response = process_chat_request(
             _chat_request(), SessionContext(session_id=uuid4()), mock_provider, TEST_USER_ID
@@ -581,9 +581,9 @@ def test_multiple_explicit_references_produce_multiple_source_references():
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response = process_chat_request(
             _chat_request(), SessionContext(session_id=uuid4()), mock_provider, TEST_USER_ID
@@ -621,9 +621,9 @@ def test_non_matching_uuid_in_answer_is_not_cited():
     mock_client.table().select().eq().order().limit().execute.return_value = MagicMock(data=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_retrieval_chunks()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_chunks()),
     ):
         response = process_chat_request(
             _chat_request(), SessionContext(session_id=uuid4()), mock_provider, TEST_USER_ID

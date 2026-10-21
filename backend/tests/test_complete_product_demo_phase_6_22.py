@@ -81,7 +81,7 @@ def _active_institution_authorization():
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
         data={"institution_id": INSTITUTION_A, "status": "active", "is_active": True}
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
         yield
 
 
@@ -89,7 +89,7 @@ def _active_institution_authorization():
 def _auth(role="student", tenant=INSTITUTION_A, user_id=USER_ID):
     principal = _user(role, tenant, user_id)
     with ExitStack() as stack:
-        stack.enter_context(patch("app.core.security.verify_jwt", return_value=dict(CLAIMS)))
+        stack.enter_context(patch("app.core.security.tokens.verify_jwt", return_value=dict(CLAIMS)))
         stack.enter_context(
             patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=principal))
         )
@@ -118,7 +118,7 @@ def test_institution_lookup_is_public_and_returns_the_safe_projection():
         "code": "GIT",
         "name": "Greenfield Institute of Technology",
     }
-    with patch("app.api.institutions.lookup_institution_by_code", return_value=payload):
+    with patch("app.api.platform.institutions.lookup_institution_by_code", return_value=payload):
         # No Authorization header: discovery must work before login.
         response = client.get("/api/v1/institutions/lookup", params={"code": "GIT"})
     assert response.status_code == 200
@@ -130,7 +130,7 @@ def test_institution_lookup_is_public_and_returns_the_safe_projection():
 
 def test_unknown_institution_code_fails_safely():
     with patch(
-        "app.api.institutions.lookup_institution_by_code",
+        "app.api.platform.institutions.lookup_institution_by_code",
         side_effect=AppError(
             "Institution not found", status_code=404, code="INSTITUTION_NOT_FOUND"
         ),
@@ -141,7 +141,7 @@ def test_unknown_institution_code_fails_safely():
 
 
 def test_institution_lookup_has_no_authentication_dependency():
-    from app.api import institutions as institutions_api
+    from app.api.platform import institutions as institutions_api
 
     # APIRouter(prefix="/institutions") prepends the prefix when the route is
     # added, so the stored path is "/institutions/lookup", not "/lookup".
@@ -174,7 +174,7 @@ def _registration_payload(**overrides):
 
 
 def test_registration_returns_201_pending_and_issues_no_token():
-    from app.services.student_registration import RegistrationResponse
+    from app.services.auth.student_registration import RegistrationResponse
 
     created = RegistrationResponse(
         message="Registration submitted. Your account is pending approval.",
@@ -183,7 +183,7 @@ def test_registration_returns_201_pending_and_issues_no_token():
         email="phase622.student@demo.collegelocal.dev",
         approval_status="pending",
     )
-    with patch("app.api.registration.register_student", return_value=created):
+    with patch("app.api.auth.registration.register_student", return_value=created):
         response = client.post("/api/v1/registration", json=_registration_payload())
     assert response.status_code == 201
     body = response.json()
@@ -209,7 +209,7 @@ def test_registration_requires_institution_and_academic_identifier():
     assert client.post("/api/v1/registration", json=missing_institution).status_code == 422
 
     with patch(
-        "app.api.registration.register_student",
+        "app.api.auth.registration.register_student",
         side_effect=AppError(
             "Provide at least one of register_number or university_roll_number",
             status_code=422,
@@ -226,7 +226,7 @@ def test_registration_requires_institution_and_academic_identifier():
 
 def test_registration_never_reports_success_for_a_failed_service_call():
     with patch(
-        "app.api.registration.register_student",
+        "app.api.auth.registration.register_student",
         side_effect=AppError(
             "Unable to complete registration at this time. Please try again later.",
             status_code=500,
@@ -253,10 +253,10 @@ def test_admin_approval_transitions_pending_to_approved():
     # table; stub it (Phase 6.19/6.20 pattern) so the approval contract itself
     # is what this test observes, not database reachability.
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.approve_student", return_value=approved
+        "app.services.admin.admin_academics.approve_student", return_value=approved
     ) as approve, patch(
-        "app.api.admin.record_admin_action", return_value={"audit_id": "a-1"}
-    ), patch("app.api.admin.get_admin_client", return_value=MagicMock()):
+        "app.api.admin.common.record_admin_action", return_value={"audit_id": "a-1"}
+    ), patch("app.api.admin.common.get_admin_client", return_value=MagicMock()):
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_ID}/approve", headers=AUTH_HEADERS
         )
@@ -273,7 +273,7 @@ def test_staff_may_use_the_approval_queue_exception_only():
     # verify_jwt / get_user_by_auth_id patches are gone and every admin route
     # would answer 401 (no principal) instead of exercising the role gate.
     with _auth("staff"), patch(
-        "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+        "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
     ):
         queue = client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS)
         assert queue.status_code == 200
@@ -305,7 +305,7 @@ def test_non_approver_roles_cannot_reach_the_approval_endpoints(role):
 
 def test_staff_approval_queue_is_tenant_scoped_by_the_principal():
     with _auth("staff", tenant=INSTITUTION_A), patch(
-        "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+        "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
     ) as pending:
         response = client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS)
     assert response.status_code == 200
@@ -316,7 +316,7 @@ def test_staff_approval_queue_is_tenant_scoped_by_the_principal():
 
 def test_stale_approval_of_an_already_decided_student_conflicts():
     with _auth("admin"), patch(
-        "app.api.admin.admin_academics.approve_student",
+        "app.services.admin.admin_academics.approve_student",
         side_effect=AppError(
             "Student is not pending approval", status_code=409, code="STUDENT_NOT_PENDING"
         ),
@@ -348,8 +348,8 @@ _SESSION = {
 
 
 def test_email_login_needs_no_institution_context():
-    with patch("app.api.student_auth.authenticate_student", return_value=_SESSION) as auth, patch(
-        "app.api.student_auth.record_auth_security_event"
+    with patch("app.api.auth.student_auth.authenticate_student", return_value=_SESSION) as auth, patch(
+        "app.api.auth.student_auth.record_auth_security_event"
     ):
         response = client.post(
             _LOGIN_URL,
@@ -372,8 +372,8 @@ def test_academic_identifier_login_requires_institution_code():
 
 @pytest.mark.parametrize("identifier", ["622001", "R622001"])
 def test_academic_identifier_login_forwards_the_institution_code(identifier):
-    with patch("app.api.student_auth.authenticate_student", return_value=_SESSION) as auth, patch(
-        "app.api.student_auth.record_auth_security_event"
+    with patch("app.api.auth.student_auth.authenticate_student", return_value=_SESSION) as auth, patch(
+        "app.api.auth.student_auth.record_auth_security_event"
     ):
         response = client.post(
             _LOGIN_URL,
@@ -388,9 +388,9 @@ def test_academic_identifier_login_forwards_the_institution_code(identifier):
 
 
 def test_login_normalizes_unknown_identifier_and_pending_state_to_401():
-    from app.services.student_auth import SafeAuthFailure
+    from app.services.auth.student_auth import SafeAuthFailure
 
-    with patch("app.api.student_auth.authenticate_student", side_effect=SafeAuthFailure()):
+    with patch("app.api.auth.student_auth.authenticate_student", side_effect=SafeAuthFailure()):
         response = client.post(
             _LOGIN_URL,
             json={"identifier": "nobody@college.edu", "password": "secret123"},
@@ -420,7 +420,7 @@ def test_login_rejects_identity_and_role_injection_fields():
 def test_own_profile_is_resolved_from_the_authenticated_user():
     own = {"student_id": STUDENT_ID, "institution_id": INSTITUTION_A}
     with _auth("student"), patch(
-        "app.api.students.student_data.get_own_profile", return_value=own
+        "app.api.students.students.student_data.get_own_profile", return_value=own
     ) as get_own:
         response = client.get(
             "/api/v1/students/me/profile",
@@ -436,7 +436,7 @@ def test_own_profile_is_resolved_from_the_authenticated_user():
 def test_cross_tenant_student_row_is_denied():
     foreign = {"student_id": OTHER_STUDENT_ID, "institution_id": FOREIGN_TENANT}
     with _auth("student", tenant=INSTITUTION_A), patch(
-        "app.api.students.student_data.get_own_profile", return_value=foreign
+        "app.api.students.students.student_data.get_own_profile", return_value=foreign
     ):
         response = client.get("/api/v1/students/me/profile", headers=AUTH_HEADERS)
     assert response.status_code == 403
@@ -458,7 +458,7 @@ def test_cross_tenant_student_row_is_denied():
 def test_student_surfaces_are_closed_to_non_student_roles(path):
     for role in ("admin", "faculty", "staff"):
         with _auth(role), patch(
-            "app.services.student_context.get_student_context",
+            "app.services.students.student_context.get_student_context",
             side_effect=AppError(
                 "No student profile is linked to this account",
                 status_code=404,
@@ -483,7 +483,7 @@ def test_unauthenticated_student_surface_is_rejected():
 
 def test_processing_run_query_documents_the_corrected_tenant_resolution():
     """Defect 1 â€” the fix rationale is pinned in the repository docstring."""
-    from app.repositories import ingestion as ingestion_repo
+    from app.repositories.knowledge import ingestion as ingestion_repo
 
     documented = ingestion_repo.get_processing_run_with_version.__doc__ or ""
     assert "documents(knowledge_source_id)" in documented
@@ -514,7 +514,7 @@ def test_processing_run_tenant_is_hoisted_from_the_document_row():
     fake_client = MagicMock()
     fake_client.table.return_value = chain
 
-    from app.repositories.ingestion import get_processing_run_with_version
+    from app.repositories.knowledge.ingestion import get_processing_run_with_version
 
     run = get_processing_run_with_version(fake_client, PROCESSING_RUN_ID)
     assert run["document_versions"]["knowledge_source_id"] == KNOWLEDGE_SOURCE_ID
@@ -525,7 +525,7 @@ def test_processing_run_tenant_is_hoisted_from_the_document_row():
 
 def test_approval_projection_supplies_the_column_the_eligibility_guard_needs():
     """Defect 2 â€” STUDENT_COLUMNS lacks approval_status; the guard must not 403."""
-    from app.repositories.admin_academics import (
+    from app.repositories.admin.admin_academics import (
         STUDENT_APPROVAL_COLUMNS,
         STUDENT_COLUMNS,
     )
@@ -533,7 +533,7 @@ def test_approval_projection_supplies_the_column_the_eligibility_guard_needs():
     assert "approval_status" not in STUDENT_COLUMNS
     assert "approval_status" in STUDENT_APPROVAL_COLUMNS
 
-    from app.services.student_context import get_student_context
+    from app.services.students.student_context import get_student_context
 
     student = {
         "student_id": STUDENT_ID,
@@ -546,9 +546,9 @@ def test_approval_projection_supplies_the_column_the_eligibility_guard_needs():
         "is_active": True,
     }
     with patch(
-        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_approval_row_by_user_id",
         return_value=student,
-    ), patch("app.services.student_context.get_admin_client", return_value=MagicMock()):
+    ), patch("app.services.students.student_context.get_admin_client", return_value=MagicMock()):
         context = get_student_context({"user_id": USER_ID, "institution_id": INSTITUTION_A})
     assert context["approval_status"] == "approved"
     assert context["student_id"] == STUDENT_ID
@@ -556,7 +556,7 @@ def test_approval_projection_supplies_the_column_the_eligibility_guard_needs():
 
 def test_student_context_still_rejects_a_pending_student():
     """Defect 2 must not have weakened the approval guard itself."""
-    from app.services.student_context import get_student_context
+    from app.services.students.student_context import get_student_context
 
     pending = {
         "student_id": STUDENT_ID,
@@ -569,9 +569,9 @@ def test_student_context_still_rejects_a_pending_student():
         "is_active": True,
     }
     with patch(
-        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_approval_row_by_user_id",
         return_value=pending,
-    ), patch("app.services.student_context.get_admin_client", return_value=MagicMock()):
+    ), patch("app.services.students.student_context.get_admin_client", return_value=MagicMock()):
         with pytest.raises(AppError) as excinfo:
             get_student_context({"user_id": USER_ID, "institution_id": INSTITUTION_A})
     assert excinfo.value.code == "STUDENT_NOT_APPROVED"
@@ -579,7 +579,7 @@ def test_student_context_still_rejects_a_pending_student():
 
 def test_personalization_label_reads_tolerate_a_missing_row():
     """Defect 3 â€” a zero-row ``maybe_single()`` now yields None, not a 500."""
-    from app.repositories import personalization
+    from app.repositories.ai import personalization
 
     def client_returning_no_row():
         # postgrest >= 2.x zero-row shape: maybe_single() still returns the
@@ -609,7 +609,7 @@ def test_personalization_label_reads_tolerate_a_missing_row():
 def test_retrieval_requires_an_explicit_scope():
     from pydantic import ValidationError
 
-    from app.schemas.retrieval import RetrievalRequest
+    from app.schemas.knowledge.retrieval import RetrievalRequest
 
     with pytest.raises(ValidationError):
         RetrievalRequest(query="What time does the library close?")
@@ -618,8 +618,8 @@ def test_retrieval_requires_an_explicit_scope():
 
 
 def test_retrieval_passes_the_requested_tenant_to_the_vector_search():
-    from app.schemas.retrieval import RetrievalRequest
-    from app.services import retrieval as retrieval_service
+    from app.schemas.knowledge.retrieval import RetrievalRequest
+    from app.services.knowledge import retrieval as retrieval_service
 
     with patch.object(
         retrieval_service, "embed_query", return_value=[0.0] * 1536
@@ -632,8 +632,8 @@ def test_retrieval_passes_the_requested_tenant_to_the_vector_search():
 
 
 def test_retrieval_for_a_foreign_tenant_returns_no_rows():
-    from app.schemas.retrieval import RetrievalRequest
-    from app.services import retrieval as retrieval_service
+    from app.schemas.knowledge.retrieval import RetrievalRequest
+    from app.services.knowledge import retrieval as retrieval_service
 
     with patch.object(
         retrieval_service, "embed_query", return_value=[0.0] * 1536
@@ -646,8 +646,8 @@ def test_retrieval_for_a_foreign_tenant_returns_no_rows():
 
 
 def test_retrieval_failure_is_reported_without_leaking_internals():
-    from app.schemas.retrieval import RetrievalRequest
-    from app.services import retrieval as retrieval_service
+    from app.schemas.knowledge.retrieval import RetrievalRequest
+    from app.services.knowledge import retrieval as retrieval_service
 
     with patch.object(
         retrieval_service, "embed_query", return_value=[0.0] * 1536
@@ -665,7 +665,7 @@ def test_retrieval_failure_is_reported_without_leaking_internals():
 
 
 def test_retrieval_rejects_an_invalid_query_embedding():
-    from app.services import retrieval as retrieval_service
+    from app.services.knowledge import retrieval as retrieval_service
 
     with pytest.raises(AppError) as excinfo:
         retrieval_service.retrieve_chunks([0.0] * 10, institution_id=INSTITUTION_A)

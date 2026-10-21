@@ -48,8 +48,9 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import _ADMIN, _APPROVAL
-from app.api.ingestion import _INGEST_ALLOWED
+from app.api.admin.dependencies import _ADMIN
+from app.api.admin.dependencies import _APPROVAL
+from app.api.knowledge.ingestion import _INGEST_ALLOWED
 from app.core.errors import AppError
 from app.core.security import (
     assert_tenant_object,
@@ -58,10 +59,10 @@ from app.core.security import (
     scope_tenant,
 )
 from app.main import app
-from app.repositories import tenancy as tenancy_repo
-from app.services import authorization as authz
-from app.services import tenancy as tenancy_svc
-from app.services.student_auth import SafeAuthFailure
+from app.repositories.platform import tenancy as tenancy_repo
+from app.services.auth import authorization as authz
+from app.services.platform import tenancy as tenancy_svc
+from app.services.auth.student_auth import SafeAuthFailure
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -141,7 +142,7 @@ def _active_institution_authorization():
         }
     }
     with patch(
-        "app.services.authorization.get_admin_client",
+        "app.services.auth.authorization.get_admin_client",
         return_value=_db(active_state),
     ):
         yield
@@ -176,7 +177,7 @@ def _resolve(rows, current_user=None):
     cu = current_user or {"user_id": USER_ADMIN, "institution_id": None}
     with (
         patch(
-            "app.services.authorization.get_admin_client", return_value=MagicMock()
+            "app.services.auth.authorization.get_admin_client", return_value=MagicMock()
         ),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
         patch.object(
@@ -191,7 +192,7 @@ def _resolve(rows, current_user=None):
 def _authz_patches(user_id: str, rows: list):
     """Mock the authorization-context sources (same seams as Phase 6.13.4)."""
     return (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
         patch.object(
             tenancy_repo,
@@ -473,7 +474,7 @@ def test_15_missing_role_denied_on_protected_endpoint():
     """No role -> 403 FORBIDDEN on the admin boundary."""
     _as(_user(roles=()))
     try:
-        with patch("app.api.admin.admin_dashboard.get_dashboard_summary") as svc:
+        with patch("app.services.admin.admin_dashboard.get_dashboard_summary") as svc:
             resp = client.get("/api/v1/admin/dashboard")
     finally:
         _clear()
@@ -650,7 +651,7 @@ def test_05_student_isolation_on_admin_and_chat_and_own_data():
     # Admin boundary closed.
     _as(student)
     try:
-        with patch("app.api.admin.admin_academics.list_students") as list_students:
+        with patch("app.services.admin.admin_academics.list_students") as list_students:
             resp = client.get(f"/api/v1/admin/students?institution_id={TENANT_A}")
         assert resp.status_code == 403
         assert resp.json()["error"]["code"] == "FORBIDDEN"
@@ -678,7 +679,7 @@ def test_05_student_isolation_on_admin_and_chat_and_own_data():
             .return_value.execute
         ).return_value = MagicMock(data=foreign_profile)
         with patch(
-            "app.services.student_data.get_admin_client", return_value=db
+            "app.services.students.student_data.get_admin_client", return_value=db
         ):
             resp = client.get("/api/v1/students/me/profile")
         assert resp.status_code == 403
@@ -702,7 +703,7 @@ def test_05b_student_same_tenant_data_allowed():
     ).return_value = MagicMock(data=own_profile)
     _as(student)
     try:
-        with patch("app.services.student_data.get_admin_client", return_value=db):
+        with patch("app.services.students.student_data.get_admin_client", return_value=db):
             resp = client.get("/api/v1/students/me/profile")
     finally:
         _clear()
@@ -717,15 +718,15 @@ def test_06_faculty_isolation_on_ingestion_pipeline():
     try:
         # /documents/ingest against a foreign knowledge source -> 403.
         with (
-            patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+            patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
             patch(
-                "app.api.ingestion.get_knowledge_source",
+                "app.api.knowledge.ingestion.get_knowledge_source",
                 return_value={
                     "knowledge_source_id": KS_B,
                     "institution_id": TENANT_B,
                 },
             ),
-            patch("app.api.ingestion.ingest_document") as ingest,
+            patch("app.api.knowledge.ingestion.ingest_document") as ingest,
         ):
             resp = client.post(
                 "/api/v1/documents/ingest",
@@ -751,16 +752,16 @@ def test_06_faculty_isolation_on_ingestion_pipeline():
             },
         }
         with (
-            patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+            patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
             patch(
-                "app.api.ingestion.get_processing_run_with_version",
+                "app.api.knowledge.ingestion.get_processing_run_with_version",
                 return_value=run,
             ),
             patch(
-                "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+                "app.api.knowledge.ingestion.knowledge_repo.get_knowledge_source_detail",
                 return_value={"institution_id": TENANT_B},
             ),
-            patch("app.api.ingestion.update_run_status") as update_status,
+            patch("app.api.knowledge.ingestion.update_run_status") as update_status,
         ):
             resp = client.post(f"/api/v1/documents/{RUN_ID}/extract")
         assert resp.status_code == 403
@@ -776,20 +777,20 @@ def test_06_faculty_isolation_on_ingestion_pipeline():
             },
         }
         with (
-            patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+            patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
             patch(
-                "app.api.ingestion.get_processing_run_with_version",
+                "app.api.knowledge.ingestion.get_processing_run_with_version",
                 return_value=run_same,
             ),
             patch(
-                "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+                "app.api.knowledge.ingestion.knowledge_repo.get_knowledge_source_detail",
                 return_value={"institution_id": TENANT_A},
             ),
-            patch("app.api.ingestion.update_run_status"),
-            patch("app.api.ingestion.store_extracted_text"),
-            patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-            patch("app.api.ingestion.download_file", return_value=b"text"),
-            patch("app.api.ingestion.extract_text", return_value="text"),
+            patch("app.api.knowledge.ingestion.update_run_status"),
+            patch("app.api.knowledge.ingestion.store_extracted_text"),
+            patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+            patch("app.api.knowledge.ingestion.download_file", return_value=b"text"),
+            patch("app.api.knowledge.ingestion.extract_text", return_value="text"),
         ):
             resp = client.post(f"/api/v1/documents/{RUN_ID}/extract")
         assert resp.status_code == 200, resp.text
@@ -811,16 +812,16 @@ def test_06b_embed_guard_denies_foreign_tenant_run():
     _as(faculty)
     try:
         with (
-            patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+            patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
             patch(
-                "app.api.ingestion.get_processing_run_with_version",
+                "app.api.knowledge.ingestion.get_processing_run_with_version",
                 return_value=run,
             ),
             patch(
-                "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+                "app.api.knowledge.ingestion.knowledge_repo.get_knowledge_source_detail",
                 return_value={"institution_id": TENANT_B},
             ),
-            patch("app.api.ingestion.embed_processing_run") as embed,
+            patch("app.api.knowledge.ingestion.embed_processing_run") as embed,
         ):
             resp = client.post(f"/api/v1/documents/{RUN_ID}/embed")
     finally:
@@ -835,7 +836,7 @@ def test_07_staff_isolation_on_approval_queue():
     staff = _user(TENANT_A, roles=("staff",))
     _as(staff)
     try:
-        with patch("app.api.admin.admin_academics.list_pending_approvals") as svc:
+        with patch("app.services.admin.admin_academics.list_pending_approvals") as svc:
             resp = client.get(
                 f"/api/v1/admin/students/pending?institution_id={TENANT_B}"
             )
@@ -845,7 +846,7 @@ def test_07_staff_isolation_on_approval_queue():
 
         # Own tenant: forced to A even when A is requested.
         with patch(
-            "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+            "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
         ) as svc:
             resp = client.get(
                 f"/api/v1/admin/students/pending?institution_id={TENANT_A}"
@@ -874,7 +875,7 @@ def test_12_client_institution_id_substitution_denied():
     admin = _user(TENANT_A, roles=("admin",))
     _as(admin)
     try:
-        with patch("app.api.admin.admin_academics.list_students") as list_students:
+        with patch("app.services.admin.admin_academics.list_students") as list_students:
             resp = client.get(f"/api/v1/admin/students?institution_id={TENANT_B}")
     finally:
         _clear()
@@ -906,7 +907,7 @@ def test_21_cross_tenant_resource_access_denied():
     _as(admin)
     try:
         with patch(
-            "app.api.admin.admin_academics.get_student", return_value=foreign
+            "app.services.admin.admin_academics.get_student", return_value=foreign
         ):
             resp = client.get(f"/api/v1/admin/students/{STUDENT_A}")
     finally:
@@ -921,7 +922,7 @@ def test_22_valid_same_tenant_resource_access_allowed():
     _as(admin)
     try:
         with patch(
-            "app.api.admin.admin_academics.list_students", return_value=[]
+            "app.services.admin.admin_academics.list_students", return_value=[]
         ) as list_students:
             resp = client.get(f"/api/v1/admin/students?institution_id={TENANT_A}")
     finally:
@@ -1042,7 +1043,7 @@ def test_01c_platform_admin_approves_pending_organization():
 
 def test_03b_institution_admin_membership_decision_lifecycle():
     """Institution admin: ACTIVE institution allows, PENDING denies (service)."""
-    from app.schemas.tenancy import ApprovalDecisionRequest
+    from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
     current_user = {"user_id": INST_ADMIN, "auth_user_id": INST_ADMIN, "institution_id": None}
     ctx = _inst_ctx()
@@ -1123,7 +1124,7 @@ def test_09_unauthorized_role_denied():
     faculty = _user(TENANT_A, roles=("faculty",))
     _as(faculty)
     try:
-        with patch("app.api.admin.admin_academics.list_students") as list_students:
+        with patch("app.services.admin.admin_academics.list_students") as list_students:
             resp = client.get("/api/v1/admin/me")
         assert resp.status_code == 403
         assert resp.json()["error"]["code"] == "FORBIDDEN"
@@ -1249,7 +1250,7 @@ def test_24_phase_6_13_1_to_6_13_6_regression():
     ctx_platform = _resolve([legacy_tenant_row])
     assert ctx_platform["scope_type"] == authz.PLATFORM
     # Sign-in guard: missing account and non-active user fail closed.
-    from app.services.sign_in import assert_sign_in_allowed
+    from app.services.auth.sign_in import assert_sign_in_allowed
 
     with pytest.raises(SafeAuthFailure):
         assert_sign_in_allowed(MagicMock(), None)
@@ -1282,7 +1283,7 @@ def test_24_phase_6_13_1_to_6_13_6_regression():
         "approve": "active",
         "reject": "rejected",
     }
-    from app.schemas.tenancy import ApprovalDecisionRequest
+    from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
     with pytest.raises(Exception):
         ApprovalDecisionRequest.model_validate(

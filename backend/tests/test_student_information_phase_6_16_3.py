@@ -26,8 +26,8 @@ import pytest
 
 from app.core.errors import AppError
 from app.main import app
-from app.services import student_notices as notices_service
-from app.services import student_resources as resources_service
+from app.services.students import student_notices as notices_service
+from app.services.students import student_resources as resources_service
 
 TENANT_A = "a1111111-0000-0000-0000-000000000001"
 STUDENT_ID = "30000000-0000-0000-0000-000000000151"
@@ -36,7 +36,7 @@ STUDENT_ID = "30000000-0000-0000-0000-000000000151"
 @pytest.fixture
 def authorized_student(monkeypatch):
     """Stub server-side identity/tenant resolution to the student's own tenant."""
-    from app.services import student_context as student_context_service
+    from app.services.students import student_context as student_context_service
 
     monkeypatch.setattr(
         student_context_service,

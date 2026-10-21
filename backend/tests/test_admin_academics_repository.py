@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-from app.repositories import admin_academics as repo
+from app.repositories.admin import admin_academics as repo
 
 INSTITUTION_ID = uuid4()
 PROGRAM_ID = uuid4()

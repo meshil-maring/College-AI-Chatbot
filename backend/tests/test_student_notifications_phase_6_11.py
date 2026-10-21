@@ -22,9 +22,9 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.schemas.student_notifications import NOTIFICATION_TYPES
-from app.services import student_notifications as notifications_service
-from app.services import student_notifications_integration as integration
+from app.schemas.students.student_notifications import NOTIFICATION_TYPES
+from app.services.students import student_notifications as notifications_service
+from app.services.students import student_notifications_integration as integration
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -161,8 +161,8 @@ class TestNotificationListing:
         """1. Authenticated student can list their own notifications."""
         db = _db_with_notification_row(_notification_row(student_id=STUDENT_ID))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 200
         body = response.json()
@@ -201,10 +201,10 @@ class TestNotificationListing:
 
         db = MagicMock()
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
-                with patch("app.repositories.student_notifications.list_notifications", side_effect=fake_list):
-                    with patch("app.repositories.student_notifications.count_notifications_by_student", side_effect=fake_count):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
+                with patch("app.repositories.students.student_notifications.list_notifications", side_effect=fake_list):
+                    with patch("app.repositories.students.student_notifications.count_notifications_by_student", side_effect=fake_count):
                         response = client.get("/api/v1/students/me/notifications?page=1&page_size=2")
         assert response.status_code == 200
         body = response.json()
@@ -225,8 +225,8 @@ class TestNotificationListing:
             _notification_row(is_read=True, read_at="2026-09-14T11:00:00+00:00")
         )
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 200
         item = response.json()["items"][0]
@@ -236,8 +236,8 @@ class TestNotificationListing:
         """Notification type/category is present in the response."""
         db = _db_with_notification_row(_notification_row(notification_type="attendance_alert"))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 200
         item = response.json()["items"][0]
@@ -247,8 +247,8 @@ class TestNotificationListing:
         """Optional reference to the authoritative source record is exposed."""
         db = _db_with_notification_row(_notification_row(source_record_id=SOURCE_RECORD_ID))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 200
         item = response.json()["items"][0]
@@ -258,8 +258,8 @@ class TestNotificationListing:
         """Student with no notifications gets a deterministic empty page."""
         db = _db_with_notifications([])
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 200
         body = response.json()
@@ -287,7 +287,7 @@ class TestAuthAndEligibility:
         profile["approval_status"] = "pending"
         db = _db_with_student_profile(profile)
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "STUDENT_NOT_APPROVED"
@@ -298,7 +298,7 @@ class TestAuthAndEligibility:
         profile["is_active"] = False
         db = _db_with_student_profile(profile)
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 403
         assert response.json()["error"]["code"] == "STUDENT_INACTIVE"
@@ -315,8 +315,8 @@ class TestOwnershipIsolation:
         """2. Student cannot read another student's notification (404)."""
         db = _db_with_notification_row(_notification_row(student_id=OTHER_STUDENT_ID))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get(f"/api/v1/students/me/notifications/{NOTIFICATION_ID}")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "NOTIFICATION_NOT_FOUND"
@@ -325,8 +325,8 @@ class TestOwnershipIsolation:
         """7. Student cannot mark another student's notification as read (404)."""
         db = _db_with_notification_row(_notification_row(student_id=OTHER_STUDENT_ID))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.patch(f"/api/v1/students/me/notifications/{NOTIFICATION_ID}/read")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "NOTIFICATION_NOT_FOUND"
@@ -338,8 +338,8 @@ class TestOwnershipIsolation:
         ]
         db = _db_with_notifications(rows)
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 200
         body = response.json()
@@ -374,8 +374,8 @@ class TestReadStateMutation:
         """6. Student can mark their own notification as read."""
         db = _db_with_notification_row(_notification_row(is_read=False))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.patch(f"/api/v1/students/me/notifications/{NOTIFICATION_ID}/read")
         assert response.status_code == 200
         body = response.json()
@@ -388,8 +388,8 @@ class TestReadStateMutation:
         """8. Student cannot modify notification content via read endpoint."""
         db = _db_with_notification_row(_notification_row(title="Original title", message="Original message"))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.patch(
                     f"/api/v1/students/me/notifications/{NOTIFICATION_ID}/read",
                     json={"title": "Hacked title", "message": "Hacked message"},
@@ -403,8 +403,8 @@ class TestReadStateMutation:
         """Marking a nonexistent notification returns 404."""
         db = _db_with_notification_row(None)
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.patch(f"/api/v1/students/me/notifications/{NOTIFICATION_ID}/read")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "NOTIFICATION_NOT_FOUND"
@@ -501,7 +501,7 @@ class TestIntegrationFunctions:
 
     def test_attendance_notification_has_correct_ownership(self):
         """14. Attendance alert references the authoritative attendance record."""
-        with patch("app.repositories.student_notifications.create_notification", side_effect=_fake_repo_create):
+        with patch("app.repositories.students.student_notifications.create_notification", side_effect=_fake_repo_create):
             result = integration.notify_attendance_alert(
                 student_id=STUDENT_ID,
                 institution_id=TENANT_A,
@@ -519,7 +519,7 @@ class TestIntegrationFunctions:
 
     def test_result_notification_has_correct_ownership(self):
         """15. Result-published notification references the authoritative result."""
-        with patch("app.repositories.student_notifications.create_notification", side_effect=_fake_repo_create):
+        with patch("app.repositories.students.student_notifications.create_notification", side_effect=_fake_repo_create):
             result = integration.notify_result_published(
                 student_id=STUDENT_ID,
                 institution_id=TENANT_A,
@@ -535,7 +535,7 @@ class TestIntegrationFunctions:
 
     def test_test_result_notification_has_correct_ownership(self):
         """15. Test-result notification references the authoritative test result."""
-        with patch("app.repositories.student_notifications.create_notification", side_effect=_fake_repo_create):
+        with patch("app.repositories.students.student_notifications.create_notification", side_effect=_fake_repo_create):
             result = integration.notify_test_result_published(
                 student_id=STUDENT_ID,
                 institution_id=TENANT_A,
@@ -551,7 +551,7 @@ class TestIntegrationFunctions:
 
     def test_academic_admin_notification_has_correct_ownership(self):
         """Academic/admin notification owns the institution + student."""
-        with patch("app.repositories.student_notifications.create_notification", side_effect=_fake_repo_create):
+        with patch("app.repositories.students.student_notifications.create_notification", side_effect=_fake_repo_create):
             result = integration.notify_academic_admin(
                 student_id=STUDENT_ID,
                 institution_id=TENANT_A,
@@ -575,8 +575,8 @@ class TestPaginationEdgeCases:
         """Page < 1 is rejected by FastAPI validation (422)."""
         db = _db_with_notifications([])
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications?page=0")
         assert response.status_code == 422
 
@@ -584,8 +584,8 @@ class TestPaginationEdgeCases:
         """Page size > 100 is rejected by FastAPI validation (422)."""
         db = _db_with_notifications([])
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications?page_size=101")
         assert response.status_code == 422
 
@@ -601,8 +601,8 @@ class TestSingleNotificationEndpoint:
         """Student can retrieve one of their own notifications by id."""
         db = _db_with_notification_row(_notification_row(student_id=STUDENT_ID))
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get(f"/api/v1/students/me/notifications/{NOTIFICATION_ID}")
         assert response.status_code == 200
         body = response.json()
@@ -614,8 +614,8 @@ class TestSingleNotificationEndpoint:
         """Nonexistent notification returns 404 NOTIFICATION_NOT_FOUND."""
         db = _db_with_notification_row(None)
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get(f"/api/v1/students/me/notifications/{NOTIFICATION_ID}")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "NOTIFICATION_NOT_FOUND"
@@ -629,9 +629,9 @@ class TestUnreadCountEndpoint:
     def test_unread_count_returns_correct_count(self):
         """Unread count is scoped to the authenticated student."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=MagicMock()):
-                with patch("app.repositories.student_notifications.count_unread_by_student", return_value=3):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=MagicMock()):
+                with patch("app.repositories.students.student_notifications.count_unread_by_student", return_value=3):
                     response = client.get("/api/v1/students/me/notifications/unread-count")
         assert response.status_code == 200
         assert response.json()["unread_count"] == 3
@@ -654,7 +654,7 @@ class TestNoDataLeaks:
     def test_notifications_not_in_profile_response(self):
         """Notification data is not embedded in the profile endpoint."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_data.get_own_profile", return_value=_approved_student_profile()):
+        with patch("app.services.students.student_data.get_own_profile", return_value=_approved_student_profile()):
             response = client.get("/api/v1/students/me/profile")
         assert response.status_code == 200
         body = response.json()
@@ -664,7 +664,7 @@ class TestNoDataLeaks:
     def test_notifications_not_in_results_response(self):
         """Notification data is not embedded in the results endpoint."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_data.get_own_results", return_value=[]):
+        with patch("app.services.students.student_data.get_own_results", return_value=[]):
             response = client.get("/api/v1/students/me/results")
         assert response.status_code == 200
         assert response.json() == []
@@ -672,7 +672,7 @@ class TestNoDataLeaks:
     def test_notifications_not_in_attendance_response(self):
         """Notification data is not embedded in the attendance endpoint."""
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_data.get_own_attendance", return_value=[]):
+        with patch("app.services.students.student_data.get_own_attendance", return_value=[]):
             response = client.get("/api/v1/students/me/attendance")
         assert response.status_code == 200
         assert response.json() == []
@@ -693,8 +693,8 @@ class TestRBACBoundaries:
         """The read endpoint accepts no payload and cannot change the type."""
         db = _db_with_notification_row()
         app.dependency_overrides[get_current_user] = lambda: _student_user()
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.patch(
                     f"/api/v1/students/me/notifications/{NOTIFICATION_ID}/read",
                     json={"notification_type": "academic_status"},
@@ -707,7 +707,7 @@ class TestRBACBoundaries:
         admin_user = _student_user()
         admin_user["roles"] = ["admin"]
         app.dependency_overrides[get_current_user] = lambda: admin_user
-        with patch("app.services.student_context.get_admin_client", return_value=_db_without_profile()):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_without_profile()):
             response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "STUDENT_PROFILE_NOT_FOUND"
@@ -768,8 +768,8 @@ class TestTenantIsolation:
         """Notification institution_id is derived from the authoritative tenant."""
         db = _db_with_notification_row(_notification_row(institution_id=TENANT_A))
         app.dependency_overrides[get_current_user] = lambda: _student_user(tenant=TENANT_A)
-        with patch("app.services.student_context.get_admin_client", return_value=_db_with_student_profile()):
-            with patch("app.services.student_notifications.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=_db_with_student_profile()):
+            with patch("app.services.students.student_notifications.get_admin_client", return_value=db):
                 response = client.get("/api/v1/students/me/notifications")
         assert response.status_code == 200
         item = response.json()["items"][0]
@@ -785,21 +785,21 @@ class TestRegressionSmoke:
 
     def test_imports_work(self):
         """All notification modules import without error."""
-        from app.schemas.student_notifications import Notification, NotificationListResponse  # noqa: F401
-        from app.repositories.student_notifications import (
+        from app.schemas.students.student_notifications import Notification, NotificationListResponse  # noqa: F401
+        from app.repositories.students.student_notifications import (
             get_notification,
             list_notifications,
             create_notification,
             mark_notification_read,
         )  # noqa: F401
-        from app.services.student_notifications import (
+        from app.services.students.student_notifications import (
             get_own_notifications,
             get_own_notification,
             mark_own_notification_read,
             create_notification_for_student,
             get_unread_count,
         )  # noqa: F401
-        from app.services.student_notifications_integration import (
+        from app.services.students.student_notifications_integration import (
             notify_attendance_alert,
             notify_result_published,
             notify_test_result_published,
@@ -810,7 +810,7 @@ class TestRegressionSmoke:
 
     def test_schema_validates_correct_data(self):
         """Notification schema validates correct data and rejects foreign fields."""
-        from app.schemas.student_notifications import Notification, NotificationCreate
+        from app.schemas.students.student_notifications import Notification, NotificationCreate
 
         row = _notification_row()
         notification = Notification(**row)

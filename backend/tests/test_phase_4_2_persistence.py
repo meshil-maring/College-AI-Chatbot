@@ -5,11 +5,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.retrieval import RetrievalResponse, RetrievalResult
-from app.schemas.session import SessionContext
-from app.services.chat import _persist_in_background, process_chat_request
-from app.services.generation_provider import GenerationProvider, GenerationResult
+from app.schemas.ai.chat import ChatRequest, ChatResponse
+from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
+from app.schemas.ai.session import SessionContext
+from app.services.ai.chat import _persist_in_background, process_chat_request
+from app.services.ai.generation_provider import GenerationProvider, GenerationResult
 
 
 @pytest.fixture(autouse=True)
@@ -24,7 +24,7 @@ def _sync_background_persistence(monkeypatch):
     client via the patched ``get_admin_client``).
     """
     monkeypatch.setattr(
-        "app.services.chat._start_background_persistence",
+        "app.services.ai.chat._start_background_persistence",
         lambda **kwargs: _persist_in_background(**kwargs),
     )
 
@@ -100,9 +100,9 @@ def test_new_conversation_creates_conversation_record() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -146,9 +146,9 @@ def test_existing_conversation_reuses_conversation_id() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -180,9 +180,9 @@ def test_conversation_ownership_verification_rejects_unauthorized() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         try:
             process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
@@ -229,9 +229,9 @@ def test_user_message_persisted_with_correct_sequence() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -273,9 +273,9 @@ def test_assistant_message_and_ai_response_persisted_after_generation() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -325,9 +325,9 @@ def test_ai_response_captures_token_counts_and_latency() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -366,9 +366,9 @@ def test_backward_compatibility_session_id_maps_to_conversation_id() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -408,9 +408,9 @@ def test_response_contract_includes_conversation_and_message_ids() -> None:
     )
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 
@@ -460,9 +460,9 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
     ]
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client_turn_1),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client_turn_1),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client_turn_1),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client_turn_1),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response_1 = process_chat_request(request_turn_1, session_context, mock_provider, TEST_USER_ID)
 
@@ -498,9 +498,9 @@ def test_multi_turn_conversation_sequence_continuity() -> None:
     ]
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client_turn_2),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client_turn_2),
-        patch("app.services.chat.retrieve", return_value=_mock_retrieval_response()),
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client_turn_2),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client_turn_2),
+        patch("app.services.ai.chat.retrieve", return_value=_mock_retrieval_response()),
     ):
         response_2 = process_chat_request(request_turn_2, session_context, mock_provider, TEST_USER_ID)
 
@@ -534,9 +534,9 @@ def test_insufficient_context_persists_user_message_only() -> None:
     empty_retrieval_response = RetrievalResponse(results=[])
 
     with (
-        patch("app.services.chat.get_admin_client", return_value=mock_client),
-        patch("app.services.conversation_history.get_admin_client", return_value=mock_client),
-        patch("app.services.chat.retrieve", return_value=empty_retrieval_response) as mock_retrieve,
+        patch("app.services.ai.chat.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mock_client),
+        patch("app.services.ai.chat.retrieve", return_value=empty_retrieval_response) as mock_retrieve,
     ):
         response = process_chat_request(request, session_context, mock_provider, TEST_USER_ID)
 

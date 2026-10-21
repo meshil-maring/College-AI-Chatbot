@@ -171,7 +171,7 @@ Backend PowerShell (create the temporary directory if rerunning after cleanup):
     $env:TMP=$env:TEMP
     .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider tests
 
-Actual final result: **2,873 passed, 27 skipped, 6 warnings**. Output was redirected to backend/attendance-backend-tests-final.log. Host DEBUG is inherited as release, which is not boolean, so it was explicitly overridden. An earlier DEBUG=false run produced two existing conversational-RAG diagnostic failures; DEBUG=true in test mode satisfies their expected diagnostics.
+Actual final result: **2,873 passed, 27 skipped, 6 warnings**. Output was redirected to `logs/backend/attendance-backend-tests-final.log` (relocated from the backend root during cleanup). Host DEBUG is inherited as release, which is not boolean, so it was explicitly overridden. An earlier DEBUG=false run produced two existing conversational-RAG diagnostic failures; DEBUG=true in test mode satisfies their expected diagnostics.
 
 Frontend PowerShell:
 
@@ -179,7 +179,7 @@ Frontend PowerShell:
     npx.cmd tsc -b
     npm.cmd run build
 
-Actual: **70 files/582 tests passed; TypeScript passed; build passed with bundle warning**. Evidence: frontend/attendance-frontend-tests-final.log and frontend/attendance-build-final.log.
+Actual: **70 files/582 tests passed; TypeScript passed; build passed with bundle warning**. Evidence: logs/frontend/attendance-frontend-tests-final.log and logs/frontend/attendance-build-final.log.
 
 Backend static checks:
 

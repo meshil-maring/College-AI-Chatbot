@@ -101,7 +101,7 @@ class TestDataMinimization:
     """No student payload may carry internal, tenant, storage, or audit data."""
 
     def test_academic_profile_projection_stays_minimal(self):
-        from app.schemas.student_profile import StudentAcademicProfile
+        from app.schemas.students.student_profile import StudentAcademicProfile
 
         dumped = set(StudentAcademicProfile.model_fields.keys())
         assert dumped == {
@@ -114,7 +114,7 @@ class TestDataMinimization:
         }
 
     def test_notice_projection_stays_minimal(self):
-        from app.schemas.student_notices import StudentNotice, StudentNoticeList
+        from app.schemas.students.student_notices import StudentNotice, StudentNoticeList
 
         item_fields = set(StudentNotice.model_fields.keys())
         assert item_fields == {
@@ -124,7 +124,7 @@ class TestDataMinimization:
         assert "items" in StudentNoticeList.model_fields
 
     def test_resource_projection_stays_minimal(self):
-        from app.schemas.student_resources import (
+        from app.schemas.students.student_resources import (
             StudentResource,
             StudentResourceList,
         )

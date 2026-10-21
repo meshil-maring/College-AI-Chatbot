@@ -1,13 +1,13 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import FacultyStudentRegistration from '../faculty/FacultyStudentRegistration.tsx'
-import { adminStudentWorkspaceApi as api } from '../../services/adminStudentWorkspaceApi.ts'
+import FacultyStudentRegistration from '../faculty/students/registration/FacultyStudentRegistration.tsx'
+import { adminStudentWorkspaceApi as api } from '../../services/admin/adminStudentWorkspaceApi.ts'
 import { StudentWorkspaceContext } from './StudentWorkspaceContext.tsx'
 import { readStudentFile } from '../admin/students/studentImport.ts'
-import type { ClassStudentRegistration } from '../../services/studentRegistrationApi.ts'
+import type { ClassStudentRegistration } from '../../services/students/studentRegistrationApi.ts'
 
-vi.mock('../../services/adminStudentWorkspaceApi.ts')
+vi.mock('../../services/admin/adminStudentWorkspaceApi.ts')
 vi.mock('../admin/students/studentImport.ts', async (original) => ({ ...await original<typeof import('../admin/students/studentImport.ts')>(), readStudentFile: vi.fn() }))
 const assignment = { section_id: 'section', assignment_id: 'assignment', assigned_at: '', academic_year_id: 'year', semester_id: 'semester', can_manage: true, section: { section_id: 'section', name: 'Section A', code: 'A', program_id: 'program', program: { program_id: 'program', name: 'CSE', degree_type: 'B.Tech' }, course: { name: 'Subject', code: 'CS101' } } }
 const student: ClassStudentRegistration = { registration_id: 'registration', student_name: 'Ada', email: 'ada@college.edu', register_number: 'CS001', university_roll_number: null, program_id: 'program', batch_id: 'batch', section_code: 'A', batch_start_year: 2026, batch_end_year: 2030, roster_status: 'UNREGISTERED', linked_student_id: null, identity_conflict: false, subjects_assigned: false }

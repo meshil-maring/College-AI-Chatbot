@@ -9,8 +9,8 @@ from postgrest.exceptions import APIError
 
 from app.core.security import get_current_user
 from app.main import app
-from app.services import academic_setup as service
-from app.services import authorization
+from app.services.academics import academic_setup as service
+from app.services.auth import authorization
 
 TENANT = "30000000-0000-0000-0000-000000000001"
 FOREIGN = "30000000-0000-0000-0000-000000000002"

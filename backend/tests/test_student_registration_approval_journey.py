@@ -123,10 +123,10 @@ def test_student_registration_through_institution_decision_and_login(decision):
     try:
         with ExitStack() as stack:
             stack.enter_context(patch.object(settings, "auth_rate_limit_enabled", False))
-            for module in ["services.user_registration", "services.student_registration", "services.admin_academics",
-                           "services.student_auth", "services.auth_security", "services.authorization", "services.tenancy", "api.admin"]:
+            for module in ["services.auth.user_registration", "services.auth.student_registration", "services.admin.admin_academics",
+                           "services.auth.student_auth", "services.auth.auth_security", "services.auth.authorization", "services.platform.tenancy", "api.admin.common"]:
                 stack.enter_context(patch(f"app.{module}.get_admin_client", return_value=database))
-            for module in ["services.student_registration", "services.student_auth"]:
+            for module in ["services.auth.student_registration", "services.auth.student_auth"]:
                 stack.enter_context(patch(f"app.{module}.create_supabase_client", return_value=provider))
             client = TestClient(app)
             assert client.get("/api/v1/institutions/lookup?code=quest123").status_code == 200

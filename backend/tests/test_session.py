@@ -5,8 +5,8 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.session import SessionContext, SessionContextRequest
-from app.services.session import resolve_session_context, resolve_session_id, session_response
+from app.schemas.ai.session import SessionContext, SessionContextRequest
+from app.services.auth.session import resolve_session_context, resolve_session_id, session_response
 
 
 def test_missing_session_id_creates_a_valid_uuid() -> None:

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.core.errors import AppError
-from app.services import embeddings
+from app.services.knowledge import embeddings
 
 
 RUN_ID = "run-1"

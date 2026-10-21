@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 from app.core.errors import AppError
 from app.main import app
-from app.services import student_registration as reg
+from app.services.auth import student_registration as reg
 
 client = TestClient(app, raise_server_exceptions=False)
 

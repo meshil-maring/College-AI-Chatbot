@@ -4,8 +4,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from app.schemas.generation import AIRequest, RetrievalScope, RetrievedChunk
-from app.services.context import (
+from app.schemas.ai.generation import AIRequest, RetrievalScope, RetrievedChunk
+from app.services.ai.context import (
     EMPTY_RETRIEVAL_NOTICE,
     GROUNDING_INSTRUCTIONS,
     SYSTEM_INSTRUCTIONS,
@@ -145,7 +145,7 @@ def test_assembler_does_not_call_external_dependencies(monkeypatch: pytest.Monke
         raise AssertionError("external dependency was called")
 
     monkeypatch.setattr("app.db.supabase.get_admin_client", fail_if_called)
-    monkeypatch.setattr("app.services.embeddings.embed_query", fail_if_called)
+    monkeypatch.setattr("app.services.knowledge.embeddings.embed_query", fail_if_called)
 
     context = assemble_context(request_with_chunks([chunk(1)]))
 

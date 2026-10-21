@@ -8,7 +8,7 @@
  * These types mirror the locked backend Pydantic response schemas verbatim
  * (snake_case JSON names, UUIDs represented as strings at the HTTP boundary,
  * datetimes as ISO 8601 strings). The backend is authoritative:
- *     backend/app/schemas/conversation.py (ConversationSummary, MessageSummary)
+ *     backend/app/schemas/ai/conversation.py (ConversationSummary, MessageSummary)
  *
  * Only fields the backend actually returns are declared. `user_id` is
  * intentionally excluded: the history API never exposes it, and the frontend
@@ -18,7 +18,7 @@
 /**
  * One conversation in the authenticated user's conversation list.
  *
- * Mirrors backend `ConversationSummary` (backend/app/schemas/conversation.py).
+ * Mirrors backend `ConversationSummary` (backend/app/schemas/ai/conversation.py).
  * Conversations are ordered by `updated_at` DESC by the backend.
  */
 export interface ConversationSummary {
@@ -32,7 +32,7 @@ export interface ConversationSummary {
 /**
  * One persisted message returned by the conversation history API.
  *
- * Mirrors backend `MessageSummary` (backend/app/schemas/conversation.py).
+ * Mirrors backend `MessageSummary` (backend/app/schemas/ai/conversation.py).
  * Messages are ordered by `message_sequence` ASC by the backend.
  */
 export interface MessageSummary {

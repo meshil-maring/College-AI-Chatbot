@@ -5,8 +5,8 @@ from PIL import Image
 from pydantic import ValidationError
 
 from app.core.errors import AppError
-from app.schemas.faculty_attendance import RosterStudentInput
-from app.services.faculty_attendance import parse_attendance_file
+from app.schemas.faculty.faculty_attendance import RosterStudentInput
+from app.services.faculty.faculty_attendance import parse_attendance_file
 
 
 def test_csv_is_deterministic_and_does_not_require_ai():

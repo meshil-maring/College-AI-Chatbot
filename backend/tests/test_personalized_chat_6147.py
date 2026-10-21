@@ -38,19 +38,19 @@ from app.config import settings
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.generation import AIContext, RetrievedChunk
-from app.schemas.session import SessionContext
-from app.schemas.student_academic_context import StudentAcademicContext
-from app.services import ai_context_builder as ai_context_builder_service
-from app.services import personalized_retrieval as personalized_retrieval_service
-from app.services.chat import process_chat_request
-from app.services.generation_provider import (
+from app.schemas.ai.chat import ChatRequest, ChatResponse
+from app.schemas.ai.generation import AIContext, RetrievedChunk
+from app.schemas.ai.session import SessionContext
+from app.schemas.students.student_academic_context import StudentAcademicContext
+from app.services.ai import ai_context_builder as ai_context_builder_service
+from app.services.ai import personalized_retrieval as personalized_retrieval_service
+from app.services.ai.chat import process_chat_request
+from app.services.ai.generation_provider import (
     GenerationProvider,
     GenerationResult,
     _build_user_content,
 )
-from app.services.personalized_retrieval import (
+from app.services.ai.personalized_retrieval import (
     get_personalized_context as real_get_personalized_context,
 )
 
@@ -86,7 +86,7 @@ GENERAL_QUERY = "What is the attendance policy for exams?"
 @pytest.fixture(autouse=True)
 def _cleanup_dependency_overrides():
     with patch(
-        "app.services.authorization.tenancy_repo.get_institution_by_id",
+        "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
         side_effect=lambda _db, institution_id: _institution_row(
             institution_id=str(institution_id)
         ),
@@ -139,17 +139,17 @@ def _academic_context(
     institution_name="Test College",
 ):
     """A Phase 6.14.4 ``StudentAcademicContext`` for the authenticated student."""
-    from app.schemas.student_academic_context import (
+    from app.schemas.students.student_academic_context import (
         StudentAcademicIdentity,
         StudentAcademicInstitution,
         StudentContextResults,
     )
-    from app.schemas.student_attendance import (
+    from app.schemas.students.student_attendance import (
         StudentAttendanceRecord,
         StudentAttendanceSummary,
         StudentOwnAttendance,
     )
-    from app.schemas.student_results import (
+    from app.schemas.students.student_results import (
         StudentAcademicResultRecord,
         StudentOwnResultsSummary,
         StudentOwnTestResultsSummary,
@@ -230,7 +230,7 @@ def _academic_context(
 
 
 def _retrieval_response(text=CHUNK_A_TEXT, run_id=RUN_A, chunk_id=CHUNK_A_ID):
-    from app.schemas.retrieval import RetrievalResponse, RetrievalResult
+    from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
 
     return RetrievalResponse(
         results=[
@@ -361,9 +361,9 @@ def _run_chat(
     the Phase 6.14.6 AI context builder and the whole generation/persistence
     path run for real.
     """
-    from app.schemas.retrieval import RetrievalResponse
+    from app.schemas.knowledge.retrieval import RetrievalResponse
 
-    from app.services import chat as chat_service
+    from app.services.ai import chat as chat_service
 
     session_id = session_id or uuid4()
     captured: dict = {}
@@ -401,25 +401,25 @@ def _run_chat(
 
     patchers = [
         patch.object(chat_service, "get_admin_client", return_value=mc),
-        patch("app.services.conversation_history.get_admin_client", return_value=mc),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=mc),
         patch.object(chat_service, "_start_background_persistence", return_value=None),
         patch(
-            "app.repositories.tenancy.get_institution_by_id",
+            "app.repositories.platform.tenancy.get_institution_by_id",
             return_value=institution,
         ),
         patch(
-            "app.services.personalized_retrieval._build_authorized_knowledge_source_ids",
+            "app.services.ai.personalized_retrieval._build_authorized_knowledge_source_ids",
             return_value=set(authorized_sources),
         ),
         patch(
-            "app.services.personalized_retrieval._resolve_chunk_knowledge_sources",
+            "app.services.ai.personalized_retrieval._resolve_chunk_knowledge_sources",
             return_value={run: source for run, source in [run_to_source]},
         ),
         patch(
-            "app.services.personalized_retrieval.retrieve", side_effect=retrieve_side
+            "app.services.ai.personalized_retrieval.retrieve", side_effect=retrieve_side
         ),
         patch(
-            "app.services.student_academic_context.get_student_academic_context",
+            "app.services.students.student_academic_context.get_student_academic_context",
             academic_spy,
         ),
         patch.object(chat_service, "get_personalized_context", personalized_spy),
@@ -442,7 +442,7 @@ def _run_chat(
     if legacy_student_lookup is not None:
         patchers.append(
             patch(
-                "app.services.student_context.get_student_context",
+                "app.services.students.student_context.get_student_context",
                 side_effect=legacy_student_lookup,
             )
         )
@@ -634,7 +634,7 @@ class TestTenantLifecycle:
 
     def test_09b_inactive_tenant_never_reads_academic_data(self):
         academic_spy = MagicMock()
-        from app.services import chat as chat_service
+        from app.services.ai import chat as chat_service
 
         session_id = uuid4()
         mc = _mock_client(session_id)
@@ -642,18 +642,18 @@ class TestTenantLifecycle:
         with (
             patch.object(chat_service, "get_admin_client", return_value=mc),
             patch(
-                "app.services.conversation_history.get_admin_client", return_value=mc
+                "app.services.ai.conversation_history.get_admin_client", return_value=mc
             ),
             patch.object(
                 chat_service, "_start_background_persistence", return_value=None
             ),
             patch.object(chat_service, "retrieve", return_value=_retrieval_response()),
             patch(
-                "app.repositories.tenancy.get_institution_by_id",
+                "app.repositories.platform.tenancy.get_institution_by_id",
                 return_value=_institution_row(status="pending", is_active=False),
             ),
             patch(
-                "app.services.student_academic_context.get_student_academic_context",
+                "app.services.students.student_academic_context.get_student_academic_context",
                 academic_spy,
             ),
         ):
@@ -679,7 +679,7 @@ def _run_public_chat(user_query=GENERAL_QUERY, retrieved_chunks=None, provider=N
     ``get_personalized_context`` / ``build_personalized_ai_context`` are replaced
     with sentinels that explode if the public path ever reaches them.
     """
-    from app.services import public_chat
+    from app.services.ai import public_chat
 
     def _explode(*args, **kwargs):
         raise AssertionError(
@@ -722,11 +722,11 @@ def _run_public_chat(user_query=GENERAL_QUERY, retrieved_chunks=None, provider=N
         patch.object(personalized_retrieval_service, "get_personalized_context", _explode),
         patch.object(ai_context_builder_service, "build_personalized_ai_context", _explode),
         patch(
-            "app.repositories.tenancy.get_institution_by_id",
+            "app.repositories.platform.tenancy.get_institution_by_id",
             return_value=_institution_row(),
         ),
         patch(
-            "app.repositories.tenancy.get_organization_by_id",
+            "app.repositories.platform.tenancy.get_organization_by_id",
             return_value=_organization_row(),
         ),
         patch.object(
@@ -755,13 +755,13 @@ class TestPublicChatIsolation:
 
     def test_12b_public_chat_never_touches_student_lookup_helpers(self):
         """The public path must not even look up a student profile."""
-        from app.services import public_chat
+        from app.services.ai import public_chat
 
         def _explode(*args, **kwargs):
             raise AssertionError("public chat must not look up student data")
 
         with patch(
-            "app.services.student_academic_context.get_student_academic_context",
+            "app.services.students.student_academic_context.get_student_academic_context",
             _explode,
         ):
             response, _provider = _run_public_chat()
@@ -779,7 +779,7 @@ class TestPublicChatIsolation:
         assert CHUNK_A_TEXT in prompt
 
     def test_13c_public_personal_question_raises_auth_required(self):
-        from app.services import public_chat
+        from app.services.ai import public_chat
 
         session_id = uuid4()
         mc = _mock_client(session_id, conversation_user_id=PUBLIC_USER_ID)
@@ -800,11 +800,11 @@ class TestPublicChatIsolation:
                 public_chat, "_start_background_persistence", return_value=None
             ),
             patch(
-                "app.repositories.tenancy.get_institution_by_id",
+                "app.repositories.platform.tenancy.get_institution_by_id",
                 return_value=_institution_row(),
             ),
             patch(
-                "app.repositories.tenancy.get_organization_by_id",
+                "app.repositories.platform.tenancy.get_organization_by_id",
                 return_value=_organization_row(),
             ),
         ):
@@ -851,7 +851,7 @@ class TestNonStudentPrincipals:
 
     @pytest.mark.parametrize("role", ["admin", "faculty", "staff"])
     def test_14b_15b_non_students_never_touch_student_academic_data(self, role):
-        from app.services import chat as chat_service
+        from app.services.ai import chat as chat_service
 
         def _no_profile(*args, **kwargs):
             raise AppError(
@@ -870,7 +870,7 @@ class TestNonStudentPrincipals:
         with (
             patch.object(chat_service, "get_admin_client", return_value=mc),
             patch(
-                "app.services.conversation_history.get_admin_client", return_value=mc
+                "app.services.ai.conversation_history.get_admin_client", return_value=mc
             ),
             patch.object(
                 chat_service, "_start_background_persistence", return_value=None
@@ -878,11 +878,11 @@ class TestNonStudentPrincipals:
             patch.object(chat_service, "retrieve", return_value=_retrieval_response()),
             patch.object(chat_service, "get_personalized_context", _explode),
             patch(
-                "app.services.student_academic_context.get_student_academic_context",
+                "app.services.students.student_academic_context.get_student_academic_context",
                 academic_spy,
             ),
             patch(
-                "app.services.student_context.get_student_context",
+                "app.services.students.student_context.get_student_context",
                 side_effect=_no_profile,
             ),
         ):
@@ -1007,7 +1007,7 @@ class TestResponseAndGenerationCompatibility:
 
     def test_18c_no_second_generation_pipeline(self):
         """AIContext is assembled exactly once, by the 6.14.6 builder."""
-        from app.services import chat as chat_service
+        from app.services.ai import chat as chat_service
 
         with patch.object(chat_service, "assemble_context") as assemble_spy:
             harness = _run_chat(PERSONAL_QUERY)

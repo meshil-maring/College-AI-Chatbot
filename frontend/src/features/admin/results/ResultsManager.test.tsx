@@ -19,7 +19,7 @@ const adminApi = vi.hoisted(() => ({
   uploadResultsCsv: vi.fn(),
 }))
 
-vi.mock('../../../services/adminApi.ts', () => adminApi)
+vi.mock('../../../services/admin/adminApi.ts', () => adminApi)
 
 /** Mutable auth context so each test can drive the linked tenant. */
 const authState = vi.hoisted(() => ({
@@ -34,7 +34,7 @@ const authState = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('../../auth/AuthProvider.tsx', () => ({
+vi.mock('../../auth/session/AuthProvider.tsx', () => ({
   useAuth: () => authState,
 }))
 

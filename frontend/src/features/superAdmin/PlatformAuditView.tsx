@@ -3,13 +3,13 @@ import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import {
   PlatformInstitutionError,
   listPlatformAudit,
-} from '../../services/platformInstitutionsApi.ts'
+} from '../../services/platform/platformInstitutionsApi.ts'
 import type {
   PlatformAuditAction,
   PlatformAuditEntry,
   PlatformAuditPage,
 } from '../../types/platform.ts'
-import { useAuth } from '../auth/AuthProvider.tsx'
+import { useAuth } from '../auth/session/AuthProvider.tsx'
 
 const PAGE_SIZE = 25
 

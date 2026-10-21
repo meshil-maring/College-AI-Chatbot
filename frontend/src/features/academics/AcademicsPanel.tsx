@@ -7,13 +7,13 @@
 
 import { useState } from 'react'
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
-import { useAuth } from '../auth/AuthProvider.tsx'
+import { useAuth } from '../auth/session/AuthProvider.tsx'
 import {
   getMyAttendance,
   getMyProfile,
   getMyResults,
   getMyTestResults,
-} from '../../services/adminApi.ts'
+} from '../../services/admin/adminApi.ts'
 import type {
   AttendanceRecord,
   StudentProfile,

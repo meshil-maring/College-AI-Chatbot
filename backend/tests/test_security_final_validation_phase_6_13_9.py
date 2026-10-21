@@ -53,10 +53,10 @@ from app.core.security import (
     scope_tenant,
 )
 from app.main import app
-from app.repositories import tenancy as tenancy_repo
-from app.services import authorization as authz
-from app.services import tenancy as tenancy_svc
-from app.services.student_auth import SafeAuthFailure
+from app.repositories.platform import tenancy as tenancy_repo
+from app.services.auth import authorization as authz
+from app.services.platform import tenancy as tenancy_svc
+from app.services.auth.student_auth import SafeAuthFailure
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -142,7 +142,7 @@ def _active_institution_authorization():
     security tests keep resolving real institution rows.
     """
     with patch(
-        "app.services.authorization.get_admin_client",
+        "app.services.auth.authorization.get_admin_client",
         return_value=_FakeClient(_base_state()),
     ):
         yield
@@ -175,7 +175,7 @@ def _role_row(scope_type, scope_id, org_id, role="admin"):
 def _resolve(rows, current_user=None):
     cu = current_user or {"user_id": USER_PLATFORM, "institution_id": None}
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch.object(tenancy_repo, "get_user_role_scope_rows", return_value=rows),
         patch.object(
             tenancy_repo, "get_institution_organization", return_value=UUID(ORG_A)
@@ -464,7 +464,7 @@ class _CapturingProvider:
         self.contexts = []
 
     def generate(self, context, *, answer_model=None):
-        from app.services.generation_provider import GenerationResult
+        from app.services.ai.generation_provider import GenerationResult
 
         self.contexts.append(context)
         return GenerationResult(
@@ -481,7 +481,7 @@ def _chat_request(
     knowledge_source_id=None,
     retrieved_chunks=None,
 ):
-    from app.schemas.chat import ChatRequest
+    from app.schemas.ai.chat import ChatRequest
 
     return ChatRequest(
         user_query=query,
@@ -493,7 +493,7 @@ def _chat_request(
 
 
 def _retrieved_chunk(chunk_id, run_id, text):
-    from app.schemas.generation import RetrievedChunk
+    from app.schemas.ai.generation import RetrievedChunk
 
     return RetrievedChunk(
         chunk_id=chunk_id,
@@ -510,8 +510,8 @@ def _run_public_chat(fake, request):
     background writer) are stubbed; tenant validation and the public-only
     retrieval filter run for real against ``fake``.
     """
-    from app.schemas.session import SessionContext
-    from app.services import public_chat
+    from app.schemas.ai.session import SessionContext
+    from app.services.ai import public_chat
 
     provider = _CapturingProvider()
     with (
@@ -571,7 +571,7 @@ class TestOrganizationIsolation:
                 authz.assert_can_manage_institution(_user(user_id=USER_ORG_A), ctx, inst)
 
     def test_org_a_knowledge_not_visible_to_org_b_institution(self):
-        from app.services import public_chat
+        from app.services.ai import public_chat
 
         fake = _FakeClient(_base_state())
         assert public_chat._knowledge_source_is_public(fake, KS_FAQ_A1, UUID(INST_A1))
@@ -579,7 +579,7 @@ class TestOrganizationIsolation:
         assert not public_chat._knowledge_source_is_public(fake, KS_FAQ_A1, UUID(INST_B1))
 
     def test_org_a_request_never_gets_org_b_knowledge(self):
-        from app.services import public_chat
+        from app.services.ai import public_chat
 
         fake = _FakeClient(_base_state())
         allowed = public_chat._build_allowed_public_knowledge_source_ids(
@@ -589,7 +589,7 @@ class TestOrganizationIsolation:
         assert allowed == {KS_FAQ_A1}
 
     def test_org_a_cannot_explicitly_select_org_b_source(self):
-        from app.services import public_chat
+        from app.services.ai import public_chat
 
         fake = _FakeClient(_base_state())
         with pytest.raises(AppError) as exc:
@@ -614,7 +614,7 @@ class TestOrganizationIsolation:
         assert "Org B secret fact" not in texts
 
     def test_org_a_admin_decision_on_org_b_join_request_denied(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["institution_join_requests"] = [
@@ -645,7 +645,7 @@ class TestOrganizationIsolation:
         _as(admin)
         try:
             with patch(
-                "app.api.admin.admin_academics.get_student", return_value=foreign_student
+                "app.services.admin.admin_academics.get_student", return_value=foreign_student
             ):
                 resp = client.get(f"/api/v1/admin/students/{STUDENT_ID_B1}")
         finally:
@@ -677,7 +677,7 @@ class TestInstitutionIsolation:
         ).return_value = MagicMock(data=foreign_profile)
         _as(student)
         try:
-            with patch("app.services.student_data.get_admin_client", return_value=db):
+            with patch("app.services.students.student_data.get_admin_client", return_value=db):
                 resp = client.get("/api/v1/students/me/profile")
         finally:
             _clear()
@@ -698,7 +698,7 @@ class TestInstitutionIsolation:
         ).return_value = MagicMock(data=own_profile)
         _as(student)
         try:
-            with patch("app.services.student_data.get_admin_client", return_value=db):
+            with patch("app.services.students.student_data.get_admin_client", return_value=db):
                 resp = client.get("/api/v1/students/me/profile")
         finally:
             _clear()
@@ -710,15 +710,15 @@ class TestInstitutionIsolation:
         _as(faculty)
         try:
             with (
-                patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+                patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
                 patch(
-                    "app.api.ingestion.get_knowledge_source",
+                    "app.api.knowledge.ingestion.get_knowledge_source",
                     return_value={
                         "knowledge_source_id": KS_FAQ_B1,
                         "institution_id": INST_B1,
                     },
                 ),
-                patch("app.api.ingestion.ingest_document") as ingest,
+                patch("app.api.knowledge.ingestion.ingest_document") as ingest,
             ):
                 resp = client.post(
                     "/api/v1/documents/ingest",
@@ -735,7 +735,7 @@ class TestInstitutionIsolation:
         staff = _user(INST_A1, roles=("staff",), user_id=USER_STAFF_A1)
         _as(staff)
         try:
-            with patch("app.api.admin.admin_academics.list_pending_approvals") as svc:
+            with patch("app.services.admin.admin_academics.list_pending_approvals") as svc:
                 resp = client.get(
                     f"/api/v1/admin/students/pending?institution_id={INST_B1}"
                 )
@@ -763,7 +763,7 @@ class TestInstitutionIsolation:
         assert exc.value.code == "FORBIDDEN"
 
     def test_institution_admin_a_cannot_decide_org_b_join_request(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["institution_join_requests"] = [
@@ -815,7 +815,7 @@ class TestRoleEscalation:
         student = _user(INST_A1, roles=("student",), user_id=USER_STUDENT_A1)
         _as(student)
         try:
-            with patch("app.api.admin.admin_academics.list_students") as svc:
+            with patch("app.services.admin.admin_academics.list_students") as svc:
                 resp = client.get("/api/v1/admin/me")
         finally:
             _clear()
@@ -957,14 +957,14 @@ class TestRoleEscalation:
         _as(student)
         try:
             with patch(
-                "app.services.student_data.get_own_student",
+                "app.services.students.student_data.get_own_student",
                 return_value={
                     "student_id": STUDENT_ID_A1,
                     "user_id": student["user_id"],
                     "institution_id": INST_A1,
                 },
             ), patch(
-                "app.services.student_data.results_repo.get_student_result_with_items",
+                "app.services.students.student_data.results_repo.get_student_result_with_items",
                 return_value={
                     "student_id": STUDENT_ID_B1,
                     "status": "published",
@@ -1015,8 +1015,8 @@ class TestRegistrationSecurity:
             assert resp.json()["error"]["code"] == "VALIDATION_ERROR"
 
     def test_organization_registration_grants_only_server_chosen_admin_scope(self):
-        from app.schemas.tenancy import OrganizationRegistrationRequest
-        from app.services import tenancy as svc
+        from app.schemas.platform.tenancy import OrganizationRegistrationRequest
+        from app.services.platform import tenancy as svc
 
         payload = OrganizationRegistrationRequest(
             name="New Org",
@@ -1056,8 +1056,8 @@ class TestRegistrationSecurity:
         assert response.status == "pending"
     def test_institution_registration_uses_server_resolved_organization(self):
         """A client cannot bypass organization ownership by supplying ids."""
-        from app.schemas.tenancy import InstitutionRegistrationRequest
-        from app.services import tenancy as svc
+        from app.schemas.platform.tenancy import InstitutionRegistrationRequest
+        from app.services.platform import tenancy as svc
 
         payload = InstitutionRegistrationRequest(
             name="New Campus",
@@ -1107,8 +1107,8 @@ class TestRegistrationSecurity:
         assert response.status == "pending"
 
     def test_institution_registration_rejects_non_active_organization(self):
-        from app.schemas.tenancy import InstitutionRegistrationRequest
-        from app.services import tenancy as svc
+        from app.schemas.platform.tenancy import InstitutionRegistrationRequest
+        from app.services.platform import tenancy as svc
 
         payload = InstitutionRegistrationRequest(
             name="New Campus",
@@ -1135,8 +1135,8 @@ class TestRegistrationSecurity:
             assert exc.value.status_code == 403
             assert exc.value.code == "ORGANIZATION_NOT_ACCEPTING_REQUESTS"
     def test_users_cannot_register_into_non_active_institution(self):
-        from app.schemas.users import UserRegistrationRequest
-        from app.services import user_registration as svc
+        from app.schemas.auth.users import UserRegistrationRequest
+        from app.services.auth import user_registration as svc
 
         payload = UserRegistrationRequest(
             registration_type="student",
@@ -1163,8 +1163,8 @@ class TestRegistrationSecurity:
             assert exc.value.code == "INSTITUTION_NOT_ACCEPTING_REGISTRATIONS"
 
     def test_duplicate_email_registration_rejected(self):
-        from app.schemas.users import UserRegistrationRequest
-        from app.services import user_registration as svc
+        from app.schemas.auth.users import UserRegistrationRequest
+        from app.services.auth import user_registration as svc
 
         payload = UserRegistrationRequest(
             registration_type="student",
@@ -1199,8 +1199,8 @@ class TestRegistrationSecurity:
 
     def test_duplicate_academic_identifier_rejected(self):
         """The existing institution-scoped duplicate guard is enforced."""
-        from app.schemas.users import UserRegistrationRequest
-        from app.services import user_registration as svc
+        from app.schemas.auth.users import UserRegistrationRequest
+        from app.services.auth import user_registration as svc
 
         payload = UserRegistrationRequest(
             registration_type="student",
@@ -1237,8 +1237,8 @@ class TestRegistrationSecurity:
 
     def test_registration_password_never_reaches_application_tables(self):
         """The password goes ONLY to Supabase Auth (GoTrue)."""
-        from app.schemas.users import UserRegistrationRequest
-        from app.services import user_registration as svc
+        from app.schemas.auth.users import UserRegistrationRequest
+        from app.services.auth import user_registration as svc
 
         secret = "Sup3rSecret!Pass"
         payload = UserRegistrationRequest(
@@ -1308,7 +1308,7 @@ class TestApprovalSecurity:
         )
 
     def test_organization_admin_cannot_self_approve_own_organization(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["organizations"] = [_org_row(ORG_A, "pending")]
@@ -1328,7 +1328,7 @@ class TestApprovalSecurity:
         assert state["organizations"][0]["status"] == "pending"
 
     def test_platform_admin_can_approve_pending_organization(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["organizations"] = [_org_row(ORG_A, "pending")]
@@ -1350,7 +1350,7 @@ class TestApprovalSecurity:
         assert state["organizations"][0]["status"] == "active"
 
     def test_institution_admin_cannot_approve_join_request(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["institution_join_requests"] = [
@@ -1375,7 +1375,7 @@ class TestApprovalSecurity:
         assert state["institution_join_requests"][0]["status"] == "pending"
 
     def test_org_admin_can_decide_own_join_request(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["institution_join_requests"] = [
@@ -1403,7 +1403,7 @@ class TestApprovalSecurity:
         assert institution["is_active"] is True
 
     def test_repeated_join_request_decision_is_safe(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["institution_join_requests"] = [
@@ -1429,7 +1429,7 @@ class TestApprovalSecurity:
         assert state["institution_join_requests"][0]["status"] == "approved"
 
     def test_repeated_organization_decision_is_safe(self):
-        from app.schemas.tenancy import ApprovalDecisionRequest
+        from app.schemas.platform.tenancy import ApprovalDecisionRequest
 
         state = _base_state()
         state["organizations"] = [_org_row(ORG_A, "active")]
@@ -1448,8 +1448,8 @@ class TestApprovalSecurity:
         assert state["organizations"][0]["status"] == "active"
 
     def test_rejected_organization_cannot_accept_institution_requests(self):
-        from app.schemas.tenancy import InstitutionRegistrationRequest
-        from app.services import tenancy as svc
+        from app.schemas.platform.tenancy import InstitutionRegistrationRequest
+        from app.services.platform import tenancy as svc
 
         payload = InstitutionRegistrationRequest(
             name="New Campus",
@@ -1521,13 +1521,13 @@ def _login(account, auth=None, email="user@example.com", db=None):
     auth = auth or _gos_true_client(email=email)
     db = db if db is not None else MagicMock()
     with (
-        patch("app.api.auth.create_supabase_client", return_value=auth),
+        patch("app.api.auth.common.create_supabase_client", return_value=auth),
         patch(
-            "app.api.auth.get_sign_in_context",
+            "app.api.auth.common.get_sign_in_context",
             new=AsyncMock(return_value=account),
         ),
-        patch("app.api.auth.get_admin_client", return_value=db),
-        patch("app.api.auth.record_auth_security_event"),
+        patch("app.api.auth.common.get_admin_client", return_value=db),
+        patch("app.api.auth.common.record_auth_security_event"),
     ):
         return client.post(LOGIN_URL, json={"email": email, "password": "secret123"})
 
@@ -1618,11 +1618,11 @@ class TestAuthenticationSecurity:
             result.setdefault("expires_in", 3600)
         with (
             patch(
-                "app.api.student_auth.authenticate_student",
+                "app.api.auth.student_auth.authenticate_student",
                 side_effect=error if error else None,
                 return_value=None if error else result,
             ) as svc,
-            patch("app.api.student_auth.record_auth_security_event"),
+            patch("app.api.auth.student_auth.record_auth_security_event"),
         ):
             resp = client.post(STUDENT_LOGIN_URL, json=payload)
         return resp, svc
@@ -1681,7 +1681,7 @@ class TestAuthenticationSecurity:
         svc.assert_not_called()
 
     def test_identity_resolution_requires_institution_code(self):
-        from app.services.student_auth import _resolve_identity
+        from app.services.auth.student_auth import _resolve_identity
 
         db = MagicMock()
         assert _resolve_identity(db, "REG-1001", None) is None
@@ -1697,13 +1697,13 @@ class TestAuthenticationSecurity:
 
     def test_inactive_institution_blocks_student_login(self):
         """The Phase 6.5 institution gate is enforced inside the service."""
-        from app.services.student_auth import authenticate_student
+        from app.services.auth.student_auth import authenticate_student
 
         db = _institution_db(is_active=False)
         with (
-            patch("app.services.student_auth.get_admin_client", return_value=db),
+            patch("app.services.auth.student_auth.get_admin_client", return_value=db),
             patch(
-                "app.services.student_auth._resolve_identity",
+                "app.services.auth.student_auth._resolve_identity",
                 return_value=("student@college.edu", UUID(INST_A1), {
                     "email": "student@college.edu",
                     "approval_status": "approved",
@@ -1726,7 +1726,7 @@ class TestPublicAISecurity:
 
     def test_public_chat_requires_no_authentication(self):
         from app.main import public_chat as public_chat_endpoint
-        from app.services import public_chat
+        from app.services.ai import public_chat
 
         source = inspect.getsource(public_chat.process_chat_request)
         assert "get_current_user" not in source
@@ -1737,7 +1737,7 @@ class TestPublicAISecurity:
             assert getattr(default, "dependency", None) is not get_current_user
 
     def test_public_institution_is_resolved_server_side(self):
-        from app.services import public_chat
+        from app.services.ai import public_chat
 
         source = inspect.getsource(public_chat._validate_public_institution)
         assert "get_institution_by_id" in source

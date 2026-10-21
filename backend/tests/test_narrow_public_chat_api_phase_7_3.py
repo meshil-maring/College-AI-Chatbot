@@ -12,8 +12,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.schemas.chat import PublicChatResponse
-from app.schemas.retrieval import RetrievalResponse, RetrievalResult
+from app.schemas.ai.chat import PublicChatResponse
+from app.schemas.knowledge.retrieval import RetrievalResponse, RetrievalResult
 
 
 INST_A = "10000000-0000-0000-0000-000000000001"
@@ -232,8 +232,8 @@ def test_valid_request_needs_no_credentials_and_normalizes_input():
 def test_unknown_institution_fails_before_retrieval():
     fake = FakeClient({"institutions": []})
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
-        patch("app.services.public_chat.retrieve") as retrieve,
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.retrieve") as retrieve,
     ):
         response = TestClient(app).post(
             "/api/v1/chat/public",
@@ -262,14 +262,14 @@ def test_tenant_isolation_and_stateless_generation_context():
 
     persistence_sentinel = MagicMock(side_effect=AssertionError("public persistence called"))
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
-        patch("app.services.public_chat.retrieve", return_value=_retrieval_results()) as retrieve,
-        patch("app.services.public_chat.AIGenerationService.generate", new=generate),
-        patch("app.services.public_chat.create_conversation", persistence_sentinel),
-        patch("app.services.public_chat.get_conversation", persistence_sentinel),
-        patch("app.services.public_chat.create_message", persistence_sentinel),
-        patch("app.services.public_chat.get_conversation_messages", persistence_sentinel),
-        patch("app.services.public_chat._start_background_persistence", persistence_sentinel),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.retrieve", return_value=_retrieval_results()) as retrieve,
+        patch("app.services.ai.public_chat.AIGenerationService.generate", new=generate),
+        patch("app.services.ai.public_chat.create_conversation", persistence_sentinel),
+        patch("app.services.ai.public_chat.get_conversation", persistence_sentinel),
+        patch("app.services.ai.public_chat.create_message", persistence_sentinel),
+        patch("app.services.ai.public_chat.get_conversation_messages", persistence_sentinel),
+        patch("app.services.ai.public_chat._start_background_persistence", persistence_sentinel),
     ):
         response = TestClient(app).post(
             "/api/v1/chat/public",
@@ -359,12 +359,12 @@ def test_generation_receives_only_fully_eligible_public_data():
         )
 
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
         patch(
-            "app.services.public_chat.retrieve",
+            "app.services.ai.public_chat.retrieve",
             return_value=RetrievalResponse(results=results),
         ),
-        patch("app.services.public_chat.AIGenerationService.generate", new=generate),
+        patch("app.services.ai.public_chat.AIGenerationService.generate", new=generate),
     ):
         response = TestClient(app).post(
             "/api/v1/chat/public",
@@ -379,9 +379,9 @@ def test_no_public_information_returns_safe_insufficient_context_response():
     fake = _client_with_public_and_cross_tenant_chunks()
     provider = MagicMock()
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
         patch(
-            "app.services.public_chat.retrieve",
+            "app.services.ai.public_chat.retrieve",
             return_value=RetrievalResponse(results=[]),
         ),
         patch("app.main.OpenRouterGenerationProvider", return_value=provider),
@@ -404,8 +404,8 @@ def test_generation_failure_returns_only_safe_provider_error():
     provider = MagicMock()
     provider.generate.side_effect = RuntimeError("SECRET_API_KEY provider traceback")
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
-        patch("app.services.public_chat.retrieve", return_value=_retrieval_results()),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.retrieve", return_value=_retrieval_results()),
         patch("app.main.OpenRouterGenerationProvider", return_value=provider),
     ):
         response = TestClient(app).post(
@@ -425,9 +425,9 @@ def test_generation_failure_returns_only_safe_provider_error():
 def test_unhandled_retrieval_failure_uses_generic_error_envelope():
     fake = _client_with_public_and_cross_tenant_chunks()
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
         patch(
-            "app.services.public_chat.retrieve",
+            "app.services.ai.public_chat.retrieve",
             side_effect=RuntimeError("SELECT secret FROM internal_table"),
         ),
     ):
@@ -442,14 +442,14 @@ def test_unhandled_retrieval_failure_uses_generic_error_envelope():
 
 
 @pytest.mark.parametrize("boundary", [
-    "app.services.public_chat.tenancy_repo.get_institution_by_code",
-    "app.services.public_chat.tenancy_repo.get_institution_by_id",
-    "app.services.public_chat.retrieve",
+    "app.services.ai.public_chat.tenancy_repo.get_institution_by_code",
+    "app.services.ai.public_chat.tenancy_repo.get_institution_by_id",
+    "app.services.ai.public_chat.retrieve",
 ])
 def test_database_connection_failure_is_retryable(boundary, caplog):
     fake = _client_with_public_and_cross_tenant_chunks()
     with (
-        patch("app.services.public_chat.get_admin_client", return_value=fake),
+        patch("app.services.ai.public_chat.get_admin_client", return_value=fake),
         patch(boundary, side_effect=httpx.ConnectError("private database host and credentials")),
         patch("app.main.OpenRouterGenerationProvider") as provider,
     ):

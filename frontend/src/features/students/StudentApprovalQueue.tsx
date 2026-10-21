@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Check, ChevronLeft, ChevronRight, Hourglass, RefreshCw, X } from 'lucide-react'
 import { useApiMutation, useApiQuery } from '../../hooks/useApiQuery.ts'
-import { AdminApiError, approvePendingStudent, listPendingStudents, rejectPendingStudent } from '../../services/adminApi.ts'
+import { AdminApiError, approvePendingStudent, listPendingStudents, rejectPendingStudent } from '../../services/admin/adminApi.ts'
 import type { PendingStudent } from '../../types/admin.ts'
 import { StudentsSearch } from './StudentsUI.tsx'
 import './students.css'

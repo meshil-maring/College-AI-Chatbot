@@ -7,9 +7,9 @@
  * These types mirror the locked backend Pydantic schemas verbatim
  * (snake_case JSON names, UUIDs represented as strings at the HTTP
  * boundary). The backend is authoritative:
- *     backend/app/schemas/generation.py
- *     backend/app/schemas/chat.py
- *     backend/app/schemas/chat_response.py
+ *     backend/app/schemas/ai/generation.py
+ *     backend/app/schemas/ai/chat.py
+ *     backend/app/schemas/ai/chat_response.py
  */
 
 /** Valid response status values validated by the backend (do not broaden). */
@@ -18,7 +18,7 @@ export type ChatStatus = 'success' | 'insufficient_context'
 /**
  * Public request accepted by POST /api/v1/generation/chat.
  *
- * Mirrors backend `ChatRequest` (backend/app/schemas/chat.py).
+ * Mirrors backend `ChatRequest` (backend/app/schemas/ai/chat.py).
  * Retrieval filters, chunks, and model selection are internal/backend
  * concerns and are intentionally not exposed by the frontend.
  */
@@ -32,7 +32,7 @@ export interface ChatRequest {
 /**
  * Citation/grounding reference for answer content.
  *
- * Mirrors backend `SourceReference` (backend/app/schemas/generation.py).
+ * Mirrors backend `SourceReference` (backend/app/schemas/ai/generation.py).
  */
 export interface SourceReference {
   chunk_id: string
@@ -45,7 +45,7 @@ export interface SourceReference {
 /**
  * Frontend-friendly citation derived from a source reference.
  *
- * Mirrors backend `StructuredSource` (backend/app/schemas/chat_response.py).
+ * Mirrors backend `StructuredSource` (backend/app/schemas/ai/chat_response.py).
  */
 export interface StructuredSource {
   chunk_id: string
@@ -58,7 +58,7 @@ export interface StructuredSource {
 /**
  * Structured token usage information.
  *
- * Mirrors backend `ChatUsage` (backend/app/schemas/chat_response.py).
+ * Mirrors backend `ChatUsage` (backend/app/schemas/ai/chat_response.py).
  */
 export interface ChatUsage {
   input_tokens?: number | null
@@ -68,8 +68,8 @@ export interface ChatUsage {
 /**
  * Full response returned by POST /api/v1/generation/chat.
  *
- * Mirrors backend `ChatResponse` (backend/app/schemas/chat.py), which
- * extends `AIResponse` (backend/app/schemas/generation.py) — including the
+ * Mirrors backend `ChatResponse` (backend/app/schemas/ai/chat.py), which
+ * extends `AIResponse` (backend/app/schemas/ai/generation.py) — including the
  * inherited `source_references` and `metadata` fields that are part of the
  * serialized response.
  */

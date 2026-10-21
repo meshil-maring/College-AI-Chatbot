@@ -40,16 +40,16 @@ from fastapi.testclient import TestClient
 
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories import student_academic_experience as experience_repo
-from app.schemas.student_results import (
+from app.repositories.students import student_academic_experience as experience_repo
+from app.schemas.students.student_results import (
     StudentOwnResults,
     StudentOwnResultsSummary,
     StudentOwnTestResults,
     StudentOwnTestResultsSummary,
     StudentTestResultRecord,
 )
-from app.services import student_academic_experience as experience_service
-from app.services import student_results as student_results_service
+from app.services.students import student_academic_experience as experience_service
+from app.services.students import student_results as student_results_service
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -258,7 +258,7 @@ def _patch_experience_repo(**overrides):
 
 def _patch_scope(institution_id=TENANT_A, **kwargs):
     return patch(
-        "app.services.student_context.get_admin_client",
+        "app.services.students.student_context.get_admin_client",
         return_value=_db_for_student(institution_id=institution_id, **kwargs),
     )
 
@@ -294,7 +294,7 @@ def _experience_env(scope_kwargs=None, **repo_overrides):
     stack.enter_context(_patch_scope(**(scope_kwargs or {})))
     stack.enter_context(
         patch(
-            "app.services.student_academic_experience.get_admin_client",
+            "app.services.students.student_academic_experience.get_admin_client",
             return_value=MagicMock(),
         )
     )
@@ -439,10 +439,10 @@ class TestAuthenticationAndIdentity:
 
     def test_student_without_profile_is_404(self):
         with patch(
-            "app.services.student_context.get_admin_client",
+            "app.services.students.student_context.get_admin_client",
             return_value=_db_no_profile(),
         ), patch(
-            "app.services.student_academic_experience.get_admin_client",
+            "app.services.students.student_academic_experience.get_admin_client",
             return_value=MagicMock(),
         ):
             response = client.get(NEW_ENDPOINTS[0])
@@ -524,7 +524,7 @@ class TestSubjectAttendance:
 
     def test_service_matches_the_faculty_reporting_statistics(self):
         """Same helper, same threshold as the faculty surface — no drift."""
-        from app.services import faculty_attendance_reporting as reporting
+        from app.services.faculty import faculty_attendance_reporting as reporting
 
         stack, _ = _experience_env()
         with stack:

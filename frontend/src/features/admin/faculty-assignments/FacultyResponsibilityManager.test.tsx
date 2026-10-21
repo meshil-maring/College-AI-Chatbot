@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FacultyResponsibilityManager from './FacultyResponsibilityManager.tsx'
-import * as api from '../../../services/adminApi.ts'
+import * as api from '../../../services/admin/adminApi.ts'
 import { responsibilityManagementFixture } from '../../../test/facultyResponsibilitiesFixtures.ts'
 
-vi.mock('../../../services/adminApi.ts')
+vi.mock('../../../services/admin/adminApi.ts')
 beforeEach(() => {
   vi.clearAllMocks()
   vi.spyOn(window, 'confirm').mockReturnValue(true)

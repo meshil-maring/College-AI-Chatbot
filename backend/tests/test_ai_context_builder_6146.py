@@ -19,47 +19,47 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.generation import (
+from app.schemas.ai.generation import (
     AIContext,
     AIRequest,
     RetrievalScope,
     RetrievedChunk,
     SourceReference,
 )
-from app.schemas.personalized_context import (
+from app.schemas.ai.personalized_context import (
     InstitutionalKnowledge,
     PersonalizedContext,
 )
-from app.schemas.student_academic_context import (
+from app.schemas.students.student_academic_context import (
     StudentAcademicContext,
     StudentAcademicIdentity,
     StudentAcademicInstitution,
     StudentContextResults,
 )
-from app.schemas.student_attendance import (
+from app.schemas.students.student_attendance import (
     StudentAttendanceRecord,
     StudentAttendanceSummary,
     StudentOwnAttendance,
 )
-from app.schemas.student_results import (
+from app.schemas.students.student_results import (
     StudentAcademicResultRecord,
     StudentOwnResultsSummary,
     StudentOwnTestResultsSummary,
     StudentTestResultRecord,
 )
-from app.services import ai_context_builder as builder
-from app.services import personalization as personalization_svc
-from app.services import personalized_retrieval as prsvc
-from app.services import student_academic_context as resolver
-from app.services.context import (
+from app.services.ai import ai_context_builder as builder
+from app.services.ai import personalization as personalization_svc
+from app.services.ai import personalized_retrieval as prsvc
+from app.services.students import student_academic_context as resolver
+from app.services.ai.context import (
     EMPTY_RETRIEVAL_NOTICE,
     GROUNDING_INSTRUCTIONS,
     STUDENT_DATA_GUIDANCE,
     SYSTEM_INSTRUCTIONS,
     assemble_context,
 )
-from app.services.generation import AIGenerationService
-from app.services.generation_provider import GenerationResult, _build_user_content
+from app.services.ai.generation import AIGenerationService
+from app.services.ai.generation_provider import GenerationResult, _build_user_content
 
 INST_A = "a1111111-0000-0000-0000-000000000001"
 SUID = "71000000-0000-0000-0000-000000000001"

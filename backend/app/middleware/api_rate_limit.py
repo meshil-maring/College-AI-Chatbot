@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from app.config import settings
-from app.services.public_abuse_controls import SlidingWindowRateLimiter
+from app.services.auth.public_abuse_controls import SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)
 api_rate_limiter = SlidingWindowRateLimiter()

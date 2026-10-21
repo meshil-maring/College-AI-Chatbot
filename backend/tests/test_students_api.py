@@ -52,7 +52,7 @@ def student_auth():
     app.dependency_overrides[get_current_user] = _student_user
     # Academic eligibility itself is exercised by test_student_access_lifecycle.
     # These contract tests isolate the existing raw record service responses.
-    with patch("app.api.students.get_student_context", return_value={"institution_id": None}):
+    with patch("app.api.students.students.get_student_context", return_value={"institution_id": None}):
         yield
     app.dependency_overrides.pop(get_current_user, None)
 
@@ -75,7 +75,7 @@ def test_me_profile_requires_authentication() -> None:
 
 def test_me_profile_resolves_student_server_side_from_jwt() -> None:
     db = _resolved_db()
-    with patch("app.services.student_data.get_admin_client", return_value=db):
+    with patch("app.services.students.student_data.get_admin_client", return_value=db):
         response = client.get("/api/v1/students/me/profile")
 
     assert response.status_code == 200
@@ -89,7 +89,7 @@ def test_me_profile_resolves_student_server_side_from_jwt() -> None:
 def test_me_profile_ignores_client_supplied_student_id() -> None:
     """Even if a client passes ?student_id=..., the profile is the caller's own."""
     db = _resolved_db()
-    with patch("app.services.student_data.get_admin_client", return_value=db):
+    with patch("app.services.students.student_data.get_admin_client", return_value=db):
         response = client.get(
             "/api/v1/students/me/profile",
             params={"student_id": OTHER_STUDENT_ID},
@@ -107,7 +107,7 @@ def test_me_profile_404_when_no_student_profile_linked() -> None:
     (
         db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
     ).return_value = MagicMock(data=None)
-    with patch("app.services.student_data.get_admin_client", return_value=db):
+    with patch("app.services.students.student_data.get_admin_client", return_value=db):
         response = client.get("/api/v1/students/me/profile")
 
     assert response.status_code == 404
@@ -121,9 +121,9 @@ def test_me_results_returns_only_own_published_rows() -> None:
         {"student_result_id": str(uuid4()), "student_id": STUDENT_ID, "status": "withheld", "sgpa": 6.0},
     ]
     with (
-        patch("app.services.student_data.get_admin_client", return_value=db),
+        patch("app.services.students.student_data.get_admin_client", return_value=db),
         patch(
-            "app.repositories.admin_academics.list_student_results",
+            "app.repositories.admin.admin_academics.list_student_results",
             return_value=results,
         ) as list_mock,
     ):
@@ -146,9 +146,9 @@ def test_me_test_results_returns_only_own_published_rows() -> None:
         {"test_result_id": str(uuid4()), "student_id": STUDENT_ID, "status": "withheld"},
     ]
     with (
-        patch("app.services.student_data.get_admin_client", return_value=db),
+        patch("app.services.students.student_data.get_admin_client", return_value=db),
         patch(
-            "app.repositories.admin_academics.list_test_results",
+            "app.repositories.admin.admin_academics.list_test_results",
             return_value=rows,
         ) as list_mock,
     ):
@@ -167,9 +167,9 @@ def test_me_attendance_returns_own_records() -> None:
         {"student_attendance_id": str(uuid4()), "student_id": STUDENT_ID, "status": "present"}
     ]
     with (
-        patch("app.services.student_data.get_admin_client", return_value=db),
+        patch("app.services.students.student_data.get_admin_client", return_value=db),
         patch(
-            "app.repositories.admin_academics.list_student_attendance",
+            "app.repositories.admin.admin_academics.list_student_attendance",
             return_value=rows,
         ) as list_mock,
     ):
@@ -190,7 +190,7 @@ def test_me_results_404_when_no_profile() -> None:
     (
         db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
     ).return_value = MagicMock(data=None)
-    with patch("app.services.student_data.get_admin_client", return_value=db):
+    with patch("app.services.students.student_data.get_admin_client", return_value=db):
         response = client.get("/api/v1/students/me/results")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "STUDENT_PROFILE_NOT_FOUND"
@@ -203,7 +203,7 @@ def test_other_student_token_cannot_leak_first_students_data() -> None:
     (
         db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
     ).return_value = MagicMock(data=None)
-    with patch("app.services.student_data.get_admin_client", return_value=db):
+    with patch("app.services.students.student_data.get_admin_client", return_value=db):
         response = client.get("/api/v1/students/me/profile")
     assert response.status_code == 404
     db.table.return_value.select.return_value.eq.assert_called_once_with(

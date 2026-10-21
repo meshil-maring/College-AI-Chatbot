@@ -3,8 +3,8 @@
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-from app.repositories import admin_audit as repo
-from app.schemas.admin import AdminAuditLogCreate
+from app.repositories.admin import admin_audit as repo
+from app.schemas.admin.admin import AdminAuditLogCreate
 
 ACTOR_ID = uuid4()
 AUDIT_ID = uuid4()

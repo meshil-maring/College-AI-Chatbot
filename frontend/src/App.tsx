@@ -1,386 +1,27 @@
-import { useState } from 'react'
-import { useBrowserLocation } from './lib/navigation.ts'
-import { resolveFacultyRoute } from './features/faculty/facultyRoutes.ts'
-import { AuthProvider, useAuth } from './features/auth/AuthProvider.tsx'
-import LoginForm, { type LoginAudience } from './features/auth/LoginForm.tsx'
-import ChangePasswordForm from './features/auth/ChangePasswordForm.tsx'
-import ResetPasswordForm from './features/auth/ResetPasswordForm.tsx'
-import AdminShell from './features/admin/AdminShell.tsx'
-import StudentShell from './features/student/StudentShell.tsx'
-import FacultyShell from './features/faculty/FacultyShell.tsx'
-import StaffShell from './features/staff/StaffShell.tsx'
-import PublicChatPage, { PublicChatRouteError } from './features/publicChat/PublicChatPage.tsx'
-import LandingPage from './features/landing/LandingPage.tsx'
+import { AuthGate, FacultyGate, RootGate, SuperAdminGate } from './app/RouteGates.tsx'
+import { resolveAppRoute } from './app/routes.ts'
+import AdminInvitationPage from './features/adminInvitation/AdminInvitationPage.tsx'
+import { AuthProvider } from './features/auth/session/AuthProvider.tsx'
+import ResetPasswordForm from './features/auth/password/ResetPasswordForm.tsx'
+import UniversityRegistrationPage from './features/auth/registration/UniversityRegistrationPage.tsx'
 import InstitutionEntryPage from './features/landing/InstitutionEntryPage.tsx'
 import InstitutionGatewayPage from './features/landing/InstitutionGatewayPage.tsx'
-import SuperAdminShell from './features/superAdmin/SuperAdminShell.tsx'
+import PublicChatPage, { PublicChatRouteError } from './features/publicChat/PublicChatPage.tsx'
 import SuperAdminRegisterEntryPage from './features/superAdmin/SuperAdminRegisterEntryPage.tsx'
 import SuperAdminRegistrationPage from './features/superAdmin/SuperAdminRegistrationPage.tsx'
-import AdminInvitationPage from './features/adminInvitation/AdminInvitationPage.tsx'
-import UniversityRegistrationPage from './features/auth/UniversityRegistrationPage.tsx'
-
-function decodeInstitutionCode(value: string | undefined): string | null {
-  if (value === undefined) return null
-  try {
-    const code = decodeURIComponent(value).trim().toUpperCase()
-    return /^[A-Z0-9][A-Z0-9_-]{0,31}$/.test(code) ? code : null
-  } catch {
-    return null
-  }
-}
-
-export function resolvePublicInstitutionCode(pathname: string): string | null | undefined {
-  const match = pathname.match(/^\/public-chat(?:\/([^/]+))?\/?$/)
-  if (match === null) return undefined
-  return decodeInstitutionCode(match[1])
-}
-
-export type AppRoute =
-  | { readonly kind: 'home' }
-  | { readonly kind: 'login'; readonly audience: LoginAudience }
-  | { readonly kind: 'reset-password' }
-  | { readonly kind: 'super-admin' }
-  | { readonly kind: 'faculty' }
-  | { readonly kind: 'admin-invitation'; readonly token: string }
-  | { readonly kind: 'super-admin-invitation'; readonly token: string }
-  | { readonly kind: 'super-admin-register' }
-  | { readonly kind: 'university-registration' }
-  | { readonly kind: 'institution-entry' }
-  | { readonly kind: 'institution'; readonly institutionCode: string }
-  | { readonly kind: 'institution-ai'; readonly institutionCode: string }
-  | { readonly kind: 'public-chat'; readonly institutionCode: string | null }
-  | { readonly kind: 'not-found' }
-
-/**
- * Extract the opaque invitation token from `/admin-invite/{token}`.
- *
- * The token is returned VERBATIM — it is a base64url credential, not an
- * identifier, so any case folding or re-encoding would corrupt it. Only the
- * obviously-malformed shapes (empty, wrong segment count, unsafe characters) are
- * rejected; every authorization decision is made by the server.
- */
-function resolveInvitationToken(pathname: string): string | null | undefined {
-  const match = pathname.match(/^\/admin-invite\/([^/]+)\/?$/)
-  if (match === null) return undefined
-  let token: string
-  try {
-    token = decodeURIComponent(match[1])
-  } catch {
-    return null
-  }
-  // 32-256 chars of URL-safe base64, matching the backend's acceptance bounds.
-  return /^[A-Za-z0-9_-]{32,256}$/.test(token) ? token : null
-}
-
-export function resolveAppRoute(pathname: string): AppRoute {
-  if (resolveFacultyRoute(pathname)) return { kind: 'faculty' }
-  const publicInstitutionCode = resolvePublicInstitutionCode(pathname)
-  if (publicInstitutionCode !== undefined) {
-    return { kind: 'public-chat', institutionCode: publicInstitutionCode }
-  }
-  // The invitation route is PUBLIC: the invited person has no account yet, so it
-  // is resolved before any AuthProvider gate and never depends on session state.
-  const invitationToken = resolveInvitationToken(pathname)
-  if (invitationToken !== undefined) {
-    return invitationToken === null
-      ? { kind: 'not-found' }
-      : { kind: 'admin-invitation', token: invitationToken }
-  }
-  const superAdminMatch = pathname.match(/^\/super-admin-invite\/([^/]+)\/?$/)
-  if (superAdminMatch !== null) {
-    let token: string | null = null
-    try {
-      token = decodeURIComponent(superAdminMatch[1])
-    } catch {
-      token = null
-    }
-    return token !== null && /^[A-Za-z0-9_-]{32,256}$/.test(token)
-      ? { kind: 'super-admin-invitation', token }
-      : { kind: 'not-found' }
-  }
-  if (/^\/register\/super-admin\/?$/.test(pathname)) return { kind: 'super-admin-register' }
-  if (pathname === '/' || pathname === '') return { kind: 'home' }
-  if (/^\/reset-password\/?$/.test(pathname)) return { kind: 'reset-password' }
-  if (/^\/register\/university\/?$/.test(pathname)) return { kind: 'university-registration' }
-  if (/^\/u\/?$/.test(pathname)) return { kind: 'institution-entry' }
-
-  const institutionMatch = pathname.match(/^\/u\/([^/]+)(?:\/(ai))?\/?$/)
-  if (institutionMatch !== null) {
-    const institutionCode = decodeInstitutionCode(institutionMatch[1])
-    if (institutionCode === null) return { kind: 'not-found' }
-    return institutionMatch[2] === 'ai'
-      ? { kind: 'institution-ai', institutionCode }
-      : { kind: 'institution', institutionCode }
-  }
-
-  if (/^\/super-admin\/?$/.test(pathname)) return { kind: 'super-admin' }
-  const loginMatch = pathname.match(/^\/login(?:\/(student|admin|staff|faculty))?\/?$/)
-  if (loginMatch !== null) {
-    return { kind: 'login', audience: (loginMatch[1] as LoginAudience | undefined) ?? 'general' }
-  }
-  return { kind: 'not-found' }
-}
-
-function AccountSecurityPanel() {
-  const [open, setOpen] = useState(false)
-  const { logoutAll } = useAuth()
-
-  return (
-    <div className="fixed bottom-4 right-4 z-50">
-      {open ? (
-        <div id="account-security-panel" className="flex flex-col items-end gap-2">
-          <button
-            type="button"
-            onClick={() => void logoutAll()}
-            className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700"
-          >
-            Sign out all sessions
-          </button>
-          <ChangePasswordForm />
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="text-xs text-slate-400 hover:text-slate-200 underline"
-          >
-            Close
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-expanded={open}
-          aria-controls="account-security-panel"
-          className="rounded-lg border border-emerald-600/60 bg-slate-800 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg hover:bg-slate-700"
-        >
-          Account security
-        </button>
-      )}
-    </div>
-  )
-}
-
-function AuthenticatedExperience() {
-  return (
-    <>
-      <AuthenticatedShell />
-      <AccountSecurityPanel />
-    </>
-  )
-}
-
-function RestoringShell() {
-  return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-      <main className="max-w-xl w-full text-center py-16">
-        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-10 shadow-xl">
-          <h1 className="text-4xl font-bold text-white tracking-tight">College AI Chatbot</h1>
-          <p className="mt-4 text-lg text-slate-300">Restoring your session…</p>
-        </div>
-      </main>
-    </div>
-  )
-}
-
-/**
- * Phase 6.16 — Student experience shell composition.
- *
- * The pre-6.16 shell rendered `ChatShell` (+ the `AcademicsPanel` modal)
- * directly here. The coherent student navigation now lives in
- * `features/student/StudentShell.tsx`, which reuses the same `ChatShell` for
- * its assistant view.
- */
-
-/**
- * Phase 6.18 — staff shell selection added; the selection model is
- * unchanged: the shell is selected from the SERVER-authoritative role
- * resolved by /auth/me (held in AuthProvider state). No /admin/me probe, no
- * inference from email/identifier/storage: the backend decides, the
- * frontend renders.
- *
- * Faculty -> FacultyShell (Phase 6.17; server-verified capabilities only).
- * Staff -> StaffShell (Phase 6.18; server-verified capabilities only:
- * the Phase 6.4 tenant-scoped approval queue + the existing ChatShell).
- *
- * Unknown/unsupported role (`null` or any value outside AuthRole) fails
- * SAFELY: no privileged UI — the user sees a controlled access message and
- * can sign out. A role is only ever privileged when it equals 'admin'.
- *
- * Phase 6.20 — role shells are additionally keyed on the canonical
- * identity, so a session replacement can never leave a previous role's (or a
- * previous tenant's) view state mounted. See `AuthenticatedShell`.
- */
-function AuthenticatedShell() {
-  const { user, role, logout } = useAuth()
-
-  /**
-   * Phase 6.20 — identity-scoped shell key.
-   *
-   * Shell selection happens per render, but React REUSES a component instance
-   * when the element type and position are unchanged. Two authentication
-   * replacements keep the same element type:
-   *
-   *   * the same role with a DIFFERENT account/tenant (admin A -> admin B),
-   *     which is exactly the cross-tenant case the backend isolates;
-   *   * any role change that React would otherwise reconcile in place.
-   *
-   * Keying the shell on the canonical identity (`role` + server-issued
-   * `auth_user_id`, both from `/auth/me`) forces React to unmount the previous
-   * shell and mount a fresh one, so in-shell view state (e.g. an open
-   * "Documents" manager) and already-fetched role data can never survive an
-   * authentication replacement. This is UX state hygiene only — every request
-   * remains authorized server-side from the JWT.
-   */
-  const shellKey = `${role ?? 'unsupported'}:${user?.auth_user_id ?? user?.user_id ?? 'unknown'}`
-
-  if (role === 'admin') {
-    return <AdminShell key={shellKey} />
-  }
-  if (role === 'super_admin') {
-    return <SuperAdminShell key={shellKey} />
-  }
-  if (role === 'faculty') {
-    return <FacultyShell key={shellKey} />
-  }
-  if (role === 'staff') {
-    return <StaffShell key={shellKey} />
-  }
-  if (role === 'student') {
-    return <StudentShell key={shellKey} />
-  }
-  return <UnsupportedRoleShell key={shellKey} onSignOut={logout} />
-}
-
-function UnsupportedRoleShell({ onSignOut, message = 'This account does not have an application role assigned. Please contact your institution administrator.' }: { onSignOut: () => void; message?: string }) {
-  return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-      <main className="max-w-xl w-full text-center py-16">
-        <div className="rounded-2xl border border-amber-900/50 bg-amber-500/10 p-10 shadow-xl">
-          <h1 className="text-2xl font-bold text-amber-300">Access restricted</h1>
-          <p className="mt-4 text-slate-300">
-            {message}
-          </p>
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="mt-6 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-          >
-            Sign out
-          </button>
-        </div>
-      </main>
-    </div>
-  )
-}
-
-function StudentAccountSwitch({ registering }: { registering: boolean }) {
-  const { role, logout } = useAuth()
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const account = role === 'admin' ? 'an administrator'
-    : role === 'super_admin' ? 'a platform administrator'
-      : role === 'faculty' ? 'a faculty member'
-        : role === 'staff' ? 'a staff member'
-          : role === 'student' ? 'a student' : 'another account'
-
-  async function continueAsStudent() {
-    if (busy) return
-    setBusy(true)
-    setError(null)
-    try {
-      await logout()
-    } catch {
-      setError('Could not sign out. Please try again.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-900 px-4 py-16 text-slate-100">
-      <section className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl" aria-busy={busy}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Student access</p>
-        <h1 className="mt-3 text-2xl font-bold">{registering ? 'Student registration' : 'Student sign in'}</h1>
-        <p className="mt-4 text-sm leading-6 text-slate-300">
-          You are currently signed in as {account}. Sign out to continue with this student {registering ? 'registration' : 'sign-in'}.
-        </p>
-        <p className="mt-3 text-sm leading-6 text-slate-400">This also signs out other CollegeAI tabs in this browser.</p>
-        {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
-        <button type="button" disabled={busy} onClick={() => void continueAsStudent()} className="mt-6 w-full rounded-lg bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
-          {busy ? 'Signing out…' : 'Sign out and continue'}
-        </button>
-        <a href="/" className="mt-4 block text-center text-sm text-slate-300 underline hover:text-white">Continue with current account</a>
-      </section>
-    </main>
-  )
-}
-
-function AuthGate({ audience = 'general' }: { audience?: LoginAudience }) {
-  const { status, role } = useAuth()
-  if (status === 'restoring') {
-    return <RestoringShell />
-  }
-  if (status === 'authenticated') {
-    if (audience === 'student') {
-      const registering = new URLSearchParams(window.location.search).get('register') === '1'
-      if (role !== 'student' || registering) return <StudentAccountSwitch registering={registering} />
-    }
-    return (
-      <>
-        <AuthenticatedExperience />
-      </>
-    )
-  }
-  return <LoginForm audience={audience} />
-}
-
-function RootGate() {
-  const { status, error } = useAuth()
-  if (status === 'restoring') return <RestoringShell />
-  if (status === 'authenticated') {
-    return (
-      <>
-        <AuthenticatedExperience />
-      </>
-    )
-  }
-  // A rejected/expired saved session still lands on the shared login form so
-  // the established safe authentication error remains visible. Deliberate
-  // sign-out (no error) returns to the public demo gateway.
-  if (error !== null) return <LoginForm />
-  return <LandingPage />
-}
-
-function SuperAdminGate() {
-  const { status, role, logout } = useAuth()
-  if (status === 'restoring') return <RestoringShell />
-  if (status !== 'authenticated') return <LoginForm audience="super_admin" />
-  if (role === 'super_admin') {
-    return (
-      <>
-        <SuperAdminShell />
-        <AccountSecurityPanel />
-      </>
-    )
-  }
-  return <UnsupportedRoleShell onSignOut={logout} />
-}
-
-function FacultyGate() {
-  const { status, role, logout } = useAuth()
-  if (status === 'restoring') return <RestoringShell />
-  if (status !== 'authenticated') return <LoginForm audience="faculty" />
-  if (role !== 'faculty') return <UnsupportedRoleShell onSignOut={logout} message="This page requires a faculty account. Sign in with your faculty account to continue." />
-  return <AuthenticatedExperience />
-}
-
+import { useBrowserLocation } from './lib/navigation.ts'
 function NotFoundPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center text-slate-100">
       <section className="max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-xl">
         <h1 className="text-2xl font-bold text-white">Page not found</h1>
         <p className="mt-3 text-sm text-slate-400">This demo route is not available.</p>
-        <a href="/" className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">Return to College AI</a>
+        <a
+          href="/"
+          className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300"
+        >
+          Return to College AI
+        </a>
       </section>
     </main>
   )
@@ -390,15 +31,22 @@ function App() {
   const { pathname } = useBrowserLocation()
   const route = resolveAppRoute(pathname)
   if (route.kind === 'public-chat') {
-    return route.institutionCode === null
-      ? <PublicChatRouteError />
-      : <PublicChatPage institutionCode={route.institutionCode} />
+    return route.institutionCode === null ? (
+      <PublicChatRouteError />
+    ) : (
+      <PublicChatPage institutionCode={route.institutionCode} />
+    )
   }
   if (route.kind === 'institution-ai') return <PublicChatPage institutionCode={route.institutionCode} />
   if (route.kind === 'institution-entry') return <InstitutionEntryPage />
   if (route.kind === 'institution') return <InstitutionGatewayPage institutionCode={route.institutionCode} />
   if (route.kind === 'not-found') return <NotFoundPage />
-  if (route.kind === 'admin-invitation') return <AuthProvider><AdminInvitationPage token={route.token} /></AuthProvider>
+  if (route.kind === 'admin-invitation')
+    return (
+      <AuthProvider>
+        <AdminInvitationPage token={route.token} />
+      </AuthProvider>
+    )
   if (route.kind === 'super-admin-register') return <SuperAdminRegisterEntryPage />
   if (route.kind === 'super-admin-invitation') {
     return <SuperAdminRegistrationPage token={route.token} />
@@ -420,3 +68,5 @@ function App() {
 }
 
 export default App
+
+export { resolveAppRoute, resolvePublicInstitutionCode, type AppRoute } from './app/routes.ts'

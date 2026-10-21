@@ -13,12 +13,12 @@ from fastapi.testclient import TestClient
 
 from app.core.errors import AppError
 from app.main import app
-from app.repositories import platform_admin_invitations as repo
-from app.schemas.tenancy import ApprovalDecisionRequest
-from app.services import platform_admin_invitations as institution
-from app.services import super_admin_registration as platform
-from app.services import tenancy
-from app.services import student_registration as accounts
+from app.repositories.invitations import platform_admin_invitations as repo
+from app.schemas.platform.tenancy import ApprovalDecisionRequest
+from app.services.invitations import platform_admin_invitations as institution
+from app.services.invitations import super_admin_registration as platform
+from app.services.platform import tenancy
+from app.services.auth import student_registration as accounts
 
 ROOT = Path(__file__).parents[2]
 SQL = ROOT / 'supabase/migrations/20261017000000_b05_invitation_acceptance_security.sql'

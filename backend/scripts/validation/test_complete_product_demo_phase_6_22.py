@@ -47,9 +47,9 @@ import httpx  # noqa: E402
 
 from app.config import settings  # noqa: E402
 from app.db.supabase import create_supabase_client, get_admin_client  # noqa: E402
-from app.schemas.retrieval import RetrievalRequest  # noqa: E402
-from app.services.retrieval import retrieve  # noqa: E402
-from app.services.storage import download_file, get_r2_client  # noqa: E402
+from app.schemas.knowledge.retrieval import RetrievalRequest  # noqa: E402
+from app.services.knowledge.retrieval import retrieve  # noqa: E402
+from app.services.knowledge.storage import download_file, get_r2_client  # noqa: E402
 
 # ============================================================================
 # Demo environment contract (live values, read from the environment)
@@ -798,7 +798,7 @@ observe(
         ),
         "note": (
             "structured sources require the model to repeat the chunk id with "
-            "the literal 'chunk' prefix used by app.services.chat"
+            "the literal 'chunk' prefix used by app.services.ai.chat"
         ),
     },
 )

@@ -11,7 +11,7 @@ import pytest
 
 from app.core.errors import AppError
 from app.main import app
-from app.services.extraction import extract_text
+from app.services.knowledge.extraction import extract_text
 from fastapi.testclient import TestClient
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -73,7 +73,7 @@ def _auth_headers():
 
 
 def _patch_auth():
-    p1 = patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS)
+    p1 = patch("app.core.security.tokens.verify_jwt", return_value=FAKE_CLAIMS)
     p2 = patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=FAKE_USER))
     return p1, p2
 
@@ -81,13 +81,13 @@ def _patch_auth():
 @pytest.fixture(autouse=True)
 def _active_institution_authorization():
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
             return_value={"status": "active", "is_active": True},
         ),
         patch(
-            "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+            "app.api.knowledge.ingestion.knowledge_repo.get_knowledge_source_detail",
             return_value={"knowledge_source_id": KS_ID, "institution_id": INSTITUTION_ID},
         ),
     ):
@@ -137,12 +137,12 @@ def _post_extract(run_id=RUN_ID, run=None, file_bytes=b"hello world", file_type=
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=fake_run),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=file_bytes),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=fake_run),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=file_bytes),
     ):
         return client.post(f"/api/v1/documents/{run_id}/extract", headers=_auth_headers())
 
@@ -167,12 +167,12 @@ def test_pdf_download_from_r2_called_with_correct_bucket_and_key():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=run),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", download_mock),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=run),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", download_mock),
     ):
         response = client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -314,12 +314,12 @@ def test_corrupt_pdf_sets_failed_status():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=run),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=b"corrupt garbage bytes"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=run),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"corrupt garbage bytes"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -364,12 +364,12 @@ def test_status_transitions_queued_to_processing_to_ready():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=b"text content"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"text content"),
     ):
         response = client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -391,12 +391,12 @@ def test_processing_status_set_before_download():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_status),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", side_effect=_download),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_status),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", side_effect=_download),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -415,12 +415,12 @@ def test_ready_status_includes_completed_at():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=b"text"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"text"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -438,12 +438,12 @@ def test_processing_status_includes_started_at():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=b"text"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"text"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -464,12 +464,12 @@ def test_failure_transitions_processing_to_failed():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", side_effect=Exception("R2 connection refused")),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", side_effect=Exception("R2 connection refused")),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -487,12 +487,12 @@ def test_failure_error_message_is_recorded():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", side_effect=Exception("bucket not found")),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", side_effect=Exception("bucket not found")),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -511,12 +511,12 @@ def test_failure_error_message_truncated_to_1000_chars():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", side_effect=Exception("x" * 2000)),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", side_effect=Exception("x" * 2000)),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -534,12 +534,12 @@ def test_failure_includes_completed_at():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status", side_effect=_capture),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", side_effect=Exception("fail")),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status", side_effect=_capture),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", side_effect=Exception("fail")),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -556,12 +556,12 @@ def test_r2_delete_never_called_during_extraction():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=r2_mock),
-        patch("app.api.ingestion.download_file", return_value=b"text"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=r2_mock),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"text"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -574,12 +574,12 @@ def test_r2_put_object_never_called_during_extraction():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=r2_mock),
-        patch("app.api.ingestion.download_file", return_value=b"text"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=r2_mock),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"text"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -592,12 +592,12 @@ def test_r2_object_unchanged_on_failure():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=r2_mock),
-        patch("app.api.ingestion.download_file", side_effect=Exception("fail")),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=r2_mock),
+        patch("app.api.knowledge.ingestion.download_file", side_effect=Exception("fail")),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -620,12 +620,12 @@ def test_store_extracted_text_called_with_correct_document_version_id():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text", side_effect=_spy),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=b"document text"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text", side_effect=_spy),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"document text"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -644,12 +644,12 @@ def test_store_extracted_text_not_called_on_failure():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text", store_mock),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", side_effect=Exception("fail")),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text", store_mock),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", side_effect=Exception("fail")),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -666,12 +666,12 @@ def test_knowledge_chunks_table_never_touched():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=db_mock),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=b"text"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db_mock),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"text"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 
@@ -680,7 +680,7 @@ def test_knowledge_chunks_table_never_touched():
 
 
 def test_extraction_service_has_no_chunking_imports():
-    import app.services.extraction as ext_module
+    import app.services.knowledge.extraction as ext_module
     import inspect
     source = inspect.getsource(ext_module)
     assert "knowledge_chunks" not in source
@@ -692,7 +692,7 @@ def test_extraction_service_has_no_chunking_imports():
 # ---------------------------------------------------------------------------
 
 def test_extraction_service_has_no_embedding_imports():
-    import app.services.extraction as ext_module
+    import app.services.knowledge.extraction as ext_module
     import inspect
     source = inspect.getsource(ext_module)
     assert "openai" not in source
@@ -706,7 +706,7 @@ def test_extraction_service_has_no_embedding_imports():
 # ---------------------------------------------------------------------------
 
 def test_extraction_service_has_no_vector_storage():
-    import app.services.extraction as ext_module
+    import app.services.knowledge.extraction as ext_module
     import inspect
     source = inspect.getsource(ext_module)
     assert "pinecone" not in source
@@ -720,7 +720,7 @@ def test_extraction_service_has_no_vector_storage():
 # ---------------------------------------------------------------------------
 
 def test_extraction_service_has_no_retrieval_calls():
-    import app.services.extraction as ext_module
+    import app.services.knowledge.extraction as ext_module
     import inspect
     source = inspect.getsource(ext_module)
     assert "retrieval" not in source.lower()
@@ -734,12 +734,12 @@ def test_extract_endpoint_does_not_touch_retrieval_tables():
     with (
         p1,
         p2,
-        patch("app.api.ingestion.get_admin_client", return_value=db_mock),
-        patch("app.api.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
-        patch("app.api.ingestion.update_run_status"),
-        patch("app.api.ingestion.store_extracted_text"),
-        patch("app.api.ingestion.get_r2_client", return_value=MagicMock()),
-        patch("app.api.ingestion.download_file", return_value=b"text"),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db_mock),
+        patch("app.api.knowledge.ingestion.get_processing_run_with_version", return_value=FAKE_RUN_QUEUED),
+        patch("app.api.knowledge.ingestion.update_run_status"),
+        patch("app.api.knowledge.ingestion.store_extracted_text"),
+        patch("app.api.knowledge.ingestion.get_r2_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.download_file", return_value=b"text"),
     ):
         client.post(f"/api/v1/documents/{RUN_ID}/extract", headers=_auth_headers())
 

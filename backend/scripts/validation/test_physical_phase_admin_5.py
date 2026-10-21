@@ -35,7 +35,7 @@ from docx import Document as DocxDocument
 
 from app.config import settings
 from app.db.supabase import create_supabase_client, get_admin_client
-from app.services.storage import get_r2_client
+from app.services.knowledge.storage import get_r2_client
 
 BASE_URL = "http://127.0.0.1:8000"
 

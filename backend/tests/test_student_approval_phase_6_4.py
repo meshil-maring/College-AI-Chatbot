@@ -17,12 +17,12 @@ import pytest
 from postgrest.exceptions import APIError
 from fastapi.testclient import TestClient
 
-from app.api.admin import _APPROVAL
+from app.api.admin.dependencies import _APPROVAL
 from app.core.security import get_current_user
 from app.core.errors import AppError
 from app.main import app
-from app.repositories import admin_academics as repo
-from app.services import admin_academics as svc
+from app.repositories.admin import admin_academics as repo
+from app.services.admin import admin_academics as svc
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -71,7 +71,7 @@ def _active_institution_authorization():
     client.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
         data={"institution_id": TENANT_A, "status": "active", "is_active": True}
     )
-    with patch("app.services.authorization.get_admin_client", return_value=client):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=client):
         yield
 
 
@@ -150,8 +150,8 @@ def test_admin_can_approve():
     row = _pending_row(approval_status="approved")
     try:
         with (
-            patch("app.api.admin.admin_academics.approve_student", return_value=row) as m,
-            patch("app.api.admin._record_audit") as audit,
+            patch("app.services.admin.admin_academics.approve_student", return_value=row) as m,
+            patch("app.api.admin.common.record_audit") as audit,
         ):
             resp = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
     finally:
@@ -169,18 +169,18 @@ def test_staff_can_approve_and_reject():
     try:
         with (
             patch(
-                "app.api.admin.admin_academics.approve_student",
+                "app.services.admin.admin_academics.approve_student",
                 return_value=_pending_row(approval_status="approved"),
             ),
-            patch("app.api.admin._record_audit"),
+            patch("app.api.admin.common.record_audit"),
         ):
             r1 = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
         with (
             patch(
-                "app.api.admin.admin_academics.reject_student",
+                "app.services.admin.admin_academics.reject_student",
                 return_value=_pending_row(approval_status="rejected"),
             ),
-            patch("app.api.admin._record_audit"),
+            patch("app.api.admin.common.record_audit"),
         ):
             r2 = client.post(f"/api/v1/admin/students/{STUDENT_A}/reject")
     finally:
@@ -196,7 +196,7 @@ def test_admin_lists_only_own_pending():
     rows_a = [_pending_row(STUDENT_A, TENANT_A)]
     try:
         with patch(
-            "app.api.admin.admin_academics.list_pending_approvals", return_value=rows_a
+            "app.services.admin.admin_academics.list_pending_approvals", return_value=rows_a
         ) as m:
             resp = client.get("/api/v1/admin/students/pending")
     finally:
@@ -211,7 +211,7 @@ def test_client_institution_query_cannot_override_scope():
     _as(_user(TENANT_A, roles=("admin",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+            "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
         ) as m:
             resp = client.get(f"/api/v1/admin/students/pending?institution_id={TENANT_B}")
     finally:
@@ -225,7 +225,7 @@ def test_client_own_institution_query_is_accepted():
     _as(_user(TENANT_A, roles=("admin",)))
     try:
         with patch(
-            "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+            "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
         ) as m:
             resp = client.get(f"/api/v1/admin/students/pending?institution_id={TENANT_A}")
     finally:
@@ -245,7 +245,7 @@ def test_admin_cannot_approve_other_tenant_student():
         )
 
     try:
-        with patch("app.api.admin.admin_academics.approve_student", side_effect=_deny):
+        with patch("app.services.admin.admin_academics.approve_student", side_effect=_deny):
             resp = client.post(f"/api/v1/admin/students/{STUDENT_B}/approve")
     finally:
         _clear()
@@ -264,7 +264,7 @@ def test_admin_cannot_reject_other_tenant_student():
         )
 
     try:
-        with patch("app.api.admin.admin_academics.reject_student", side_effect=_deny):
+        with patch("app.services.admin.admin_academics.reject_student", side_effect=_deny):
             resp = client.post(f"/api/v1/admin/students/{STUDENT_B}/reject")
     finally:
         _clear()
@@ -413,7 +413,7 @@ def test_api_surfaces_not_pending_as_409():
         )
 
     try:
-        with patch("app.api.admin.admin_academics.approve_student", side_effect=_stale):
+        with patch("app.services.admin.admin_academics.approve_student", side_effect=_stale):
             resp = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
     finally:
         _clear()
@@ -426,8 +426,8 @@ def test_client_body_cannot_bypass_authorization():
     row = _pending_row(approval_status="approved")
     try:
         with (
-            patch("app.api.admin.admin_academics.approve_student", return_value=row) as m,
-            patch("app.api.admin._record_audit"),
+            patch("app.services.admin.admin_academics.approve_student", return_value=row) as m,
+            patch("app.api.admin.common.record_audit"),
         ):
             resp = client.post(
                 f"/api/v1/admin/students/{STUDENT_A}/approve",
@@ -449,8 +449,8 @@ def test_reject_body_tampering_inert():
     row = _pending_row(approval_status="rejected")
     try:
         with (
-            patch("app.api.admin.admin_academics.reject_student", return_value=row) as m,
-            patch("app.api.admin._record_audit"),
+            patch("app.services.admin.admin_academics.reject_student", return_value=row) as m,
+            patch("app.api.admin.common.record_audit"),
         ):
             resp = client.post(
                 f"/api/v1/admin/students/{STUDENT_A}/reject",
@@ -490,16 +490,16 @@ def test_approve_and_reject_write_audit_log():
     _as(_user(TENANT_A, roles=("admin",)))
     try:
         with (
-            patch("app.api.admin.admin_academics.approve_student",
+            patch("app.services.admin.admin_academics.approve_student",
                   return_value=_pending_row(approval_status="approved")),
-            patch("app.api.admin._record_audit") as audit,
+            patch("app.api.admin.common.record_audit") as audit,
         ):
             client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
             assert not audit.mock_calls  # Atomic RPC audit contract covered by service and failure tests.
         with (
-            patch("app.api.admin.admin_academics.reject_student",
+            patch("app.services.admin.admin_academics.reject_student",
                   return_value=_pending_row(approval_status="rejected")),
-            patch("app.api.admin._record_audit") as audit2,
+            patch("app.api.admin.common.record_audit") as audit2,
         ):
             client.post(f"/api/v1/admin/students/{STUDENT_A}/reject")
             assert audit2.call_args.args[1] == "student.reject"
@@ -512,8 +512,8 @@ def test_approval_response_leaks_no_secrets():
     row = _pending_row(approval_status="approved")
     try:
         with (
-            patch("app.api.admin.admin_academics.approve_student", return_value=row),
-            patch("app.api.admin._record_audit"),
+            patch("app.services.admin.admin_academics.approve_student", return_value=row),
+            patch("app.api.admin.common.record_audit"),
         ):
             body = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve").json()
     finally:
@@ -544,7 +544,7 @@ def test_institution_staff_cannot_approve_other_tenant_student():
         )
 
     try:
-        with patch("app.api.admin.admin_academics.approve_student", side_effect=_deny):
+        with patch("app.services.admin.admin_academics.approve_student", side_effect=_deny):
             resp = client.post(f"/api/v1/admin/students/{STUDENT_B}/approve")
     finally:
         _clear()
@@ -563,7 +563,7 @@ def test_institution_staff_cannot_reject_other_tenant_student():
         )
 
     try:
-        with patch("app.api.admin.admin_academics.reject_student", side_effect=_deny):
+        with patch("app.services.admin.admin_academics.reject_student", side_effect=_deny):
             resp = client.post(f"/api/v1/admin/students/{STUDENT_B}/reject")
     finally:
         _clear()
@@ -661,7 +661,7 @@ def test_tenantless_admin_cannot_approve_any_tenant():
     """Phase 7.20: a tenant-less ordinary admin has no institution authority."""
     _as(_user(None, roles=("admin",)))
     try:
-        with patch("app.api.admin.admin_academics.approve_student") as m:
+        with patch("app.services.admin.admin_academics.approve_student") as m:
             resp = client.post(f"/api/v1/admin/students/{STUDENT_B}/approve")
     finally:
         _clear()
@@ -673,7 +673,7 @@ def test_tenantless_admin_cannot_approve_any_tenant():
 def test_tenantless_admin_cannot_list_pending_globally():
     _as(_user(None, roles=("admin",)))
     try:
-        with patch("app.api.admin.admin_academics.list_pending_approvals") as m:
+        with patch("app.services.admin.admin_academics.list_pending_approvals") as m:
             resp = client.get("/api/v1/admin/students/pending")
     finally:
         _clear()
@@ -685,7 +685,7 @@ def test_tenantless_admin_cannot_list_pending_globally():
 def test_tenantless_admin_cannot_filter_by_institution():
     _as(_user(None, roles=("admin",)))
     try:
-        with patch("app.api.admin.admin_academics.list_pending_approvals") as m:
+        with patch("app.services.admin.admin_academics.list_pending_approvals") as m:
             resp = client.get(f"/api/v1/admin/students/pending?institution_id={TENANT_B}")
     finally:
         _clear()
@@ -697,7 +697,7 @@ def test_tenantless_admin_cannot_filter_by_institution():
 def test_platform_staff_cannot_approve():
     _as(_user(None, roles=("staff",)))
     try:
-        with patch("app.api.admin.admin_academics.approve_student") as m:
+        with patch("app.services.admin.admin_academics.approve_student") as m:
             resp = client.post(f"/api/v1/admin/students/{STUDENT_A}/approve")
     finally:
         _clear()

@@ -1,170 +1,19 @@
-/**
- * Phase 6.20 — Cross-role session lifecycle integration.
- *
- * This suite runs the REAL AuthProvider with the REAL App and the REAL shell
- * selection, and drives the session boundary the way the product does:
- *
- *   login      -> /auth/me -> role -> role shell
- *   refresh    -> saved token re-validated -> the SAME role survives
- *   expiry     -> requestJson -> notifySessionExpired -> AuthProvider -> login
- *   logout     -> authenticated application state removed
- *   multi-tab  -> storage events synchronize sign-out AND sign-in as another
- *                 role (never leaving a tab authenticated on its own)
- *
- * It also pins the browser-storage contract: provider session state may be
- * persisted, but role and authorization decisions are never persisted.
- *
- * Only the HTTP clients are mocked (auth/admin/student/dev auth). No
- * role-specific session system is introduced anywhere.
- */
-
-/// <reference types="vitest/globals" />
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import './__tests__/CrossRoleSessionLifecycle.support.tsx'
+import {
+  ME_STAFF,
+  SAVED_TOKEN,
+  SHELL_MARKERS,
+  dispatchStorageEvent,
+  reportSessionExpired,
+  restoreAs,
+} from './__tests__/CrossRoleSessionLifecycle.support.tsx'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
-import {
-  ACCESS_TOKEN_STORAGE_KEY,
-  REFRESH_TOKEN_STORAGE_KEY,
-} from './features/auth/AuthProvider.tsx'
-import { mockAllLoaded } from './features/student/studentTestFixtures.ts'
-import * as authService from './services/auth.ts'
-import * as adminApi from './services/adminApi.ts'
-import {
-  SESSION_EXPIRED_MESSAGE,
-  notifySessionExpired,
-  resetSessionExpiredListeners,
-} from './services/sessionEvents.ts'
-import type { CurrentUser } from './types/auth.ts'
-import type { DashboardSummary } from './types/admin.ts'
-import { emptyDashboardSummary } from './test/adminDashboardFixtures.ts'
-
-vi.mock('./services/auth.ts', async () => {
-  const actual = await vi.importActual<typeof import('./services/auth.ts')>(
-    './services/auth.ts',
-  )
-  return { ...actual, authenticate: vi.fn(), fetchCurrentUser: vi.fn() }
-})
-
-vi.mock('./services/devAuth.ts', () => ({
-  fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
-}))
-
-vi.mock('./services/adminApi.ts')
-vi.mock('./services/studentApi.ts', () => ({
-  StudentApiError: class StudentApiError extends Error {
-    readonly status = 0
-    readonly code: string | null = null
-  },
-  getMyAcademicProfile: vi.fn(),
-  getMyAttendanceSummary: vi.fn(),
-  getMyResultsSummary: vi.fn(),
-  getMyTestResultsSummary: vi.fn(),
-  getMyNotices: vi.fn(),
-  getMyResources: vi.fn(),
-}))
-
-const SAVED_TOKEN = 'saved-session-token'
-
-const ME_ADMIN: CurrentUser = {
-  authenticated: true,
-  user_id: '11111111-1111-1111-1111-111111111111',
-  auth_user_id: 'aaaaaaaa-0000-0000-0000-00000000000a',
-  email: 'admin.a@college.edu',
-  role: 'admin',
-  institution_id: '30000000-0000-0000-0000-000000000001',
-}
-
-const ME_STAFF: CurrentUser = {
-  authenticated: true,
-  user_id: '22222222-2222-2222-2222-222222222221',
-  auth_user_id: 'bbbbbbbb-0000-0000-0000-00000000000a',
-  email: 'staff.a@college.edu',
-  role: 'staff',
-  institution_id: '30000000-0000-0000-0000-000000000001',
-}
-
-const ME_FACULTY: CurrentUser = {
-  authenticated: true,
-  user_id: '33333333-3333-3333-3333-333333333331',
-  auth_user_id: 'cccccccc-0000-0000-0000-00000000000a',
-  email: 'faculty.a@college.edu',
-  role: 'faculty',
-  institution_id: '30000000-0000-0000-0000-000000000001',
-}
-
-const ME_STUDENT: CurrentUser = {
-  authenticated: true,
-  user_id: '44444444-4444-4444-4444-444444444442',
-  auth_user_id: 'dddddddd-0000-0000-0000-00000000000b',
-  email: 'student.b@college.edu',
-  role: 'student',
-  institution_id: '30000000-0000-0000-0000-000000000002',
-}
-
-const ME_BY_ROLE: Readonly<Record<string, CurrentUser>> = {
-  admin: ME_ADMIN,
-  staff: ME_STAFF,
-  faculty: ME_FACULTY,
-  student: ME_STUDENT,
-}
-
-const SHELL_MARKERS: Readonly<Record<string, string>> = {
-  admin: 'Admin navigation',
-  staff: 'Staff navigation',
-  faculty: 'Faculty navigation',
-  student: 'Student navigation',
-}
-
-const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
-
-/** A 401 reported by an authenticated request is what the client publishes. */
-function reportSessionExpired(token: string): void {
-  act(() => {
-    notifySessionExpired(token)
-  })
-}
-
-function dispatchStorageEvent(newValue: string | null): void {
-  act(() => {
-    if (newValue === null) {
-      window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
-    } else {
-      window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, newValue)
-    }
-    window.dispatchEvent(
-      new StorageEvent('storage', {
-        key: ACCESS_TOKEN_STORAGE_KEY,
-        storageArea: window.localStorage,
-        newValue,
-      }),
-    )
-  })
-}
-
-beforeEach(() => {
-  window.localStorage.clear()
-  window.sessionStorage.clear()
-  resetSessionExpiredListeners()
-  vi.mocked(authService.authenticate).mockReset()
-  vi.mocked(authService.fetchCurrentUser).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
-  vi.mocked(adminApi.listPendingStudents).mockReset()
-  vi.mocked(adminApi.listPendingStudents).mockResolvedValue([])
-  mockAllLoaded()
-})
-
-function restoreAs(role: string): void {
-  window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, SAVED_TOKEN)
-  window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, 'saved-refresh-token')
-  window.localStorage.setItem(
-    'college-ai-chatbot.session-expires-at',
-    String(Date.now() + 3_600_000),
-  )
-  vi.mocked(authService.fetchCurrentUser).mockResolvedValue(ME_BY_ROLE[role])
-}
-
+import { ACCESS_TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY } from './features/auth/session/AuthProvider.tsx'
+import * as authService from './services/auth/auth.ts'
+import { SESSION_EXPIRED_MESSAGE } from './services/shared/sessionEvents.ts'
 describe('session restore (refresh) across roles', () => {
   it('restores each role into its own shell from the saved token', async () => {
     for (const role of ['admin', 'staff', 'faculty', 'student'] as const) {
@@ -173,15 +22,11 @@ describe('session restore (refresh) across roles', () => {
       restoreAs(role)
 
       const view = render(<App />)
-      expect(
-        await screen.findByRole('navigation', { name: SHELL_MARKERS[role] }),
-      ).toBeInTheDocument()
+      expect(await screen.findByRole('navigation', { name: SHELL_MARKERS[role] })).toBeInTheDocument()
       // Exactly one shell, exactly one authenticated request (/auth/me).
       for (const other of Object.keys(SHELL_MARKERS)) {
         if (other === role) continue
-        expect(
-          screen.queryByRole('navigation', { name: SHELL_MARKERS[other] }),
-        ).not.toBeInTheDocument()
+        expect(screen.queryByRole('navigation', { name: SHELL_MARKERS[other] })).not.toBeInTheDocument()
       }
       expect(authService.fetchCurrentUser).toHaveBeenCalledTimes(1)
       expect(authService.fetchCurrentUser).toHaveBeenCalledWith(SAVED_TOKEN)
@@ -274,14 +119,11 @@ describe('multi-tab session synchronization', () => {
     vi.mocked(authService.fetchCurrentUser).mockResolvedValue(ME_STAFF)
     dispatchStorageEvent('other-tab-token')
 
-    expect(
-      await screen.findByRole('navigation', { name: 'Staff navigation' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Staff navigation' })).toBeInTheDocument()
     expect(authService.fetchCurrentUser).toHaveBeenCalledWith('other-tab-token')
     expect(window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBe('other-tab-token')
   })
 })
-
 
 describe('browser storage audit across roles', () => {
   it('persists provider session state, but no role data or credentials', async () => {
@@ -292,9 +134,7 @@ describe('browser storage audit across roles', () => {
       restoreAs(role)
 
       const view = render(<App />)
-      expect(
-        await screen.findByRole('navigation', { name: SHELL_MARKERS[role] }),
-      ).toBeInTheDocument()
+      expect(await screen.findByRole('navigation', { name: SHELL_MARKERS[role] })).toBeInTheDocument()
 
       expect(window.localStorage.length).toBe(3)
       expect(window.localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)).toBe('saved-refresh-token')

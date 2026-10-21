@@ -5,15 +5,19 @@ from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
+from fastapi.routing import iter_route_contexts
 
-from app.api import faculty, institutions, organizations
-from app.api.admin import _ADMIN_ROUTE_PERMISSIONS, router as admin_router
-from app.api.platform import _PLATFORM_ROUTE_PERMISSIONS, router as platform_router
+from app.api.faculty import faculty
+from app.api.platform import institutions
+from app.api.platform import organizations
+from app.api.admin.dependencies import _ADMIN_ROUTE_PERMISSIONS
+from app.api.admin.admin import router as admin_router
+from app.api.platform.platform import _PLATFORM_ROUTE_PERMISSIONS, router as platform_router
 from app.core.errors import AppError
 from app.core.permissions import DELEGABLE_STAFF_PERMISSIONS
 from app.core.security import get_current_user
 from app.db import supabase
-from app.services import phase81_rbac
+from app.services.auth import phase81_rbac
 from app.main import app
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -49,12 +53,11 @@ def test_all_admin_and_platform_methods_have_permission_policies() -> None:
         (admin_router, _ADMIN_ROUTE_PERMISSIONS, "/admin"),
         (platform_router, _PLATFORM_ROUTE_PERMISSIONS, "/platform"),
     ):
-        for route in router.routes:
-            route_path = getattr(route, "path", "")
-            if not route_path.startswith(prefix):
+        for route in iter_route_contexts(router.routes):
+            if not route.path or not route.path.startswith(prefix):
                 continue
-            normalized = route_path[route_path.rfind(prefix):]
-            for method in route.methods - {"HEAD", "OPTIONS"}:
+            normalized = route.path[route.path.rfind(prefix):]
+            for method in (route.methods or set()) - {"HEAD", "OPTIONS"}:
                 assert (method, normalized) in policies
 
 
@@ -111,7 +114,7 @@ def test_direct_staff_grants_require_matching_active_staff_institution_scope(
         "permissions_resolved": True,
     }
     with (
-        patch("app.core.security.verify_jwt", return_value={"sub": "auth-actor"}),
+        patch("app.core.security.tokens.verify_jwt", return_value={"sub": "auth-actor"}),
         patch(
             "app.db.supabase.get_user_by_auth_id",
             new=AsyncMock(return_value=user_record),
@@ -212,10 +215,10 @@ def test_staff_permission_api_rejects_non_delegable_permission_before_rpc() -> N
 def test_staff_permission_api_requires_staff_target_in_same_institution() -> None:
     with (
         patch(
-            "app.services.phase81_rbac._staff_member",
+            "app.services.auth.phase81_rbac._staff_member",
             side_effect=AppError("Active Staff member not found", 404, "STAFF_MEMBER_NOT_FOUND"),
         ),
-        patch("app.services.phase81_rbac.get_admin_client") as get_client,
+        patch("app.services.auth.phase81_rbac.get_admin_client") as get_client,
     ):
         with pytest.raises(AppError) as error:
             phase81_rbac.change_staff_permissions(
@@ -239,9 +242,9 @@ def test_staff_grant_mutation_uses_atomic_rpc_and_returns_effective_sources() ->
         "delegable_permissions": ["attendance.manage"],
     }
     with (
-        patch("app.services.phase81_rbac._staff_member", return_value={"id": TARGET}),
-        patch("app.services.phase81_rbac.get_admin_client", return_value=db),
-        patch("app.services.phase81_rbac.list_staff_permissions", return_value=expected),
+        patch("app.services.auth.phase81_rbac._staff_member", return_value={"id": TARGET}),
+        patch("app.services.auth.phase81_rbac.get_admin_client", return_value=db),
+        patch("app.services.auth.phase81_rbac.list_staff_permissions", return_value=expected),
     ):
         result = phase81_rbac.change_staff_permissions(
             _resolved_user("admin", ["permissions.manage"]),
@@ -267,7 +270,7 @@ def test_staff_grant_mutation_uses_atomic_rpc_and_returns_effective_sources() ->
 def test_faculty_assignment_mutation_uses_atomic_rpc() -> None:
     db = MagicMock()
     db.rpc.return_value.execute.return_value.data = "assignment-id"
-    with patch("app.services.phase81_rbac.get_admin_client", return_value=db):
+    with patch("app.services.auth.phase81_rbac.get_admin_client", return_value=db):
         result = phase81_rbac.manage_faculty_assignment(
             _resolved_user("admin", ["faculty.assignments.manage"]),
             UUID(TENANT_A),
@@ -304,11 +307,11 @@ def test_notification_read_permission_cannot_authorize_read_state_mutation() -> 
     try:
         with (
             patch(
-                "app.api.student_notifications.student_context_service.get_student_context",
+                "app.api.students.student_notifications.student_context_service.get_student_context",
                 return_value={"student_id": TARGET},
             ),
             patch(
-                "app.api.student_notifications.notifications_service.mark_own_notification_read"
+                "app.api.students.student_notifications.notifications_service.mark_own_notification_read"
             ) as mark_read,
         ):
             response = client.patch(
@@ -334,10 +337,10 @@ def test_organization_decision_denies_platform_role_without_permission() -> None
     app.dependency_overrides[get_current_user] = lambda: user
     with (
         patch(
-            "app.api.organizations.get_authorization_context_for_user",
+            "app.api.platform.organizations.get_authorization_context_for_user",
             return_value=object(),
         ),
-        patch("app.api.organizations.decide_organization") as decide,
+        patch("app.api.platform.organizations.decide_organization") as decide,
     ):
         response = client.post(
             "/api/v1/organizations/00000000-0000-0000-0000-000000000009/decision",
@@ -353,10 +356,10 @@ def test_institution_decision_requires_organization_scoped_permission() -> None:
     try:
         with (
             patch(
-                "app.api.institutions.get_authorization_context_for_user",
+                "app.api.platform.institutions.get_authorization_context_for_user",
                 return_value=object(),
             ),
-            patch("app.api.institutions.decide_join_request") as decide,
+            patch("app.api.platform.institutions.decide_join_request") as decide,
         ):
             response = client.post(
                 "/api/v1/institutions/join-requests/"

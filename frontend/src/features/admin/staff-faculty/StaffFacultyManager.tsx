@@ -4,7 +4,7 @@ import {
   decideMembershipRequest,
   listMembershipRequests,
   listMembershipRoster,
-} from '../../../services/adminApi.ts'
+} from '../../../services/admin/adminApi.ts'
 import type {
   MembershipRequest,
   MembershipRole,

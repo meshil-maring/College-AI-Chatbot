@@ -1,4 +1,4 @@
-/** Exact public HTTP contracts from backend/app/schemas/chat.py. */
+/** Exact public HTTP contracts from backend/app/schemas/ai/chat.py. */
 export interface PublicChatRequest {
   institution_code: string
   message: string

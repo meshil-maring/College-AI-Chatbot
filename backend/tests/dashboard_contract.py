@@ -7,7 +7,7 @@ tests cannot drift from the real schema.
 
 from __future__ import annotations
 
-from app.schemas.admin_dashboard import (
+from app.schemas.admin.admin_dashboard import (
     DashboardAcademics,
     DashboardCommunication,
     DashboardInstitution,

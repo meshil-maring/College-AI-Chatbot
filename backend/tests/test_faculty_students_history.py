@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.errors import AppError
-from app.services import faculty_students as service
+from app.services.faculty import faculty_students as service
 
 TENANT = '11111111-1111-4111-8111-111111111111'
 SECTION = '22222222-2222-4222-8222-222222222222'
@@ -167,7 +167,7 @@ def test_history_handles_multiple_internal_database_pages(database):
 
 
 def test_history_api_paginates_and_rejects_invalid_inputs(monkeypatch):
-    from app.api import faculty as api
+    from app.api.faculty import faculty as api
     from app.main import app
     reader = MagicMock(return_value={'items': [], 'total': 0})
     monkeypatch.setattr(service, 'registration_history', reader)

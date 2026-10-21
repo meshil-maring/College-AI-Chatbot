@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.core.errors import AppError
-from app.services import vector_search
+from app.services.knowledge import vector_search
 
 
 QUERY = [0.25] * 1536

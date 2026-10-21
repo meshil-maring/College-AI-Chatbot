@@ -6,8 +6,8 @@
 
 import { useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
-import { useAuth } from '../../auth/AuthProvider.tsx'
-import { listAttendance } from '../../../services/adminApi.ts'
+import { useAuth } from '../../auth/session/AuthProvider.tsx'
+import { listAttendance } from '../../../services/admin/adminApi.ts'
 import type { AttendanceRecord } from '../../../types/admin.ts'
 
 export default function AttendanceManager() {

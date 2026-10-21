@@ -1,0 +1,98 @@
+.students-empty,
+.students-table td.students-empty {
+  padding: 60px 20px;
+  text-align: center;
+  background: #121a25;
+  color: #a4b7d3;
+  white-space: normal;
+}
+.students-empty > svg {
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 16px;
+  color: #7d94b7;
+}
+.students-empty h2 {
+  margin-bottom: 7px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #e4ecfa;
+}
+.students-empty p {
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.students-empty .students-text-button {
+  margin-top: 10px;
+}
+.students-table.directory {
+  min-width: 700px;
+}
+.students-table.directory td {
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+.students-roster-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.students-roster-identity > span {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid #334259;
+  border-radius: 7px;
+  background: #233044;
+  color: #b7c9e5;
+}
+.students-roster-identity svg {
+  width: 16px;
+  height: 16px;
+}
+.students-roster-identity strong {
+  font-weight: 550;
+}
+.students-onboarding-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.students-onboarding-card {
+  padding: 35px 30px;
+  border: 1px solid #2d3b4f;
+  border-radius: 12px;
+  background: linear-gradient(140deg, #192330, #111923);
+}
+.students-onboarding-card .students-upload-icon {
+  margin-left: 0;
+}
+.students-onboarding-card h2 {
+  font-size: 19px;
+  font-weight: 600;
+}
+.students-onboarding-card p {
+  margin: 10px 0 25px;
+  font-size: 13px;
+  color: #a9bbd5;
+}
+.students-onboarding-card small {
+  display: block;
+  margin-top: 12px;
+  color: #a9bbd5;
+  font-size: 11px;
+}
+.students-confirm {
+  margin-top: 20px;
+  padding: 35px 25px;
+  border: 1px solid #2b3a4f;
+  border-radius: 9px;
+  background: #121c28;
+  text-align: center;
+}
+.students-confirm .students-alert {
+  max-width: 650px;
+  margin: 20px auto;
+  text-align: left;
+}

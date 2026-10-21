@@ -2,18 +2,18 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StudentManager from './StudentManager.tsx'
-import { adminStudentWorkspaceApi as api } from '../../../services/adminStudentWorkspaceApi.ts'
-import { getFacultyAttendanceAssignments, getFacultyAttendanceStudents } from '../../../services/facultyAttendanceApi.ts'
-import { listPendingStudents } from '../../../services/adminApi.ts'
+import { adminStudentWorkspaceApi as api } from '../../../services/admin/adminStudentWorkspaceApi.ts'
+import { getFacultyAttendanceAssignments, getFacultyAttendanceStudents } from '../../../services/faculty/facultyAttendanceApi.ts'
+import { listPendingStudents } from '../../../services/admin/adminApi.ts'
 import { readStudentFile } from './studentImport.ts'
-import type { ClassStudentRegistration } from '../../../services/studentRegistrationApi.ts'
+import type { ClassStudentRegistration } from '../../../services/students/studentRegistrationApi.ts'
 
-vi.mock('../../../services/adminStudentWorkspaceApi.ts')
-vi.mock('../../../services/facultyAttendanceApi.ts')
-vi.mock('../../../services/adminApi.ts')
+vi.mock('../../../services/admin/adminStudentWorkspaceApi.ts')
+vi.mock('../../../services/faculty/facultyAttendanceApi.ts')
+vi.mock('../../../services/admin/adminApi.ts')
 vi.mock('./studentImport.ts', async (original) => ({ ...await original<typeof import('./studentImport.ts')>(), readStudentFile: vi.fn(), downloadCsv: vi.fn() }))
 const auth = vi.hoisted(() => ({ status: 'authenticated', accessToken: 'token', user: { institution_id: 'institution-a' as string | null, effective_permissions: ['*'] as string[] } }))
-vi.mock('../../auth/AuthProvider.tsx', () => ({ useAuth: () => auth }))
+vi.mock('../../auth/session/AuthProvider.tsx', () => ({ useAuth: () => auth }))
 const assignment = { can_manage: true, assignment_id: 'section-1', section_id: 'section-1', assigned_at: '', academic_year_id: 'year-1', semester_id: 'semester-1', section: { section_id: 'section-1', name: 'Section A', code: 'A', program_id: 'program-1', program: { program_id: 'program-1', name: 'Computer Science', degree_type: 'B.Tech' }, course: { name: 'Data Mining', code: 'CS501' } } }
 const student = { roster_id: 'roster-1', student_name: 'Ada Rao', register_number: 'CS001', university_roll_number: 'UNI001', email: 'ada@college.test', roster_status: 'ACTIVE' as const, linked_student_id: 'private-student', attendance_percentage: 80 }
 const registration: ClassStudentRegistration = { ...student, registration_id: 'registration-1', batch_id: 'batch-1', program_id: 'program-1', section_code: 'A', batch_start_year: 2026, batch_end_year: 2030, identity_conflict: false, subjects_assigned: false }

@@ -4,11 +4,11 @@ import httpx
 import pytest
 
 from app.core.errors import AppError
-from app.schemas.generation import AIContext, AIResponse, RetrievedChunk, SourceReference
-from app.services.context import assemble_context
-from app.services.generation import AIGenerationService, generate_response
-from app.services.generation_provider import GenerationProvider, GenerationResult
-from app.schemas.generation import AIRequest, RetrievalScope
+from app.schemas.ai.generation import AIContext, AIResponse, RetrievedChunk, SourceReference
+from app.services.ai.context import assemble_context
+from app.services.ai.generation import AIGenerationService, generate_response
+from app.services.ai.generation_provider import GenerationProvider, GenerationResult
+from app.schemas.ai.generation import AIRequest, RetrievalScope
 
 
 class DeterministicProvider:
@@ -168,7 +168,7 @@ def test_service_does_not_call_retrieval_database_or_network(monkeypatch: pytest
         raise AssertionError("external dependency was called")
 
     monkeypatch.setattr("app.db.supabase.get_admin_client", fail)
-    monkeypatch.setattr("app.services.retrieval.retrieve", fail, raising=False)
+    monkeypatch.setattr("app.services.knowledge.retrieval.retrieve", fail, raising=False)
     monkeypatch.setattr(httpx.Client, "post", fail)
 
     response = generate_response(valid_context(), DeterministicProvider())

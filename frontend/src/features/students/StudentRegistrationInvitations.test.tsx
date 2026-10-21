@@ -2,10 +2,10 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StudentRegistrationInvitations from './StudentRegistrationInvitations.tsx'
-import { sendStudentRegistrationInvitation, type ClassStudentRegistration, type StudentInvitationDelivery } from '../../services/studentRegistrationApi.ts'
-import { AdminApiError } from '../../services/adminApi.ts'
+import { sendStudentRegistrationInvitation, type ClassStudentRegistration, type StudentInvitationDelivery } from '../../services/students/studentRegistrationApi.ts'
+import { AdminApiError } from '../../services/admin/adminApi.ts'
 
-vi.mock('../../services/studentRegistrationApi.ts', () => ({ sendStudentRegistrationInvitation: vi.fn() }))
+vi.mock('../../services/students/studentRegistrationApi.ts', () => ({ sendStudentRegistrationInvitation: vi.fn() }))
 const students = ['Ada', 'Ben'].map((name, index): ClassStudentRegistration => ({ registration_id: `r${index + 1}`, student_name: name, email: `${name.toLowerCase()}@college.edu`, register_number: `CS${index}`, university_roll_number: null, batch_id: 'batch', batch_start_year: 2026, batch_end_year: 2030, section_code: 'A', program_id: 'program', roster_status: 'UNREGISTERED', linked_student_id: null, identity_conflict: false, subjects_assigned: false }))
 beforeEach(() => vi.resetAllMocks())
 

@@ -5,7 +5,7 @@ import {
   getStaffPermissions,
   listMembershipRoster,
   type StaffPermissionState,
-} from '../../../services/adminApi.ts'
+} from '../../../services/admin/adminApi.ts'
 
 export default function StaffPermissionManager({ accessToken }: { accessToken: string }) {
   const [members, setMembers] = useState<Array<{ user_id: string; name: string; email: string }>>([])

@@ -32,11 +32,11 @@ from fastapi.testclient import TestClient
 
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories import student_dashboard as dashboard_repo
-from app.schemas.student_notices import StudentNoticeList
-from app.schemas.student_resources import StudentResourceList
-from app.services import student_notices as notices_service
-from app.services import student_resources as resources_service
+from app.repositories.students import student_dashboard as dashboard_repo
+from app.schemas.students.student_notices import StudentNoticeList
+from app.schemas.students.student_resources import StudentResourceList
+from app.services.students import student_notices as notices_service
+from app.services.students import student_resources as resources_service
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -149,7 +149,7 @@ def test_service_limit_validation_stays_bounded():
 def test_duplicate_rows_project_one_to_one():
     db = _db_for_student()
     dup = [_notice_row(notice_id=NOTICE_A), _notice_row(notice_id=NOTICE_A)]
-    with patch("app.services.student_context.get_admin_client", return_value=db):
+    with patch("app.services.students.student_context.get_admin_client", return_value=db):
         with patch.object(dashboard_repo, "list_published_notices", return_value=dup):
             result = notices_service.get_own_notices(_student_user())
     assert len(result.items) == 2
@@ -169,7 +169,7 @@ def test_cross_tenant_profile_is_denied_with_403():
     app.dependency_overrides[get_current_user] = lambda: _student_user()
     try:
         db = _db_for_student(institution_id=TENANT_B)
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             response = client.get("/api/v1/students/me/notices")
     finally:
         app.dependency_overrides.pop(get_current_user, None)
@@ -180,7 +180,7 @@ def test_payloads_never_leak_internal_fields_over_http():
     app.dependency_overrides[get_current_user] = lambda: _student_user()
     try:
         db = _db_for_student()
-        with patch("app.services.student_context.get_admin_client", return_value=db):
+        with patch("app.services.students.student_context.get_admin_client", return_value=db):
             with patch.object(dashboard_repo, "list_published_notices", return_value=[_notice_row()]):
                 notices_payload = client.get("/api/v1/students/me/notices").text
             with patch.object(dashboard_repo, "list_published_resources", return_value=[_resource_row()]):

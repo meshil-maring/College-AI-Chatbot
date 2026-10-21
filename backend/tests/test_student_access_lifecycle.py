@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.core.security import get_current_user
 from app.main import app
-from app.services.student_auth import SafeAuthFailure, authenticate_student
+from app.services.auth.student_auth import SafeAuthFailure, authenticate_student
 
 USER = "71000000-0000-0000-0000-000000000001"
 AUTH = "81000000-0000-0000-0000-000000000001"
@@ -46,13 +46,13 @@ def test_legacy_academics_recheck_eligibility_before_read(academic_client, path,
     elif state == "other_tenant":
         row["institution_id"] = OTHER
     with (
-        patch("app.services.student_context.get_admin_client", return_value=MagicMock()),
-        patch("app.repositories.admin_academics.get_student_approval_row_by_user_id", return_value=row),
-        patch("app.services.student_auth._assert_institution_active", side_effect=SafeAuthFailure() if state == "institution_inactive" else None),
-        patch("app.api.students.student_data.get_own_results") as results,
-        patch("app.api.students.student_data.get_own_result") as detail,
-        patch("app.api.students.student_data.get_own_test_results") as tests,
-        patch("app.api.students.student_data.get_own_attendance") as attendance,
+        patch("app.services.students.student_context.get_admin_client", return_value=MagicMock()),
+        patch("app.repositories.admin.admin_academics.get_student_approval_row_by_user_id", return_value=row),
+        patch("app.services.auth.student_auth._assert_institution_active", side_effect=SafeAuthFailure() if state == "institution_inactive" else None),
+        patch("app.api.students.students.student_data.get_own_results") as results,
+        patch("app.api.students.students.student_data.get_own_result") as detail,
+        patch("app.api.students.students.student_data.get_own_test_results") as tests,
+        patch("app.api.students.students.student_data.get_own_attendance") as attendance,
     ):
         response = academic_client.get(f"/api/v1/students/me/{path}")
     assert response.status_code == (401 if state == "institution_inactive" else 403)
@@ -64,14 +64,14 @@ def test_legacy_academics_recheck_eligibility_before_read(academic_client, path,
 def test_approved_legacy_academics_use_only_authenticated_identity(academic_client, path):
     db = MagicMock()
     with (
-        patch("app.services.student_context.get_admin_client", return_value=db),
-        patch("app.services.student_data.get_admin_client", return_value=db),
-        patch("app.repositories.admin_academics.get_student_approval_row_by_user_id", return_value=profile()) as identity,
-        patch("app.repositories.admin_academics.get_student_by_user_id", return_value=profile()),
-        patch("app.services.student_auth._assert_institution_active"),
-        patch("app.repositories.admin_academics.list_student_results", return_value=[]) as results,
-        patch("app.repositories.admin_academics.list_test_results", return_value=[]) as tests,
-        patch("app.repositories.admin_academics.list_student_attendance", return_value=[]) as attendance,
+        patch("app.services.students.student_context.get_admin_client", return_value=db),
+        patch("app.services.students.student_data.get_admin_client", return_value=db),
+        patch("app.repositories.admin.admin_academics.get_student_approval_row_by_user_id", return_value=profile()) as identity,
+        patch("app.repositories.admin.admin_academics.get_student_by_user_id", return_value=profile()),
+        patch("app.services.auth.student_auth._assert_institution_active"),
+        patch("app.repositories.admin.admin_academics.list_student_results", return_value=[]) as results,
+        patch("app.repositories.admin.admin_academics.list_test_results", return_value=[]) as tests,
+        patch("app.repositories.admin.admin_academics.list_student_attendance", return_value=[]) as attendance,
     ):
         response = academic_client.get(f"/api/v1/students/me/{path}", params={"student_id": OTHER, "institution_id": OTHER})
     assert response.status_code == 200
@@ -85,12 +85,12 @@ def test_approved_student_cannot_read_another_students_result(academic_client, f
     row = {"student_id": OTHER, "institution_id": OTHER if foreign_tenant else TENANT,
            "status": "published"}
     with (
-        patch("app.services.student_context.get_admin_client", return_value=MagicMock()),
-        patch("app.services.student_data.get_admin_client", return_value=MagicMock()),
-        patch("app.repositories.admin_academics.get_student_approval_row_by_user_id", return_value=profile()),
-        patch("app.repositories.admin_academics.get_student_by_user_id", return_value=profile()),
-        patch("app.services.student_auth._assert_institution_active"),
-        patch("app.repositories.results.get_student_result_with_items", return_value=row),
+        patch("app.services.students.student_context.get_admin_client", return_value=MagicMock()),
+        patch("app.services.students.student_data.get_admin_client", return_value=MagicMock()),
+        patch("app.repositories.admin.admin_academics.get_student_approval_row_by_user_id", return_value=profile()),
+        patch("app.repositories.admin.admin_academics.get_student_by_user_id", return_value=profile()),
+        patch("app.services.auth.student_auth._assert_institution_active"),
+        patch("app.repositories.academics.results.get_student_result_with_items", return_value=row),
     ):
         response = academic_client.get(f"/api/v1/students/me/results/{RESULT}")
     assert response.status_code == 404
@@ -104,10 +104,10 @@ def test_identifier_login_rejects_unusable_public_account(account):
     db = MagicMock()
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = account
     with (
-        patch("app.services.student_auth.get_admin_client", return_value=db),
-        patch("app.services.student_auth._resolve_identity", return_value=("fixture@example.com", TENANT, profile())),
-        patch("app.services.student_auth._assert_institution_active"),
-        patch("app.services.student_auth._supabase_sign_in") as provider,
+        patch("app.services.auth.student_auth.get_admin_client", return_value=db),
+        patch("app.services.auth.student_auth._resolve_identity", return_value=("fixture@example.com", TENANT, profile())),
+        patch("app.services.auth.student_auth._assert_institution_active"),
+        patch("app.services.auth.student_auth._supabase_sign_in") as provider,
     ):
         with pytest.raises(SafeAuthFailure):
             authenticate_student("REG-FIXTURE", "test-password", "FIXTURE")
@@ -120,10 +120,10 @@ def test_identifier_login_rejects_mismatched_auth_link():
         "status": "active", "auth_user_id": AUTH,
     }
     with (
-        patch("app.services.student_auth.get_admin_client", return_value=db),
-        patch("app.services.student_auth._resolve_identity", return_value=("fixture@example.com", TENANT, profile())),
-        patch("app.services.student_auth._assert_institution_active"),
-        patch("app.services.student_auth._supabase_sign_in", return_value={"user": {"id": OTHER}}),
+        patch("app.services.auth.student_auth.get_admin_client", return_value=db),
+        patch("app.services.auth.student_auth._resolve_identity", return_value=("fixture@example.com", TENANT, profile())),
+        patch("app.services.auth.student_auth._assert_institution_active"),
+        patch("app.services.auth.student_auth._supabase_sign_in", return_value={"user": {"id": OTHER}}),
     ):
         with pytest.raises(SafeAuthFailure):
             authenticate_student("REG-FIXTURE", "test-password", "FIXTURE")

@@ -39,7 +39,7 @@ from fastapi.testclient import TestClient
 
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
 from app.main import app
-from app.repositories.admin_academics import STUDENT_APPROVAL_COLUMNS
+from app.repositories.admin.admin_academics import STUDENT_APPROVAL_COLUMNS
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -98,7 +98,7 @@ def _active_institution_authorization():
             "is_active": True,
         }
     )
-    with patch("app.services.authorization.get_admin_client", return_value=db):
+    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
         yield
 
 AUTH_HEADERS = {"Authorization": "Bearer valid.token.here"}
@@ -129,7 +129,7 @@ def _patch_staff_auth(user=STAFF_USER):
     """Authenticate every request as the staff principal."""
     with ExitStack() as stack:
         stack.enter_context(
-            patch("app.core.security.verify_jwt", return_value=STAFF_CLAIMS)
+            patch("app.core.security.tokens.verify_jwt", return_value=STAFF_CLAIMS)
         )
         stack.enter_context(
             patch(
@@ -151,13 +151,13 @@ def _assert_staff_forbidden(method: str, path: str, **kwargs) -> None:
 def _assert_staff_denied_on_student_endpoint(path: str) -> None:
     """The /students/me/* identity chain fails closed for a staff principal."""
     with _patch_staff_auth(), patch(
-        "app.repositories.admin_academics.get_student_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_by_user_id",
         return_value=None,
     ), patch(
-        "app.repositories.admin_academics.get_student_academic_profile_row",
+        "app.repositories.admin.admin_academics.get_student_academic_profile_row",
         return_value=None,
     ), patch(
-        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_approval_row_by_user_id",
         return_value=None,
     ):
         response = client.get(path, headers=AUTH_HEADERS)
@@ -217,7 +217,7 @@ def test_staff_lists_pending_students_for_own_tenant():
     """Tenant-bound staff always receive their OWN institution's queue; the
     tenant is resolved server-side and no institution_id is needed."""
     with _patch_staff_auth(), patch(
-        "app.api.admin.admin_academics.list_pending_approvals",
+        "app.services.admin.admin_academics.list_pending_approvals",
         return_value=[PENDING_STUDENT_ROW],
     ) as list_mock:
         response = client.get("/api/v1/admin/students/pending", headers=AUTH_HEADERS)
@@ -229,7 +229,7 @@ def test_staff_lists_pending_students_for_own_tenant():
 def test_staff_own_institution_filter_is_accepted():
     """An own-institution query filter is accepted (Phase 6.4 contract)."""
     with _patch_staff_auth(), patch(
-        "app.api.admin.admin_academics.list_pending_approvals",
+        "app.services.admin.admin_academics.list_pending_approvals",
         return_value=[],
     ) as list_mock:
         response = client.get(
@@ -244,7 +244,7 @@ def test_staff_own_institution_filter_is_accepted():
 def test_staff_foreign_institution_filter_rejected_with_tenant_mismatch():
     """A foreign ?institution_id= can never widen the staff queue scope."""
     with _patch_staff_auth(), patch(
-        "app.api.admin.admin_academics.list_pending_approvals",
+        "app.services.admin.admin_academics.list_pending_approvals",
     ) as list_mock:
         response = client.get(
             "/api/v1/admin/students/pending",
@@ -257,12 +257,12 @@ def test_staff_foreign_institution_filter_rejected_with_tenant_mismatch():
 
 def test_staff_approves_pending_student_within_own_tenant():
     with _patch_staff_auth(), patch(
-        "app.api.admin.admin_academics.approve_student",
+        "app.services.admin.admin_academics.approve_student",
         return_value=dict(PENDING_STUDENT_ROW, approval_status="approved"),
     ) as approve_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.api.admin.common.record_admin_action"
     ) as audit_mock, patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ):
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_A}/approve", headers=AUTH_HEADERS
@@ -275,12 +275,12 @@ def test_staff_approves_pending_student_within_own_tenant():
 
 def test_staff_rejects_pending_student_within_own_tenant():
     with _patch_staff_auth(), patch(
-        "app.api.admin.admin_academics.reject_student",
+        "app.services.admin.admin_academics.reject_student",
         return_value=dict(PENDING_STUDENT_ROW, approval_status="rejected"),
     ) as reject_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.api.admin.common.record_admin_action"
     ), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ):
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_A}/reject", headers=AUTH_HEADERS
@@ -295,12 +295,12 @@ def test_staff_cannot_approve_cross_tenant_student():
     service enforces tenant BEFORE any state change; no write happens."""
     foreign_student = dict(PENDING_STUDENT_ROW, institution_id=INSTITUTION_B)
     with _patch_staff_auth(), patch(
-        "app.services.admin_academics.get_admin_client", return_value=MagicMock()
+        "app.services.admin.admin_academics.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.services.admin_academics.academics_repo.get_student_for_approval",
+        "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
         return_value=foreign_student,
     ), patch(
-        "app.services.admin_academics.academics_repo.set_student_approval_status"
+        "app.services.admin.admin_academics.academics_repo.set_student_approval_status"
     ) as write_mock:
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_B}/approve", headers=AUTH_HEADERS
@@ -313,12 +313,12 @@ def test_staff_cannot_approve_cross_tenant_student():
 def test_staff_cannot_reject_cross_tenant_student():
     foreign_student = dict(PENDING_STUDENT_ROW, institution_id=INSTITUTION_B)
     with _patch_staff_auth(), patch(
-        "app.services.admin_academics.get_admin_client", return_value=MagicMock()
+        "app.services.admin.admin_academics.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.services.admin_academics.academics_repo.get_student_for_approval",
+        "app.services.admin.admin_academics.academics_repo.get_student_for_approval",
         return_value=foreign_student,
     ), patch(
-        "app.services.admin_academics.academics_repo.set_student_approval_status"
+        "app.services.admin.admin_academics.academics_repo.set_student_approval_status"
     ) as write_mock:
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_B}/reject", headers=AUTH_HEADERS
@@ -345,12 +345,12 @@ def test_staff_cannot_widen_approval_scope_with_identity_parameters():
     """student_id/institution_id supplied by the client are never an
     authorization mechanism: approval scope comes from the JWT context."""
     with _patch_staff_auth(), patch(
-        "app.api.admin.admin_academics.approve_student",
+        "app.services.admin.admin_academics.approve_student",
         return_value=dict(PENDING_STUDENT_ROW, approval_status="approved"),
     ) as approve_mock, patch(
-        "app.api.admin.record_admin_action"
+        "app.api.admin.common.record_admin_action"
     ), patch(
-        "app.api.admin.get_admin_client", return_value=MagicMock()
+        "app.api.admin.common.get_admin_client", return_value=MagicMock()
     ):
         response = client.post(
             f"/api/v1/admin/students/{STUDENT_B}/approve",
@@ -489,10 +489,10 @@ def test_staff_identity_parameters_cannot_widen_student_scope():
     mechanism: the student identity chain ignores them and still fails
     closed for a staff principal (no student profile)."""
     with _patch_staff_auth(), patch(
-        "app.repositories.admin_academics.get_student_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_by_user_id",
         return_value=None,
     ), patch(
-        "app.repositories.admin_academics.get_student_approval_row_by_user_id",
+        "app.repositories.admin.admin_academics.get_student_approval_row_by_user_id",
         return_value=None,
     ):
         response = client.get(
@@ -513,7 +513,7 @@ def test_staff_can_list_own_conversations():
     """Conversations authenticate with get_current_user (any role) and scope
     to the authenticated user_id server-side."""
     with _patch_staff_auth(), patch(
-        "app.api.conversations.get_user_conversations",
+        "app.api.ai.conversations.get_user_conversations",
         return_value=[],
     ) as conversations_mock:
         response = client.get("/api/v1/conversations", headers=AUTH_HEADERS)
@@ -530,7 +530,7 @@ def _ingest_with_tenant(ks_institution: str | None):
     """POST /documents/ingest as staff against a knowledge source whose
     tenant is controlled by the test. The downstream pipeline is stubbed so
     the test isolates ONLY the role + tenant authorization gate."""
-    from app.schemas.ingestion import IngestResponse
+    from app.schemas.knowledge.ingestion import IngestResponse
 
     claims = dict(STAFF_CLAIMS)
     user = dict(STAFF_USER, institution_id=INSTITUTION_A)
@@ -544,12 +544,12 @@ def _ingest_with_tenant(ks_institution: str | None):
         storage_object_key="k",
     )
     with (
-        patch("app.core.security.verify_jwt", return_value=claims),
+        patch("app.core.security.tokens.verify_jwt", return_value=claims),
         patch("app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=user)),
-        patch("app.api.ingestion.get_admin_client", return_value=db),
-        patch("app.api.ingestion.get_knowledge_source", return_value=ks),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=db),
+        patch("app.api.knowledge.ingestion.get_knowledge_source", return_value=ks),
         patch(
-            "app.api.ingestion.ingest_document",
+            "app.api.knowledge.ingestion.ingest_document",
             new=AsyncMock(return_value=stub_response),
         ),
     ):

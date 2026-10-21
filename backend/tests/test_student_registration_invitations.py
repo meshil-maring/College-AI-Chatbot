@@ -7,8 +7,10 @@ import pytest
 from pydantic import ValidationError
 
 from app.core.errors import AppError
-from app.schemas.student_registrations import StudentRegistrationCreate
-from app.services import email_delivery, student_registration_invitations as service, student_registrations
+from app.schemas.students.student_registrations import StudentRegistrationCreate
+from app.services.email import email_delivery
+from app.services.invitations import student_registration_invitations as service
+from app.services.students import student_registrations
 from tests.test_student_class_registrations import Database, Query, SCOPE, TENANT, SECTION, USER, BATCH, stored, principal
 
 REGISTRATION = '88888888-8888-4888-8888-888888888888'

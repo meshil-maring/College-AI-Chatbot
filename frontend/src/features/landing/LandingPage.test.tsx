@@ -14,12 +14,12 @@ const authState = vi.hoisted(() => ({
   logout: vi.fn(),
 }))
 
-vi.mock('../auth/AuthProvider.tsx', () => ({
+vi.mock('../auth/session/AuthProvider.tsx', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => authState,
 }))
 
-vi.mock('../../services/devAuth.ts', () => ({
+vi.mock('../../services/auth/devAuth.ts', () => ({
   fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
 }))
 

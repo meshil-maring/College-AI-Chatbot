@@ -43,9 +43,9 @@ from app.core.errors import AppError
 from app.core.security import assert_tenant_object, scope_tenant
 from app.db.supabase import get_sign_in_context, get_user_by_auth_id
 from app.main import app
-from app.services.sign_in import _has_student_profile, assert_sign_in_allowed
-from app.services.student_auth import SafeAuthFailure
-from app.services.auth_security import reset_auth_abuse_state
+from app.services.auth.sign_in import _has_student_profile, assert_sign_in_allowed
+from app.services.auth.student_auth import SafeAuthFailure
+from app.services.auth.auth_security import reset_auth_abuse_state
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -175,9 +175,9 @@ def login_api(
     """POST /api/v1/auth/login with the EXISTING flow patched end-to-end."""
     auth = auth or auth_client(user_email=email)
     db = db or institution_db()
-    with patch("app.api.auth.create_supabase_client", return_value=auth), patch(
-        "app.api.auth.get_sign_in_context", new=AsyncMock(return_value=account)
-    ), patch("app.api.auth.get_admin_client", return_value=db):
+    with patch("app.api.auth.common.create_supabase_client", return_value=auth), patch(
+        "app.api.auth.common.get_sign_in_context", new=AsyncMock(return_value=account)
+    ), patch("app.api.auth.common.get_admin_client", return_value=db):
         return client.post(LOGIN_URL, json={"email": email, "password": password})
 
 
@@ -225,18 +225,18 @@ def student_login_api(
     payload: dict[str, Any] = {"identifier": identifier, "password": password}
     if institution_code is not None:
         payload["institution_code"] = institution_code
-    with patch("app.services.student_auth.get_admin_client", return_value=db), patch(
-        "app.services.student_auth.create_supabase_client", return_value=auth
+    with patch("app.services.auth.student_auth.get_admin_client", return_value=db), patch(
+        "app.services.auth.student_auth.create_supabase_client", return_value=auth
     ), patch(
-        "app.services.student_auth._find_institution_by_code", return_value=institution
+        "app.services.auth.student_auth._find_institution_by_code", return_value=institution
     ), patch(
-        "app.repositories.admin_academics.get_student_by_email_global",
+        "app.repositories.admin.admin_academics.get_student_by_email_global",
         return_value=by_email,
     ), patch(
-        "app.repositories.admin_academics.get_student_by_register_number",
+        "app.repositories.admin.admin_academics.get_student_by_register_number",
         return_value=by_register,
     ), patch(
-        "app.repositories.admin_academics.get_student_by_university_roll_number",
+        "app.repositories.admin.admin_academics.get_student_by_university_roll_number",
         return_value=by_roll,
     ):
         return client.post(STUDENT_LOGIN_URL, json=payload)
@@ -551,9 +551,9 @@ def _active_institution_authorization():
     )
     reset_auth_abuse_state()
     with (
-        patch("app.services.authorization.get_admin_client", return_value=db),
-        patch("app.api.auth.record_auth_security_event"),
-        patch("app.api.student_auth.record_auth_security_event"),
+        patch("app.services.auth.authorization.get_admin_client", return_value=db),
+        patch("app.api.auth.common.record_auth_security_event"),
+        patch("app.api.auth.student_auth.record_auth_security_event"),
     ):
         yield
     reset_auth_abuse_state()
@@ -562,7 +562,7 @@ def _active_institution_authorization():
 def _as_authenticated(fake_user: dict):
     """Patch JWT verification + public.users resolution (existing Phase 6)."""
     return (
-        patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS),
+        patch("app.core.security.tokens.verify_jwt", return_value=FAKE_CLAIMS),
         patch(
             "app.db.supabase.get_user_by_auth_id",
             new=AsyncMock(return_value=fake_user),
@@ -600,7 +600,7 @@ def test_pending_faculty_login_returns_actionable_message_after_credentials_veri
         "status": "pending",
     }
     with patch(
-        "app.api.auth.tenancy_repo.get_pending_membership_request_for_user",
+        "app.repositories.platform.tenancy.get_pending_membership_request_for_user",
         return_value=pending,
     ):
         response = login_api(
@@ -629,7 +629,7 @@ def test_pending_staff_login_returns_actionable_message_after_credentials_verify
         "status": "pending",
     }
     with patch(
-        "app.api.auth.tenancy_repo.get_pending_membership_request_for_user",
+        "app.repositories.platform.tenancy.get_pending_membership_request_for_user",
         return_value=pending,
     ):
         response = login_api(
@@ -660,10 +660,10 @@ def test_unconfirmed_pending_faculty_gets_pending_message_not_invalid_credential
         "status": "pending",
     }
     with patch(
-        "app.api.auth.tenancy_repo.get_user_by_email",
+        "app.repositories.platform.tenancy.get_user_by_email",
         return_value={"user_id": str(uuid4()), "email": FACULTY_EMAIL},
     ), patch(
-        "app.api.auth.tenancy_repo.get_pending_membership_request_for_user",
+        "app.repositories.platform.tenancy.get_pending_membership_request_for_user",
         return_value=pending,
     ):
         response = login_api(
@@ -742,7 +742,7 @@ def test_14c_approved_staff_role_resolved_server_side():
     projection = _auth_user(user, roles=("staff",), institution_id=INSTITUTION_A)
     verify, db = _as_authenticated(projection)
     with verify, db, patch(
-        "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+        "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
     ) as listing:
         response = client.get(
             "/api/v1/admin/students/pending",
@@ -876,7 +876,7 @@ def test_17c_tenant_bound_admin_own_institution_is_scoped_not_substituted():
     projection = _auth_user(user, roles=("admin",), institution_id=INSTITUTION_A)
     verify, db = _as_authenticated(projection)
     with verify, db, patch(
-        "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+        "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
     ) as listing:
         response = client.get(
             f"/api/v1/admin/students/pending?institution_id={INSTITUTION_A}",
@@ -895,7 +895,7 @@ def test_18_organization_scope_cannot_be_overridden():
 
 def test_18b_organization_scope_comes_from_user_roles_only():
     """Client-declared scope fields are ignored; user_roles is authoritative."""
-    from app.services.authorization import INSTITUTION, resolve_authorization_context
+    from app.services.auth.authorization import INSTITUTION, resolve_authorization_context
 
     user = {
         "user_id": uuid4(),
@@ -919,11 +919,11 @@ def test_18b_organization_scope_comes_from_user_roles_only():
         }
     ]
     with patch(
-        "app.services.authorization.get_admin_client", return_value=MagicMock()
+        "app.services.auth.authorization.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.repositories.tenancy.get_user_role_scope_rows", return_value=rows
+        "app.repositories.platform.tenancy.get_user_role_scope_rows", return_value=rows
     ), patch(
-        "app.repositories.tenancy.get_institution_organization",
+        "app.repositories.platform.tenancy.get_institution_organization",
         return_value=ORGANIZATION_ID,
     ):
         context = resolve_authorization_context(user)
@@ -952,9 +952,9 @@ def test_19_cross_institution_access_denied():
     }
     verify, db = _as_authenticated(projection)
     with verify, db, patch(
-        "app.services.admin_academics.get_admin_client", return_value=MagicMock()
+        "app.services.admin.admin_academics.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.repositories.admin_academics.get_student_for_approval",
+        "app.repositories.admin.admin_academics.get_student_for_approval",
         return_value=target,
     ):
         response = client.post(
@@ -988,7 +988,7 @@ def test_19b_cross_institution_login_requires_correct_institution_code():
 
 def test_19c_cross_institution_student_lookup_uses_scoped_query():
     """The repository lookup is always filtered by institution_id."""
-    from app.repositories import admin_academics as academics_repo
+    from app.repositories.admin import admin_academics as academics_repo
 
     db = MagicMock()
     table = MagicMock()
@@ -1018,7 +1018,7 @@ def test_20a_tenant_resolution_after_email_login():
     profile = {"student_id": str(STUDENT_B), "institution_id": str(INSTITUTION_A)}
     verify, db = _as_authenticated(projection)
     with verify, db, patch(
-        "app.api.students.student_data.get_own_profile", return_value=profile
+        "app.api.students.students.student_data.get_own_profile", return_value=profile
     ) as get_profile:
         response = client.get(
             "/api/v1/students/me/profile",
@@ -1056,7 +1056,7 @@ def test_20b_tenant_resolution_after_academic_identifier_login():
 
 def test_20c_authorization_context_resolves_scope_from_user_roles():
     """Post-login scope resolution reads user_roles, not the JWT or the client."""
-    from app.services.authorization import INSTITUTION, resolve_authorization_context
+    from app.services.auth.authorization import INSTITUTION, resolve_authorization_context
 
     rows = [
         {
@@ -1070,11 +1070,11 @@ def test_20c_authorization_context_resolves_scope_from_user_roles():
     ]
     user = {"user_id": uuid4(), "email": STAFF_EMAIL, "institution_id": str(INSTITUTION_A)}
     with patch(
-        "app.services.authorization.get_admin_client", return_value=MagicMock()
+        "app.services.auth.authorization.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.repositories.tenancy.get_user_role_scope_rows", return_value=rows
+        "app.repositories.platform.tenancy.get_user_role_scope_rows", return_value=rows
     ), patch(
-        "app.repositories.tenancy.get_institution_organization",
+        "app.repositories.platform.tenancy.get_institution_organization",
         return_value=ORGANIZATION_ID,
     ):
         context = resolve_authorization_context(user)
@@ -1086,7 +1086,7 @@ def test_20c_authorization_context_resolves_scope_from_user_roles():
 
 def test_20d_legacy_unscoped_tenant_row_is_not_widened_to_platform():
     """A pre-6.13 tenant-bound role row keeps institution scope (no escalation)."""
-    from app.services.authorization import INSTITUTION, resolve_authorization_context
+    from app.services.auth.authorization import INSTITUTION, resolve_authorization_context
 
     rows = [
         {
@@ -1100,11 +1100,11 @@ def test_20d_legacy_unscoped_tenant_row_is_not_widened_to_platform():
     ]
     user = {"user_id": uuid4(), "email": STAFF_EMAIL, "institution_id": str(INSTITUTION_A)}
     with patch(
-        "app.services.authorization.get_admin_client", return_value=MagicMock()
+        "app.services.auth.authorization.get_admin_client", return_value=MagicMock()
     ), patch(
-        "app.repositories.tenancy.get_user_role_scope_rows", return_value=rows
+        "app.repositories.platform.tenancy.get_user_role_scope_rows", return_value=rows
     ), patch(
-        "app.repositories.tenancy.get_institution_organization",
+        "app.repositories.platform.tenancy.get_institution_organization",
         return_value=ORGANIZATION_ID,
     ):
         context = resolve_authorization_context(user)
@@ -1319,18 +1319,18 @@ def test_23c_password_never_persisted_by_the_service_layer():
     the identity repositories — only the identifier is looked up."""
     student = student_row()
     with patch(
-        "app.services.student_auth.get_admin_client", return_value=institution_db(auth_user_id=student["user_id"])
+        "app.services.auth.student_auth.get_admin_client", return_value=institution_db(auth_user_id=student["user_id"])
     ), patch(
-        "app.services.student_auth.create_supabase_client",
+        "app.services.auth.student_auth.create_supabase_client",
         return_value=auth_client(student),
     ), patch(
-        "app.repositories.admin_academics.get_student_by_register_number",
+        "app.repositories.admin.admin_academics.get_student_by_register_number",
         return_value=student,
     ) as lookup, patch(
-        "app.repositories.admin_academics.get_student_by_university_roll_number",
+        "app.repositories.admin.admin_academics.get_student_by_university_roll_number",
         return_value=None,
     ):
-        from app.services.student_auth import authenticate_student
+        from app.services.auth.student_auth import authenticate_student
 
         authenticate_student(APPROVED_REGISTER, SECRET_PASSWORD, INSTITUTION_CODE)
 
@@ -1344,14 +1344,14 @@ def test_23d_password_forwarded_only_to_supabase_auth():
     student = student_row()
     auth = auth_client(student)
     with patch(
-        "app.services.student_auth.get_admin_client", return_value=institution_db(auth_user_id=student["user_id"])
+        "app.services.auth.student_auth.get_admin_client", return_value=institution_db(auth_user_id=student["user_id"])
     ), patch(
-        "app.services.student_auth.create_supabase_client", return_value=auth
+        "app.services.auth.student_auth.create_supabase_client", return_value=auth
     ), patch(
-        "app.repositories.admin_academics.get_student_by_email_global",
+        "app.repositories.admin.admin_academics.get_student_by_email_global",
         return_value=student,
     ):
-        from app.services.student_auth import authenticate_student
+        from app.services.auth.student_auth import authenticate_student
 
         authenticate_student(APPROVED_EMAIL, SECRET_PASSWORD)
 
@@ -1362,8 +1362,8 @@ def test_23d_password_forwarded_only_to_supabase_auth():
 
 def test_23e_login_schemas_carry_no_password_storage_field():
     """No response schema anywhere exposes a stored/plaintext password field."""
-    from app.schemas.student_auth import StudentLoginRequest, StudentLoginResponse
-    from app.schemas.users import UserRegistrationResponse
+    from app.schemas.auth.student_auth import StudentLoginRequest, StudentLoginResponse
+    from app.schemas.auth.users import UserRegistrationResponse
 
     assert set(StudentLoginRequest.model_fields) == {
         "identifier",
@@ -1449,7 +1449,7 @@ def test_24f_get_current_user_contract_unchanged():
 
 def test_24g_get_current_user_still_requires_an_application_user():
     """A valid JWT with no public.users row -> 404 USER_NOT_FOUND (unchanged)."""
-    with patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS), patch(
+    with patch("app.core.security.tokens.verify_jwt", return_value=FAKE_CLAIMS), patch(
         "app.db.supabase.get_user_by_auth_id", new=AsyncMock(return_value=None)
     ):
         response = client.get(
@@ -1478,7 +1478,7 @@ def test_24h_get_current_user_projections_still_drive_rbac():
 
 def test_25a_phase_6_13_1_hierarchy_guard_unchanged():
     """organization <-> institution consistency is still enforced server-side."""
-    from app.services.authorization import assert_institution_in_organization
+    from app.services.auth.authorization import assert_institution_in_organization
 
     # Same organization -> allowed.
     assert_institution_in_organization(ORGANIZATION_ID, ORGANIZATION_ID)
@@ -1496,7 +1496,7 @@ def test_25a_phase_6_13_1_hierarchy_guard_unchanged():
 
 def test_25b_phase_6_13_3_scope_accessors_unchanged():
     """Organization/institution ids are extracted from the resolved context."""
-    from app.services.authorization import user_institution_id, user_organization_id
+    from app.services.auth.authorization import user_institution_id, user_organization_id
 
     context = {
         "organization_id": str(ORGANIZATION_ID),
@@ -1517,7 +1517,7 @@ def test_25c_phase_6_13_5_registration_gate_semantics_unchanged():
     INSTITUTION_NOT_ACCEPTING_REGISTRATIONS, sign-in with 401
     INVALID_CREDENTIALS (anti-enumeration).
     """
-    from app.services.tenancy import _assert_institution_active as registration_gate
+    from app.services.platform.tenancy import _assert_institution_active as registration_gate
 
     registration_gate({"status": "active", "is_active": True})  # allowed
 
@@ -1528,7 +1528,7 @@ def test_25c_phase_6_13_5_registration_gate_semantics_unchanged():
         assert exc.value.code == "INSTITUTION_NOT_ACCEPTING_REGISTRATIONS"
 
     # The sign-in gate reuses the Phase 6.5 checker on the same rows.
-    from app.services.student_auth import _assert_institution_active as sign_in_gate
+    from app.services.auth.student_auth import _assert_institution_active as sign_in_gate
 
     with pytest.raises(SafeAuthFailure):
         sign_in_gate(institution_db(is_active=False), INSTITUTION_A)
@@ -1537,7 +1537,7 @@ def test_25c_phase_6_13_5_registration_gate_semantics_unchanged():
 def test_25d_phase_6_13_5_role_map_unchanged_no_new_roles():
     """Self-registration still grants only student/faculty/staff — no new
     roles were invented by Phase 6.13.6."""
-    from app.services.user_registration import ROLE_MAP
+    from app.services.auth.user_registration import ROLE_MAP
 
     assert ROLE_MAP == {"student": "student", "faculty": "faculty", "staff": "staff"}
     assert "admin" not in ROLE_MAP.values()
@@ -1546,12 +1546,12 @@ def test_25d_phase_6_13_5_role_map_unchanged_no_new_roles():
 def test_25e_phase_6_13_6_single_status_seam():
     """No duplicate status logic: the sign-in guard reuses the Phase 6.5
     institution checker and defines only the 'active' literal it needs."""
-    import app.services.sign_in as sign_in
+    import app.services.auth.sign_in as sign_in
 
     assert sign_in.ACTIVE == "active"
     assert sign_in._assert_institution_active is (
         __import__(
-            "app.services.student_auth", fromlist=["_assert_institution_active"]
+            "app.services.auth.student_auth", fromlist=["_assert_institution_active"]
         )._assert_institution_active
     )
 

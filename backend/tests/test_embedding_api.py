@@ -63,7 +63,7 @@ def _auth_headers():
 
 def _patch_auth():
     return (
-        patch("app.core.security.verify_jwt", return_value=FAKE_CLAIMS),
+        patch("app.core.security.tokens.verify_jwt", return_value=FAKE_CLAIMS),
         patch(
             "app.db.supabase.get_user_by_auth_id",
             new=AsyncMock(return_value=FAKE_USER),
@@ -74,13 +74,13 @@ def _patch_auth():
 @pytest.fixture(autouse=True)
 def _active_institution_authorization():
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
             return_value={"status": "active", "is_active": True},
         ),
         patch(
-            "app.api.ingestion.knowledge_repo.get_knowledge_source_detail",
+            "app.api.knowledge.ingestion.knowledge_repo.get_knowledge_source_detail",
             return_value={"knowledge_source_id": KS_ID, "institution_id": INSTITUTION_ID},
         ),
     ):
@@ -90,9 +90,9 @@ def _active_institution_authorization():
 def _patch_db():
     """Stub the route's server-side run lookup (Phase 6.13.7 tenant read)."""
     return (
-        patch("app.api.ingestion.get_admin_client", return_value=MagicMock()),
+        patch("app.api.knowledge.ingestion.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.api.ingestion.get_processing_run_with_version",
+            "app.api.knowledge.ingestion.get_processing_run_with_version",
             return_value=FAKE_RUN,
         ),
     )
@@ -103,7 +103,7 @@ def test_embed_success_delegates_and_returns_embedded_status():
     db_patch, run_patch = _patch_db()
     embed_mock = MagicMock(return_value=3)
     with verify, user, db_patch, run_patch, patch(
-        "app.api.ingestion.embed_processing_run", embed_mock
+        "app.api.knowledge.ingestion.embed_processing_run", embed_mock
     ):
         response = client.post(
             f"/api/v1/documents/{RUN_ID}/embed",
@@ -128,8 +128,8 @@ def test_embed_already_embedded_response_is_terminal_without_route_regeneration(
         user,
         db_patch,
         run_patch,
-        patch("app.api.ingestion.embed_processing_run", embed_mock),
-        patch("app.api.ingestion.update_run_status") as update_status,
+        patch("app.api.knowledge.ingestion.embed_processing_run", embed_mock),
+        patch("app.api.knowledge.ingestion.update_run_status") as update_status,
     ):
         response = client.post(
             f"/api/v1/documents/{RUN_ID}/embed",
@@ -143,7 +143,7 @@ def test_embed_already_embedded_response_is_terminal_without_route_regeneration(
 
 def test_embed_invalid_processing_run_id_uses_fastapi_validation():
     verify, user = _patch_auth()
-    with verify, user, patch("app.api.ingestion.embed_processing_run") as embed_mock:
+    with verify, user, patch("app.api.knowledge.ingestion.embed_processing_run") as embed_mock:
         response = client.post(
             "/api/v1/documents/not-a-uuid/embed",
             headers=_auth_headers(),
@@ -158,7 +158,7 @@ def test_embed_app_error_uses_application_error_handler():
     db_patch, run_patch = _patch_db()
     error = AppError("Run is not available for embedding", status_code=409, code="RUN_NOT_EMBEDDABLE")
     with verify, user, db_patch, run_patch, patch(
-        "app.api.ingestion.embed_processing_run", side_effect=error
+        "app.api.knowledge.ingestion.embed_processing_run", side_effect=error
     ):
         response = client.post(
             f"/api/v1/documents/{RUN_ID}/embed",
@@ -178,7 +178,7 @@ def test_embed_unexpected_service_failure_uses_existing_500_convention():
     verify, user = _patch_auth()
     db_patch, run_patch = _patch_db()
     with verify, user, db_patch, run_patch, patch(
-        "app.api.ingestion.embed_processing_run",
+        "app.api.knowledge.ingestion.embed_processing_run",
         side_effect=RuntimeError("unexpected failure"),
     ):
         response = client.post(
@@ -214,8 +214,8 @@ def test_embed_route_does_not_update_processing_run_status():
         user,
         db_patch,
         run_patch,
-        patch("app.api.ingestion.embed_processing_run", embed_mock),
-        patch("app.api.ingestion.update_run_status") as update_status,
+        patch("app.api.knowledge.ingestion.embed_processing_run", embed_mock),
+        patch("app.api.knowledge.ingestion.update_run_status") as update_status,
     ):
         response = client.post(
             f"/api/v1/documents/{RUN_ID}/embed",

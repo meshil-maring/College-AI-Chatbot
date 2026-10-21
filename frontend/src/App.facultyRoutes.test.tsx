@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import App, { resolveAppRoute } from './App.tsx'
-import { FACULTY_PATHS, FACULTY_STUDENT_PATHS } from './features/faculty/facultyRoutes.ts'
+import { FACULTY_PATHS, FACULTY_STUDENT_PATHS } from './features/faculty/workspace/facultyRoutes.ts'
 
 const auth = vi.hoisted(() => ({ status: 'authenticated', role: 'faculty' as string | null, user: { auth_user_id: 'faculty-1' }, logout: vi.fn() }))
-vi.mock('./features/auth/AuthProvider.tsx', () => ({
+vi.mock('./features/auth/session/AuthProvider.tsx', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => auth,
 }))
-vi.mock('./features/faculty/FacultyShell.tsx', () => ({ default: () => <div>Faculty workspace</div> }))
-vi.mock('./features/auth/LoginForm.tsx', () => ({ default: ({ audience }: { audience: string }) => <div>{audience} sign in</div> }))
+vi.mock('./features/faculty/workspace/FacultyShell.tsx', () => ({ default: () => <div>Faculty workspace</div> }))
+vi.mock('./features/auth/login/LoginForm.tsx', () => ({ default: ({ audience }: { audience: string }) => <div>{audience} sign in</div> }))
 
 beforeEach(() => {
   auth.status = 'authenticated'

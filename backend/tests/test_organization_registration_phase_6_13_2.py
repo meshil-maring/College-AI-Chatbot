@@ -25,9 +25,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repositories import tenancy as tenancy_repo
-from app.services import student_registration as student_svc
-from app.services import tenancy as tenancy_svc
+from app.repositories.platform import tenancy as tenancy_repo
+from app.services.auth import student_registration as student_svc
+from app.services.platform import tenancy as tenancy_svc
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -599,7 +599,7 @@ def test_existing_tenancy_repo_helpers_still_available():
 
 
 def test_existing_authorization_service_unchanged():
-    from app.services import authorization as authz
+    from app.services.auth import authorization as authz
 
     assert callable(authz.resolve_authorization_context)
     assert authz.ORGANIZATION == "organization"

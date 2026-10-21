@@ -13,13 +13,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.config import settings
-from app.schemas.chat import ChatRequest
-from app.schemas.conversation import MessageSummary
-from app.schemas.generation import AIContext
-from app.schemas.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult
-from app.schemas.session import SessionContext
-from app.services.chat import process_chat_request
-from app.services.generation_provider import GenerationResult
+from app.schemas.ai.chat import ChatRequest
+from app.schemas.ai.conversation import MessageSummary
+from app.schemas.ai.generation import AIContext
+from app.schemas.knowledge.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult
+from app.schemas.ai.session import SessionContext
+from app.services.ai.chat import process_chat_request
+from app.services.ai.generation_provider import GenerationResult
 
 TEST_USER_ID = uuid4()
 INSTITUTION_ID = "30000000-0000-0000-0000-000000000001"
@@ -95,9 +95,9 @@ def _chat_request(user_query: str = "what about for girl?") -> ChatRequest:
 def _run(request: ChatRequest, history: list[MessageSummary], provider: MagicMock):
     session_context = SessionContext(session_id=uuid4())
     with (
-        patch("app.services.chat.get_admin_client", return_value=_mock_client()),
-        patch("app.services.conversation_history.get_admin_client", return_value=MagicMock()),
-        patch("app.services.chat.get_conversation_messages", return_value=history),
+        patch("app.services.ai.chat.get_admin_client", return_value=_mock_client()),
+        patch("app.services.ai.conversation_history.get_admin_client", return_value=MagicMock()),
+        patch("app.services.ai.chat.get_conversation_messages", return_value=history),
     ):
         return process_chat_request(request, session_context, provider, TEST_USER_ID), session_context
 
@@ -117,8 +117,8 @@ def test_follow_up_uses_rewritten_query_for_retrieval():
     )
 
     with (
-        patch("app.services.chat.rewrite_query", return_value=REWRITTEN_FOLLOW_UP),
-        patch("app.services.chat.retrieve", return_value=_retrieval_response()) as mock_retrieve,
+        patch("app.services.ai.chat.rewrite_query", return_value=REWRITTEN_FOLLOW_UP),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_response()) as mock_retrieve,
     ):
         response, _ = _run(_chat_request(), _history(), provider)
 
@@ -142,7 +142,7 @@ def test_first_question_uses_original_query_for_retrieval():
         model_used="openai/gpt-4o-mini",
     )
     query = "What is the annual hostel fee for a standard room?"
-    with patch("app.services.chat.retrieve", return_value=_retrieval_response()) as mock_retrieve:
+    with patch("app.services.ai.chat.retrieve", return_value=_retrieval_response()) as mock_retrieve:
         response, _ = _run(_chat_request(user_query=query), [], provider)
 
     called_request: RetrievalRequest = mock_retrieve.call_args[0][0]
@@ -164,7 +164,7 @@ def test_real_rewriter_rewrites_follow_up_in_flow():
     provider = MagicMock()
     provider.generate.side_effect = generate
 
-    with patch("app.services.chat.retrieve", return_value=_retrieval_response()) as mock_retrieve:
+    with patch("app.services.ai.chat.retrieve", return_value=_retrieval_response()) as mock_retrieve:
         response, _ = _run(_chat_request(), _history(), provider)
 
     assert provider.generate.call_count == 2
@@ -179,7 +179,7 @@ def test_real_rewriter_rewrites_follow_up_in_flow():
 
 
 def test_interpreted_question_appears_in_final_prompt_without_metadata():
-    from app.services.generation_provider import _build_user_content
+    from app.services.ai.generation_provider import _build_user_content
 
     provider = MagicMock()
     captured: dict = {}
@@ -196,8 +196,8 @@ def test_interpreted_question_appears_in_final_prompt_without_metadata():
     provider.generate.side_effect = generate
 
     with (
-        patch("app.services.chat.rewrite_query", return_value=REWRITTEN_FOLLOW_UP),
-        patch("app.services.chat.retrieve", return_value=_retrieval_response()),
+        patch("app.services.ai.chat.rewrite_query", return_value=REWRITTEN_FOLLOW_UP),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_response()),
     ):
         _run(_chat_request(), _history(), provider)
 
@@ -226,8 +226,8 @@ def test_dev_diagnostics_attach_to_generation_metadata():
         metadata={"usage": {"prompt_tokens": 640, "completion_tokens": 30}},
     )
     with (
-        patch("app.services.chat.rewrite_query", return_value=REWRITTEN_FOLLOW_UP),
-        patch("app.services.chat.retrieve", return_value=_retrieval_response()),
+        patch("app.services.ai.chat.rewrite_query", return_value=REWRITTEN_FOLLOW_UP),
+        patch("app.services.ai.chat.retrieve", return_value=_retrieval_response()),
     ):
         response, _ = _run(_chat_request(), _history(), provider)
 
@@ -252,7 +252,7 @@ def test_standalone_question_diagnostics_rewritten_query_is_none():
         metadata={"usage": {"prompt_tokens": 400, "completion_tokens": 20}},
     )
     query = "What is the annual hostel fee for a standard room?"
-    with patch("app.services.chat.retrieve", return_value=_retrieval_response()):
+    with patch("app.services.ai.chat.retrieve", return_value=_retrieval_response()):
         response, _ = _run(_chat_request(user_query=query), [], provider)
 
     diagnostics = response.metadata["diagnostics"]
@@ -278,7 +278,7 @@ def test_casual_and_general_questions_skip_college_retrieval(query):
         status="success",
     )
 
-    with patch("app.services.chat.retrieve") as retrieve:
+    with patch("app.services.ai.chat.retrieve") as retrieve:
         response, _ = _run(_chat_request(user_query=query), [], provider)
 
     retrieve.assert_not_called()
@@ -294,7 +294,7 @@ def test_identity_and_ambiguous_questions_skip_retrieval_and_generation():
         ("What about attendance?", "Are you asking"),
     ):
         provider = MagicMock()
-        with patch("app.services.chat.retrieve") as retrieve:
+        with patch("app.services.ai.chat.retrieve") as retrieve:
             response, _ = _run(_chat_request(user_query=query), [], provider)
 
         retrieve.assert_not_called()

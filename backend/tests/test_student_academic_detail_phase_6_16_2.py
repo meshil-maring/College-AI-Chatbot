@@ -30,9 +30,9 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services import student_academic_profile as profile_svc
-from app.services import student_attendance as attendance_svc
-from app.services import student_results as results_svc
+from app.services.students import student_academic_profile as profile_svc
+from app.services.students import student_attendance as attendance_svc
+from app.services.students import student_results as results_svc
 
 TC = TestClient(app, raise_server_exceptions=False)
 
@@ -486,8 +486,8 @@ def test_results_payloads_contain_no_internal_identifiers() -> None:
 def test_response_models_reject_extra_internal_fields() -> None:
     import pytest as _pytest
 
-    from app.schemas.student_attendance import StudentOwnAttendance
-    from app.schemas.student_results import StudentOwnResults
+    from app.schemas.students.student_attendance import StudentOwnAttendance
+    from app.schemas.students.student_results import StudentOwnResults
 
     with _pytest.raises(Exception):
         StudentOwnAttendance(summary={}, records=[],  # type: ignore[call-arg]

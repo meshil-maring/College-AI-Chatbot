@@ -153,8 +153,15 @@ def main():
         path = HERE / name
         manifest[path.relative_to(ROOT).as_posix()] = sha(path)
     additional_paths = [ROOT / p for p in ("scripts/maintenance/reset_supabase_data.sql", "backend/app/db/supabase.py",
-        "backend/app/core/security.py", "backend/app/config.py", "backend/app/api/mailgun_webhooks.py",
-        "backend/app/services/mailgun_webhooks.py", "backend/app/services/platform_admin_invitations.py",
+        "backend/app/core/security/__init__.py",
+        "backend/app/core/security/tokens.py",
+        "backend/app/core/security/identity.py",
+        "backend/app/core/security/roles.py",
+        "backend/app/core/security/tenancy.py",
+        "backend/app/core/security/permissions.py",
+        "backend/app/core/security/dependencies.py",
+        "backend/app/config.py", "backend/app/api/email/mailgun_webhooks.py",
+        "backend/app/services/email/mailgun_webhooks.py", "backend/app/services/invitations/platform_admin_invitations.py",
         "scripts/validation/disposable_container.py", "docs/evidence/enrollment_harness_remediation/REVIEW.md")]
     additional_paths += list((ROOT / "scripts/validation").glob("verify_*database.ps1"))
     additional_paths += list((ROOT / "scripts/validation").glob("*concurrency.py"))

@@ -9,11 +9,12 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import _ADMIN, _APPROVAL
+from app.api.admin.dependencies import _ADMIN
+from app.api.admin.dependencies import _APPROVAL
 from app.core.errors import AppError
 from app.core.security import get_current_user
 from app.main import app
-from app.services.authorization import resolve_institution_authorization_context
+from app.services.auth.authorization import resolve_institution_authorization_context
 
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -92,9 +93,9 @@ def _authenticated(principal: dict, *, institution_active: bool = True):
         else {"status": "suspended", "is_active": False}
     )
     with (
-        patch("app.services.authorization.get_admin_client", return_value=MagicMock()),
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
         patch(
-            "app.services.authorization.tenancy_repo.get_institution_by_id",
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
             return_value=institution,
         ),
     ):
@@ -115,7 +116,7 @@ def test_auth_me_projects_admin_scope_from_user_roles_without_student_profile() 
     user = dict(ADMIN_A_USER)
     claims = {"sub": ADMIN_A, "email": user["email"]}
     with (
-        patch("app.core.security.verify_jwt", return_value=claims),
+        patch("app.core.security.tokens.verify_jwt", return_value=claims),
         patch(
             "app.db.supabase.get_user_by_auth_id",
             new=AsyncMock(return_value=user),
@@ -138,7 +139,7 @@ def test_admin_a_and_admin_b_each_receive_their_authoritative_scope() -> None:
         assert response.json()["is_admin"] is True
         # The endpoint does not expose scope, so prove it through a scoped call.
         with _authenticated(principal), patch(
-            "app.api.admin.admin_academics.list_students", return_value=[]
+            "app.services.admin.admin_academics.list_students", return_value=[]
         ) as list_students:
             response = client.get(f"/api/v1/admin/students?institution_id={expected}")
         assert response.status_code == 200
@@ -176,7 +177,7 @@ def test_inactive_institution_is_denied() -> None:
 def test_conflicting_institution_grants_fail_context_resolution(
     conflicting_admin: dict,
 ) -> None:
-    with patch("app.services.authorization.get_admin_client") as get_admin_client:
+    with patch("app.services.auth.authorization.get_admin_client") as get_admin_client:
         with pytest.raises(AppError) as exc_info:
             resolve_institution_authorization_context(
                 conflicting_admin, allowed_roles=("admin",)
@@ -192,9 +193,9 @@ def test_conflicting_institution_grants_are_denied_before_resource_access(
 ) -> None:
     with (
         _authenticated(conflicting_admin),
-        patch("app.api.admin.admin_faq.get_faq") as get_faq,
-        patch("app.api.admin.admin_faq.update_faq") as update_faq,
-        patch("app.api.admin._record_audit") as record_audit,
+        patch("app.services.admin.admin_faq.get_faq") as get_faq,
+        patch("app.services.admin.admin_faq.update_faq") as update_faq,
+        patch("app.api.admin.common.record_audit") as record_audit,
     ):
         response = client.request(
             method,
@@ -211,7 +212,7 @@ def test_conflicting_institution_grants_are_denied_before_resource_access(
 def test_staff_keeps_only_the_institution_scoped_approval_exception() -> None:
     staff = _principal("72000000-0000-0000-0000-0000000000aa", "staff", INST_A)
     with _authenticated(staff), patch(
-        "app.api.admin.admin_academics.list_pending_approvals", return_value=[]
+        "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
     ) as pending:
         allowed = client.get("/api/v1/admin/students/pending")
         denied = client.get("/api/v1/admin/me")
@@ -222,7 +223,7 @@ def test_staff_keeps_only_the_institution_scoped_approval_exception() -> None:
 
 def test_forged_institution_query_and_code_cannot_change_scope() -> None:
     with _authenticated(ADMIN_A_USER), patch(
-        "app.api.admin.admin_academics.list_students", return_value=[]
+        "app.services.admin.admin_academics.list_students", return_value=[]
     ) as list_students:
         foreign = client.get(f"/api/v1/admin/students?institution_id={INST_B}")
         own = client.get(
@@ -236,7 +237,7 @@ def test_forged_institution_query_and_code_cannot_change_scope() -> None:
 
 def test_forged_student_create_body_is_denied_before_write() -> None:
     with _authenticated(ADMIN_A_USER), patch(
-        "app.api.admin.admin_academics.create_student"
+        "app.services.admin.admin_academics.create_student"
     ) as create_student:
         response = client.post(
             "/api/v1/admin/students",
@@ -256,11 +257,11 @@ def test_cross_tenant_knowledge_source_and_document_are_denied() -> None:
     document = {"document_id": RESOURCE_ID, "knowledge_source_id": RESOURCE_ID}
     with _authenticated(ADMIN_A_USER), (
         patch(
-            "app.api.admin.knowledge_repo.get_document_with_versions",
+            "app.repositories.admin.admin_knowledge.get_document_with_versions",
             return_value=document,
         )
     ), patch(
-        "app.api.admin.knowledge_repo.get_knowledge_source_detail",
+        "app.repositories.admin.admin_knowledge.get_knowledge_source_detail",
         return_value=foreign_source,
     ):
         response = client.get(f"/api/v1/admin/documents/{RESOURCE_ID}")
@@ -270,7 +271,7 @@ def test_cross_tenant_knowledge_source_and_document_are_denied() -> None:
 
 def test_unknown_knowledge_source_is_denied_with_not_found() -> None:
     with _authenticated(ADMIN_A_USER), patch(
-        "app.api.admin.knowledge_repo.get_knowledge_source_detail", return_value=None
+        "app.repositories.admin.admin_knowledge.get_knowledge_source_detail", return_value=None
     ):
         response = client.get(
             f"/api/v1/admin/knowledge-sources/{RESOURCE_ID}/documents"
@@ -301,7 +302,7 @@ def test_cross_tenant_faq_and_notice_mutations_are_denied(
 ) -> None:
     payload = {"question": "changed"} if method == "PATCH" else None
     with _authenticated(ADMIN_A_USER), patch(
-        f"app.api.admin.{service_name}", return_value=row
+        f"app.services.admin.{service_name}", return_value=row
     ):
         response = client.request(method, path, json=payload)
     assert response.status_code == 403
@@ -310,7 +311,7 @@ def test_cross_tenant_faq_and_notice_mutations_are_denied(
 
 def test_global_faq_mutation_is_not_tenant_admin_authority() -> None:
     with _authenticated(ADMIN_A_USER), patch(
-        "app.api.admin.admin_faq.get_faq",
+        "app.services.admin.admin_faq.get_faq",
         return_value={"faq_id": RESOURCE_ID, "institution_id": None},
     ):
         response = client.patch(
@@ -330,7 +331,7 @@ def test_global_faq_mutation_is_not_tenant_admin_authority() -> None:
 )
 def test_cross_tenant_academic_resource_families_are_denied(path: str) -> None:
     with _authenticated(ADMIN_A_USER), patch(
-        "app.api.admin.admin_academics.get_student",
+        "app.services.admin.admin_academics.get_student",
         return_value={"student_id": STUDENT_B, "institution_id": INST_B},
     ):
         response = client.get(path)
@@ -340,7 +341,7 @@ def test_cross_tenant_academic_resource_families_are_denied(path: str) -> None:
 
 def test_audit_list_is_forced_to_current_actor() -> None:
     with _authenticated(ADMIN_A_USER), patch(
-        "app.api.admin.list_audit_entries", return_value=[]
+        "app.api.admin.audit.list_audit_entries", return_value=[]
     ) as audit:
         response = client.get("/api/v1/admin/audit-logs")
     assert response.status_code == 200
@@ -349,7 +350,7 @@ def test_audit_list_is_forced_to_current_actor() -> None:
 
 def test_cross_actor_audit_detail_and_filter_are_denied() -> None:
     with _authenticated(ADMIN_A_USER), patch(
-        "app.api.admin.get_audit_entry",
+        "app.api.admin.audit.get_audit_entry",
         return_value={"audit_id": RESOURCE_ID, "actor_user_id": ADMIN_B},
     ):
         detail = client.get(f"/api/v1/admin/audit-logs/{RESOURCE_ID}")

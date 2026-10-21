@@ -5,7 +5,7 @@ This is an implementation guide for the shared UI helper. The broader RBAC speci
 ## Check the signed-in user in React
 
 ```tsx
-import { usePermissions } from './features/auth/usePermissions.ts'
+import { usePermissions } from './features/auth/access/usePermissions.ts'
 
 const { can, canAll, canAny, permissions } = usePermissions()
 
@@ -28,7 +28,7 @@ Faculty responsibility grants remain in their existing scoped context. This hook
 ## Inspect role defaults
 
 ```ts
-import { permissionsByRole } from './features/auth/rbac.ts'
+import { permissionsByRole } from './features/auth/access/rbac.ts'
 
 permissionsByRole.admin.students.update // true
 permissionsByRole.admin.students.delete // true
@@ -42,14 +42,14 @@ This read-only map is a bootstrap reference derived from existing backend defaul
 ## Use outside React
 
 ```ts
-import { createPermissions } from './features/auth/rbac.ts'
+import { createPermissions } from './features/auth/access/rbac.ts'
 
 const access = createPermissions(serverUser.effective_permissions)
 access.can('students', 'update')
 access.permissions.students.update
 ```
 
-This creates an immutable snapshot. Create a new snapshot after the server grant list changes. Existing `hasPermission(grants, code)` imports from `features/auth/permissions.ts` delegate to the same central implementation, preserving existing exact/resource-wildcard matching.
+This creates an immutable snapshot. Create a new snapshot after the server grant list changes. Existing `hasPermission(grants, code)` imports from `features/auth/access/permissions.ts` delegate to the same central implementation, preserving existing exact/resource-wildcard matching.
 
 ## Maintain one source
 
@@ -57,9 +57,9 @@ This creates an immutable snapshot. Create a new snapshot after the server grant
 |---|---|
 | `backend/app/core/permissions.py` | Canonical permission vocabulary and existing bootstrap role defaults. |
 | `backend/scripts/generate_frontend_rbac.py` | Generates the typed frontend snapshot without settings or database access. |
-| `frontend/src/features/auth/rbacPolicy.generated.ts` | Generated vocabulary and defaults; do not edit manually. |
-| `frontend/src/features/auth/rbac.ts` | Nested role reference, typed effective-permission checks, and compatible string checker. |
-| `frontend/src/features/auth/usePermissions.ts` | Authenticated React adapter with memoized current-user access. |
+| `frontend/src/features/auth/access/rbacPolicy.generated.ts` | Generated vocabulary and defaults; do not edit manually. |
+| `frontend/src/features/auth/access/rbac.ts` | Nested role reference, typed effective-permission checks, and compatible string checker. |
+| `frontend/src/features/auth/access/usePermissions.ts` | Authenticated React adapter with memoized current-user access. |
 
 After changing the canonical catalog/defaults, run from `backend/`:
 

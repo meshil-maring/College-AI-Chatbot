@@ -172,7 +172,7 @@ Unsaved marks trigger in-workspace, Faculty-shell and browser navigation protect
 
 ## 19. Backend tests
 
-Final **complete** backend suite: **2,986 passed, 27 skipped, 6 warnings**, 80.79 seconds. Evidence: `backend/examination-backend-tests-final.log`. Existing skipped tests and warnings remain visible; no failing module was excluded.
+Final **complete** backend suite: **2,986 passed, 27 skipped, 6 warnings**, 80.79 seconds. Evidence: `logs/backend/examination-backend-tests-final.log` (relocated from the backend root during cleanup). Existing skipped tests and warnings remain visible; no failing module was excluded.
 
 The new assessment module contributes **113 passing tests** covering schema forgery, decimal/absence/zero semantics, batch/correction contracts, exact teaching and responsibility boundaries, independent API denial, tenant/ownership containment, server-derived RPC arguments, safe error mapping, deterministic file handling/formula denial, identity conflict annotation, stored-row commit revalidation, Student safe visibility and roster deletion/history races. Lifecycle, transactional rollback/audit, publication/locking/reconciliation and concurrent database behavior additionally run against actual PostgreSQL contracts.
 
@@ -180,13 +180,13 @@ An earlier complete backend run also passed (2,984 passed before the two final r
 
 ## 20. Frontend tests
 
-Final **complete** frontend suite: **71 files passed, 612 tests passed**, 210.31 seconds. Evidence: `frontend/examination-frontend-tests-final.log`. The assessment module contains **27 passing interaction tests** for dashboard/selectors, creation/schedule, marks/bulk/keyboard/pagination/validation, dirty protection, review/submission/publication/lock/correction, monitoring/revocation/context refresh, import/correction/errors/history and safe text. Existing shell/navigation tests were updated for the implemented Results surface, with additional shell/navigation and Student absent/zero/outcome coverage.
+Final **complete** frontend suite: **71 files passed, 612 tests passed**, 210.31 seconds. Evidence: `logs/frontend/examination-frontend-tests-final.log`. The assessment module contains **27 passing interaction tests** for dashboard/selectors, creation/schedule, marks/bulk/keyboard/pagination/validation, dirty protection, review/submission/publication/lock/correction, monitoring/revocation/context refresh, import/correction/errors/history and safe text. Existing shell/navigation tests were updated for the implemented Results surface, with additional shell/navigation and Student absent/zero/outcome coverage.
 
 Initial focused assessment tests exposed schedule-button intent and stale context-state problems; production code was corrected and all 27 then passed. An initial complete run had **2 failures and 610 passes**: the added Student test expected a spaced score label while the existing renderer uses `0/100`, and an existing FacultyAssignmentManager loading assertion timed out under concurrent heavy verification. The new expectation was corrected to actual rendering. A subsequent focused run also encountered an existing dashboard loading timeout. Existing assertions/timeouts were retained; the final complete run used two workers without concurrent heavy suites and passed. No test was deleted or weakened.
 
 ## 21. TypeScript/build/static checks
 
-Final `npx.cmd tsc -b` passed. Final `npm.cmd run build` passed TypeScript and Vite, transforming 2,067 modules. Main JavaScript is **632.90 kB**, **160.98 kB gzip**. Vite's chunk-size warning remains; native stderr redirection appears as PowerShell `NativeCommandError` formatting in the log, but the checked process exit code is zero and Vite completed successfully. Evidence: `frontend/examination-build-final.log`.
+Final `npx.cmd tsc -b` passed. Final `npm.cmd run build` passed TypeScript and Vite, transforming 2,067 modules. Main JavaScript is **632.90 kB**, **160.98 kB gzip**. Vite's chunk-size warning remains; native stderr redirection appears as PowerShell `NativeCommandError` formatting in the log, but the checked process exit code is zero and Vite completed successfully. Evidence: `logs/frontend/examination-build-final.log`.
 
 Targeted Ruff passed for assessment API/schema/service/tests and changed integration files. `B008` is excluded for the existing FastAPI dependency-default convention; `BLE001` is excluded for the existing optional-label fallback and safe historical-FK race error mapping. Python application compilation passed.
 
@@ -241,7 +241,7 @@ New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
 .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider tests
 ```
 
-Actual final result: **2,986 passed, 27 skipped, 6 warnings in 80.79 seconds**, exit 0. Full output: `backend/examination-backend-tests-final.log`.
+Actual final result: **2,986 passed, 27 skipped, 6 warnings in 80.79 seconds**, exit 0. Full output: `logs/backend/examination-backend-tests-final.log`.
 
 Frontend PowerShell, from `frontend`:
 
@@ -251,7 +251,7 @@ npx.cmd tsc -b
 npm.cmd run build
 ```
 
-Actual final results: **71 files/612 tests passed in 210.31 seconds; TypeScript passed; build passed in 16.71 seconds with the bundle warning**, all exit 0. Evidence: `frontend/examination-frontend-tests-final.log`, `frontend/examination-build-final.log`.
+Actual final results: **71 files/612 tests passed in 210.31 seconds; TypeScript passed; build passed in 16.71 seconds with the bundle warning**, all exit 0. Evidence: `logs/frontend/examination-frontend-tests-final.log`, `logs/frontend/examination-build-final.log`.
 
 Backend static checks, from `backend`:
 
