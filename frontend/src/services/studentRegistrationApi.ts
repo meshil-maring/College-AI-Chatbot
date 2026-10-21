@@ -17,13 +17,21 @@ export interface ClassStudentRegistration {
   linked_student_id: string | null
   identity_conflict: boolean
   subjects_assigned: false
+  invitation_delivery?: StudentInvitationDelivery
+}
+
+export interface StudentInvitationDelivery {
+  registration_id: string
+  status: 'sent' | 'already_sent' | 'failed' | 'pending' | 'captured'
+  message: string
 }
 
 export interface ClassStudentRegistrationInput {
   student_name: string
   register_number: string
   university_roll_number?: string
-  email?: string
+  email: string
+  auto_send_invitation?: boolean
   batch_id: string
 }
 
@@ -57,6 +65,9 @@ async function request<T>(token: string, scopeSectionId: string, init: RequestIn
 
 export const createClassStudentRegistration = (token: string, scopeSectionId: string, data: ClassStudentRegistrationInput) =>
   request<ClassStudentRegistration>(token, scopeSectionId, { method: 'POST', body: JSON.stringify(data) })
+
+export const sendStudentRegistrationInvitation = (token: string, scopeSectionId: string, registrationId: string) =>
+  request<StudentInvitationDelivery>(token, scopeSectionId, { method: 'POST' }, `/${encodeURIComponent(registrationId)}/invitation`)
 
 export const getClassStudentRegistrations = (token: string, scopeSectionId: string, offset = 0, limit = 100, registration?: ClassStudentRegistration['roster_status'], filters?: ClassRegistrationFilters) =>
   request<{ items: ClassStudentRegistration[]; total: number }>(token, scopeSectionId, {}, `?${new URLSearchParams({

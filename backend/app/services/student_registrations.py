@@ -65,7 +65,7 @@ def create_registration(user: dict, scope_section_id: UUID, payload: StudentRegi
         .eq('program_id', str(scope['program_id'])).eq('is_active', True).range(0, 0))
     if not batches:
         raise AppError('The selected batch is unavailable for this branch. Refresh the batch list or ask your administrator to add an active batch in Academic Setup.', 422, 'BATCH_UNAVAILABLE')
-    row = payload.model_dump(exclude={'batch_id'})
+    row = payload.model_dump(exclude={'batch_id', 'auto_send_invitation'})
     row.update(batch_id=str(payload.batch_id), batch_start_year=batches[0]['start_year'], batch_end_year=batches[0]['end_year'])
     if row.get('email'):
         from email_validator import EmailNotValidError, validate_email
@@ -88,7 +88,16 @@ def create_registration(user: dict, scope_section_id: UUID, payload: StudentRegi
         if error.code == '23514':
             raise AppError('The class or batch changed while registering. Refresh the available options and try again.', 409, 'BATCH_UNAVAILABLE') from error
         raise
-    return _project(created, student)
+    result = _project(created, student)
+    if payload.auto_send_invitation:
+        # Saving the class record must not be undone/retried when delivery fails.
+        from app.services.student_registration_invitations import send_invitation
+        try:
+            result['invitation_delivery'] = send_invitation(user, scope_section_id, UUID(str(created['registration_id'])), permission=permission)
+        except Exception:
+            result['invitation_delivery'] = {'registration_id': str(created['registration_id']), 'status': 'failed',
+                'message': 'Student registered. The invitation could not be sent; retry from the registration results.'}
+    return result
 
 
 def class_rows(db, tenant: str, scope: dict, batch_id: UUID | None = None) -> list[dict]:

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   AlertCircle,
   AlertTriangle,
@@ -72,6 +72,9 @@ export interface StudentRegistrationImport {
   reviewRows: (rows: ImportStudent[]) => ReviewStudent[]
   importRows: (rows: ReviewStudent[], onProgress: (completed: number) => void) => Promise<StudentImportOutcome[]>
   onBusyChange: (busy: boolean) => void
+  resultActions?: ReactNode
+  onReset?: () => void
+  resultsBusy?: boolean
 }
 
 export default function StudentImport({
@@ -152,6 +155,7 @@ export default function StudentImport({
       const rows = await (registration ? registration.readFile(file) : readStudentFile(file))
       if (id !== request.current) return
       setUpload({ name: file.name, time: new Date(), rows })
+      registration?.onReset?.()
       setStage(1)
       setOutcomes([])
       setPage(1)
@@ -313,7 +317,7 @@ export default function StudentImport({
           </div>
           <button
             className="students-button"
-            disabled={busy}
+            disabled={busy || registration?.resultsBusy}
             onClick={() => fileInput.current?.click()}
           >
             <Upload />
@@ -369,7 +373,7 @@ export default function StudentImport({
           <div>
             <strong>A little preparation goes a long way.</strong>
             <p>
-              {registration ? 'Include name and register_number. University roll number and email are optional. The selected course, branch, section, and batch apply to every row. Subjects and attendance are managed separately. ' : 'Include name, register_number, university_roll_number, and email. Attendance is optional (0–100). '}
+              {registration ? 'Include name, register_number, and email. University roll number is optional. The selected course, branch, section, and batch apply to every row. Subjects and attendance are managed separately. ' : 'Include name, register_number, university_roll_number, and email. Attendance is optional (0–100). '}
               Format identifiers as text to preserve leading zeros. Excel reads the first sheet.
             </p>
           </div>
@@ -649,7 +653,8 @@ export default function StudentImport({
                 <tbody>{outcomes.map((item) => <tr key={item.row}><td>{item.row}</td><td className="student-name">{item.name}</td><td><span className={`students-status ${item.status === 'imported' ? 'valid' : 'invalid'}`}>{item.status === 'imported' ? 'Registered' : 'Failed'}</span></td><td className="validation-message">{item.message}</td></tr>)}</tbody>
               </table></div>
               <p>Student accounts still require signup and approval before students can sign in.</p>
-              {outcomes.some((item) => item.status === 'failed') && <button className="students-button" disabled={busy || !directoryReady || !reviewed.some((row) => row.status === 'valid' && outcomes.some((item) => item.row === row.row && item.status === 'failed'))} onClick={() => void importSelected(reviewed.filter((row) => row.status === 'valid' && outcomes.some((item) => item.row === row.row && item.status === 'failed')))}>{busy ? 'Registering students…' : 'Retry failed registrations'}</button>}
+              {registration?.resultActions}
+              {outcomes.some((item) => item.status === 'failed') && <button className="students-button" disabled={busy || registration?.resultsBusy || !directoryReady || !reviewed.some((row) => row.status === 'valid' && outcomes.some((item) => item.row === row.row && item.status === 'failed'))} onClick={() => void importSelected(reviewed.filter((row) => row.status === 'valid' && outcomes.some((item) => item.row === row.row && item.status === 'failed')))}>{busy ? 'Registering students…' : 'Retry failed registrations'}</button>}
             </section>
           ) : (
             <section className="students-confirm">
@@ -725,7 +730,7 @@ export default function StudentImport({
             <div>
               <button
                 className="students-button"
-                disabled={busy}
+                disabled={busy || registration?.resultsBusy}
                 onClick={() => {
                   if (stage === 3) onBack()
                   else if (stage === 2) setStage(1)

@@ -1,11 +1,13 @@
 from uuid import UUID
-from pydantic import field_validator
+from pydantic import EmailStr, Field, field_validator
 
 from app.schemas.faculty_attendance import RosterStudentInput
 
 
 class StudentRegistrationCreate(RosterStudentInput):
     batch_id: UUID
+    email: EmailStr = Field(max_length=128)
+    auto_send_invitation: bool = False
 
     @field_validator('university_roll_number', 'email', 'address', mode='before')
     @classmethod

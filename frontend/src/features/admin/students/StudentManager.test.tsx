@@ -83,14 +83,16 @@ describe('Admin uses the full Faculty Students workflow', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Batch' }), 'batch-1')
     await user.type(screen.getByRole('textbox', { name: 'Student name (required)' }), 'Ada Rao')
     await user.type(screen.getByRole('textbox', { name: 'Register number (required)' }), 'CS001')
+    await user.type(screen.getByRole('textbox', { name: 'Email (required)' }), 'beena@college.edu')
     await user.click(screen.getByRole('button', { name: 'Register student', exact: true }))
-    await waitFor(() => expect(api.createRegistration).toHaveBeenCalledExactlyOnceWith('token', 'section-1', { student_name: 'Ada Rao', register_number: 'CS001', batch_id: 'batch-1' }))
+    await waitFor(() => expect(api.createRegistration).toHaveBeenCalledExactlyOnceWith('token', 'section-1', { student_name: 'Ada Rao', register_number: 'CS001', email: 'beena@college.edu', batch_id: 'batch-1' }))
+    await user.click(await screen.findByRole('button', { name: 'Not now' }))
     expect(props.onNavigate).toHaveBeenCalledWith('roster', 'section-1', true)
   })
   it('validates a bulk file, saves selected students and retries only failed saves', async () => {
     vi.mocked(readStudentFile).mockResolvedValue([
-      { row: 2, name: 'Ben Rao', registerNumber: 'CS002', rollNumber: '', email: '', attendance: '' },
-      { row: 3, name: 'Casey Rao', registerNumber: 'CS003', rollNumber: '', email: '', attendance: '' },
+      { row: 2, name: 'Ben Rao', registerNumber: 'CS002', rollNumber: '', email: 'student@college.edu', attendance: '' },
+      { row: 3, name: 'Casey Rao', registerNumber: 'CS003', rollNumber: '', email: 'student@college.edu', attendance: '' },
     ])
     vi.mocked(api.createRegistration).mockResolvedValueOnce(registration).mockRejectedValueOnce(new Error('Temporary registration failure')).mockResolvedValue(registration)
     const user = userEvent.setup()

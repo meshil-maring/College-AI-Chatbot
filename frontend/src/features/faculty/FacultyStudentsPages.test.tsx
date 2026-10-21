@@ -120,6 +120,7 @@ describe('Students page navigation', () => {
     await user.click(within(nav).getByRole('link', { name: 'Register', exact: true }))
     await user.type(screen.getByRole('textbox', { name: 'Student name (required)' }), 'Beena Shah')
     await user.type(screen.getByRole('textbox', { name: 'Register number (required)' }), 'CS002')
+    await user.type(screen.getByRole('textbox', { name: 'Email (required)' }), 'beena@college.edu')
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Batch' })).toBeEnabled())
     fireEvent.change(screen.getByRole('combobox', { name: 'Batch' }), { target: { value: 'batch-1' } })
     await user.click(screen.getByRole('button', { name: 'Register student', exact: true }))

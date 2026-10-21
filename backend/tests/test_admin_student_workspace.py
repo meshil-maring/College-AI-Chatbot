@@ -23,7 +23,7 @@ BASE = '/api/v1/admin/student-workspace'
 SCOPE = {'institution_id': TENANT, 'section_id': SECTION, 'program_id': PROGRAM, 'academic_year_id': YEAR,
          'semester_id': SEMESTER, 'code': 'A', 'section_code': 'A', 'name': 'Section A',
          'course_id': 'subject', 'course': {'name': 'Data Mining', 'code': 'CS501'}}
-PAYLOAD = {'student_name': 'Ada Rao', 'register_number': 'CS001', 'batch_id': BATCH}
+PAYLOAD = {'student_name': 'Ada Rao', 'register_number': 'CS001', 'batch_id': BATCH, 'email': 'ada@college.edu'}
 
 
 class Query:
@@ -174,6 +174,27 @@ def test_create_permission_and_batch_are_rechecked_server_side(api):
     response = client.post(f'{BASE}/sections/{SECTION}/registrations', json=PAYLOAD)
     assert response.status_code == 422 and response.json()['error']['code'] == 'BATCH_UNAVAILABLE'
     assert not db.writes
+
+
+def test_invitation_route_uses_the_existing_registration_permission_and_server_actor(api, monkeypatch):
+    from app.services import student_registration_invitations
+    client, _, user = api
+    calls = []
+    def send(actor, section, registration, **kwargs):
+        calls.append((actor, section, registration, kwargs))
+        return {'registration_id': str(registration), 'status': 'sent', 'message': 'Accepted'}
+    monkeypatch.setattr(student_registration_invitations, 'send_invitation', send)
+    path = f'{BASE}/sections/{SECTION}/registrations/{ROSTER}/invitation'
+    assert client.post(path, json={'email': 'forged@other.edu', 'actor': FOREIGN}).status_code == 200
+    assert calls[0][0]['institution_id'] == TENANT and calls[0][0]['user_id'] == USER
+    assert calls[0][3] == {'permission': 'students.create'}
+    user['effective_permissions'].remove('students.create')
+    assert client.post(path).status_code == 403
+    assert len(calls) == 1
+    user['roles'] = ['staff']
+    user['role_assignments'][0]['role'] = 'staff'
+    user['effective_permissions'] = ['*']
+    assert client.post(path).status_code == 403
 
 
 def test_missing_attendance_permission_and_foreign_profile_fail_closed(api):

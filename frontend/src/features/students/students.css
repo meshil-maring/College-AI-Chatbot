@@ -1177,6 +1177,20 @@
 .admin-sidebar nav.students-page-links { padding: 0 0 6px; }
 .students-tabs-bar { margin-bottom: 20px; }
 .students-search-form { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.students-auto-invite { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid #304862; border-radius: 9px; background: #121c28; }
+.students-auto-invite input { flex: 0 0 auto; margin-top: 3px; }
+.students-auto-invite strong { display: block; color: #e1e8f8; font-size: 13px; }
+.students-auto-invite small { display: block; margin-top: 5px; color: #a4b4cd; font-size: 12px; }
+.students-registration-complete { padding: 24px; }
+.students-invitation-results { margin-top: 20px; padding: 20px; border: 1px solid #304862; border-radius: 9px; background: #0d1c2c; text-align: left; }
+.students-invitation-results h3 { display: flex; align-items: center; gap: 9px; color: #e1e8f8; font-size: 16px; font-weight: 600; }
+.students-invitation-results h3 svg { flex-shrink: 0; width: 20px; height: 20px; color: #ffc72c; }
+.students-invitation-results p { max-width: none; margin: 10px 0; color: #a4b4cd; font-size: 12px; }
+.students-invitation-results ul { margin: 15px 0; padding: 0; list-style: none; }
+.students-invitation-results li { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid #26394e; font-size: 12px; overflow-wrap: anywhere; }
+.students-invitation-results li strong { color: #e1e8f8; }
+.students-invitation-results li span { color: #a4b4cd; }
+.students-invitation-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 @media (max-width: 760px) {
   .students-search-form { width: 100%; }
 }

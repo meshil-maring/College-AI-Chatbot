@@ -56,6 +56,14 @@ def register_class_student(scope_section_id: UUID, payload: StudentRegistrationC
     return created
 
 
+@router.post('/student-registrations/sections/{scope_section_id}/{registration_id}/invitation')
+def send_student_registration_invitation(scope_section_id: UUID, registration_id: UUID,
+                                         current_user: dict = Depends(_FACULTY)) -> dict:
+    authorize_permissions(current_user, 'attendance.manage')
+    from app.services.student_registration_invitations import send_invitation
+    return send_invitation(current_user, scope_section_id, registration_id)
+
+
 @router.get("/context")
 def get_faculty_context(current_user: dict = Depends(_FACULTY)) -> dict:
     authorize_permissions(current_user, "profile.own.read")

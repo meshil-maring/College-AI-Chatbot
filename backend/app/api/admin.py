@@ -134,6 +134,7 @@ _ADMIN_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("GET", "/admin/student-workspace/sections/{section_id}/history"): ("students.read", "attendance.read"),
     ("GET", "/admin/student-workspace/sections/{section_id}/registrations"): ("students.read",),
     ("POST", "/admin/student-workspace/sections/{section_id}/registrations"): ("students.create",),
+    ("POST", "/admin/student-workspace/sections/{section_id}/registrations/{registration_id}/invitation"): ("students.create",),
     ("GET", "/admin/student-workspace/sections/{section_id}/batches"): ("students.read",),
     ("POST", "/admin/students"): ("students.create",),
     ("GET", "/admin/students/pending"): ("students.read",),
@@ -1475,3 +1476,9 @@ def student_workspace_register(section_id: UUID, payload: StudentRegistrationCre
     created = student_registrations.create_registration(current_user, section_id, payload, permission='students.create')
     _record_audit(current_user, 'students.registration.create', 'student_registrations', str(created['registration_id']), created)
     return created
+
+
+@router.post('/student-workspace/sections/{section_id}/registrations/{registration_id}/invitation')
+def student_workspace_invitation(section_id: UUID, registration_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
+    from app.services.student_registration_invitations import send_invitation
+    return send_invitation(current_user, section_id, registration_id, permission='students.create')

@@ -144,6 +144,9 @@ class Settings(BaseSettings):
     # header.
     # ------------------------------------------------------------------
     email_provider: str = "local"
+    # Explicit opt-in for real inbox tests without changing the app environment.
+    # Test/testing environments always capture, even when this flag is true.
+    email_allow_live_in_development: bool = False
     email_from: str = "no-reply@localhost"
     email_reply_to: str = ""
     email_base_url: str = "http://localhost:5173"

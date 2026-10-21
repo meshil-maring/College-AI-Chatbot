@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches } from './studentRegistrationApi.ts'
+import { createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches, sendStudentRegistrationInvitation } from './studentRegistrationApi.ts'
 import { onSessionExpired } from './sessionEvents.ts'
 
 const fetchMock = vi.fn()
@@ -7,6 +7,12 @@ beforeEach(() => vi.stubGlobal('fetch', fetchMock.mockReset()))
 afterEach(() => vi.unstubAllGlobals())
 
 describe('class registration API', () => {
+  it('requests email only for a saved registration and never sends a client recipient', async () => {
+    fetchMock.mockResolvedValue(new Response('{}', { status: 200 }))
+    await sendStudentRegistrationInvitation('token', 'section', 'registration')
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/faculty/student-registrations/sections/section/registration/invitation', expect.objectContaining({ method: 'POST', headers: expect.objectContaining({ Authorization: 'Bearer token' }) }))
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined()
+  })
   it('loads configured batches through the authenticated class scope', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify([]), { status: 200 }))
     expect(await getRegistrationBatches('test-token', 'scope-section')).toEqual([])
@@ -14,7 +20,7 @@ describe('class registration API', () => {
   })
   it('sends the cohort and identity while using the section only as an authorization reference', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ registration_id: 'r1' }), { status: 201 }))
-    const data = { student_name: 'Ada Rao', register_number: '001', batch_id: 'batch-1' }
+    const data = { student_name: 'Ada Rao', register_number: '001', batch_id: 'batch-1', email: 'ada@college.edu' }
     await createClassStudentRegistration('test-token', 'scope-section', data)
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/faculty/student-registrations/sections/scope-section', expect.objectContaining({ method: 'POST', headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' }, body: JSON.stringify(data) }))
     expect(fetchMock.mock.calls[0][1].body).not.toContain('course_id')

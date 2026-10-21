@@ -13,11 +13,11 @@ vi.mock('../admin/students/studentImport.ts', async (original) => ({
 const assignment = { can_manage: true, assignment_id: 'a1', section_id: 'section-1', assigned_at: '', semester_id: 's1', academic_year_id: 'y1', section: { section_id: 'section-1', name: 'Section A', code: 'A', program_id: 'program-1', program: { program_id: 'program-1', name: 'Computer Science', degree_type: 'B.Tech' }, course: { name: 'Data Mining', code: 'CS501' } } }
 const existing: ClassStudentRegistration = { registration_id: 'r1', batch_id: 'batch-1', program_id: 'program-1', section_code: 'A', batch_start_year: 2026, batch_end_year: 2030, identity_conflict: false, subjects_assigned: false, student_name: 'Ada Rao', register_number: 'CS001', university_roll_number: 'UNI001', email: 'ada@example.test', roster_status: 'ACTIVE', linked_student_id: 'student-1' }
 const rows: files.ImportStudent[] = [
-  { row: 2, name: 'Ben Shah', registerNumber: 'CS002', rollNumber: 'UNI002', email: '', attendance: '' },
-  { row: 3, name: 'Casey Rao', registerNumber: 'CS003', rollNumber: 'UNI003', email: '', attendance: '' },
-  { row: 4, name: 'Ada Rao', registerNumber: 'CS001', rollNumber: 'UNI001', email: '', attendance: '' },
-  { row: 5, name: '', registerNumber: 'CS004', rollNumber: '', email: '', attendance: '' },
-  { row: 6, name: 'Different Student', registerNumber: 'CS001', rollNumber: 'UNI001', email: '', attendance: '' },
+  { row: 2, name: 'Ben Shah', registerNumber: 'CS002', rollNumber: 'UNI002', email: 'student@college.edu', attendance: '' },
+  { row: 3, name: 'Casey Rao', registerNumber: 'CS003', rollNumber: 'UNI003', email: 'student@college.edu', attendance: '' },
+  { row: 4, name: 'Ada Rao', registerNumber: 'CS001', rollNumber: 'UNI001', email: 'ada@example.test', attendance: '' },
+  { row: 5, name: '', registerNumber: 'CS004', rollNumber: '', email: 'student@college.edu', attendance: '' },
+  { row: 6, name: 'Different Student', registerNumber: 'CS001', rollNumber: 'UNI001', email: 'student@college.edu', attendance: '' },
 ]
 
 beforeEach(() => {
@@ -65,6 +65,7 @@ describe('registration methods and bulk import', () => {
     expect(screen.queryByRole('combobox', { name: /subject/i })).not.toBeInTheDocument()
     await user.type(screen.getByRole('textbox', { name: 'Student name (required)' }), 'Ada Rao')
     await user.type(screen.getByRole('textbox', { name: 'Register number (required)' }), 'CS001')
+    await user.type(screen.getByRole('textbox', { name: 'Email (required)' }), 'beena@college.edu')
     await user.click(screen.getByRole('button', { name: 'Register student', exact: true }))
     expect(await screen.findByRole('alert')).toHaveTextContent('active batch')
     expect(createClassStudentRegistration).not.toHaveBeenCalled()
@@ -72,7 +73,7 @@ describe('registration methods and bulk import', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Batch' }), 'batch-1')
     await user.click(screen.getByRole('button', { name: 'Register student', exact: true }))
     await waitFor(() => expect(createClassStudentRegistration).toHaveBeenCalledExactlyOnceWith('token', 'section-1', {
-      student_name: 'Ada Rao', register_number: 'CS001', batch_id: 'batch-1',
+      student_name: 'Ada Rao', register_number: 'CS001', batch_id: 'batch-1', email: 'beena@college.edu',
     }))
   })
   it('switches accessible tabs with the keyboard and retains the individual form draft', async () => {
@@ -104,7 +105,7 @@ describe('registration methods and bulk import', () => {
     const results = await screen.findByRole('region', { name: 'Registration results' })
     expect(within(results).getByRole('status')).toHaveTextContent('Registered: 1 · Failed: 1 · Skipped: 3')
     expect(createClassStudentRegistration).toHaveBeenCalledTimes(2)
-    expect(createClassStudentRegistration).toHaveBeenNthCalledWith(1, 'token', 'section-1', { student_name: 'Ben Shah', register_number: 'CS002', university_roll_number: 'UNI002', batch_id: 'batch-1' })
+    expect(createClassStudentRegistration).toHaveBeenNthCalledWith(1, 'token', 'section-1', { student_name: 'Ben Shah', register_number: 'CS002', university_roll_number: 'UNI002', email: 'student@college.edu', batch_id: 'batch-1' })
     await waitFor(() => expect(screen.getByRole('button', { name: 'Retry failed registrations' })).toBeEnabled())
     await user.click(screen.getByRole('button', { name: 'Retry failed registrations' }))
     await waitFor(() => expect(within(results).getByRole('status')).toHaveTextContent('Registered: 2 · Failed: 0 · Skipped: 3'))

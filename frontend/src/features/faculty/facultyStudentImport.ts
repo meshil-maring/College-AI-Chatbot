@@ -5,7 +5,7 @@ import { readStudentFile, type ImportStudent, type ReviewStudent } from '../admi
 export const REGISTRATION_COLUMNS = ['name', 'register_number', 'university_roll_number', 'email']
 
 export function readRegistrationFile(file: File) {
-  return readStudentFile(file, { requiredColumns: ['name', 'register_number'], allowedColumns: REGISTRATION_COLUMNS })
+  return readStudentFile(file, { requiredColumns: ['name', 'register_number', 'email'], allowedColumns: REGISTRATION_COLUMNS })
 }
 
 export async function loadRegistrationRoster(token: string, sectionId: string, getRegistrations = getClassStudentRegistrations): Promise<ClassStudentRegistration[]> {
@@ -28,7 +28,8 @@ export function reviewStudentRegistrations(rows: ImportStudent[], existing: Pick
     const errors: string[] = []
     if (!row.name) errors.push('Student name is missing')
     if (!row.registerNumber) errors.push('Register number is missing')
-    if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) errors.push('Email format is invalid')
+    if (!row.email) errors.push('Student email is required')
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) errors.push('Email format is invalid')
     if (row.name.length > 256 || [row.registerNumber, row.rollNumber, row.email].some((value) => value.length > 128)) errors.push('A value exceeds the allowed length')
     if (errors.length) return { ...row, status: 'invalid', message: errors.join('; ') }
     const matches = existing.filter((student) => key(student.register_number) === key(row.registerNumber)

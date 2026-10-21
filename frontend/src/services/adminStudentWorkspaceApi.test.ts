@@ -4,6 +4,13 @@ import { adminStudentWorkspaceApi as api } from './adminStudentWorkspaceApi.ts'
 afterEach(() => vi.unstubAllGlobals())
 
 describe('Admin Students API routing', () => {
+  it('sends invitation requests only through the Admin route for saved registrations', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await api.sendInvitation('token', 'section', 'registration')
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/student-workspace/sections/section/registrations/registration/invitation', expect.objectContaining({ method: 'POST', headers: expect.objectContaining({ Authorization: 'Bearer token' }) }))
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined()
+  })
   it('sends saved cohort filters and archived cohort reads through Admin routes', async () => {
     const fetchMock = vi.fn().mockImplementation(async () => new Response('[]', { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
@@ -24,7 +31,7 @@ describe('Admin Students API routing', () => {
     await api.getHistory('token', 'section-1', new URLSearchParams({ offset: '25' }))
     await api.getBatches('token', 'section-1')
     await api.getRegistrations('token', 'section-1', 100, 100, 'PENDING_APPROVAL')
-    const input = { student_name: 'Ada Rao', register_number: 'CS001', batch_id: 'batch-1' }
+    const input = { student_name: 'Ada Rao', register_number: 'CS001', batch_id: 'batch-1', email: 'ada@college.edu' }
     await api.createRegistration('token', 'section-1', input)
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       '/api/v1/admin/student-workspace/sections',

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -107,6 +108,20 @@ def test_mailgun_success_constructs_message_and_normalizes_id() -> None:
         assert value in observed["body"]
 
 
+def test_mailgun_sends_html_with_the_text_fallback() -> None:
+    observed = {}
+    def handler(request):
+        observed['body'] = request.content.decode()
+        return httpx.Response(200, json={'id': f'<{MESSAGE_ID}>'})
+    html = '<a href="https://app.example.edu/login/student?register=1">Complete registration</a>'
+    _transport(handler).send_invitation(
+        replace(_email(), html_body=html), from_address='noreply@example.edu', reply_to=None,
+        timeout_seconds=4.5, idempotency_key='email-outbox:test-id',
+    )
+    assert 'name="html"' in observed['body'] and html in observed['body']
+    assert 'name="text"' in observed['body'] and _email().body in observed['body']
+
+
 @pytest.mark.parametrize(
     ("status", "expected", "retryable"),
     [
@@ -123,6 +138,7 @@ def test_mailgun_http_errors_are_normalized(status, expected, retryable) -> None
         _send(transport)
     assert error.value.code == expected
     assert error.value.retryable is retryable
+    assert error.value.provider_status_code == status
     assert "provider secret body" not in str(error.value)
 
 
@@ -135,6 +151,7 @@ def test_mailgun_rate_limit_honors_retry_after() -> None:
     assert error.value.code == email_delivery.DELIVERY_RATE_LIMITED
     assert error.value.retryable is True
     assert error.value.retry_after_seconds == 17
+    assert error.value.provider_status_code == 429
 
 
 def test_mailgun_timeout_and_network_failures_are_safe() -> None:

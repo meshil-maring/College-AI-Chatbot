@@ -4,15 +4,17 @@ import { parseCsv, readImportRows, type ImportStudent } from '../admin/students/
 import { loadRegistrationRoster, REGISTRATION_COLUMNS, reviewStudentRegistrations } from './facultyStudentImport.ts'
 
 vi.mock('../../services/studentRegistrationApi.ts', () => ({ getClassStudentRegistrations: vi.fn() }))
-const row = (overrides: Partial<ImportStudent> = {}): ImportStudent => ({ row: 2, name: 'Ada Rao', registerNumber: '001', rollNumber: '', email: '', attendance: '', ...overrides })
+const row = (overrides: Partial<ImportStudent> = {}): ImportStudent => ({ row: 2, name: 'Ada Rao', registerNumber: '001', rollNumber: '', email: 'ada@college.edu', attendance: '', ...overrides })
 const existing: ClassStudentRegistration = { registration_id: 'r1', batch_id: 'batch-1', program_id: 'program-1', section_code: 'A', batch_start_year: 2026, batch_end_year: 2030, identity_conflict: false, subjects_assigned: false, student_name: 'Ada Rao', register_number: '001', university_roll_number: null, email: null, roster_status: 'UNREGISTERED', linked_student_id: null }
 beforeEach(() => vi.resetAllMocks())
 
 describe('bulk student registration review', () => {
-  it('supports optional contact and roll fields, preserves identifier zeros, and rejects unsupported attendance columns', () => {
-    const options = { requiredColumns: ['name', 'register_number'], allowedColumns: REGISTRATION_COLUMNS }
-    expect(readImportRows(parseCsv('student_name,register_number\nAda Rao,001'), options)).toEqual([row()])
-    expect(() => readImportRows(parseCsv('name,register_number,attendance\nAda Rao,001,90'), options)).toThrow('Unrecognized columns: attendance')
+  it('requires email while allowing an optional roll number and preserves identifier zeros', () => {
+    const options = { requiredColumns: ['name', 'register_number', 'email'], allowedColumns: REGISTRATION_COLUMNS }
+    expect(readImportRows(parseCsv('student_name,register_number,email\nAda Rao,001,ada@college.edu'), options)).toEqual([row()])
+    expect(() => readImportRows(parseCsv('name,register_number,email,attendance\nAda Rao,001,ada@college.edu,90'), options)).toThrow('Unrecognized columns: attendance')
+    expect(() => readImportRows(parseCsv('name,register_number\nAda Rao,001'), options)).toThrow('Missing columns: email')
+    expect(reviewStudentRegistrations([row({ email: '' })], [])[0]).toMatchObject({ status: 'invalid', message: 'Student email is required' })
     expect(reviewStudentRegistrations([row()], [])[0].status).toBe('valid')
   })
   it('distinguishes identical duplicates, conflicting identities, malformed email, and missing required fields', () => {

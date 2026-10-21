@@ -13,10 +13,10 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
+from email.utils import parseaddr, parsedate_to_datetime
 from enum import StrEnum
 from typing import Callable, Protocol, runtime_checkable
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 import httpx
 
@@ -67,10 +67,12 @@ class EmailDeliveryError(AppError):
         *,
         retryable: bool = False,
         retry_after_seconds: float | None = None,
+        provider_status_code: int | None = None,
     ) -> None:
         super().__init__(message, status_code=502, code=code)
         self.retryable = retryable
         self.retry_after_seconds = retry_after_seconds
+        self.provider_status_code = provider_status_code
 
 
 @dataclass(frozen=True)
@@ -85,6 +87,7 @@ class InvitationEmail:
     expires_at: str | None
     # Stable across retries for one application attempt. Never a raw token.
     idempotency_key: str = ""
+    html_body: str | None = None
 
 
 @dataclass(frozen=True)
@@ -409,6 +412,8 @@ class MailgunEmailTransport:
             "subject": email.subject,
             "text": email.body,
         }
+        if email.html_body:
+            form["html"] = email.html_body
         if reply_to:
             form["h:Reply-To"] = reply_to
         try:
@@ -432,22 +437,26 @@ class MailgunEmailTransport:
                 code=DELIVERY_RATE_LIMITED,
                 retryable=True,
                 retry_after_seconds=_retry_after_seconds(response.headers.get("Retry-After")),
+                provider_status_code=response.status_code,
             )
         if response.status_code in {401, 403}:
             raise EmailDeliveryError(
                 "Invitation could not be delivered.",
                 code=DELIVERY_CONFIGURATION_ERROR,
+                provider_status_code=response.status_code,
             )
         if 500 <= response.status_code <= 599:
             raise EmailDeliveryError(
                 "Invitation could not be delivered.",
                 code=DELIVERY_TEMPORARY_FAILURE,
                 retryable=True,
+                provider_status_code=response.status_code,
             )
         if response.status_code != 200:
             raise EmailDeliveryError(
                 "Invitation could not be delivered.",
                 code=DELIVERY_PERMANENT_FAILURE,
+                provider_status_code=response.status_code,
             )
         try:
             payload = response.json()
@@ -485,10 +494,13 @@ def get_email_provider() -> EmailDeliveryProvider:
     environment = (settings.environment or "").strip().lower()
     if environment in {"test", "testing"}:
         return TestEmailProvider()
-    if environment in {"development", "dev", "local"}:
+    development = environment in {"development", "dev", "local"}
+    if development and not settings.email_allow_live_in_development:
         return LocalEmailProvider()
 
     name = (settings.email_provider or "").strip().lower()
+    if development:
+        _validate_live_development_mailgun(name)
     api_key = (
         settings.mailgun_api_key
         if name == PROVIDER_MAILGUN
@@ -501,6 +513,34 @@ def get_email_provider() -> EmailDeliveryProvider:
         transport=_build_production_transport(name, api_key),
         api_key=api_key,
     )
+
+
+def _validate_live_development_mailgun(name: str) -> None:
+    """Validate an explicit real-mail test without exposing configured values."""
+    from email_validator import EmailNotValidError, validate_email
+    missing = []
+    if name != PROVIDER_MAILGUN:
+        missing.append('EMAIL_PROVIDER=mailgun')
+    if not settings.mailgun_api_key.strip():
+        missing.append('MAILGUN_API_KEY')
+    domain = settings.mailgun_domain.strip().lower()
+    if not domain or any(char in domain for char in '/:@ '):
+        missing.append('MAILGUN_DOMAIN')
+    address = parseaddr(settings.email_from)[1]
+    try:
+        validate_email(address, check_deliverability=False)
+    except EmailNotValidError:
+        missing.append('EMAIL_FROM')
+    if domain.startswith('sandbox') and domain.endswith('.mailgun.org') and not address.lower().endswith('@' + domain):
+        missing.append('EMAIL_FROM using the sandbox domain')
+    if settings.mailgun_base_url.strip().rstrip('/') not in {'https://api.mailgun.net', 'https://api.eu.mailgun.net'}:
+        missing.append('MAILGUN_BASE_URL using the Mailgun US or EU origin')
+    base = urlsplit(settings.email_base_url.strip())
+    if base.scheme not in {'http', 'https'} or not base.netloc or base.username or base.password or base.query or base.fragment:
+        missing.append('EMAIL_BASE_URL')
+    if missing:
+        raise EmailDeliveryError('Real development email requires: ' + ', '.join(missing) + '.',
+                                 code=DELIVERY_CONFIGURATION_ERROR)
 
 
 def get_email_sender_address() -> str:

@@ -32,7 +32,7 @@ def principal():
 
 def payload(**changes):
     return StudentRegistrationCreate(student_name='Ada Rao', register_number='CS001',
-                                     batch_id=BATCH, **changes)
+                                     batch_id=BATCH, email='ada@college.edu', **changes)
 
 
 def stored(**changes):

@@ -32,4 +32,5 @@ export const adminStudentWorkspaceApi: StudentWorkspaceApi = {
   })}`),
   createRegistration: (token, id, data) => request(token, `${section(id)}/registrations`, { method: 'POST', body: JSON.stringify(data) }),
   getBatches: (token, id, includeInactive = false) => request(token, `${section(id)}/batches${includeInactive ? '?include_inactive=true' : ''}`),
+  sendInvitation: (token, id, registrationId) => request(token, `${section(id)}/registrations/${encodeURIComponent(registrationId)}/invitation`, { method: 'POST' }),
 }
