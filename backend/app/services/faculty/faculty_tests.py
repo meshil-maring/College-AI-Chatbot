@@ -8,6 +8,7 @@ from uuid import UUID
 from postgrest.exceptions import APIError
 
 from app.core.errors import AppError
+from app.services.faculty import assessment_roster
 from app.db.supabase import get_admin_client
 from app.repositories.shared.query_pages import read_all, read_one
 from app.schemas.faculty.faculty_tests import MarkInput
@@ -84,29 +85,11 @@ def list_tests(user, section_id, *, offset=0, limit=50):
 
 
 def marks(user, test_id):
-    t = test_row(user, test_id)
-    roster = read_all(get_admin_client().table('faculty_attendance_rosters').select(
-        'roster_id,register_number,university_roll_number,student_name,roster_status,reconciliation_state,linked_student_id')
-        .eq('institution_id', str(user['institution_id'])).eq('section_id', t['section_id']).order('register_number').order('roster_id'))
-    candidates = _identity_candidates(get_admin_client(), str(user['institution_id']), roster)
-    for r in roster:
-        identity, errors = match_identity(str(user['institution_id']), r, candidates)
-        if errors or (identity and any(identity.get(key) is not None and str(identity[key]) != str(t['section'][key])
-                                     for key in ('program_id', 'academic_year_id'))) or (
-            r.get('linked_student_id') and str(r['linked_student_id']) != str((identity or {}).get('student_id'))
-        ):
-            r['reconciliation_state'] = 'CONFLICT'
-        r.pop('linked_student_id', None)
-    saved = read_all(get_admin_client().table('test_results').select('roster_id,scored_marks,mark_status,remarks,percentage')
-                    .eq('institution_id', str(user['institution_id'])).eq('test_id', str(test_id)).order('test_result_id'))
-    by_id = {row['roster_id']: row for row in saved}
-    t['can_edit_metadata'] = t['can_manage'] and t['status'] in ('DRAFT', 'SCHEDULED') and not saved
-    rows = [{**r, **by_id.get(r['roster_id'], {'scored_marks': None, 'mark_status': 'missing', 'remarks': None, 'percentage': None})}
-            for r in roster if r['roster_status'] != 'INACTIVE' or r['roster_id'] in by_id]
-    for row in rows:
-        row['outcome'] = ('pass' if Decimal(str(row['scored_marks'])) >= Decimal(str(t['passing_marks'])) else 'fail') \
-            if row['mark_status'] == 'present' and t['passing_marks'] is not None else None
-    return {'test': t, 'rows': rows, 'review': calculate_review(rows)}
+    return assessment_roster.marks(
+        user, test_id, db=get_admin_client(), t=test_row(user, test_id),
+        identity_candidates=_identity_candidates, identity_match=match_identity,
+        review=calculate_review,
+    )
 
 
 def calculate_review(rows):

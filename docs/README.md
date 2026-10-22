@@ -14,7 +14,7 @@ tasks can load only the shared rules and relevant user section.
 | `evidence/` | Raw JSON evidence captured during validation runs (latency/behaviour baselines, physical validation results, OpenAPI dump) |
 | `schema/` | `schemaV2_export.sql` — exported database schema snapshot |
 | `reports/` | Validation/implementation reports plus the root-level security audit reports (`M1_PREFLIGHT_AUDIT_REPORT.md`, `SECURITY_REMEDIATION_PLANNING_REPORT.md`) |
-| `proposals/` | Design proposals (e.g. `academic_identity_verification_design/`) |
+| `proposals/` | Design proposals and implementation follow-ups, including the [Academic Setup curriculum/package workflow](proposals/academic_curriculum_packages/README.md), its [implementation evidence](proposals/academic_curriculum_packages/implementation.md), and `academic_identity_verification_design/`. |
 | `reviews/` | Independent review packages (e.g. `student_enrollment_final_2026-10-11/`) |
 | `security/` | Security audit records |
 | `mcp/` | Postman MCP guide (`postman_mcp_readme.md`) and its captured documentation page |

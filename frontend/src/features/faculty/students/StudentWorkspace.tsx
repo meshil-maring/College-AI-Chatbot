@@ -3,6 +3,7 @@ import { Users } from 'lucide-react'
 import { useState } from 'react'
 import { type FacultyAttendanceAssignment } from '../../../services/faculty/facultyAttendanceApi.ts'
 import StudentRosterFilters from '../../students/StudentRosterFilters.tsx'
+import SubjectAssignment from '../../students/subject-assignment/SubjectAssignment.tsx'
 import type { StudentRegistrationMethod } from '../../students/studentsNavigation.ts'
 import { StudentsPageHeader } from '../../students/StudentsUI.tsx'
 import { useStudentWorkspaceApi } from '../../students/StudentWorkspaceContext.tsx'
@@ -21,6 +22,7 @@ export function StudentWorkspace({
   registrationMethod,
   onRegistrationMethod,
   initialSearch,
+  packageAccess,
 }: {
   accessToken: string
   page: FacultyStudentPage
@@ -35,6 +37,7 @@ export function StudentWorkspace({
   registrationMethod?: StudentRegistrationMethod
   onRegistrationMethod?: (method: StudentRegistrationMethod) => void
   initialSearch?: string
+  packageAccess?: boolean
 }) {
   const api = useStudentWorkspaceApi()
   const registrationOpen = page === 'register'
@@ -111,7 +114,15 @@ export function StudentWorkspace({
               showBatch={page !== 'history'}
             />
           ) : null}
-          {page === 'history' ? (
+          {page === 'subject-assignment' ? (
+            <SubjectAssignment
+              key={`${selected.section_id}:${batchId}`}
+              token={accessToken}
+              assignment={selected}
+              batchId={batchId}
+              packageAccess={packageAccess}
+            />
+          ) : page === 'history' ? (
             <FacultyStudentRecordHistory key={selected.section_id} token={accessToken} assignment={selected} />
           ) : (
             <SectionStudents

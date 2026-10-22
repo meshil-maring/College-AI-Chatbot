@@ -57,6 +57,8 @@ output belongs in `dist/`, and installed dependencies belong in `node_modules/`.
 | `features/auth/registration/`                               | Institution lookup, registration state, fields, success screen                     |
 | `features/auth/access/`                                     | Permission helpers, permissions hook, and generated RBAC reference                 |
 | `features/adminInvitation/`                                 | Invitation acceptance hook and form                                                |
+| `features/students/subject-assignment/` | Missing subject memberships, assignment actions, and workflow tests |
+| `features/academic-packages/` | Shared curriculum/class setup, fixed package assignment, requests, decisions, and history |
 | `features/admin/students/import/`                           | Spreadsheet parsing, validation, CSV reports, import state, and workflow stages    |
 | `features/admin/students/directory/`                        | Student directory filters, pagination, statistics, and export state                |
 | `features/admin/documents/`                                 | Document UI and request lifecycle                                                  |
@@ -96,6 +98,7 @@ move, and callers and mocks use the new paths. Type facades retain their paths.
 | Entry                                          | Implementation folders                                                                       |
 | ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `services/admin/adminApi.ts`                   | `services/admin/`: transport, academics, identity, knowledge, students, faculty, memberships |
+| `services/academics/academicPackagesApi.ts`     | Cross-role authenticated academic package catalogue and typed commands |
 | `services/auth/auth.ts`                        | `services/auth/`: endpoints, errors, transport, session operations                           |
 | `services/registration/registration.ts`        | `services/registration/`: errors and public registration client                              |
 | `services/platform/platformInstitutionsApi.ts` | `services/platform/`: transport, institutions, invitations, audit                            |

@@ -112,6 +112,20 @@ describe('Admin uses the full Faculty Students workflow', () => {
     expect(api.createRegistration).toHaveBeenCalledTimes(3)
     expect(vi.mocked(api.createRegistration).mock.lastCall?.[2].student_name).toBe('Casey Rao')
   })
+  it('assigns class registrations through the Admin subject page without requiring attendance read access', async () => {
+    auth.user.effective_permissions = ['students.read', 'students.create']
+    vi.mocked(api.getSubjectAssignmentStudents).mockResolvedValue({ items: [{ ...registration, assignment_errors: [] }], total: 1 })
+    vi.mocked(api.assignStudentSubject).mockResolvedValue({ registration_id: registration.registration_id, roster_id: 'assigned', status: 'assigned' })
+    const user = userEvent.setup()
+    render(<StudentManager {...props} section="subject-assignment" />)
+    const button = await screen.findByRole('button', { name: /^Assign Ada Rao/ })
+    await waitFor(() => expect(button).toBeEnabled())
+    vi.mocked(api.getSubjectAssignmentStudents).mockResolvedValue({ items: [], total: 0 })
+    await user.click(button)
+    expect(await screen.findByText('Ada Rao was assigned to this subject.')).toBeInTheDocument()
+    expect(api.assignStudentSubject).toHaveBeenCalledWith('token', 'section-1', registration.registration_id)
+    expect(getFacultyAttendanceStudents).not.toHaveBeenCalled()
+  })
   it('shows section history rather than an actor-limited audit preview', async () => {
     render(<StudentManager {...props} section="history" />)
     expect(await screen.findByText('Added to roster')).toBeInTheDocument()

@@ -167,7 +167,7 @@ describe('FacultyStudents', () => {
     await screen.findByText('Ada Rao')
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(breadcrumb).getByText('Students')).toBeInTheDocument()
-    expect(within(breadcrumb).getByText('Roster')).toBeInTheDocument()
+    expect(within(breadcrumb).getByText('All Student')).toBeInTheDocument()
     const activeCard = await waitFor(() => {
       const card = screen.getByRole('button', { name: /Active Students/ })
       expect(card).toHaveTextContent('1')

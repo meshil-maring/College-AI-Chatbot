@@ -1,8 +1,15 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, vi } from 'vitest'
 import * as api from '../../../../services/admin/adminApi.ts'
 import type { AcademicCatalogue } from '../../../../types/academicSetup.ts'
+import * as packagesApi from '../../../../services/academics/academicPackagesApi.ts'
+import { catalogue } from '../../../academic-packages/__tests__/fixtures.ts'
+import { useAcademicSetup } from '../useAcademicSetup.ts'
+import AcademicRecordForm from '../ui/AcademicRecordForm.tsx'
+import AcademicRecordTable from '../ui/AcademicRecordTable.tsx'
+import { useAcademicDirectory } from '../useAcademicDirectory.ts'
 vi.mock('../../../../services/admin/adminApi.ts')
+vi.mock('../../../../services/academics/academicPackagesApi.ts')
 
 export const fixture = (): AcademicCatalogue => ({
   institution_id: 'tenant',
@@ -74,16 +81,63 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(api.getAcademicCatalogue).mockResolvedValue(fixture())
   vi.mocked(api.saveAcademicRecord).mockResolvedValue({ saved: true })
+  vi.mocked(packagesApi.getAcademicPackages).mockResolvedValue(catalogue())
+  vi.mocked(packagesApi.commandAcademicPackage).mockResolvedValue({})
 })
 
 export async function loaded() {
-  await screen.findByRole('button', { name: /^Add record$/ })
+  await screen.findByRole('button', { name: /^Add / }, { timeout: 5000 })
 }
 
 export function tab(name: string) {
-  fireEvent.click(
-    within(screen.getByRole('navigation', { name: 'Academic setup entities' })).getByRole('button', {
-      name: new RegExp(`^${name}`),
-    }),
+  const entities: Record<string, string> = {
+    Departments: 'departments',
+    Programs: 'programs',
+    Batches: 'batches',
+    'Academic Years': 'academic_years',
+    Semesters: 'semesters',
+    'Courses / Subjects': 'courses',
+    'Course Offerings': 'course_offerings',
+    'Program Curriculum': 'program_courses',
+  }
+  const entity = entities[name]
+  const harness = screen.queryByLabelText('Test record type')
+  if (harness) return fireEvent.change(harness, { target: { value: entity } })
+  const stage = ['departments', 'programs', 'batches'].includes(entity)
+    ? 'College basics'
+    : ['academic_years', 'semesters'].includes(entity)
+      ? 'Calendar'
+      : 'Subjects'
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`^[1-6] ${stage}$`) }))
+  const selector = screen.queryByLabelText('Record type')
+  if (selector) fireEvent.change(selector, { target: { value: entity } })
+}
+
+// Retains transport/form compatibility checks for legacy entities outside the admin setup journey.
+export function AcademicRecordHarness({ accessToken }: { accessToken: string }) {
+  const state = useAcademicSetup(accessToken)
+  const directory = useAcademicDirectory(state.data, state.entity)
+  return (
+    <>
+      <select
+        aria-label="Test record type"
+        value={state.entity}
+        onChange={(event) => state.reset(event.target.value as typeof state.entity)}
+      >
+        {state.available.map((entity) => (
+          <option key={entity} value={entity}>
+            {entity}
+          </option>
+        ))}
+      </select>
+      {state.data && (
+        <>
+          <AcademicRecordTable state={state} directory={directory} />
+          {state.formOpen && <AcademicRecordForm state={state} />}
+          {state.notice && <p>{state.notice}</p>}
+          {state.error && <p role="alert">{state.error}</p>}
+        </>
+      )}
+    </>
   )
 }

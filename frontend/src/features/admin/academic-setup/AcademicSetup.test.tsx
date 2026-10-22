@@ -1,5 +1,5 @@
 import './__tests__/AcademicSetup.support.tsx'
-import { fixture, loaded, tab } from './__tests__/AcademicSetup.support.tsx'
+import { fixture, loaded, tab, AcademicRecordHarness } from './__tests__/AcademicSetup.support.tsx'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import * as api from '../../../services/admin/adminApi.ts'
@@ -9,9 +9,9 @@ describe('AcademicSetup', () => {
     render(<AcademicSetup accessToken="jwt" />)
     await loaded()
     tab('Batches')
-    expect(screen.getByRole('heading', { name: 'Batches', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /^Batches/ })).toBeInTheDocument()
     expect(screen.getByText(/No batches have been entered/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Add record' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Add / }))
     fireEvent.change(screen.getByLabelText('Branch / program *'), { target: { value: 'p' } })
     fireEvent.change(screen.getByLabelText('Admission year *'), { target: { value: '2026' } })
     fireEvent.change(screen.getByLabelText('Completion year *'), { target: { value: '2025' } })
@@ -37,7 +37,7 @@ describe('AcademicSetup', () => {
     render(<AcademicSetup accessToken="jwt" />)
     await loaded()
     tab('Batches')
-    expect(screen.getByText('2026–2030 · Science degree')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '2026–2030 · Science degree', exact: true })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Edit 2026–2030' }))
     expect(screen.getByLabelText('Branch / program *')).toBeDisabled()
     expect(screen.getByLabelText('Admission year *')).toBeDisabled()
@@ -64,7 +64,7 @@ describe('AcademicSetup', () => {
   it('creates a department without client actor or tenant fields', async () => {
     render(<AcademicSetup accessToken="jwt" />)
     await loaded()
-    fireEvent.click(screen.getByRole('button', { name: 'Add record' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Add / }))
     fireEvent.change(screen.getByLabelText('Name *'), { target: { value: 'Engineering' } })
     fireEvent.change(screen.getByLabelText('Code *'), { target: { value: 'ENG' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save record' }))
@@ -93,14 +93,14 @@ describe('AcademicSetup', () => {
         'd',
       ),
     )
-    expect(screen.getByText('SCI · Science')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Science', exact: true })).toBeInTheDocument()
   })
 
   it('offers only active departments when creating a program', async () => {
     render(<AcademicSetup accessToken="jwt" />)
     await loaded()
     tab('Programs')
-    fireEvent.click(screen.getByRole('button', { name: 'Add record' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Add / }))
     const options = within(screen.getByLabelText('Department *'))
       .getAllByRole('option')
       .map((option) => option.textContent)
@@ -109,10 +109,10 @@ describe('AcademicSetup', () => {
   })
 
   it('cascades year/semester and program/curriculum subject selections', async () => {
-    render(<AcademicSetup accessToken="jwt" />)
+    render(<AcademicRecordHarness accessToken="jwt" />)
     await loaded()
     tab('Course Offerings')
-    fireEvent.click(screen.getByRole('button', { name: 'Add record' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Add / }))
     expect(within(screen.getByLabelText('Program *')).queryByText('BAD · Unavailable')).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Program *'), { target: { value: 'p' } })
     fireEvent.change(screen.getByLabelText('Academic year *'), { target: { value: 'y' } })
@@ -130,7 +130,7 @@ describe('AcademicSetup', () => {
     render(<AcademicSetup accessToken="jwt" />)
     await loaded()
     tab('Semesters')
-    fireEvent.click(screen.getByRole('button', { name: 'Add record' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Add / }))
     for (const [name, value] of [
       ['Academic year *', 'y'],
       ['Name *', 'Term'],
@@ -146,7 +146,7 @@ describe('AcademicSetup', () => {
   })
 
   it('keeps relationships fixed during edits and excludes them from patch payloads', async () => {
-    render(<AcademicSetup accessToken="jwt" />)
+    render(<AcademicRecordHarness accessToken="jwt" />)
     await loaded()
     tab('Course Offerings')
     fireEvent.click(screen.getByRole('button', { name: 'Edit offering' }))
@@ -170,7 +170,7 @@ describe('AcademicSetup', () => {
     vi.mocked(api.getAcademicCatalogue).mockResolvedValue(data)
     render(<AcademicSetup accessToken="jwt" />)
     await screen.findByText('Read-only access')
-    expect(screen.queryByRole('button', { name: 'Add record' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Add / })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Edit SCI' })).not.toBeInTheDocument()
   })
 
@@ -196,7 +196,7 @@ describe('AcademicSetup', () => {
   it('discards unsaved state when the session changes', async () => {
     const view = render(<AcademicSetup accessToken="old" />)
     await loaded()
-    fireEvent.click(screen.getByRole('button', { name: 'Add record' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Add / }))
     fireEvent.change(screen.getByLabelText('Name *'), { target: { value: 'Unsaved old data' } })
     view.rerender(<AcademicSetup accessToken="new" />)
     await loaded()

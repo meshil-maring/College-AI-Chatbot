@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AcademicPackagesWorkspace from '../academic-packages/AcademicPackagesWorkspace.tsx'
 import { Bot, LayoutDashboard, UserCircle, Users, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../auth/session/AuthProvider.tsx'
 import { hasPermission } from '../auth/access/permissions.ts'
@@ -11,7 +12,7 @@ import { StudentsNavigation, StudentsPageHeader } from '../students/StudentsUI.t
 import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
 import { STUDENT_PAGES, leaveStudents, navigateStudents, studentsPageHref, useStudentsLocation } from '../students/studentsNavigation.ts'
 
-const icons: Record<StaffView, LucideIcon> = { dashboard: LayoutDashboard, approvals: Users, assistant: Bot, profile: UserCircle }
+const icons: Record<StaffView, LucideIcon> = { dashboard: LayoutDashboard, approvals: Users, assistant: Bot, profile: UserCircle, 'academic-packages': Users }
 
 export default function StaffShell() {
   const { user, role, accessToken, logout } = useAuth()
@@ -42,6 +43,7 @@ export default function StaffShell() {
               : <p className="students-empty" role="status">Your session could not be verified. Please sign in again.</p>}
           </section>}
           {view === 'profile' && <StaffProfile user={user} />}
+          {view === 'academic-packages' && accessToken && <AcademicPackagesWorkspace accessToken={accessToken} />}
           {view === 'assistant' && <section aria-label="AI Assistant"><ChatShell /></section>}
         </>}
   </WorkspaceFrame>

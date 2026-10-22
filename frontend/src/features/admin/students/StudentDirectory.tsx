@@ -40,7 +40,7 @@ export default function StudentDirectory(props: Parameters<typeof useStudentDire
   return (
     <section className="students-content students-scope" aria-label="Student directory">
       <StudentsPageHeader
-        page="Roster"
+        page="All Student"
         title="Students"
         description="Your students, their records, and a clearer view of your institution."
         actions={
@@ -69,7 +69,7 @@ export default function StudentDirectory(props: Parameters<typeof useStudentDire
       />
       <div className="students-toolbar">
         <div className="students-toolbar-heading">
-          <h2>Roster{!loading && !error ? ` (${students.length})` : ''}</h2>
+          <h2>All Student{!loading && !error ? ` (${students.length})` : ''}</h2>
           <p>Institution student records</p>
         </div>
         <div className="students-table-actions">

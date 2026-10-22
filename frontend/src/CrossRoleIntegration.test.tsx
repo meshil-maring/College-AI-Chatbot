@@ -208,7 +208,7 @@ describe('stale view-state protection', () => {
 
     await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
     expect(await screen.findByRole('link', { name: 'Waiting approval' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Roster' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'All Student' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Register', exact: true })).not.toBeInTheDocument()
 
     setIdentity(STUDENT_B, 'student')

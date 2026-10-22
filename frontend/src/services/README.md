@@ -8,6 +8,7 @@ and update callers, type imports, and Vitest mock paths together.
 | Folder          | Responsibility and entry points                                              |
 | --------------- | ---------------------------------------------------------------------------- |
 | `admin/`        | `adminApi.ts`, admin student workspace, and domain-specific admin operations |
+| `academics/`    | Cross-role curriculum, class, package assignment, request and history API    |
 | `auth/`         | `auth.ts`, authentication endpoints/errors/transport, and development auth   |
 | `chat/`         | `api.ts` for authenticated conversations; `publicChat.ts` for public chat    |
 | `faculty/`      | Faculty attendance and examination clients                                   |

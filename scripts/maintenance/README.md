@@ -1,5 +1,10 @@
 # Supabase application data reset
 
+For the 2026-10-22 Quest **academic-only** fresh start, use
+[the scoped academic reset](academic_reset/README.md). It preserves accounts,
+roles, and unrelated modules. The historical global scripts described below
+delete accounts and are not applicable to that request.
+
 These scripts support the authorized fresh start of College AI Chatbot,
 project `rjnfmjcvkfotneswpygr`. They do not replay or apply migrations.
 

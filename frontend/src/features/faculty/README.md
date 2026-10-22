@@ -37,6 +37,12 @@ feature. Group further by responsibility before reaching either limit.
 API clients stay in `src/services/faculty/`, `src/services/students/`, or the
 owning admin service module. Reuse shared Students UI and workspace adapters
 without duplicating registration or approval contracts.
+Subject Assignment UI and state live in `../students/subject-assignment/` and use
+the same workspace adapters for Admin and Faculty.
+The scoped **Subject Packages** entry composes `../academic-packages/` for class
+placements, complete package assignments, requests, decisions, and history.
+Only server grants and active responsibility capabilities expose that entry;
+the catalogue also supplies capabilities for each class.
 
 Preserve identity and scope keys, server-authoritative permissions, assignment
 validity, request cancellation, and query invalidation when moving modules.

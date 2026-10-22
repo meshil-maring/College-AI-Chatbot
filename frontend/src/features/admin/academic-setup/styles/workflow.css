@@ -1,0 +1,142 @@
+.academic-workflow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--academic-border);
+}
+.academic-workflow button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 64px;
+  padding: 12px;
+  border: 1px solid #2d2e2a;
+  border-radius: 9px;
+  background: #151612;
+  color: #b7b7b0;
+  text-align: left;
+  line-height: 1.4;
+}
+.academic-workflow button > span {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid #44453d;
+  font-size: 11px;
+}
+.academic-workflow button[aria-current] {
+  color: var(--academic-yellow);
+  border-color: #9b7c19;
+  background: #272413;
+}
+.academic-workflow button[aria-current] > span {
+  color: #1e1906;
+  background: var(--academic-yellow);
+  border-color: var(--academic-yellow);
+}
+.academic-stage-intro {
+  padding: 24px 0 18px;
+}
+.academic-stage-intro > p:first-child {
+  color: var(--academic-yellow);
+  font-size: 11px;
+  margin: 0 0 7px;
+}
+.academic-stage-intro h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+  font-weight: 650;
+}
+.academic-stage-intro > p:last-child,
+.academic-stage-guidance {
+  color: var(--academic-muted);
+  line-height: 1.7;
+}
+.academic-stage-tools {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.academic-stage-tools label {
+  display: grid;
+  gap: 6px;
+  min-width: 210px;
+}
+.academic-stage-tools select {
+  border: 1px solid #393a33;
+  border-radius: 7px;
+  color: #ededed;
+  background: #151612;
+  padding: 10px;
+}
+.academic-stage-tools > button {
+  margin-left: auto;
+}
+.academic-stage-guidance {
+  margin-bottom: 18px;
+}
+.academic-prerequisites {
+  padding: 16px;
+  margin-top: 12px;
+  border: 1px solid #645020;
+  border-radius: 9px;
+  background: #211e12;
+}
+.academic-prerequisites h3 {
+  color: #f4d665;
+  font-weight: 600;
+}
+.academic-prerequisites button {
+  margin-top: 10px;
+}
+.academic-stage-footer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid var(--academic-border);
+  margin-top: 24px;
+  padding-top: 18px;
+}
+.academic-stage-footer > p {
+  flex-basis: 100%;
+}
+.package-embedded > .package-heading {
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.package-mapping-details {
+  margin: 16px 0;
+  border: 1px solid var(--academic-border);
+  border-radius: 9px;
+  padding: 14px;
+}
+.package-mapping-details summary {
+  color: var(--academic-yellow);
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+@media (max-width: 1100px) {
+  .academic-workflow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 550px) {
+  .academic-workflow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .academic-workflow button {
+    padding: 10px;
+    font-size: 12px;
+  }
+  .academic-stage-tools label {
+    width: 100%;
+    min-width: 0;
+  }
+}

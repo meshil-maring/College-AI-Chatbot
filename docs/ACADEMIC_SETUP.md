@@ -1,29 +1,138 @@
-# Entering an institution's academic structure
+﻿# Academic Setup
 
-Sign in as an authorized University Admin and open **Academic Setup** in the existing Admin Panel. Enter only your institution's actual records.
+Sign in as an authorized institution administrator and open **Academic Setup**.
+The workflow follows six stages. Use the institution's official names, codes,
+calendar dates, and subject definitions.
 
-The workspace presents the eight academic setup stages as numbered steps, with Previous/Next navigation and a suggested next step based on usable records. Progress counts visible steps with at least one active record whose parents are active; it does not certify that the college's complete catalogue has been entered. Continue adding all required records at each stage.
+| Stage | What to enter |
+| --- | --- |
+| College basics | Departments, degree programs/branches, and admission batches. |
+| Calendar | Academic years and their dated teaching terms. |
+| Subjects | Reusable subject definitions owned by departments. |
+| Curricula & packages | Named curriculum versions, study semesters, classifications, shared core, and complete subject packages. |
+| Classes | Batch, teaching term, study semester, class section, curriculum, enabled packages, rules, and teaching groups. |
+| Assignments | Student placements, complete package assignment, change requests, and history. |
 
-Academic Setup, Faculty Assignments and its responsibility options reuse recent data when you switch screens. Data stays fresh for one minute and is retained in memory for five minutes after leaving a screen. Returning after the freshness window shows the existing records while refreshing them in the background. Use **Refresh academic setup** or **Refresh assignments** to check for changes immediately. Academic saves refresh the catalogue and invalidate related Faculty options; assignment saves refresh assignments and responsibility options. Retained data is scoped to the session token and cleared on logout, session expiry or token replacement.
+Departments, programs, batches, calendar terms, and subjects remain separate
+normalized records. Their forms sit in the relevant stages. The old nine-entity
+tab bar and separate legacy Program Curriculum editor are retired from this
+workflow. Offerings and subject teaching sections are prepared within Classes.
 
-Each stage includes a short description and an illustrative example. Field information icons work on mouse hover, keyboard focus and tap; Escape dismisses the explanation. Required fields are marked with an asterisk, and optional fields may be left blank. Missing prerequisites link back to their steps; unavailable permissions direct the administrator to someone with access. Creation is disabled until the required records can be selected, while existing records remain editable. Save or cancel an open form before moving between steps. Subject selectors in Course Offerings explain the required selection order and tell you when a matching curriculum link is missing.
+## College basics, calendar, and subjects
 
-1. Create the institution's **Departments** with their official names and codes.
-2. Create **Programs** in the correct departments, including degree type and duration.
-3. Create **Academic Years** with actual start/end dates. Active years cannot overlap. To change the current year, first clear Current on the previous year; inactive years cannot remain Current.
-4. Create **Semesters** within the selected year. The existing model shares year-owned semesters across programs; offerings identify the program. Semester dates must fit the year, and code and number are unique within that year. Only one semester per year can be Current.
-5. Create **Courses / Subjects** in their owning departments. These are definitions, independent of teaching occurrences.
-6. Add **Program Curriculum** links between programs and subjects. Subjects from another department of the same institution are allowed. Leave the optional Semester selector at **Any semester** for a reusable curriculum link; selecting a term restricts offerings through that link to that exact term.
-7. Create **Course Offerings**. Select program, academic year, semester and a subject from the active program curriculum. The program department filter helps narrow programs. Each course/program/year/semester combination is unique.
-8. Create **Sections** under each offering. Use consistent section codes for the sibling subjects taught to the same class. Sections are subject-specific records in the existing architecture; the same section code on different subject offerings does not create a duplicate class hierarchy.
-9. Open the existing **Faculty Assignments** screen and select the real Faculty member and active subject section. The section already identifies its course and academic context. Existing assignment permissions and responsibilities continue to apply.
+Create departments first, then programs and their admission batches. A program
+represents the degree and branch, such as B.Tech Computer Science. A batch is an
+admission cohort, such as 2026-2030, rather than the current academic year.
 
-**Edit** supports metadata and safe activation/deactivation. Academic parent IDs are fixed after creation; section code is also fixed because it participates in class scope. Deactivation retains dependent records and historical data. Dependent selectors only offer records whose academic ancestors are active. Clear Current when deactivating a year or semester; the UI does this automatically. A duplicate/conflicting record is rejected by the database even when two administrators submit concurrently.
+The **Course / branch** selector in Curricula & packages and Classes uses these
+degree programs. Subjects such as DSA or ML belong in the subject library. If no
+program is available, use **Set up a course / branch** to open College basics
+with Degree programs selected. Saving academic records refreshes the current
+session's curriculum/class options automatically.
 
-Student enrollment is a separate existing workflow. A real student must have an approved identity/profile in the institution, appropriate program/year, and enrollment in actual subject sections through the existing Faculty roster entry/import and reconciliation process. Academic Setup creates neither students nor attendance rosters. Student academic projections continue to use the existing identity, eligibility, published-results and attendance services.
+Academic years have real start and end dates. Active years cannot overlap, and
+an inactive year cannot be Current. Clear Current on the previous year before
+choosing a new current year. Dated semesters belong to an academic year; their
+dates must fit that year. Codes and semester numbers are unique within the year,
+and only one dated semester per year can be Current.
 
-The setup API is `GET /api/v1/admin/academic-setup`, `POST /api/v1/admin/academic-setup/{entity}` and `PATCH /api/v1/admin/academic-setup/{entity}/{record_id}`. The institution and audit actor come from authenticated server state. Browser Supabase table/RPC access is denied; use the application API. Existing permissions authorize departments/programs, years, semesters, and courses/curriculum/offerings/sections individually.
+A dated teaching term is distinct from a study semester in a degree. Class Setup
+connects, for example, study Semester 5 to the actual term in academic year
+2028-2029. Programs can use the same institution calendar.
 
-Database changes are in `20261016000000_academic_master_data_management.sql` and `20261016010000_academic_curriculum_semester_convergence.sql`. The latter repairs older databases that have a required curriculum `semester_number` instead of the optional `semester_id`: it adds the UUID foreign key, keeps existing numbers, and makes the obsolete number optional so reusable curriculum links can be created. It refreshes PostgREST's schema cache and can be safely rerun. Missing academic schema now returns a controlled `503 ACADEMIC_SCHEMA_UNAVAILABLE` instead of an unhandled server error.
+Subjects are reusable definitions, such as DSA or Machine Learning. Curriculum
+membership determines whether a subject is core, elective, open elective, skill,
+or project. One subject may have different classifications in different plans.
 
-Run the full backend/frontend tests and build, then `scripts/validation/verify_academic_setup_database.ps1` for a clean disposable replay, SQL lint, rollback contracts, RLS/privilege checks, unchanged attendance/assessment/responsibility contracts and concurrent-creation checks. Contract fixtures exist only in the disposable database, which is removed afterward; the migrations contain no academic seed records. To verify the repair independently, use `scripts/validation/build_academic_curriculum_convergence_contract.py` to generate a SQL contract for legacy and canonical table shapes; execute it with PostgreSQL or `supabase db query --linked --file`. It uses only session-local temporary tables and rolls back every fixture change.
+Searchable directories and detail panels support creation and safe metadata or
+activation changes. Required fields have an asterisk. Context explanations and
+prerequisites guide each form. Academic parent identifiers remain fixed after
+creation; deactivation retains dependent data and history.
+
+## Curricula and packages
+
+Create a named version, such as curriculum code `CSE-202-DSEE`. Add the subjects
+and classifications for each study semester. Mark shared core subjects and
+create complete packages from the other curriculum subjects.
+
+| Package | Shared core | Package subjects | Assigned together |
+| --- | --- | --- | --- |
+| ABC | DSA, ML | A, B, C | DSA, ML, A, B, C |
+| EFG | DSA, ML | E, F, G | DSA, ML, E, F, G |
+
+Finish the plan before creating its first class. Referenced curriculum content
+freezes, so later changes require a new curriculum version. A class requires at
+least one complete package for its chosen study semester.
+
+Subjects use references to the shared library. Do not create duplicate subject
+definitions, legacy curriculum links, or copied core subjects for each package.
+
+## Classes and teaching groups
+
+Choose the admission batch, dated term, study semester, class section, and
+curriculum. Enable the packages offered to this class. Class codes identify the
+shared context; selection codes append the package code. Preview the full
+context and subject set instead of inferring relationships by parsing a code.
+
+Set whether students may select their first package; this defaults off. Set an
+administrator deadline no later than the semester's calendar midpoint. The
+stored instant is edited and displayed in IST (`Asia/Kolkata`). An omitted
+deadline uses the midpoint. A configured deadline can only be shortened.
+
+Use **Prepare teaching groups** after enabling packages. It prepares offerings
+and class-specific subject sections for shared core and enabled-package subjects
+in one transaction, then maps them to the class. Existing valid mappings remain.
+Invalid or foreign mappings stop the operation without partial writes.
+
+This action requires an institution administrator with both class-management
+and existing course-management permission. No manual legacy curriculum link is
+needed. Canonical offerings
+remain unique by subject, program, academic year, and teaching term. Teaching
+sections remain subject-specific because faculty, rosters, attendance, and
+results use them; they are not additional shared classes.
+
+Assign real faculty to the prepared subject sections in **Faculty Assignments**.
+That workflow retains its existing permissions and responsibility checks.
+
+## Assignments and changes
+
+Place an eligible registration in its class, then assign a package. Selection
+assigns every package subject and all shared core together. Missing, inactive,
+conflicting, or full teaching groups roll back the complete operation.
+
+If initial student choice is enabled, an eligible student may choose once for
+their own placement. Otherwise authorized administration makes the assignment.
+Students can request later changes. Only authorized administration can apply a
+change or approve a request, within the verified class/department scope.
+
+At and after the deadline, package changes and late approvals are blocked for
+everyone. Submitting a request earlier does not extend the deadline. First
+assignments remain possible for late admissions under the same authority.
+
+Changes preserve shared memberships and recorded attendance/results. Removed
+subjects receive ended participation; rejoining preserves the historical roster
+and starts a new participation episode. Current teaching views exclude ended
+participation while historical attendance and published results remain visible.
+
+Package assignment does not create, approve, or activate student accounts.
+Original admission identity and batch remain intact during progression to later
+dated terms. Managed classes require complete packages; legacy unmanaged groups
+retain their existing individual roster/import behavior.
+
+## Access, refresh, and operations
+
+The server derives the institution and actor from authenticated state. Browser
+visibility never grants authority. Staff need explicit delegation; HOD and class
+incharge authority requires a live matching scoped responsibility. Ordinary
+teaching assignments do not confer package-management authority.
+
+Academic catalogues reuse recent data for one minute and retain it in memory for
+five minutes after leaving the screen. Saves refresh affected catalogues. Use
+Refresh to fetch immediately. Data is scoped to the session token and cleared
+on logout, expiry, or replacement.
+
+See [implementation and validation](proposals/academic_curriculum_packages/implementation.md)
+for API contracts, schema installation, regression evidence, and release status.
+The [fresh-start record](proposals/academic_curriculum_packages/fresh-start.md)
+defines the authorized Quest academic reset. Accounts, roles, audit history, and
+unrelated modules are outside that reset.

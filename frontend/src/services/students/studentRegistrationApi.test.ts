@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches, sendStudentRegistrationInvitation } from './studentRegistrationApi.ts'
+import { assignStudentSubject, getSubjectAssignmentStudents, createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches, sendStudentRegistrationInvitation } from './studentRegistrationApi.ts'
 import { onSessionExpired } from '../shared/sessionEvents.ts'
 
 const fetchMock = vi.fn()
@@ -39,6 +39,18 @@ describe('class registration API', () => {
     expect(Object.fromEntries(url.searchParams)).toEqual({ limit: '25', offset: '0', registration: 'ACTIVE', batch_id: 'batch-1', search: 'Ada & Ben', sort: 'student_name' })
     await getRegistrationBatches('test-token', 'scope-section', true)
     expect(fetchMock.mock.calls[1][0]).toBe('/api/v1/faculty/student-registrations/sections/scope-section/batches?include_inactive=true')
+  })
+
+  it('loads missing subject memberships with batch filters and assigns only server-saved identifiers', async () => {
+    fetchMock.mockImplementation(async () => new Response('{}', { status: 200 }))
+    await getSubjectAssignmentStudents('token', 'section', 25, { batchId: 'batch', search: 'Ada & Ben' })
+    const url = new URL(fetchMock.mock.calls[0][0], 'http://localhost')
+    expect(url.pathname).toBe('/api/v1/faculty/student-registrations/sections/section/subject-assignments')
+    expect(Object.fromEntries(url.searchParams)).toEqual({ limit: '25', offset: '25', batch_id: 'batch', search: 'Ada & Ben' })
+    await assignStudentSubject('token', 'section', 'registration/id')
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/v1/faculty/student-registrations/sections/section/subject-assignments/registration%2Fid')
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'POST', headers: { Authorization: 'Bearer token' } })
+    expect(fetchMock.mock.calls[1][1].body).toBeUndefined()
   })
 
   it('reuses session expiration and exposes safe migration or permission errors', async () => {

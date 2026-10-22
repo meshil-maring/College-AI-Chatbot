@@ -53,28 +53,93 @@ const BASE = `${(import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '
 
 async function request<T>(token: string, scopeSectionId: string, init: RequestInit = {}, query = ''): Promise<T> {
   const response = await fetch(`${BASE}/${encodeURIComponent(scopeSectionId)}${query}`, {
-    ...init, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    ...init,
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
   })
   if (response.status === 401) notifySessionExpired(token)
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
-    throw new AdminApiError(response.status, body.error?.message ?? 'Student registration request failed.', body, body.error?.code ?? null)
+    throw new AdminApiError(
+      response.status,
+      body.error?.message ?? 'Student registration request failed.',
+      body,
+      body.error?.code ?? null,
+    )
   }
   return response.json() as Promise<T>
 }
 
-export const createClassStudentRegistration = (token: string, scopeSectionId: string, data: ClassStudentRegistrationInput) =>
-  request<ClassStudentRegistration>(token, scopeSectionId, { method: 'POST', body: JSON.stringify(data) })
+export const createClassStudentRegistration = (
+  token: string,
+  scopeSectionId: string,
+  data: ClassStudentRegistrationInput,
+) => request<ClassStudentRegistration>(token, scopeSectionId, { method: 'POST', body: JSON.stringify(data) })
 
 export const sendStudentRegistrationInvitation = (token: string, scopeSectionId: string, registrationId: string) =>
-  request<StudentInvitationDelivery>(token, scopeSectionId, { method: 'POST' }, `/${encodeURIComponent(registrationId)}/invitation`)
+  request<StudentInvitationDelivery>(
+    token,
+    scopeSectionId,
+    { method: 'POST' },
+    `/${encodeURIComponent(registrationId)}/invitation`,
+  )
 
-export const getClassStudentRegistrations = (token: string, scopeSectionId: string, offset = 0, limit = 100, registration?: ClassStudentRegistration['roster_status'], filters?: ClassRegistrationFilters) =>
-  request<{ items: ClassStudentRegistration[]; total: number }>(token, scopeSectionId, {}, `?${new URLSearchParams({
-    limit: String(limit), offset: String(offset), ...(registration ? { registration } : {}),
-    ...(filters?.batchId ? { batch_id: filters.batchId } : {}), ...(filters?.search ? { search: filters.search } : {}),
-    ...(filters?.sort ? { sort: filters.sort } : {}),
-  })}`)
+export const getClassStudentRegistrations = (
+  token: string,
+  scopeSectionId: string,
+  offset = 0,
+  limit = 100,
+  registration?: ClassStudentRegistration['roster_status'],
+  filters?: ClassRegistrationFilters,
+) =>
+  request<{ items: ClassStudentRegistration[]; total: number }>(
+    token,
+    scopeSectionId,
+    {},
+    `?${new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+      ...(registration ? { registration } : {}),
+      ...(filters?.batchId ? { batch_id: filters.batchId } : {}),
+      ...(filters?.search ? { search: filters.search } : {}),
+      ...(filters?.sort ? { sort: filters.sort } : {}),
+    })}`,
+  )
 
 export const getRegistrationBatches = (token: string, scopeSectionId: string, includeInactive = false) =>
   request<AcademicBatch[]>(token, scopeSectionId, {}, `/batches${includeInactive ? '?include_inactive=true' : ''}`)
+
+export interface SubjectAssignmentStudent extends ClassStudentRegistration {
+  assignment_errors: string[]
+}
+
+export interface SubjectAssignmentResult {
+  registration_id: string
+  roster_id: string
+  status: 'assigned' | 'already_assigned'
+}
+
+export const getSubjectAssignmentStudents = (
+  token: string,
+  sectionId: string,
+  offset = 0,
+  filters?: ClassRegistrationFilters,
+) =>
+  request<{ items: SubjectAssignmentStudent[]; total: number }>(
+    token,
+    sectionId,
+    {},
+    `/subject-assignments?${new URLSearchParams({
+      limit: '25',
+      offset: String(offset),
+      ...(filters?.batchId ? { batch_id: filters.batchId } : {}),
+      ...(filters?.search ? { search: filters.search } : {}),
+    })}`,
+  )
+
+export const assignStudentSubject = (token: string, sectionId: string, registrationId: string) =>
+  request<SubjectAssignmentResult>(
+    token,
+    sectionId,
+    { method: 'POST' },
+    `/subject-assignments/${encodeURIComponent(registrationId)}`,
+  )

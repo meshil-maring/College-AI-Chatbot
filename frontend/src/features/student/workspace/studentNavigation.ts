@@ -20,6 +20,7 @@
  */
 
 import { hasPermission } from '../../auth/access/permissions.ts'
+import { canOpenPackageWorkspace } from '../../academic-packages/packageNavigation.ts'
 
 /** Roles that receive the student experience shell. */
 const STUDENT_SHELL_ROLES: readonly string[] = ['student', 'staff', 'faculty']
@@ -33,6 +34,7 @@ export type StudentView =
   | 'resources'
   | 'assistant'
   | 'profile'
+  | 'packages'
 
 export interface StudentNavItem {
   readonly key: StudentView
@@ -69,6 +71,7 @@ const STUDENT_VIEW_PERMISSIONS: Readonly<Record<StudentView, string>> = {
   resources: 'documents.read',
   assistant: 'ai.chat',
   profile: 'profile.own.read',
+  packages: 'academic.package.own.read',
 }
 
 export function buildStudentNavigation(
@@ -78,9 +81,10 @@ export function buildStudentNavigation(
   if (role === null) return []
   if (!STUDENT_SHELL_ROLES.includes(role)) return []
   if (permissions === undefined) return STUDENT_NAV_ITEMS
-  return STUDENT_NAV_ITEMS.filter((item) =>
+  const items = STUDENT_NAV_ITEMS.filter((item) =>
     hasPermission(permissions, STUDENT_VIEW_PERMISSIONS[item.key]),
   )
+  return canOpenPackageWorkspace(permissions) ? [...items, { key: 'packages', label: 'My Subject Package' }] : items
 }
 
 /** Human-readable heading for each view (used for the page `h1`). */
@@ -92,4 +96,5 @@ export const STUDENT_VIEW_HEADINGS: Readonly<Record<StudentView, string>> = {
   resources: 'Learning Resources',
   assistant: 'AI Assistant',
   profile: 'Profile',
+  packages: 'My Subject Package',
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AcademicPackagesWorkspace from '../../academic-packages/AcademicPackagesWorkspace.tsx'
 import {
   Bell,
   BookOpen,
@@ -62,7 +63,7 @@ function PortalIcon({ name, size = 18 }: { name: IconName; size?: number }) {
 }
 
 const NAV_ICONS: Record<FacultyView, IconName> = {
-  dashboard: 'dashboard', assignments: 'sections', students: 'students', attendance: 'attendance', results: 'results', notices: 'notices', resources: 'resources', assistant: 'assistant', profile: 'settings', 'class-management': 'students', department: 'course', 'teaching-assignment-management': 'sections',
+  dashboard: 'dashboard', assignments: 'sections', students: 'students', attendance: 'attendance', results: 'results', notices: 'notices', resources: 'resources', assistant: 'assistant', profile: 'settings', 'class-management': 'students', department: 'course', 'teaching-assignment-management': 'sections', 'academic-packages': 'course',
 }
 
 export default function FacultyShell() {
@@ -148,6 +149,7 @@ export default function FacultyShell() {
             {view === 'assignments' && accessToken !== null ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">My Sections</h1><FacultyAssignments accessToken={accessToken} /></> : null}
             {view === 'attendance' && accessToken !== null ? <FacultyAttendance accessToken={accessToken} actionRequest={attendanceActionRequest} scopeVersion={JSON.stringify(context)} onNavigateAssignments={() => navigate('assignments')} /> : null}
             {view === 'students' && accessToken !== null ? <FacultyStudents accessToken={accessToken} scopeVersion={JSON.stringify(context)} /> : null}
+            {view === 'academic-packages' && accessToken ? <AcademicPackagesWorkspace accessToken={accessToken} /> : null}
             {view === 'results' && accessToken !== null ? <FacultyTests accessToken={accessToken} scopeVersion={JSON.stringify(context)} onDirtyChange={setTestsDirty} /> : null}
             {FACULTY_COMING_SOON_VIEWS.includes(view) && view !== 'attendance' ? <><h1 className="mb-4 break-words text-2xl font-bold text-white">{FACULTY_VIEW_HEADINGS[view]}</h1><FacultyComingSoon view={view} /></> : null}
             {view === 'assistant' ? <section aria-label="AI Assistant"><ChatShell /></section> : null}

@@ -12,7 +12,8 @@ from app.services.auth.phase81_rbac import _active_sections
 from app.services.students.student_registrations import schema_required
 
 ROSTER_FIELDS = ('roster_id', 'register_number', 'university_roll_number', 'student_name',
-                 'email', 'roster_status', 'linked_student_id', 'reconciliation_state')
+                 'email', 'roster_status', 'linked_student_id', 'reconciliation_state',
+                 'participation_active', 'participation_ended_at')
 
 # The project's EXISTING attendance monitoring threshold (percent). Used by
 # the faculty section overview, the delegated responsibilities report and the
@@ -80,7 +81,7 @@ def overview(user: dict, section_id: UUID) -> dict:
     for record in records:
         by_date.setdefault(record['session_date'], []).append(record)
     dates = set(by_date) | {s['session_date'] for s in sessions}
-    return {'section': section, 'total_students': len(students), 'session_count': len(dates),
+    return {'section': section, 'total_students': sum(s.get('participation_active', True) for s in students), 'session_count': len(dates),
             **statistics(records), 'average_attendance': statistics(records)['attendance_percentage'],
             'low_attendance_count': sum(s['low_attendance'] for s in students), 'monitoring_threshold': MONITORING_THRESHOLD,
             'trend': [{'date': date, **statistics(by_date.get(date, []))} for date in sorted(dates)]}
@@ -92,6 +93,7 @@ def students_page(user: dict, section_id: UUID, *, limit: int = 50, offset: int 
                   sort: str = 'register_number', descending: bool = False,
                   batch_id: UUID | None = None) -> dict:
     section, students, _, _ = section_data(user, section_id)
+    students = [student for student in students if student.get('participation_active', True)]
     if batch_id:
         # Admission cohort belongs to the student's branch and persists when
         # they progress to another semester, year or section.

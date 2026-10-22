@@ -1,0 +1,228 @@
+.academic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.academic-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.academic-heading > svg {
+  color: var(--academic-yellow);
+  width: 42px;
+  height: 42px;
+  stroke-width: 1.8;
+}
+.academic-heading h1 {
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 700;
+  margin: 0 0 7px;
+  letter-spacing: -0.5px;
+}
+.academic-heading p {
+  color: var(--academic-muted);
+  margin: 0;
+  font-size: 13px;
+}
+.academic-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.academic-year-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--academic-border);
+  border-radius: 9px;
+  min-width: 175px;
+}
+.academic-year-select > svg {
+  color: var(--academic-yellow);
+  width: 20px;
+  height: 20px;
+}
+.academic-year-select > span {
+  flex: 1;
+  min-width: 0;
+}
+.academic-year-select span > span {
+  display: block;
+  font-size: 10px;
+  color: var(--academic-muted);
+}
+.academic-year-select select {
+  display: block;
+  width: 100%;
+  margin-top: 3px;
+  background: transparent;
+  border: 0;
+  color: #ededed;
+  font-size: 12px;
+  font-weight: 600;
+}
+.academic-year-select option {
+  background: #171817;
+}
+.academic-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.academic-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  border: 1px solid #1c1d1b;
+  border-radius: 9px;
+  padding: 15px 12px;
+  background: linear-gradient(120deg, #191a18, #141513);
+  color: #f5f5f5;
+}
+.academic-stat:hover:not(:disabled) {
+  border-color: #57503a;
+}
+.academic-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 43px;
+  height: 46px;
+  border-radius: 9px;
+  background: #35234c;
+  color: #aa72ff;
+  flex-shrink: 0;
+}
+.academic-stat-icon > svg {
+  width: 24px;
+  height: 24px;
+}
+.academic-stat strong {
+  display: block;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 650;
+}
+.academic-stat > span > span {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+  color: #b8b7bb;
+}
+.academic-tone-1 .academic-stat-icon {
+  background: #1b3558;
+  color: #589cff;
+}
+.academic-tone-2 .academic-stat-icon {
+  background: #193d2b;
+  color: #39d99a;
+}
+.academic-tone-3 .academic-stat-icon {
+  background: #422b18;
+  color: #ff9a44;
+}
+.academic-tone-4 .academic-stat-icon {
+  background: #4b2036;
+  color: #f366a1;
+}
+.academic-tone-5 .academic-stat-icon {
+  background: #1e3820;
+  color: #75df61;
+}
+.academic-tone-5 strong {
+  font-size: 17px;
+}
+.academic-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--academic-border);
+  margin-bottom: 15px;
+  overflow-x: auto;
+}
+.academic-tabs > button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 13px 12px 15px;
+  color: #b9b8bf;
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+}
+.academic-tabs > button[aria-current] {
+  color: var(--academic-yellow);
+}
+.academic-tabs > button[aria-current]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--academic-yellow);
+  border-radius: 4px 4px 0 0;
+}
+.academic-tabs > button:hover:not(:disabled) {
+  color: #ffe68a;
+}
+.academic-spinning {
+  animation: academic-spin 1s linear infinite;
+}
+@keyframes academic-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 1350px) {
+  .academic-stat {
+    gap: 9px;
+    padding: 12px 10px;
+  }
+  .academic-stat-icon {
+    width: 36px;
+    height: 40px;
+  }
+}
+@media (max-width: 1050px) {
+  .academic-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .academic-header {
+    flex-wrap: wrap;
+  }
+  .academic-heading h1 {
+    font-size: 23px;
+  }
+  .academic-heading > svg {
+    width: 34px;
+    height: 34px;
+  }
+  .academic-heading p {
+    font-size: 12px;
+  }
+  .academic-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 420px) {
+  .academic-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .academic-spinning {
+    animation: none;
+  }
+}

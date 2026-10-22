@@ -8,6 +8,9 @@ Follow the shared [backend structure rules](../../STRUCTURE.md).
 | `permissions.py` | Static permission catalog, role defaults and permission matching |
 | `security/` | Token verification, authenticated identity and authorization dependencies |
 | `startup_validation/` | Configuration checks, safe reports and startup enforcement |
+| `application.py` | Application creation, middleware and safe HTTP error handlers |
+| `application_routes.py` | Feature router registration with unchanged public paths |
+| `operational_routes.py` | Root, health and read-only readiness endpoints |
 
 ## Security
 

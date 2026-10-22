@@ -1,5 +1,17 @@
-import { getFacultyAttendanceAssignments, getFacultyAttendanceProfile, getFacultyAttendanceStudents, getFacultyStudentRegistrationHistory } from '../faculty/facultyAttendanceApi.ts'
-import { createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches, sendStudentRegistrationInvitation } from './studentRegistrationApi.ts'
+import {
+  getFacultyAttendanceAssignments,
+  getFacultyAttendanceProfile,
+  getFacultyAttendanceStudents,
+  getFacultyStudentRegistrationHistory,
+} from '../faculty/facultyAttendanceApi.ts'
+import {
+  assignStudentSubject,
+  createClassStudentRegistration,
+  getClassStudentRegistrations,
+  getRegistrationBatches,
+  getSubjectAssignmentStudents,
+  sendStudentRegistrationInvitation,
+} from './studentRegistrationApi.ts'
 
 export interface StudentWorkspaceApi {
   namespace: 'faculty' | 'admin'
@@ -11,6 +23,8 @@ export interface StudentWorkspaceApi {
   createRegistration: typeof createClassStudentRegistration
   getBatches: typeof getRegistrationBatches
   sendInvitation: typeof sendStudentRegistrationInvitation
+  getSubjectAssignmentStudents: typeof getSubjectAssignmentStudents
+  assignStudentSubject: typeof assignStudentSubject
 }
 
 export const facultyStudentWorkspaceApi: StudentWorkspaceApi = {
@@ -23,4 +37,6 @@ export const facultyStudentWorkspaceApi: StudentWorkspaceApi = {
   createRegistration: (...args) => createClassStudentRegistration(...args),
   getBatches: (...args) => getRegistrationBatches(...args),
   sendInvitation: (...args) => sendStudentRegistrationInvitation(...args),
+  getSubjectAssignmentStudents: (...args) => getSubjectAssignmentStudents(...args),
+  assignStudentSubject: (...args) => assignStudentSubject(...args),
 }

@@ -37,6 +37,9 @@ PERMISSIONS: tuple[str, ...] = (
     "audit.read",
     "academic.class.read", "academic.department.read", "academic.reports.read",
     "attendance.overview.read",
+    "academic.curriculum.read", "academic.curriculum.manage", "academic.class.manage",
+    "academic.package.assign", "academic.package.change", "academic.package.requests.review",
+    "academic.package.own.read", "academic.package.own.select", "academic.package.own.request",
 )
 
 _UNIVERSITY_ADMIN = frozenset({
@@ -55,6 +58,8 @@ _UNIVERSITY_ADMIN = frozenset({
     "documents.update", "documents.delete", "notices.read", "notices.create",
     "notices.update", "notices.delete", "ai.chat", "ai.knowledge.read",
     "ai.knowledge.create", "ai.knowledge.update", "ai.knowledge.delete", "audit.read",
+    "academic.curriculum.read", "academic.curriculum.manage", "academic.class.read", "academic.class.manage",
+    "academic.package.assign", "academic.package.change", "academic.package.requests.review",
 })
 
 DEFAULT_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -94,6 +99,7 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
         "profile.own.read", "profile.own.update", "notifications.own.read",
         "notifications.own.update", "ai.chat", "attendance.own.read",
         "results.own.read", "documents.read", "notices.read",
+        "academic.package.own.read", "academic.package.own.select", "academic.package.own.request",
     }),
 }
 
@@ -104,6 +110,8 @@ DELEGABLE_STAFF_PERMISSIONS: frozenset[str] = frozenset({
     "students.read", "students.update",
     "documents.read", "documents.create", "documents.update",
     "notices.read", "notices.create", "notices.update",
+    "academic.curriculum.read", "academic.class.read",
+    "academic.package.assign", "academic.package.change", "academic.package.requests.review",
 })
 
 

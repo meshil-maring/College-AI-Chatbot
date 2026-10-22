@@ -8,8 +8,10 @@ from postgrest.exceptions import APIError
 from app.core.errors import AppError
 from app.core.security import authorize_permissions, has_permission, user_tenant_id
 from app.db.supabase import get_admin_client
+from app.repositories.academics import academic_packages as package_repository
 from app.repositories.shared.query_pages import read_all
 from app.schemas.academics.academic_setup import CREATE_MODELS, IDS
+from app.services.academics.academic_packages import translate_error
 
 logger = logging.getLogger(__name__)
 _MISSING_SCHEMA_CODES = {"42703", "42P01", "42883", "PGRST202", "PGRST204", "PGRST205"}
@@ -48,6 +50,33 @@ def tenant(user: dict) -> UUID:
     if value is None:
         raise AppError("Institution scope required", 403, "SCOPE_MISSING")
     return value
+
+
+def _offering_eligibility(db, user: dict, institution: UUID, rows: dict) -> list[dict]:
+    try:
+        data = package_repository.offering_eligibility(db, str(user['user_id']), str(institution))
+    except APIError as error:
+        # Legacy master setup remains usable before the additive package RPC is
+        # installed. Internal schema failures and authorization never fall back.
+        if (error.code in {'PGRST202', '42883'}
+                and 'academic_package_offering_eligibility' in error.message):
+            return []
+        raise translate_error(error) from error
+    fields = ('program_id', 'course_id', 'semester_id', 'source')
+    if not isinstance(data, list) or len(data) > 5000 or any(
+        not isinstance(item, dict) or item.get('source') != 'named_curriculum'
+        or any(not isinstance(item.get(field), str) or not item[field] for field in fields)
+        for item in data
+    ):
+        raise AppError('Invalid offering eligibility projection', 500, 'DATABASE_PROJECTION_INVALID')
+    programs = {row['program_id'] for row in rows['programs']}
+    courses = {row['course_id'] for row in rows['courses']}
+    semesters = {row['semester_id'] for row in rows['semesters']}
+    eligible = {
+        (item['program_id'], item['course_id'], item['semester_id']) for item in data
+        if item['program_id'] in programs and item['course_id'] in courses and item['semester_id'] in semesters
+    }
+    return [dict(zip(fields, (*key, 'named_curriculum'))) for key in sorted(eligible)]
 
 
 def catalogue(user: dict) -> dict:
@@ -99,6 +128,8 @@ def catalogue(user: dict) -> dict:
         "institution_id": str(institution),
         "records": {entity: rows[entity] for entity in readable},
         "manageable": [entity for entity in readable if has_permission(user, f"{RESOURCES[entity]}.manage")],
+        "offering_eligibility": _offering_eligibility(db, user, institution, rows)
+        if 'course_offerings' in readable else [],
     }
 
 

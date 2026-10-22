@@ -16,7 +16,7 @@ describe('class registration directory', () => {
     render(<ClassRegistrationDirectory token="token" sectionId="scope-section" />)
     expect(await screen.findByText('Ada Rao')).toBeInTheDocument()
     expect(screen.getByText('2026–2030')).toBeInTheDocument()
-    expect(within(screen.getByRole('table')).getByText('Assign later')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Manage in Subject Assignment')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Next registrations' }))
     await waitFor(() => expect(getClassStudentRegistrations).toHaveBeenLastCalledWith('token', 'scope-section', 25, 25, undefined, undefined))
   })

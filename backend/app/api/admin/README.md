@@ -13,13 +13,13 @@ permission dependency; it contains no endpoint handlers.
 | `documents.py` | Document listing, upload, versions and deletion |
 | `faqs.py` | FAQ management and publication |
 | `notices.py` | Notice management |
-| `students.py` | Student management and pending approval/rejection |
-| `results.py` | Results, CSV uploads and test results |
+| `student_records/students.py` | Student management and pending approval/rejection |
+| `student_records/results.py` | Results, CSV uploads and test results |
 | `attendance.py` | Student attendance management |
 | `audit.py` | Audit log queries |
 | `permissions.py` | Staff permission delegation |
 | `faculty.py` | Faculty teaching assignments and responsibilities |
-| `student_workspace.py` | Sections, rosters, profiles, registration history, batches and invitations |
+| `student_records/student_workspace.py` | Sections, rosters, profiles, registration history, batches, invitations and subject assignments |
 
 ## Shared boundaries
 

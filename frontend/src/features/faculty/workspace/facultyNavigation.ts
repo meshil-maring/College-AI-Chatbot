@@ -3,6 +3,7 @@
  */
 
 import { hasPermission } from '../../auth/access/permissions.ts'
+import { canOpenPackageWorkspace } from '../../academic-packages/packageNavigation.ts'
 
 /** The only role that renders the faculty shell. */
 const FACULTY_SHELL_ROLES: readonly string[] = ['faculty']
@@ -21,6 +22,7 @@ export type FacultyView =
   | 'class-management'
   | 'department'
   | 'teaching-assignment-management'
+  | 'academic-packages'
 
 /**
  * Views with NO backend contract today: each renders the inert
@@ -97,6 +99,7 @@ export function buildFacultyNavigation(
   if (hasPermission(responsibilityGrants, 'academic.class.read')) additional.push({ key: 'class-management', label: 'Class Management' })
   if (hasPermission(responsibilityGrants, 'academic.department.read')) additional.push({ key: 'department', label: 'Department' })
   if (hasPermission(responsibilityGrants, 'faculty.assignments.manage')) additional.push({ key: 'teaching-assignment-management', label: 'Teaching Assignments' })
+  if (canOpenPackageWorkspace([...(permissions ?? []), ...responsibilityGrants])) additional.push({ key: 'academic-packages', label: 'Subject Packages' })
   return [...base, ...additional]
 }
 
@@ -114,6 +117,7 @@ export const FACULTY_VIEW_HEADINGS: Readonly<Record<FacultyView, string>> = {
   'class-management': 'Class Management',
   department: 'Department',
   'teaching-assignment-management': 'Teaching Assignments',
+  'academic-packages': 'Subject Packages',
 }
 
 /**

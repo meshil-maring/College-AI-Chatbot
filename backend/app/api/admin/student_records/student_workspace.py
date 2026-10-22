@@ -7,7 +7,7 @@ from fastapi import Depends, Query
 
 from app.core.security import has_permission
 from app.schemas.students.student_registrations import StudentRegistrationCreate
-from app.services.students import student_registrations
+from app.services.students import student_registrations, subject_assignments
 from app.services.faculty import faculty_attendance_reporting as student_reporting
 from app.services.faculty.faculty_students import registration_history
 from app.services.auth.phase81_rbac import _active_sections
@@ -71,3 +71,16 @@ def student_workspace_register(section_id: UUID, payload: StudentRegistrationCre
 def student_workspace_invitation(section_id: UUID, registration_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
     from app.services.invitations.student_registration_invitations import send_invitation
     return send_invitation(current_user, section_id, registration_id, permission='students.create')
+
+
+@router.get('/student-workspace/sections/{section_id}/subject-assignments')
+def subject_assignment_students(section_id: UUID, limit: int = Query(25, ge=1, le=100),
+                                offset: int = Query(0, ge=0), batch_id: UUID | None = None,
+                                search: str = Query('', max_length=128), current_user: dict = Depends(_ADMIN)) -> dict:
+    return subject_assignments.unassigned_students(current_user, section_id,
+        limit=limit, offset=offset, batch_id=batch_id, search=search)
+
+
+@router.post('/student-workspace/sections/{section_id}/subject-assignments/{registration_id}')
+def assign_student_subject(section_id: UUID, registration_id: UUID, current_user: dict = Depends(_ADMIN)) -> dict:
+    return subject_assignments.assign_student(current_user, section_id, registration_id, permission='students.create')

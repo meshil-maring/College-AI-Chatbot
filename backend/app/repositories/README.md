@@ -8,14 +8,14 @@ remain in their owning modules.
 
 | Package | Repository modules |
 | --- | --- |
-| `academics/` | `attendance.py`, `results.py` |
+| `academics/` | `attendance.py`, `results.py`, `academic_packages.py` (service-only atomic RPCs) |
 | `admin/` | `admin_academics.py`, `admin_audit.py`, `admin_knowledge.py`, `admin_memberships.py` |
 | `ai/` | `ai_response.py`, `conversation.py`, `message.py`, `message_citation.py`, `personalization.py` |
 | `email/` | `email_outbox.py` |
 | `invitations/` | `platform_admin_invitations.py` |
 | `knowledge/` | `embeddings.py`, `ingestion.py`, `public_knowledge.py`, `retrieval_operation.py`, `vector_search.py` |
 | `platform/` | `platform_institutions.py`, `tenancy.py` |
-| `students/` | `student_academic_experience.py`, `student_dashboard.py`, `student_notifications.py` |
+| `students/` | `student_academic_experience.py`, `student_assessments.py`, `student_dashboard.py`, `student_notifications.py`, `subject_assignments.py` |
 | `shared/` | `query_pages.py` (shared row reads and pagination) |
 
 Import repositories and helpers explicitly:

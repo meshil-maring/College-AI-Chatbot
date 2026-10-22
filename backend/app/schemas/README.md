@@ -8,7 +8,7 @@ and serialization rules stay in their existing modules.
 
 | Package | Schema modules |
 | --- | --- |
-| `academics/` | `academic_setup.py` |
+| `academics/` | `academic_setup.py`, `academic_packages.py` (typed complete-package commands) |
 | `admin/` | `admin.py`, `admin_dashboard.py`, `admin_memberships.py` |
 | `ai/` | `chat.py`, `chat_response.py`, `citation.py`, `conversation.py`, `generation.py`, `personalization.py`, `personalized_context.py`, `session.py` |
 | `auth/` | `auth.py`, `student_auth.py`, `users.py`, `phase81.py` (scoped permission and assignment requests) |

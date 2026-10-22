@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import PlainTextResponse
 
 from app.api.faculty.faculty_tests import router as tests_router
-from app.core.security import authorize_permissions, require_institution_roles
+from app.api.faculty.registrations import router as registrations_router
+from app.core.security import authorize_permissions
+from app.api.faculty.dependencies import _FACULTY
 from app.schemas.faculty.faculty_attendance import (
     ImportRowCorrection,
     ManualAttendanceRequest,
@@ -19,50 +21,10 @@ from app.services.faculty import faculty_attendance
 from app.services.faculty import faculty_responsibilities
 from app.services.faculty import faculty_attendance_reporting as reporting
 from app.services.auth.phase81_rbac import list_own_faculty_assignments
-from app.schemas.students.student_registrations import StudentRegistrationCreate
-from app.services.students import student_registrations
 
 router = APIRouter(prefix="/faculty", tags=["faculty"])
 router.include_router(tests_router)
-_FACULTY = require_institution_roles("faculty")
-
-
-@router.get('/student-registrations/sections/{scope_section_id}/batches')
-def registration_batches(scope_section_id: UUID, include_inactive: bool = False, current_user: dict = Depends(_FACULTY)) -> list[dict]:
-    return student_registrations.available_batches(current_user, scope_section_id, include_inactive=include_inactive)
-
-
-@router.get('/student-registrations/sections/{scope_section_id}')
-def class_registrations(scope_section_id: UUID, limit: int = Query(100, ge=1, le=500),
-                        offset: int = Query(0, ge=0),
-                        registration: Literal['UNREGISTERED', 'PENDING_APPROVAL', 'ACTIVE', 'INACTIVE'] | None = None,
-                        batch_id: UUID | None = None, search: str = Query('', max_length=128),
-                        sort: Literal['register_number', 'student_name'] = 'register_number',
-                        current_user: dict = Depends(_FACULTY)) -> dict:
-    return student_registrations.list_registrations(current_user, scope_section_id, limit=limit, offset=offset,
-        registration=registration, batch_id=batch_id, search=search, sort=sort)
-
-
-@router.post('/student-registrations/sections/{scope_section_id}', status_code=201)
-def register_class_student(scope_section_id: UUID, payload: StudentRegistrationCreate,
-                           current_user: dict = Depends(_FACULTY)) -> dict:
-    authorize_permissions(current_user, 'attendance.manage')
-    created = student_registrations.create_registration(current_user, scope_section_id, payload)
-    from app.repositories.admin.admin_audit import record_admin_action
-    from app.schemas.admin.admin import AdminAuditLogCreate
-    record_admin_action(student_registrations.get_admin_client(), AdminAuditLogCreate(
-        actor_user_id=UUID(str(current_user['user_id'])), institution_id=UUID(str(current_user['institution_id'])),
-        action='students.registration.create', table_name='student_registrations',
-        record_id=str(created['registration_id']), record_data=created))
-    return created
-
-
-@router.post('/student-registrations/sections/{scope_section_id}/{registration_id}/invitation')
-def send_student_registration_invitation(scope_section_id: UUID, registration_id: UUID,
-                                         current_user: dict = Depends(_FACULTY)) -> dict:
-    authorize_permissions(current_user, 'attendance.manage')
-    from app.services.invitations.student_registration_invitations import send_invitation
-    return send_invitation(current_user, scope_section_id, registration_id)
+router.include_router(registrations_router)
 
 
 @router.get("/context")
@@ -217,9 +179,6 @@ def edit_roster(roster_id: UUID, payload: RosterUpdateRequest, current_user: dic
 def remove_roster(roster_id: UUID, current_user: dict = Depends(_FACULTY)) -> dict:
     authorize_permissions(current_user, 'attendance.manage')
     deleted = faculty_attendance.delete_roster(current_user, roster_id)
-    from app.repositories.admin.admin_audit import record_admin_action
-    from app.schemas.admin.admin import AdminAuditLogCreate
-    record_admin_action(faculty_attendance.get_admin_client(), AdminAuditLogCreate(actor_user_id=UUID(str(current_user['user_id'])), institution_id=UUID(str(current_user['institution_id'])), action='attendance.roster.delete', table_name='faculty_attendance_rosters', record_id=str(roster_id), record_data=deleted))
     return {'deleted': True, 'roster': deleted}
 
 

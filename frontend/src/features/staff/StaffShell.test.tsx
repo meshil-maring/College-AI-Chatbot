@@ -123,7 +123,7 @@ describe('StaffShell', () => {
     await user.click(screen.getByRole('button', { name: 'Students' }))
     expect(screen.getByRole('heading', { name: 'Students', level: 1 })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Waiting approval' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.queryByRole('link', { name: 'Roster' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'All Student' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Register', exact: true })).not.toBeInTheDocument()
   })
 

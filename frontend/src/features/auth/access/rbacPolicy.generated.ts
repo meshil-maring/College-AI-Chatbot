@@ -81,6 +81,15 @@ export const PERMISSION_CODES = [
   "academic.department.read",
   "academic.reports.read",
   "attendance.overview.read",
+  "academic.curriculum.read",
+  "academic.curriculum.manage",
+  "academic.class.manage",
+  "academic.package.assign",
+  "academic.package.change",
+  "academic.package.requests.review",
+  "academic.package.own.read",
+  "academic.package.own.select",
+  "academic.package.own.request",
 ] as const
 
 export type PermissionCode = typeof PERMISSION_CODES[number]
@@ -168,6 +177,13 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     "faculty.assignments.manage",
     "platform.manage",
     "audit.read",
+    "academic.class.read",
+    "academic.curriculum.read",
+    "academic.curriculum.manage",
+    "academic.class.manage",
+    "academic.package.assign",
+    "academic.package.change",
+    "academic.package.requests.review",
   ],
   staff: [
     "profile.own.read",
@@ -220,5 +236,8 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     "documents.read",
     "notices.read",
     "ai.chat",
+    "academic.package.own.read",
+    "academic.package.own.select",
+    "academic.package.own.request",
   ],
 } as const satisfies Readonly<Record<AuthRole, readonly PermissionCode[]>>

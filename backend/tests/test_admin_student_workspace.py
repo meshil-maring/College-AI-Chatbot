@@ -4,7 +4,8 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.admin import common, student_workspace
+from app.api.admin import common
+from app.api.admin.student_records import student_workspace
 from app.core.security import get_current_user
 from app.main import app
 from app.services.auth import authorization

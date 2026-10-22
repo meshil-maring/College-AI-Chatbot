@@ -22,6 +22,10 @@ domain's rendering, and the profile's academic context card is shared with the
 dashboard and academic detail pages. API clients remain in
 `src/services/students/`; contracts remain in `src/types/student.ts`.
 Shared staff and faculty student-management UI belongs in `features/students/`.
+The **My Subject Package** page composes `features/academic-packages/`: students
+choose an initial complete package only when enabled and request later changes.
+That shared feature also serves authorized administrative and scoped faculty
+workspaces; each action uses backend capabilities and deadline validation.
 
 Keep tests beside their owning page or workflow. Shared mock setup belongs in
 that workflow's `__tests__/` folder and must be imported before the component

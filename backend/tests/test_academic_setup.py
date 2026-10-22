@@ -40,6 +40,10 @@ def api(monkeypatch):
     }
     db = MagicMock()
     db.rpc.return_value.execute.return_value.data = {"saved": True}
+    default_rpc = db.rpc.return_value
+    eligibility_rpc = MagicMock()
+    eligibility_rpc.execute.return_value.data = []
+    db.rpc.side_effect = lambda name, *_: eligibility_rpc if name == 'academic_package_offering_eligibility' else default_rpc
     monkeypatch.setattr(service, "get_admin_client", lambda: db)
     monkeypatch.setattr(authorization, "get_admin_client", lambda: db)
     institution = {"status": "active", "is_active": True}

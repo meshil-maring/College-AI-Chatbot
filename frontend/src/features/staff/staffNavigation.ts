@@ -43,12 +43,13 @@
  */
 
 import { hasPermission } from '../auth/access/permissions.ts'
+import { canOpenPackageWorkspace } from '../academic-packages/packageNavigation.ts'
 
 /** The only role that renders the staff shell. */
 const STAFF_SHELL_ROLES: readonly string[] = ['staff']
 
 /** Every view the staff shell can render (no router library is installed). */
-export type StaffView = 'dashboard' | 'approvals' | 'assistant' | 'profile'
+export type StaffView = 'dashboard' | 'approvals' | 'assistant' | 'profile' | 'academic-packages'
 
 export interface StaffNavItem {
   readonly key: StaffView
@@ -80,6 +81,7 @@ const STAFF_VIEW_PERMISSIONS: Readonly<Record<StaffView, string>> = {
   approvals: 'students.approve',
   assistant: 'ai.chat',
   profile: 'profile.own.read',
+  'academic-packages': 'academic.class.read',
 }
 
 export function buildStaffNavigation(
@@ -89,9 +91,10 @@ export function buildStaffNavigation(
   if (role === null) return []
   if (!STAFF_SHELL_ROLES.includes(role)) return []
   if (permissions === undefined) return STAFF_NAV_ITEMS
-  return STAFF_NAV_ITEMS.filter((item) =>
+  const items = STAFF_NAV_ITEMS.filter((item) =>
     hasPermission(permissions, STAFF_VIEW_PERMISSIONS[item.key]),
   )
+  return canOpenPackageWorkspace(permissions) ? [...items, { key: 'academic-packages', label: 'Subject Packages' }] : items
 }
 
 /** Human-readable heading for each view (used for the page `h1`). */
@@ -100,6 +103,7 @@ export const STAFF_VIEW_HEADINGS: Readonly<Record<StaffView, string>> = {
   approvals: 'Students',
   assistant: 'AI Assistant',
   profile: 'Profile',
+  'academic-packages': 'Subject Packages',
 }
 
 /**

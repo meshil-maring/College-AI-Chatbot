@@ -1,4 +1,4 @@
-import { createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches, type ClassStudentRegistration } from '../../../services/students/studentRegistrationApi.ts'
+import { assignStudentSubject, getSubjectAssignmentStudents, createClassStudentRegistration, getClassStudentRegistrations, getRegistrationBatches, type ClassStudentRegistration } from '../../../services/students/studentRegistrationApi.ts'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,7 +7,7 @@ import FacultyStudentsNavigation from './FacultyStudentsNavigation.tsx'
 import { queryClient } from '../../../lib/queryClient.ts'
 import { getFacultyAttendanceAssignments, getFacultyAttendanceStudents, getFacultyStudentRegistrationHistory, type FacultyStudentRegistrationEvent } from '../../../services/faculty/facultyAttendanceApi.ts'
 
-vi.mock('../../../services/students/studentRegistrationApi.ts', () => ({ createClassStudentRegistration: vi.fn(), getClassStudentRegistrations: vi.fn(), getRegistrationBatches: vi.fn() }))
+vi.mock('../../../services/students/studentRegistrationApi.ts', () => ({ assignStudentSubject: vi.fn(), getSubjectAssignmentStudents: vi.fn(), createClassStudentRegistration: vi.fn(), getClassStudentRegistrations: vi.fn(), getRegistrationBatches: vi.fn() }))
 
 vi.mock('../../../services/faculty/facultyAttendanceApi.ts', () => ({
   getFacultyAttendanceAssignments: vi.fn(), getFacultyAttendanceStudents: vi.fn(), getFacultyStudentRegistrationHistory: vi.fn(),
@@ -42,7 +42,7 @@ describe('Students page navigation', () => {
     const nav = screen.getByRole('navigation', { name: 'Students pages' })
     expect(nav.closest('aside')).not.toBeNull()
     expect(within(screen.getByRole('main')).queryByRole('navigation', { name: 'Students pages' })).not.toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: 'Roster', exact: true })).toHaveAttribute('aria-current', 'page')
+    expect(within(nav).getByRole('link', { name: 'All Student', exact: true })).toHaveAttribute('aria-current', 'page')
     expect(within(nav).getByRole('link', { name: 'Record history' })).toHaveAttribute('href', '/faculty/students/record-history?section_id=section-1')
     expect(within(nav).getByRole('link', { name: 'Waiting approval' })).toHaveAttribute('href', '/faculty/students/waiting-approval?section_id=section-1')
     expect(within(nav).getByRole('link', { name: 'Register', exact: true })).toHaveAttribute('href', '/faculty/students/register?section_id=section-1')
@@ -59,7 +59,7 @@ describe('Students page navigation', () => {
     await user.click(within(nav).getByRole('link', { name: 'Register', exact: true }))
     expect(screen.getByRole('heading', { name: 'Register new student', level: 1 })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Student directory' })).not.toBeInTheDocument()
-    await user.click(within(nav).getByRole('link', { name: 'Roster', exact: true }))
+    await user.click(within(nav).getByRole('link', { name: 'All Student', exact: true }))
     expect(await screen.findByText('Roster student')).toBeInTheDocument()
     expect(window.location.pathname + window.location.search).toBe('/faculty/students/roster?section_id=section-1')
   })
@@ -150,6 +150,27 @@ describe('Students page navigation', () => {
     expect(screen.queryByRole('button', { name: /^(Approve|Reject)$/ })).not.toBeInTheDocument()
   })
 
+  it('opens Subject Assignment with the selected section, assigns a student, and restores the page directly', async () => {
+    const user = userEvent.setup()
+    vi.mocked(getSubjectAssignmentStudents).mockResolvedValue({ items: [{ ...pending, assignment_errors: [] }], total: 1 })
+    vi.mocked(assignStudentSubject).mockResolvedValue({ registration_id: pending.registration_id, roster_id: 'assigned', status: 'assigned' })
+    const view = render(<FacultyStudents accessToken="token" />)
+    const link = await screen.findByRole('link', { name: 'Subject Assignment' })
+    expect(link).toHaveAttribute('href', '/faculty/students/subject-assignment?section_id=section-1')
+    await user.click(link)
+    const button = await screen.findByRole('button', { name: /^Assign Beena Shah/ })
+    await waitFor(() => expect(button).toBeEnabled())
+    vi.mocked(getSubjectAssignmentStudents).mockResolvedValue({ items: [], total: 0 })
+    await user.click(button)
+    expect(await screen.findByText('Beena Shah was assigned to this subject.')).toBeInTheDocument()
+    expect(assignStudentSubject).toHaveBeenCalledWith('token', 'section-1', pending.registration_id)
+    expect(window.location.pathname).toBe('/faculty/students/subject-assignment')
+    view.unmount()
+    render(<FacultyStudents accessToken="token" />)
+    expect(await screen.findByText('No unassigned students')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Subject Assignment' })).toHaveAttribute('aria-current', 'page')
+  })
+
   it('shows dedicated empty states and disables Register for a read-only section', async () => {
     window.history.replaceState(null, '', '/faculty/students/waiting-approval?section_id=section-1')
     vi.mocked(getFacultyAttendanceAssignments).mockResolvedValue([{ ...assignment, can_manage: false }])
@@ -159,6 +180,7 @@ describe('Students page navigation', () => {
     render(<FacultyStudents accessToken="token" />)
     expect(await screen.findByText('No students waiting for approval')).toBeInTheDocument()
     const nav = screen.getByRole('navigation', { name: 'Students pages' })
+    expect(within(nav).getByText('Subject Assignment')).toHaveAttribute('aria-disabled', 'true')
     expect(within(nav).getByText('Register')).toHaveAttribute('aria-disabled', 'true')
     expect(within(nav).queryByRole('link', { name: 'Register', exact: true })).not.toBeInTheDocument()
     await user.click(within(nav).getByRole('link', { name: 'Record history' }))

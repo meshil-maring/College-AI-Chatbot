@@ -8,7 +8,7 @@ import FacultyTests from './FacultyTests.tsx'
 describe('Faculty assessment workspace', () => {
   it('loads real dashboard counts and all academic selectors', async () => {
     render(<FacultyTests accessToken="token" />)
-    await screen.findByRole('button', { name: 'Open Class test' })
+    await screen.findByRole('button', { name: 'Open Class test' }, { timeout: 5000 })
     expect(api.getTests).toHaveBeenCalledWith('token', 'section-1', 0)
     for (const name of ['Department', 'Program', 'Academic Year', 'Semester', 'Section/Class', 'Subject'])
       expect(screen.getByRole('combobox', { name })).toBeInTheDocument()

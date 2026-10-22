@@ -41,7 +41,8 @@ export const ROSTER_STATUS_CARDS = [
 ] as const
 
 export const STUDENT_PAGE_LABELS: Record<FacultyStudentPage, string> = {
-  roster: 'Roster',
+  roster: 'All Student',
+  'subject-assignment': 'Subject Assignment',
   history: 'Record history',
   'waiting-approval': 'Waiting approval',
   register: 'Register',

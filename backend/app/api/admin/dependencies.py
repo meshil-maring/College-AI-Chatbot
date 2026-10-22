@@ -53,6 +53,8 @@ _ADMIN_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("POST", "/admin/student-workspace/sections/{section_id}/registrations"): ("students.create",),
     ("POST", "/admin/student-workspace/sections/{section_id}/registrations/{registration_id}/invitation"): ("students.create",),
     ("GET", "/admin/student-workspace/sections/{section_id}/batches"): ("students.read",),
+    ("GET", "/admin/student-workspace/sections/{section_id}/subject-assignments"): ("students.read",),
+    ("POST", "/admin/student-workspace/sections/{section_id}/subject-assignments/{registration_id}"): ("students.read", "students.create"),
     ("POST", "/admin/students"): ("students.create",),
     ("GET", "/admin/students/pending"): ("students.read",),
     ("POST", "/admin/students/{student_id}/approve"): ("students.approve",),

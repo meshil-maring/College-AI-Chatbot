@@ -31,9 +31,10 @@ import { ProfilePage } from '../profile/ProfilePage.tsx'
 import { getMyAcademicProfile } from '../../../services/students/studentApi.ts'
 import { StudentAccessContext, useStudentResource, type StudentAccessDenial } from '../shared/useStudentResource.ts'
 import { ErrorBlock, LoadingBlock } from '../shared/SectionState.tsx'
+import AcademicPackagesWorkspace from '../../academic-packages/AcademicPackagesWorkspace.tsx'
 
 export default function StudentShell() {
-  const { user, role, logout } = useAuth()
+  const { user, role, accessToken, logout } = useAuth()
   const [view, setView] = useState<StudentView>('dashboard')
   const [accessDenial, setAccessDenial] = useState<StudentAccessDenial | null>(null)
   // This endpoint exposes approval state even for pending students. This is a
@@ -139,6 +140,7 @@ export default function StudentShell() {
             {view === 'notices' ? <NoticesPage /> : null}
             {view === 'resources' ? <ResourcesPage /> : null}
             {view === 'profile' ? <ProfilePage /> : null}
+            {view === 'packages' && accessToken ? <AcademicPackagesWorkspace accessToken={accessToken} selfService /> : null}
             {view === 'assistant' ? (
               <section aria-label="AI Assistant">
                 <ChatShell />

@@ -35,6 +35,7 @@ from uuid import UUID
 from supabase import Client
 
 from app.repositories.shared.query_pages import read_all
+from app.repositories.students.student_assessments import list_faculty_tests, list_test_types
 
 # Projections: only the columns the student-facing service needs. Internal
 # workflow fields (``reconciliation_state``, ``source_metadata``,
@@ -42,7 +43,7 @@ from app.repositories.shared.query_pages import read_all
 # ``version`` ...) are deliberately NOT selected.
 ROSTER_COLUMNS = (
     "roster_id, institution_id, section_id, course_offering_id, semester_id, "
-    "register_number, roster_status, linked_student_id"
+    "register_number, roster_status, linked_student_id, participation_active, participation_ended_at"
 )
 SECTION_COLUMNS = "section_id, course_offering_id, code, name, is_active"
 OFFERING_COLUMNS = "course_offering_id, course_id, academic_year_id, semester_id"
@@ -54,11 +55,6 @@ RECORD_COLUMNS = "record_id, session_id, roster_id, status"
 LEGACY_ATTENDANCE_COLUMNS = (
     "student_attendance_id, institution_id, section_id, student_id, date, status"
 )
-TEST_COLUMNS = (
-    "test_id, institution_id, section_id, title, test_type, max_marks, "
-    "scheduled_date, start_time, end_time, duration_minutes, status"
-)
-TEST_TYPE_COLUMNS = "code, name"
 
 # Bounded batch size for ``in_`` filters (keeps generated URLs small).
 BATCH_SIZE = 100
@@ -69,7 +65,6 @@ BATCH_SIZE = 100
 MAX_ROSTERS = 200
 MAX_SESSIONS_PER_SECTION = 400
 MAX_LEGACY_ROWS = 500
-MAX_TESTS = 100
 
 
 def list_linked_rosters(
@@ -218,58 +213,4 @@ def list_legacy_attendance(
                 .limit(MAX_LEGACY_ROWS)
             )
         )
-    return rows
-
-
-def list_faculty_tests(
-    client: Client,
-    institution_id: UUID | str,
-    section_ids: list[UUID | str],
-    statuses: tuple[str, ...],
-    limit: int = 20,
-) -> list[dict]:
-    """Assessment metadata for the student's OWN sections.
-
-    The caller passes the EXACT status vocabulary that is student-visible
-    (never ``DRAFT`` / ``CANCELLED``); ordering is server-authoritative
-    (earliest scheduled first). The projection never selects the assessment
-    description, marks state, version or actor columns.
-    """
-    if not statuses:
-        return []
-    bounded = max(1, min(int(limit), MAX_TESTS))
-    rows: list[dict] = []
-    for batch in _in_batches(section_ids):
-        rows.extend(
-            read_all(
-                client.table("faculty_tests")
-                .select(TEST_COLUMNS)
-                .eq("institution_id", str(institution_id))
-                .in_("section_id", batch)
-                .in_("status", list(statuses))
-                .order("scheduled_date")
-                .limit(bounded)
-            )
-        )
-    rows.sort(
-        key=lambda row: (
-            str(row.get("scheduled_date") or "9999-12-31"),
-            str(row.get("title") or ""),
-        )
-    )
-    return rows[:bounded]
-
-
-def list_test_types(client: Client) -> dict[str, str]:
-    """Small shared catalog: ``test_types`` code -> display name."""
-    rows = read_all(
-        client.table("test_types").select(TEST_TYPE_COLUMNS).order("code")
-    )
-    return {
-        str(row.get("code")): str(row.get("name") or "")
-        for row in rows
-        if row.get("code")
-    }
-
-
     return rows

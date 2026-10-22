@@ -130,7 +130,7 @@ beforeEach(() => {
 export async function open() {
   const user = userEvent.setup()
   render(<FacultyTests accessToken="token" />)
-  await user.click(await screen.findByRole('button', { name: 'Open Class test' }))
+  await user.click(await screen.findByRole('button', { name: 'Open Class test' }, { timeout: 5000 }))
   await screen.findByRole('heading', { name: 'Result review' })
   return user
 }

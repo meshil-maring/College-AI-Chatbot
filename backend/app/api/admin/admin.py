@@ -9,14 +9,12 @@ from app.api.admin import (
     documents,
     faqs,
     notices,
-    students,
-    results,
     attendance,
     audit,
     permissions,
     faculty,
-    student_workspace,
 )
+from app.api.admin.student_records import students, student_workspace, results
 from app.api.admin.dependencies import _authorize_admin_endpoint
 
 

@@ -1,0 +1,35 @@
+.academic-guidance {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  line-height: 1.6;
+}
+.academic-guidance-progress-label {
+  color: #f4d968;
+  font-weight: 500;
+}
+.academic-guidance-progress {
+  height: 6px;
+  overflow: hidden;
+  background: #323127;
+  border-radius: 12px;
+}
+.academic-guidance-progress-fill {
+  height: 100%;
+  background: var(--academic-yellow);
+  border-radius: 12px;
+}
+.academic-suggestion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #514620;
+  border-radius: 8px;
+  padding: 12px;
+  background: #1b1910;
+}
+.academic-suggestion .academic-muted {
+  margin-top: 5px;
+}

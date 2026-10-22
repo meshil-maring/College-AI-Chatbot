@@ -1,0 +1,27 @@
+{
+  "version": "20261021000000",
+  "name": "academic_curriculum_packages",
+  "files": [
+    "curriculum_tables.sql",
+    "participation_tables.sql",
+    "authorization.sql",
+    "curriculum_commands.sql",
+    "class_commands.sql",
+    "placement_commands.sql",
+    "assignment_commands.sql",
+    "request_commands.sql",
+    "catalogue.sql",
+    "legacy_commands.sql",
+    "legacy_guards.sql",
+    "assessment_compatibility/placement_identity.sql",
+    "assessment_compatibility/mark_transactions.sql",
+    "assessment_compatibility/result_visibility.sql",
+    "assessment_compatibility/attendance_import.sql",
+    "offering_compatibility/master_validation.sql",
+    "offering_compatibility/eligibility.sql",
+    "teaching_preparation/prepare.sql",
+    "permission_grants.sql",
+    "staff_delegation.sql",
+    "dispatch.sql"
+  ]
+}

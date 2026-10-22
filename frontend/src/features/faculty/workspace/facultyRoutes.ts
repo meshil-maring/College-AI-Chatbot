@@ -14,20 +14,26 @@ export const FACULTY_PATHS: Readonly<Record<FacultyView, string>> = {
   'class-management': '/faculty/class-management',
   department: '/faculty/department',
   'teaching-assignment-management': '/faculty/teaching-assignments',
+  'academic-packages': '/faculty/subject-packages',
 }
 
 export const STUDENT_REGISTRATION_PATH = '/faculty/students/register'
 export type FacultyStudentPage = StudentPage
 export const FACULTY_STUDENT_PATHS: Readonly<Record<FacultyStudentPage, string>> = {
   roster: '/faculty/students/roster',
+  'subject-assignment': '/faculty/students/subject-assignment',
   history: '/faculty/students/record-history',
   'waiting-approval': '/faculty/students/waiting-approval',
   register: STUDENT_REGISTRATION_PATH,
 }
 
-export function resolveFacultyRoute(pathname: string): { view: FacultyView; registerStudent: boolean; studentPage?: FacultyStudentPage } | null {
+export function resolveFacultyRoute(
+  pathname: string,
+): { view: FacultyView; registerStudent: boolean; studentPage?: FacultyStudentPage } | null {
   const path = pathname.replace(/\/+$/, '')
-  const studentPage = (Object.keys(FACULTY_STUDENT_PATHS) as FacultyStudentPage[]).find((page) => FACULTY_STUDENT_PATHS[page] === path)
+  const studentPage = (Object.keys(FACULTY_STUDENT_PATHS) as FacultyStudentPage[]).find(
+    (page) => FACULTY_STUDENT_PATHS[page] === path,
+  )
   if (studentPage) return { view: 'students', registerStudent: studentPage === 'register', studentPage }
   const match = (Object.keys(FACULTY_PATHS) as FacultyView[]).find((view) => FACULTY_PATHS[view] === path)
   return match ? { view: match, registerStudent: false } : null

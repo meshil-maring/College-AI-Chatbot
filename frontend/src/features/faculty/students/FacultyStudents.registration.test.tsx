@@ -110,7 +110,7 @@ describe('FacultyStudents', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Register new student' })).not.toBeInTheDocument())
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Registration unavailable' })).toBeInTheDocument()
-    await user.click(screen.getByRole('link', { name: 'Roster', exact: true }))
+    await user.click(screen.getByRole('link', { name: 'All Student', exact: true }))
     expect(await screen.findByText('Ada Rao')).toBeInTheDocument()
     expect(createClassStudentRegistration).not.toHaveBeenCalled()
   })

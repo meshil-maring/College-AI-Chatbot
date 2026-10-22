@@ -1,184 +1,30 @@
+"""Application entry point and authenticated/public generation boundaries."""
 import logging
 import time
-from typing import cast
-
 import httpx
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI, Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from starlette.types import ExceptionHandler
-from starlette.middleware.cors import CORSMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
+from fastapi import APIRouter, Depends, Request
 
 from app.config import settings
-from app.core.errors import AppError, app_error_handler
-from app.core.security import (
-    get_current_user,
-    require_permission,
-    require_institution_roles,
-    resolve_primary_role,
-    scope_tenant,
-)
-from app.api.platform.platform import router as platform_router
-from app.api.invitations.admin_invitations import router as admin_invitations_router
-from app.api.invitations.super_admin_registration import router as super_admin_registration_router
-from app.api.email.mailgun_webhooks import router as mailgun_webhooks_router
-from app.api.knowledge.ingestion import router as ingestion_router
-from app.api.auth.auth import router as auth_router
-from app.api.auth.registration import router as registration_router
-from app.api.ai.conversations import router as conversations_router
-from app.api.admin.admin import router as admin_router
-from app.api.academics.academic_setup import router as academic_setup_router
-from app.api.platform.organizations import router as organizations_router
-from app.api.platform.institutions import router as institutions_router
-from app.api.auth.users import router as users_router
-from app.api.auth.student_auth import router as student_auth_router
-from app.api.students.students import router as students_router
-from app.api.students.student_notifications import router as student_notifications_router
-from app.api.auth.dev_auth import router as dev_auth_router
-from app.api.faculty.faculty import router as faculty_router
-from app.schemas.ai.chat import (
-    AuthenticatedChatRequest,
-    ChatRequest,
-    ChatResponse,
-    PublicAPIErrorResponse,
-    PublicChatRequest,
-    PublicChatResponse,
-)
+from app.core.errors import AppError
+from app.core.application import create_application
+from app.core.application_routes import register_feature_routes
+from app.core.operational_routes import register_operational_routes
+from app.core.security import require_permission, require_institution_roles, scope_tenant
+from app.db.supabase import get_admin_client
+from app.api.ai.public_contract import PUBLIC_CHAT_RESPONSES
+from app.schemas.ai.chat import AuthenticatedChatRequest, ChatRequest, ChatResponse, PublicChatRequest, PublicChatResponse
 from app.schemas.ai.session import SessionContextRequest
 from app.services.ai.chat import process_chat_request
 from app.services.ai.public_chat import process_public_request
 from app.services.ai.generation_provider import OpenRouterGenerationProvider
 from app.services.auth.session import resolve_session_context
-from app.core.startup_validation import run_startup_configuration_validation
-from app.middleware.public_body_limit import PublicChatBodyLimitMiddleware
-from app.middleware.request_limits import RequestSizeLimitMiddleware
-from app.middleware.api_rate_limit import ApiRateLimitMiddleware
-from app.middleware.security_headers import SecurityHeadersMiddleware
-from app.db.supabase import get_admin_client
-from app.services.auth.public_abuse_controls import (
-    acquire_concurrency,
-    enforce_rate_limit,
-)
-
-# Phase 6.15.8 — fail fast on an invalid/incomplete deployment configuration.
-# In local development/testing this only logs a warning; anywhere else a
-# failed check stops startup with a value-free error message.
-run_startup_configuration_validation(settings)
-
-
-app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
-    docs_url="/docs" if settings.effective_api_docs_enabled else None,
-    redoc_url="/redoc" if settings.effective_api_docs_enabled else None,
-    openapi_url="/openapi.json" if settings.effective_api_docs_enabled else None,
-)
-app.add_middleware(
-    SecurityHeadersMiddleware,
-    enable_hsts=not settings.is_local_environment,
-)
-if settings.effective_cors_allowed_origins:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.effective_cors_allowed_origins,
-        allow_credentials=False,
-        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "Accept"],
-        expose_headers=["Retry-After"],
-        max_age=600,
-    )
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=settings.effective_allowed_hosts,
-)
-app.add_middleware(ApiRateLimitMiddleware)
-app.add_middleware(RequestSizeLimitMiddleware)
-app.add_middleware(PublicChatBodyLimitMiddleware)
-
-app.add_exception_handler(AppError, cast(ExceptionHandler, app_error_handler))
-
+from app.services.auth.public_abuse_controls import acquire_concurrency, enforce_rate_limit
 
 logger = logging.getLogger(__name__)
-
-
-@app.exception_handler(Exception)
-async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Phase 6.15.7 — fail closed on unhandled server errors.
-
-    Production responses carry ONLY the stable ``{"error": ...}`` envelope
-    with a generic message. The traceback, exception class name, SQL text,
-    file paths, and any other internal detail are logged server-side (with
-    the request path for correlation) and never returned to the client.
-    """
-    logger.exception("Unhandled server error on %s", request.url.path)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": {
-                "code": "INTERNAL_ERROR",
-                "message": "An unexpected server error occurred. Please try again later.",
-            }
-        },
-    )
-
-
-@app.exception_handler(RequestValidationError)
-async def validation_error_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
-    """Normalize request validation failures to the ``{"error": ...}`` contract.
-
-    Phase 6.13.2 organization registration (and all other schema-validated
-    endpoints) must return ``error.code == "VALIDATION_ERROR"`` with HTTP 422
-    for missing/invalid/extra fields, matching the project's AppError shape.
-
-    The pydantic error list is sanitized: raw ``errors()`` entries can carry
-    non-JSON-serializable ``ctx`` values (e.g. the raised ``ValueError``
-    instances from custom field validators), so only the stable ``loc`` /
-    ``msg`` / ``type`` triple is returned.
-    """
-    safe_errors = [
-        {
-            "loc": list(err.get("loc", ())),
-            "msg": str(err.get("msg", "")),
-            "type": str(err.get("type", "")),
-        }
-        for err in exc.errors()
-    ]
-    return JSONResponse(
-        status_code=422,
-        content={
-            "error": {
-                "code": "VALIDATION_ERROR",
-                "message": "Request validation failed",
-                "details": safe_errors,
-            }
-        },
-    )
-
-
-app.include_router(ingestion_router, prefix="/api/v1")
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(student_auth_router, prefix="/api/v1")
-app.include_router(registration_router, prefix="/api/v1")
-app.include_router(organizations_router, prefix="/api/v1")
-app.include_router(institutions_router, prefix="/api/v1")
-app.include_router(users_router, prefix="/api/v1")
-app.include_router(conversations_router, prefix="/api/v1")
-app.include_router(admin_router, prefix="/api/v1")
-app.include_router(academic_setup_router, prefix="/api/v1")
-app.include_router(students_router, prefix="/api/v1")
-app.include_router(student_notifications_router, prefix="/api/v1")
-app.include_router(dev_auth_router, prefix="/api/v1")  # DEVELOPMENT / TESTING ONLY
-app.include_router(faculty_router, prefix="/api/v1")
-app.include_router(platform_router, prefix="/api/v1")
-# Phase 7.14: the invitation boundary is token-authorized, not session-
-# authorized, so it is mounted as its own router rather than under /platform.
-app.include_router(admin_invitations_router, prefix="/api/v1")
-app.include_router(super_admin_registration_router, prefix="/api/v1")
-app.include_router(mailgun_webhooks_router, prefix="/api/v1")
+app = create_application(settings)
+register_feature_routes(app)
+register_operational_routes(app, settings, lambda: get_admin_client())
 
 generation_router = APIRouter(prefix="/generation", tags=["generation"])
 
@@ -252,56 +98,7 @@ public_chat_router = APIRouter(prefix="/chat", tags=["chat"])
         "Personal-data requests require authentication. Responses are stateless "
         "and omit internal identifiers and diagnostics."
     ),
-    responses={
-        400: {
-            "model": PublicAPIErrorResponse,
-            "description": "The public request is malformed.",
-        },
-        401: {
-            "model": PublicAPIErrorResponse,
-            "description": "The question requires authenticated personal data.",
-        },
-        403: {
-            "model": PublicAPIErrorResponse,
-            "description": "The institution is not eligible for public chat.",
-        },
-        404: {
-            "model": PublicAPIErrorResponse,
-            "description": "The public institution code is unavailable.",
-        },
-        422: {
-            "model": PublicAPIErrorResponse,
-            "description": "The request body failed strict validation.",
-        },
-        413: {
-            "model": PublicAPIErrorResponse,
-            "description": "The public request body is too large.",
-        },
-        408: {
-            "model": PublicAPIErrorResponse,
-            "description": "The public request timed out before completion.",
-        },
-        429: {
-            "model": PublicAPIErrorResponse,
-            "description": "The public request rate limit was exceeded.",
-        },
-        500: {
-            "model": PublicAPIErrorResponse,
-            "description": "A safe public service error.",
-        },
-        502: {
-            "model": PublicAPIErrorResponse,
-            "description": "The generation response was invalid.",
-        },
-        503: {
-            "model": PublicAPIErrorResponse,
-            "description": "Public chat or a required dependency is temporarily unavailable.",
-        },
-        504: {
-            "model": PublicAPIErrorResponse,
-            "description": "Public generation exceeded the server timeout.",
-        },
-    },
+    responses=PUBLIC_CHAT_RESPONSES,
 )
 def public_chat(request: PublicChatRequest, http_request: Request) -> PublicChatResponse:
     """Process one public, stateless AI chat request.
@@ -376,105 +173,6 @@ def public_chat(request: PublicChatRequest, http_request: Request) -> PublicChat
 
 app.include_router(public_chat_router, prefix="/api/v1")
 
-
-@app.get("/")
-def root():
-    """Friendly landing response for the API root.
-
-    Browsing the backend root previously returned a bare ``{"detail":"Not
-    Found"}``, which looks like a broken service. The API itself is fine —
-    the real UI is the frontend dev server (http://localhost:5173), which
-    proxies ``/api`` to this backend.
-    """
-    return {
-        "service": settings.app_name,
-        "version": settings.app_version,
-        "message": "Backend API is running.",
-        "health": "/health",
-        "readiness": "/ready",
-    }
-
-
-@app.get("/health")
-def health_check():
-    return {
-        "status": "ok",
-        "service": settings.app_name,
-        "environment": settings.environment,
-    }
-
-
-@app.get("/ready")
-def readiness_check():
-    """Run a bounded read-only check of the public chat's database dependency."""
-    try:
-        (
-            get_admin_client()
-            .table("institutions")
-            .select("institution_id")
-            .limit(1)
-            .execute()
-        )
-    except Exception:
-        logger.warning("event=readiness_failed dependency=database")
-        return JSONResponse(
-            status_code=503,
-            content={"status": "unavailable", "service": settings.app_name},
-        )
-    return {"status": "ready", "service": settings.app_name}
-
-
-@app.get("/api/v1/auth/me")
-async def auth_me(current_user: dict = Depends(get_current_user)):
-    """Phase 6.15.4 — canonical authenticated identity + role bootstrap.
-
-    The role and tenant are resolved SERVER-SIDE from the authenticated
-    JWT -> public.users -> user_roles -> roles chain (never from any
-    client-supplied value). Existing Phase 5.4 response fields are preserved
-    byte-for-byte; ``role`` (canonical, single) and ``institution_id`` (tenant
-    context, None for platform-level accounts) are additive.
-
-    An account whose active roles contain no supported role resolves to
-    ``role: None`` — the frontend treats that as "no privileged UI".
-    """
-    payload = {
-        "authenticated": True,
-        "user_id": current_user["user_id"],
-        "auth_user_id": current_user["auth_user_id"],
-        "email": current_user["email"],
-        "role": resolve_primary_role(current_user.get("roles")),
-        "institution_id": current_user.get("institution_id"),
-        "effective_permissions": current_user.get("effective_permissions", []),
-    }
-    if payload["role"] == "faculty" and current_user.get("permissions_resolved") is True:
-        from app.services.faculty.faculty_responsibilities import faculty_context
-        from app.services.auth.authorization import resolve_institution_authorization_context
-        context = resolve_institution_authorization_context(current_user, allowed_roles=("faculty",))
-        try:
-            payload["faculty_context"] = faculty_context({**current_user, "institution_id": str(context.institution_id)})
-        except AppError as error:
-            if error.status_code != 503 or error.code != "FACULTY_SCHEMA_UNAVAILABLE":
-                raise
-            # Identity and the institution grant have already been verified.
-            # Missing optional faculty schema must not prevent sign-in or
-            # manufacture any assignment or scoped responsibility permission.
-            payload["faculty_context"] = {
-                "responsibilities": [],
-                "teaching_assignments": [],
-                "responsibility_permissions": [],
-            }
-    return payload
-
-
-@app.get("/api/v1/dev/auth/status")
-def dev_auth_status():
-    """DEVELOPMENT / TESTING ONLY.
-
-    Public, unauthenticated flag so the frontend can decide whether to show
-    the dev-only password recovery UI. Reveals nothing beyond a boolean and
-    is a no-op outside development/testing (always False by default).
-    """
-    return {"dev_test_mode": settings.dev_test_mode}
 
 
 def start():

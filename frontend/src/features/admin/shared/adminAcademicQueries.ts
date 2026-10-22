@@ -10,6 +10,11 @@ export function invalidateFacultyResponsibilities(token: string): Promise<void> 
   return queryClient.invalidateQueries({ queryKey: adminAcademicKeys.responsibilities(token) })
 }
 
+/** Program, calendar, batch and subject edits also change curriculum/class choices. */
+export function invalidateAcademicPackageOptions(token: string): Promise<void> {
+  return queryClient.invalidateQueries({ queryKey: ['academic-packages', token] })
+}
+
 /** Academic edits can change eligible sections, subject labels and responsibility scopes. */
 export async function invalidateFacultyAcademicOptions(token: string): Promise<void> {
   await Promise.all([
