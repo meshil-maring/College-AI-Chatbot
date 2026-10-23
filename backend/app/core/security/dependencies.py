@@ -8,6 +8,7 @@ from app.core.errors import AppError
 from app.core.security.identity import get_current_user
 from app.core.security.permissions import has_permission, _deny_permission
 from app.core.security.roles import resolve_primary_role
+from app.core.security.scoped_permissions import permissions_for_scope
 
 
 def require_roles(*allowed: str) -> Callable:
@@ -69,6 +70,12 @@ def require_institution_roles(*allowed: str) -> Callable:
         scoped_user = dict(current_user)
         scoped_user["institution_id"] = str(context.institution_id)
         scoped_user["authorization_context"] = context
+        scoped_user["effective_permissions"] = permissions_for_scope(
+            current_user,
+            "institution",
+            context.institution_id,
+            allowed_roles=allowed_roles,
+        )
         return scoped_user
 
     return _dependency

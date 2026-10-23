@@ -1,14 +1,4 @@
 export {
-  type DashboardAcademics,
-  type DashboardCommunication,
-  type DashboardInstitution,
-  type DashboardKnowledge,
-  type DashboardQuickAction,
-  type DashboardRecentNotice,
-  type DashboardStudents,
-  type DashboardSummary,
-} from './admin/dashboard.ts'
-export {
   type DocumentVersion,
   type DocumentWithVersions,
   type Faq,
@@ -33,21 +23,4 @@ export {
   type MembershipRoster,
   type MembershipRosterEntry,
 } from './admin/memberships.ts'
-export {
-  type AttendanceCreate,
-  type AttendanceRecord,
-  type AttendanceUpdate,
-  type CsvRowError,
-  type CsvUploadResult,
-  type PendingStudent,
-  type ResultCreate,
-  type ResultUpdate,
-  type Student,
-  type StudentCreate,
-  type StudentProfile,
-  type StudentResult,
-  type StudentUpdate,
-  type TestResult,
-  type TestResultCreate,
-  type TestResultUpdate,
-} from './admin/students.ts'
+export { type PendingStudent } from './admin/students.ts'

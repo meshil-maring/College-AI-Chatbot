@@ -8,6 +8,7 @@ import {
   setProfileReply,
 } from './__tests__/StudentAccessState.support.tsx'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import App from '../../../App.tsx'
 import { SESSION_EXPIRED_MESSAGE } from '../../../services/shared/sessionEvents.ts'
@@ -20,7 +21,7 @@ describe('student account access through the real auth and API boundaries with o
     'explains %s when validating a session from another tab and hides views while checking',
     async (code, status, message) => {
       render(<App />)
-      await screen.findByText('80%')
+      await screen.findByText('Welcome, REG-100')
       let resolveMe!: (response: Response) => void
       setMeReply(
         () =>
@@ -62,6 +63,7 @@ describe('student account access through the real auth and API boundaries with o
   ])('explains an existing %s data denial without guessing a pending or rejected status', async (code, message) => {
     setAttendanceReply(() => failure(code))
     render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Notices', exact: true }))
     await screen.findByRole('heading', {
       name: code === 'STUDENT_INACTIVE' ? 'Account inactive' : 'Student access unavailable',
     })
@@ -81,6 +83,8 @@ describe('student account access through the real auth and API boundaries with o
       if (endpoint === 'profile') setProfileReply(() => failure('TOKEN_EXPIRED', 401))
       if (endpoint === 'attendance') setAttendanceReply(() => failure('TOKEN_EXPIRED', 401))
       render(<App />)
+      if (endpoint === 'attendance')
+        await userEvent.click(await screen.findByRole('button', { name: 'Notices', exact: true }))
       expect(await screen.findByRole('button', { name: 'Sign in', exact: true })).toBeInTheDocument()
       expect(screen.getByRole('alert')).toHaveTextContent(SESSION_EXPIRED_MESSAGE)
       expect(screen.queryByRole('navigation', { name: 'Student navigation' })).not.toBeInTheDocument()

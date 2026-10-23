@@ -2,8 +2,6 @@ import { screen, within } from '@testing-library/react'
 import { beforeEach, vi } from 'vitest'
 import { mockAllLoaded } from '../features/student/__tests__/studentTestFixtures.ts'
 import * as adminApi from '../services/admin/adminApi.ts'
-import { buildDashboardSummary } from '../test/adminDashboardFixtures.ts'
-import type { DashboardSummary } from '../types/admin.ts'
 import type { CurrentUser } from '../types/auth.ts'
 vi.mock('../services/auth/devAuth.ts', () => ({
   fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
@@ -16,7 +14,7 @@ vi.mock('../services/students/studentApi.ts', () => ({
     readonly status = 0
     readonly code: string | null = null
   },
-  getMyAcademicProfile: vi.fn(),
+  getMyProfile: vi.fn(),
   getMyAttendanceSummary: vi.fn(),
   getMyResultsSummary: vi.fn(),
   getMyTestResultsSummary: vi.fn(),
@@ -94,8 +92,6 @@ export const STUDENT_B: CurrentUser = {
   institution_id: INSTITUTION_B,
 }
 
-export const DASHBOARD_SUMMARY: DashboardSummary = buildDashboardSummary()
-
 export const NAV_LANDMARKS: Readonly<Record<string, string>> = {
   admin: 'Admin navigation',
   staff: 'Staff navigation',
@@ -149,8 +145,6 @@ beforeEach(() => {
   authState.logout.mockReset()
   setIdentity(ADMIN_A, 'admin')
 
-  vi.mocked(adminApi.getDashboardSummary).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
   vi.mocked(adminApi.listKnowledgeSources).mockReset()
   vi.mocked(adminApi.listKnowledgeSources).mockResolvedValue([])
   vi.mocked(adminApi.listPendingStudents).mockReset()

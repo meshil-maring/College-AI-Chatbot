@@ -46,10 +46,10 @@ describe('student account access through the real auth and API boundaries with o
     await act(async () => {
       resolveProfile(json(PROFILE))
     })
-    expect(await screen.findByText('80%')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
-    expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/academic-profile'))).toHaveLength(1)
-    expect(academicCalls()).toHaveLength(5)
+    expect(await screen.findByText('Welcome, REG-100')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Profile' })).toBeInTheDocument()
+    expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/profile'))).toHaveLength(1)
+    expect(academicCalls()).toHaveLength(0)
     for (const [url, init] of vi.mocked(fetch).mock.calls) {
       expect(String(url)).not.toMatch(/student_id|institution_id|synthetic-tenant/)
       expect(init?.headers).toMatchObject({ Authorization: `Bearer ${token}` })
@@ -89,7 +89,7 @@ describe('student account access through the real auth and API boundaries with o
           }),
       )
       render(<App />)
-      if (flow === 'proactive') await screen.findByText('80%')
+      if (flow === 'proactive') await screen.findByText('Welcome, REG-100')
       await waitFor(() =>
         expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/auth/refresh'))).toBe(true),
       )
@@ -127,7 +127,7 @@ describe('student account access through the real auth and API boundaries with o
     expect(window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBeNull()
   })
 
-  it('rechecks pending approval without flashing views and opens the dashboard only after approval', async () => {
+  it('rechecks pending approval without flashing views and opens the profile only after approval', async () => {
     const user = userEvent.setup()
     setProfileReply(() => json({ ...PROFILE, approval_status: 'pending' }))
     render(<App />)
@@ -145,7 +145,7 @@ describe('student account access through the real auth and API boundaries with o
     await act(async () => {
       resolve(json(PROFILE))
     })
-    expect(await screen.findByText('80%')).toBeInTheDocument()
+    expect(await screen.findByText('Welcome, REG-100')).toBeInTheDocument()
   })
 
   it.each(['network', 'server', 'tenant'])(
@@ -163,7 +163,7 @@ describe('student account access through the real auth and API boundaries with o
       expectNoStudentViews()
       setProfileReply(() => json(PROFILE))
       await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }))
-      expect(await screen.findByText('80%')).toBeInTheDocument()
+      expect(await screen.findByText('Welcome, REG-100')).toBeInTheDocument()
     },
   )
 
@@ -203,7 +203,7 @@ describe('student account access through the real auth and API boundaries with o
         }),
     )
     render(<App />)
-    await screen.findByText('80%')
+    await screen.findByText('Welcome, REG-100')
     await waitFor(() =>
       expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/auth/refresh'))).toBe(true),
     )

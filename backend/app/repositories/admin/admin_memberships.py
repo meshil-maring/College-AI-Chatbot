@@ -4,8 +4,10 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
+from postgrest.exceptions import APIError
 from supabase import Client
 
+from app.core.errors import AppError
 from app.repositories.platform.tenancy import MEMBERSHIP_REQUEST_COLUMNS
 
 ALLOWED_ROLES = frozenset({"staff", "faculty"})
@@ -60,11 +62,27 @@ def decide_pending_request(
     decided_by_user_id: UUID | str,
     reason: str | None,
 ) -> dict[str, Any] | None:
-    """Decision and uniquely correlated audit commit in one RPC."""
-    response = client.rpc("b05_reject_membership", {
-        "p_request_id": str(request_id), "p_institution_id": str(institution_id),
-        "p_decided_by": str(decided_by_user_id), "p_reason": reason,
-    }).execute()
+    """Reject using the local atomic contract; never fall back to table writes."""
+    if status != "rejected":
+        raise ValueError("Membership rejection requires rejected status")
+    try:
+        response = client.rpc(
+            "b05_reject_membership",
+            {
+                "p_request_id": str(request_id),
+                "p_institution_id": str(institution_id),
+                "p_decided_by": str(decided_by_user_id),
+                "p_reason": reason,
+            },
+        ).execute()
+    except APIError as exc:
+        if exc.code not in {"PGRST202", "42883", "42703"}:
+            raise
+        raise AppError(
+            "Membership rejection is unavailable. Contact your platform administrator.",
+            503,
+            "MEMBERSHIP_REJECTION_UNAVAILABLE",
+        ) from None
     rows = _rows(response)
     return rows[0] if rows else None
 

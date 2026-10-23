@@ -1,12 +1,15 @@
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
-import { lookupInstitution, RegistrationError, registrationErrorMessage } from '../../services/registration/registration.ts'
+import {
+  lookupInstitution,
+  RegistrationError,
+  registrationErrorMessage,
+} from '../../services/registration/registration.ts'
 import type { InstitutionLookupResponse } from '../../types/registration.ts'
 import { createInstitutionBranding } from './institutionBranding.ts'
 
 export default function InstitutionGatewayPage({ institutionCode }: { institutionCode: string }) {
-  const query = useApiQuery<InstitutionLookupResponse>(
-    ['public', 'institution-lookup', institutionCode],
-    () => lookupInstitution(institutionCode),
+  const query = useApiQuery<InstitutionLookupResponse>(['public', 'institution-lookup', institutionCode], () =>
+    lookupInstitution(institutionCode),
   )
   const institution = query.data ?? null
   const failed = query.isError
@@ -16,11 +19,25 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
       <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center text-slate-100">
         <section className="max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-xl">
           <h1 className="text-2xl font-bold text-white">Institution unavailable</h1>
-          <p role="alert" className="mt-3 text-sm leading-6 text-slate-400">{query.error instanceof RegistrationError
-            ? registrationErrorMessage(query.error)
-            : 'We could not load that institution. Check the code or try again later.'}</p>
-          <button type="button" onClick={() => void query.refetch()} disabled={query.isFetching} className="mt-6 mr-3 rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-60">{query.isFetching ? 'Retrying…' : 'Try again'}</button>
-          <a href="/u" className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">Choose another institution</a>
+          <p role="alert" className="mt-3 text-sm leading-6 text-slate-400">
+            {query.error instanceof RegistrationError
+              ? registrationErrorMessage(query.error)
+              : 'We could not load that institution. Check the code or try again later.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => void query.refetch()}
+            disabled={query.isFetching}
+            className="mt-6 mr-3 rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-60"
+          >
+            {query.isFetching ? 'Retrying…' : 'Try again'}
+          </button>
+          <a
+            href="/u"
+            className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          >
+            Choose another institution
+          </a>
         </section>
       </main>
     )
@@ -29,7 +46,9 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
   if (institution === null) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
-        <p role="status" className="text-sm text-slate-300">Loading institution…</p>
+        <p role="status" className="text-sm text-slate-300">
+          Loading institution…
+        </p>
       </main>
     )
   }
@@ -41,15 +60,30 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="border-b border-slate-800 bg-slate-950">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-5">
-          <a href="/" className="rounded-md text-sm font-semibold text-slate-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">College AI Platform</a>
-          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-bold tracking-[0.18em] text-emerald-300">DEMO</span>
+          <a
+            href="/"
+            className="rounded-md text-sm font-semibold text-slate-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          >
+            College AI Platform
+          </a>
+          <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-bold tracking-[0.18em] text-emerald-300">
+            DEMO
+          </span>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-8 py-16">
-        <section className="rounded-3xl border border-slate-700 bg-slate-900 p-10 shadow-2xl" style={{ borderTopColor: branding.primary_color }}>
+        <section
+          className="rounded-3xl border border-slate-700 bg-slate-900 p-10 shadow-2xl"
+          style={{ borderTopColor: branding.primary_color }}
+        >
           <div className="flex items-center gap-4">
             {branding.logo === null ? (
-              <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-xl font-black text-emerald-300">{branding.name.slice(0, 2).toUpperCase()}</span>
+              <span
+                aria-hidden="true"
+                className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-xl font-black text-emerald-300"
+              >
+                {branding.name.slice(0, 2).toUpperCase()}
+              </span>
             ) : (
               <img src={branding.logo} alt={`${branding.name} logo`} className="h-14 w-14 rounded-2xl object-contain" />
             )}
@@ -61,25 +95,46 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
           <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300">{branding.welcome_message}</p>
 
           <div className="mt-9 grid gap-5 md:grid-cols-2">
-            <a href={`/u/${encodeURIComponent(code)}/ai`} className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-6 hover:bg-emerald-500/15 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+            <a
+              href={`/u/${encodeURIComponent(code)}/ai`}
+              className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-6 hover:bg-emerald-500/15 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            >
               <h2 className="text-xl font-bold text-white">Public AI Chat</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">Ask about public university information. No sign-in is required.</p>
-              <p className="mt-5 text-sm font-semibold text-emerald-300">Open public AI <span aria-hidden="true">→</span></p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Ask about public university information. No sign-in is required.
+              </p>
+              <p className="mt-5 text-sm font-semibold text-emerald-300">
+                Open public AI <span aria-hidden="true">→</span>
+              </p>
             </a>
-            <a href={`/login/student?institution=${encodeURIComponent(institution.code)}`} className="rounded-2xl border border-sky-500/40 bg-sky-500/10 p-6 hover:bg-sky-500/15 focus:outline-none focus:ring-2 focus:ring-sky-300">
+            <a
+              href={`/login/student?institution=${encodeURIComponent(institution.code)}`}
+              className="rounded-2xl border border-sky-500/40 bg-sky-500/10 p-6 hover:bg-sky-500/15 focus:outline-none focus:ring-2 focus:ring-sky-300"
+            >
               <h2 className="text-xl font-bold text-white">Student Login</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">Sign in for student-authorized academic information and authenticated AI.</p>
-              <p className="mt-5 text-sm font-semibold text-sky-300">Continue securely <span aria-hidden="true">→</span></p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Sign in for your profile, institution notices, learning resources, and AI chat.
+              </p>
+              <p className="mt-5 text-sm font-semibold text-sky-300">
+                Continue securely <span aria-hidden="true">→</span>
+              </p>
             </a>
           </div>
           <p className="mt-6 text-sm text-slate-300">
             New student?{' '}
-            <a href={`/login/student?institution=${encodeURIComponent(institution.code)}&register=1`} className="rounded-sm font-semibold text-emerald-300 underline focus:outline-none focus:ring-2 focus:ring-emerald-300">Register as Student</a>
+            <a
+              href={`/login/student?institution=${encodeURIComponent(institution.code)}&register=1`}
+              className="rounded-sm font-semibold text-emerald-300 underline focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            >
+              Register as Student
+            </a>
           </p>
-          <p className="mt-7 text-xs leading-5 text-slate-500">Public AI uses public knowledge only. Authentication and tenant access are resolved by the server after sign-in.</p>
+          <p className="mt-7 text-xs leading-5 text-slate-500">
+            Public AI uses public knowledge only. Authentication and tenant access are resolved by the server after
+            sign-in.
+          </p>
         </section>
       </main>
     </div>
   )
 }
-

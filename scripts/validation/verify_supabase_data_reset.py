@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
-import time
 from pathlib import Path
 from uuid import uuid4
 
+from data_reset.runtime import docker, wait_database
+from data_reset.contracts import configuration_snapshot, reset_requires_audit_review
+
 from disposable_container import (
-    docker_arguments,
     expected_name,
     validate_cleanup_target,
     validate_disposable_target,
@@ -23,26 +23,7 @@ CATALOGS = (
     "roles",
     "permissions",
     "role_permissions",
-    "responsibility_definitions",
-    "responsibility_permissions",
-    "test_types",
 )
-
-
-def docker(*args: str, sql: str | None = None, expect_success: bool = True) -> str:
-    result = subprocess.run(
-        docker_arguments(*args),
-        input=sql,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        check=False,
-    )
-    if expect_success and result.returncode != 0:
-        raise RuntimeError(f"Docker verification failed: {result.stderr[-2000:]}")
-    if not expect_success and result.returncode == 0:
-        raise AssertionError("Expected SQL refusal, but the operation succeeded")
-    return result.stdout.strip()
 
 
 def main() -> None:
@@ -74,14 +55,6 @@ def main() -> None:
             expect_success=expect_success,
         )
 
-    def config() -> dict:
-        values = ", ".join(
-            f"'{table}', (SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), "
-            f"'[]'::jsonb) FROM public.{table} t)"
-            for table in CATALOGS
-        )
-        return json.loads(execute(f"SELECT jsonb_build_object({values});"))
-
     def user_counts() -> tuple[int, int]:
         value = execute(
             "SELECT (SELECT count(*) FROM public.users)::text || ',' || "
@@ -91,46 +64,38 @@ def main() -> None:
 
     try:
         container_id = docker(
-            "run", "--pull=never", "--rm", "-d", "--network", "none",
-            "--tmpfs", "/var/lib/postgresql/data:rw,size=536870912",
-            "--name", container_name,
-            "--label", "collegeai.validation.disposable=true",
-            "--label", f"collegeai.validation.run={run_token}",
-            "--label", f"collegeai.validation.purpose={purpose}",
-            "-e", "PGDATA=/var/lib/postgresql/data",
-            "-e", f"POSTGRES_PASSWORD={uuid4().hex}", IMAGE,
+            "run",
+            "--pull=never",
+            "--rm",
+            "-d",
+            "--network",
+            "none",
+            "--tmpfs",
+            "/var/lib/postgresql/data:rw,size=536870912",
+            "--name",
+            container_name,
+            "--label",
+            "collegeai.validation.disposable=true",
+            "--label",
+            f"collegeai.validation.run={run_token}",
+            "--label",
+            f"collegeai.validation.purpose={purpose}",
+            "-e",
+            "PGDATA=/var/lib/postgresql/data",
+            "-e",
+            f"POSTGRES_PASSWORD={uuid4().hex}",
+            IMAGE,
         )
         if not re.fullmatch(r"[a-f0-9]{64}", container_id):
-            raise RuntimeError("Disposable container creation did not return a valid ID")
+            raise RuntimeError(
+                "Disposable container creation did not return a valid ID"
+            )
         created = True
         container_id = validate_disposable_target(container_id, run_token, purpose)
         print(
             "Disposable local database created; waiting for initialization", flush=True
         )
-        for _ in range(100):
-            process = docker("exec", container_id, "cat", "/proc/1/comm")
-            readiness = subprocess.run(
-                docker_arguments(
-                    "exec",
-                    container_id,
-                    "pg_isready",
-                    "-U",
-                    "postgres",
-                ),
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            # The cached image uses a .postgres wrapper process name. Match
-            # the established Faculty verifier's prefix check, not equality.
-            if readiness.returncode == 0 and process.strip().lstrip(".").startswith(
-                "postgres"
-            ):
-                execute("SELECT 1;")
-                break
-            time.sleep(0.5)
-        else:
-            raise RuntimeError("Disposable PostgreSQL did not finish initialization")
+        wait_database(execute, container_id)
 
         migrations = sorted((ROOT / "supabase/migrations").glob("*.sql"))
         for index, migration in enumerate(migrations, start=1):
@@ -180,7 +145,7 @@ def main() -> None:
             INSERT INTO public.users(auth_user_id, email, first_name, last_name)
             VALUES ('91000000-0000-0000-0000-000000000001', 'user@reset.example', 'Reset', 'Fixture');
         """)
-        original_config = config()
+        original_config = configuration_snapshot(execute, CATALOGS)
         original_platform_id = execute(
             "SELECT organization_id FROM public.organizations WHERE organization_code = 'COLLEGE-AI-PLATFORM';"
         )
@@ -212,10 +177,12 @@ def main() -> None:
         )
         print("PASS: restoration refuses to override restricted onboarding", flush=True)
 
+        if reset_requires_audit_review(execute, reset):
+            return
         execute(reset)
         assert user_counts() == (1, 1)
         assert execute("SELECT count(*) FROM public.organizations;") == "2"
-        assert config() == original_config
+        assert configuration_snapshot(execute, CATALOGS) == original_config
         print("PASS: default rehearsal rolls back without data loss", flush=True)
 
         execute("""
@@ -249,7 +216,7 @@ def main() -> None:
             "status": "active",
             "join_code_required": False,
         }
-        assert config() == original_config
+        assert configuration_snapshot(execute, CATALOGS) == original_config
         assert execute("SELECT count(*) FROM public.organizations;") == "1"
         assert (
             execute("SELECT count(*) FROM storage.buckets WHERE id = 'reset-fixture';")

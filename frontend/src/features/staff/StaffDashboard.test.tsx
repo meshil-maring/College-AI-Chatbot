@@ -55,9 +55,9 @@ describe('StaffDashboard', () => {
     expect(screen.getByRole('heading', { name: 'Operational workspace' })).toBeInTheDocument()
     expect(screen.getByText('Student Approvals')).toBeInTheDocument()
     expect(screen.getByText('AI Assistant')).toBeInTheDocument()
-    expect(screen.getByText('Attendance')).toBeInTheDocument()
-    expect(screen.getByText('Notices')).toBeInTheDocument()
-    expect(screen.getAllByText('Not available yet').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Attendance')).not.toBeInTheDocument()
+    expect(screen.queryByText('Notices')).not.toBeInTheDocument()
+    expect(screen.queryByText('Not available yet')).not.toBeInTheDocument()
   })
 
   it('never fabricates operational counts or statistics', () => {
@@ -92,9 +92,7 @@ describe('StaffProfile', () => {
   it('renders the identity and the honest no-context statement', () => {
     render(<StaffProfile user={STAFF_USER} />)
     expect(screen.getByRole('heading', { name: 'Staff identity' })).toBeInTheDocument()
-    expect(
-      screen.getByRole('heading', { name: 'Profile details' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Profile details' })).toBeInTheDocument()
   })
 
   it('never invents staff profile fields', () => {

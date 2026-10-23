@@ -6,7 +6,8 @@ from fastapi.routing import iter_route_contexts
 
 from app.api.admin.dependencies import _ADMIN_ROUTE_PERMISSIONS
 from app.api.admin.admin import router as admin_router
-from app.api.platform.platform import _PLATFORM_ROUTE_PERMISSIONS, router as platform_router
+from app.api.platform.dependencies import _PLATFORM_ROUTE_PERMISSIONS
+from app.api.platform.platform import router as platform_router
 from app.core.errors import AppError
 from app.core.permissions import (
     DEFAULT_ROLE_PERMISSIONS,
@@ -154,7 +155,7 @@ def test_admin_api_denies_resolved_user_without_required_permission() -> None:
         "effective_permissions": [],
     }
     try:
-        response = TestClient(app).get("/api/v1/admin/students")
+        response = TestClient(app).get("/api/v1/admin/students/pending")
     finally:
         app.dependency_overrides.pop(get_current_user, None)
 

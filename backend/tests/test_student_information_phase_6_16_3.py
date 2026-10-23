@@ -157,7 +157,7 @@ class TestProfileIsReadOnly:
         # The three information surfaces this phase completes stay read-only.
         # (The separate Phase 6.11 notification read-receipt PATCH is an
         # existing, unrelated student-owned contract and is not touched here.)
-        for suffix in ("academic-profile", "notices", "resources"):
+        for suffix in ("profile", "notices", "resources"):
             path = f"/api/v1/students/me/{suffix}"
             assert path in paths, path
             assert set(paths[path]) == {"get"}, path

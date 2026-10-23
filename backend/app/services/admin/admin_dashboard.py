@@ -1,33 +1,8 @@
-"""Phase 7.21 — University Admin operational dashboard service.
+"""Bounded account, knowledge and communication summary for one institution.
 
-Reads a bounded, institution-scoped operational summary for exactly ONE
-institution and projects it into the explicit ``DashboardResponse`` contract.
-
-Reuse (nothing here is a new data-access pattern):
-
-* ``_count`` / ``_count_related`` are the Phase 7.20 tenant-safe counting
-  primitives already proven by ``tests/test_admin_dashboard_service.py``. Every
-  count is either filtered by ``institution_id`` directly or resolved through
-  an ``!inner`` join to an institution-owned parent.
-* ``admin_knowledge.ACTIVE_LIFECYCLE_STATUSES`` and
-  ``admin_knowledge.list_notices`` are the existing knowledge/notice
-  projections, so "active source" and "recent notice" mean exactly what they
-  mean on the management screens.
-* ``tenancy.get_institution_by_id`` is the existing institution read used by the
-  Phase 7.20 authorization guard, so the dashboard reads the same row the
-  guard validated.
-
-Authorization: this service NEVER accepts a tenant from the request. The
-caller passes the institution that ``require_institution_roles`` already
-resolved from the server-owned ``user_roles`` grant. There is deliberately no
-``institution_id`` query parameter on the endpoint any more — a client-supplied
-tenant can neither widen nor redirect the scope because it is never read.
-
-Query shape: a fixed number of aggregate queries proportional to the number of
-metrics (not to the number of rows), so there is no N+1 behaviour and no
-unbounded list is ever materialised. ``recent_notices`` is explicitly bounded.
-
-No cache, no background job, no materialized view, no analytics warehouse.
+The API supplies the institution resolved from the authenticated admin grant.
+Every count is tenant filtered directly or through an institution-owned parent.
+Recent notices are bounded; academic metrics and links have been retired.
 """
 
 from uuid import UUID
@@ -38,7 +13,6 @@ from app.db.supabase import get_admin_client
 from app.repositories.admin import admin_knowledge as knowledge_repo
 from app.repositories.platform import tenancy as tenancy_repo
 from app.schemas.admin.admin_dashboard import (
-    DashboardAcademics,
     DashboardCommunication,
     DashboardInstitution,
     DashboardKnowledge,
@@ -52,19 +26,12 @@ from app.schemas.admin.admin_dashboard import (
 # management page remains the place for full, paginated records.
 RECENT_NOTICES_LIMIT = 5
 
-# Phase 7.21 — every quick action below points at an admin screen that already
-# exists (AdminShell navigation + its verified backend endpoints). No new
-# feature module is introduced by the dashboard.
+# Actions target the retained institution administration screens.
 QUICK_ACTIONS: tuple[DashboardQuickAction, ...] = (
     DashboardQuickAction(
         view="approvals",
         label="Approve Student",
         description="Review the pending student approval queue.",
-    ),
-    DashboardQuickAction(
-        view="students",
-        label="Manage Students",
-        description="View and update this institution's students.",
     ),
     DashboardQuickAction(
         view="documents",
@@ -80,21 +47,6 @@ QUICK_ACTIONS: tuple[DashboardQuickAction, ...] = (
         view="notices",
         label="Create Notice",
         description="Publish a notice for students to see.",
-    ),
-    DashboardQuickAction(
-        view="attendance",
-        label="Manage Attendance",
-        description="Record and correct attendance.",
-    ),
-    DashboardQuickAction(
-        view="results",
-        label="Manage Results",
-        description="Maintain result records for this institution.",
-    ),
-    DashboardQuickAction(
-        view="test-results",
-        label="Manage Tests",
-        description="Maintain test result records for this institution.",
     ),
 )
 
@@ -198,7 +150,10 @@ def _knowledge_summary(db: Client, institution_id: UUID | str) -> DashboardKnowl
     return DashboardKnowledge(
         sources_total=_count(db, "knowledge_sources", institution_id),
         sources_active=_count_in(
-            db, "knowledge_sources", institution_id, knowledge_repo.ACTIVE_LIFECYCLE_STATUSES
+            db,
+            "knowledge_sources",
+            institution_id,
+            knowledge_repo.ACTIVE_LIFECYCLE_STATUSES,
         ),
         documents_total=_count_related(
             db, "documents", "document_id", "knowledge_sources", institution_id
@@ -231,25 +186,6 @@ def _communication_summary(
     )
 
 
-def _academics_summary(db: Client, institution_id: UUID | str) -> DashboardAcademics:
-    """Count academic records through institution-owned ``!inner`` joins."""
-    return DashboardAcademics(
-        attendance_records=_count_related(
-            db,
-            "student_attendance",
-            "student_attendance_id",
-            "students",
-            institution_id,
-        ),
-        test_results=_count_related(
-            db, "test_results", "test_result_id", "students", institution_id
-        ),
-        results=_count_related(
-            db, "student_results", "student_result_id", "students", institution_id
-        ),
-    )
-
-
 def get_dashboard_summary(
     institution_id: UUID | str,
     client: Client | None = None,
@@ -267,6 +203,5 @@ def get_dashboard_summary(
         students=_students_summary(db, institution_id),
         knowledge=_knowledge_summary(db, institution_id),
         communication=_communication_summary(db, institution_id, recent_notices_limit),
-        academics=_academics_summary(db, institution_id),
         quick_actions=list(QUICK_ACTIONS),
     )

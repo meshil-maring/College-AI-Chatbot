@@ -85,6 +85,7 @@ async def get_user_by_auth_id(
         role_name = role.get("name")
         if not role_name:
             continue
+        grant_permissions: set[str] = set()
         if include_permissions:
             for role_permission in role.get("role_permissions") or []:
                 if not isinstance(role_permission, dict):
@@ -108,6 +109,7 @@ async def get_user_by_auth_id(
                     and permission_scope_matches
                 ):
                     effective_permissions.add(permission["code"])
+                    grant_permissions.add(permission["code"])
         role_assignments.append(
             {
                 "role": role_name,
@@ -115,6 +117,7 @@ async def get_user_by_auth_id(
                 "scope_id": grant.get("scope_id"),
                 "scope_organization_id": grant.get("scope_organization_id"),
                 "is_active": True,
+                "permissions": sorted(grant_permissions),
             }
         )
     roles = [grant["role"] for grant in role_assignments]
@@ -153,6 +156,7 @@ async def get_user_by_auth_id(
                 })
         result["direct_permission_grants"] = direct_permission_grants
         result["permissions_resolved"] = True
+        result["scoped_permissions_resolved"] = True
     return result
 
 

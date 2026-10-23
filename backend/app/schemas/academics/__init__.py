@@ -1,1 +1,0 @@
-"""Schemas for academics features."""

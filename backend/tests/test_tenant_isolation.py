@@ -168,8 +168,8 @@ def tenant_admin_override():
 
 
 def test_admin_list_students_rejects_foreign_institution(tenant_admin_override):
-    with patch("app.services.admin.admin_academics.list_students") as list_students:
-        response = client.get(f"/api/v1/admin/students?institution_id={TENANT_B}")
+    with patch("app.services.admin.admin_academics.list_pending_approvals") as list_students:
+        response = client.get(f"/api/v1/admin/students/pending?institution_id={TENANT_B}")
 
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "TENANT_MISMATCH"
@@ -178,9 +178,9 @@ def test_admin_list_students_rejects_foreign_institution(tenant_admin_override):
 
 def test_admin_list_students_forced_to_own_institution(tenant_admin_override):
     with patch(
-        "app.services.admin.admin_academics.list_students", return_value=[]
+        "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
     ) as list_students:
-        response = client.get(f"/api/v1/admin/students?institution_id={TENANT_A}")
+        response = client.get(f"/api/v1/admin/students/pending?institution_id={TENANT_A}")
 
     assert response.status_code == 200
     assert list_students.call_args.args[0] == UUID(TENANT_A)
@@ -195,9 +195,9 @@ def test_tenantless_admin_cannot_list_any_institution():
     }
     try:
         with patch(
-            "app.services.admin.admin_academics.list_students", return_value=[]
+            "app.services.admin.admin_academics.list_pending_approvals", return_value=[]
         ) as list_students:
-            response = client.get(f"/api/v1/admin/students?institution_id={TENANT_B}")
+            response = client.get(f"/api/v1/admin/students/pending?institution_id={TENANT_B}")
     finally:
         app.dependency_overrides.pop(get_current_user, None)
 

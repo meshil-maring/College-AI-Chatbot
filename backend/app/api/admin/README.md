@@ -13,13 +13,9 @@ permission dependency; it contains no endpoint handlers.
 | `documents.py` | Document listing, upload, versions and deletion |
 | `faqs.py` | FAQ management and publication |
 | `notices.py` | Notice management |
-| `student_records/students.py` | Student management and pending approval/rejection |
-| `student_records/results.py` | Results, CSV uploads and test results |
-| `attendance.py` | Student attendance management |
+| `student_approvals.py` | Pending student account queue, approval and rejection |
 | `audit.py` | Audit log queries |
 | `permissions.py` | Staff permission delegation |
-| `faculty.py` | Faculty teaching assignments and responsibilities |
-| `student_records/student_workspace.py` | Sections, rosters, profiles, registration history, batches, invitations and subject assignments |
 
 ## Shared boundaries
 
@@ -32,11 +28,15 @@ routers are nested. Do not add another `/admin` prefix when including a feature.
 central map requires an explicit permission policy for each method/path;
 missing policies deny access. Endpoint role dependencies reuse the same `_ADMIN`
 and `_APPROVAL` objects from `dependencies.py`.
+The permission boundary resolves the same role/institution dependency before
+checking permissions, so another tenant's or an unrelated role's permissions
+cannot authorize the handler.
 
 Tenant guards and audit writes go through `common`. Student approval retains its
-existing service-owned provisioning/audit workflow. Features call the existing
-services and repositories; this split does not change their transaction behavior.
-The Faculty API also uses `common.record_audit` without importing an admin router.
+existing service-owned atomic provisioning/audit workflow. Approval passes the
+authenticated actor to the service; it does not issue a second approval audit.
+Features call the existing services and repositories. Academic management,
+rosters, attendance, examinations and faculty teaching APIs are retired.
 
 ## Adding an endpoint
 

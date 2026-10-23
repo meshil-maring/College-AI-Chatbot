@@ -1,24 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import App, { resolveAppRoute } from './App.tsx'
-import { FACULTY_PATHS, FACULTY_STUDENT_PATHS } from './features/faculty/workspace/facultyRoutes.ts'
+import { FACULTY_PATHS } from './features/faculty/workspace/facultyRoutes.ts'
 
-const auth = vi.hoisted(() => ({ status: 'authenticated', role: 'faculty' as string | null, user: { auth_user_id: 'faculty-1' }, logout: vi.fn() }))
+const auth = vi.hoisted(() => ({
+  status: 'authenticated',
+  role: 'faculty' as string | null,
+  user: { auth_user_id: 'faculty-1' },
+  logout: vi.fn(),
+}))
 vi.mock('./features/auth/session/AuthProvider.tsx', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => auth,
 }))
 vi.mock('./features/faculty/workspace/FacultyShell.tsx', () => ({ default: () => <div>Faculty workspace</div> }))
-vi.mock('./features/auth/login/LoginForm.tsx', () => ({ default: ({ audience }: { audience: string }) => <div>{audience} sign in</div> }))
+vi.mock('./features/auth/login/LoginForm.tsx', () => ({
+  default: ({ audience }: { audience: string }) => <div>{audience} sign in</div>,
+}))
 
 beforeEach(() => {
   auth.status = 'authenticated'
   auth.role = 'faculty'
-  window.history.replaceState(null, '', '/faculty/students/register?section_id=section-1')
+  window.history.replaceState(null, '', '/faculty/profile')
 })
 
 describe('Faculty URL routes', () => {
-  it.each([...Object.values(FACULTY_PATHS), ...Object.values(FACULTY_STUDENT_PATHS)])('recognizes %s and its trailing slash', (path) => {
+  it.each(Object.values(FACULTY_PATHS))('recognizes %s and its trailing slash', (path) => {
     expect(resolveAppRoute(path)).toEqual({ kind: 'faculty' })
     expect(resolveAppRoute(`${path}/`)).toEqual({ kind: 'faculty' })
   })
@@ -37,7 +44,7 @@ describe('Faculty URL routes', () => {
     auth.status = 'unauthenticated'
     render(<App />)
     expect(screen.getByText('faculty sign in')).toBeInTheDocument()
-    expect(window.location.pathname + window.location.search).toBe('/faculty/students/register?section_id=section-1')
+    expect(window.location.pathname + window.location.search).toBe('/faculty/profile')
     expect(screen.queryByText('Faculty workspace')).not.toBeInTheDocument()
   })
 

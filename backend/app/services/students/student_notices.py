@@ -15,7 +15,7 @@ Security model (reuses locked Phase 6 primitives; nothing weakened):
            institution active)
         -> ``assert_student_context_tenant`` (defence-in-depth: the resolved
            student tenant must match the authenticated user's tenant)
-        -> ``student_dashboard.list_published_notices`` with the student's OWN
+        -> ``student_content.list_published_notices`` with the student's OWN
            institution id as a mandatory equality filter
 
 The caller never supplies identity: the service accepts the ``current_user``
@@ -33,7 +33,7 @@ from typing import Any
 
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
-from app.repositories.students import student_dashboard as dashboard_repo
+from app.repositories.students import student_content as dashboard_repo
 from app.schemas.students.student_notices import StudentNotice, StudentNoticeList
 from app.services.students import student_context as student_context_service
 

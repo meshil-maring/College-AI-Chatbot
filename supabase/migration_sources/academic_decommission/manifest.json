@@ -1,0 +1,5 @@
+{
+  "version": "20261023000000",
+  "name": "decommission_academic_domain",
+  "files": ["scope.sql", "preflight.sql", "remove_runtime.sql", "staff_delegation.sql", "permissions.sql", "approval_adapter.sql", "verification.sql"]
+}

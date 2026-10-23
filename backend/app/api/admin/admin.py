@@ -9,12 +9,10 @@ from app.api.admin import (
     documents,
     faqs,
     notices,
-    attendance,
     audit,
     permissions,
-    faculty,
 )
-from app.api.admin.student_records import students, student_workspace, results
+from app.api.admin import student_approvals
 from app.api.admin.dependencies import _authorize_admin_endpoint
 
 
@@ -29,10 +27,6 @@ router.include_router(knowledge_sources.router)
 router.include_router(documents.router)
 router.include_router(faqs.router)
 router.include_router(notices.router)
-router.include_router(students.router)
-router.include_router(results.router)
-router.include_router(attendance.router)
 router.include_router(audit.router)
 router.include_router(permissions.router)
-router.include_router(faculty.router)
-router.include_router(student_workspace.router)
+router.include_router(student_approvals.router)

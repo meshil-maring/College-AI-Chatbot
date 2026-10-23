@@ -1,152 +1,47 @@
-/**
- * Phase 6.19 — Admin navigation model.
- *
- * The admin experience has ONE navigation definition, derived exclusively
- * from the server-authoritative role held in AuthProvider state
- * (`/auth/me` -> `user.role`, Phase 6.15.4). The shell previously inlined
- * this list; it now mirrors the staff/faculty/student navigation-model
- * pattern so the fail-closed behaviour is testable without rendering.
- *
- * UX ONLY — NEVER AUTHORIZATION:
- * This module decides which links to RENDER. It is not a security boundary.
- * Every navigation target calls a backend endpoint that re-resolves the
- * caller's identity server-side from the JWT, and every /admin/* surface
- * stays behind `require_roles("admin", ...)` (the Phase 6.4 approval queue
- * additionally authorizes staff with the tenant-pinned `_approval_scope`).
- * Removing or editing this file cannot grant access to anything: a user who
- * manually requests an admin URL still receives 403 FORBIDDEN from the
- * backend unless the server resolves the `admin` role for their account.
- *
- * Every visible navigation item maps to a server-verified backend contract:
- *
- *   dashboard      -> GET  /admin/dashboard                    (require_roles("admin"))
- *   approvals      -> GET  /admin/students/pending             (require_roles("admin","staff"))
- *                     POST /admin/students/{id}/approve|reject
- *   students       -> GET  /admin/students (+ CRUD)            (require_roles("admin"))
- *   attendance     -> GET/POST/PATCH/DELETE /admin/attendance* (require_roles("admin"))
- *   results        -> GET/POST/PATCH/DELETE /admin/results*,
- *                     POST /admin/results/csv-upload           (require_roles("admin"))
- *   test-results   -> GET/POST/PATCH/DELETE /admin/test-results* (require_roles("admin"))
- *   notices        -> CRUD /admin/notices*                     (require_roles("admin"))
- *   documents      -> CRUD /admin/knowledge-sources*,
- *                     /admin/documents* (+ /documents pipeline) (require_roles("admin"))
- *   faqs           -> CRUD /admin/faqs*                        (require_roles("admin"))
- *   assistant      -> GET /conversations, POST /generation/chat (get_current_user)
- *   profile        -> GET /auth/me identity already in AuthProvider state
- *
- * No speculative surfaces (no user management, no role management, no
- * institution administration links — those exist in the backend for admins
- * but have NO frontend manager today, so no navigation entry is added).
- */
-
 import { hasPermission } from '../auth/access/permissions.ts'
 
-/** The only role that renders the admin shell (App.tsx gates on this too). */
-const ADMIN_SHELL_ROLES: readonly string[] = ['admin']
-
-/** Every view the admin shell can render (no router library is installed). */
 export type AdminView =
-  | 'dashboard'
-  | 'approvals'
-  | 'staff-faculty'
-  | 'students'
-  | 'attendance'
-  | 'results'
-  | 'test-results'
-  | 'notices'
-  | 'documents'
-  | 'faqs'
-  | 'assistant'
-  | 'profile'
-  | 'permissions'
-  | 'faculty-assignments'
-  | 'academic-setup'
-
+  'staff-faculty' | 'approvals' | 'notices' | 'documents' | 'faqs' | 'assistant' | 'profile' | 'permissions'
 export interface AdminNavItem {
   readonly key: AdminView
   readonly label: string
 }
-
-/**
- * The admin navigation, in display order. Deliberately contains ONLY
- * server-verified admin capabilities.
- */
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
-  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'profile', label: 'Profile' },
   { key: 'staff-faculty', label: 'Staff & Faculty' },
-  { key: 'students', label: 'Students' },
-  { key: 'attendance', label: 'Attendance' },
-  { key: 'results', label: 'Results' },
-  { key: 'test-results', label: 'Test Results' },
+  { key: 'approvals', label: 'Student Approvals' },
   { key: 'notices', label: 'Notices' },
   { key: 'documents', label: 'Documents' },
   { key: 'faqs', label: 'FAQs' },
   { key: 'assistant', label: 'AI Assistant' },
-  { key: 'profile', label: 'Profile' },
   { key: 'permissions', label: 'Staff Permissions' },
-  { key: 'faculty-assignments', label: 'Faculty Assignments' },
-  { key: 'academic-setup', label: 'Academic Setup' },
 ]
-
-/**
- * Return the navigation for a server-resolved role.
- *
- * Only the admin role receives any navigation. Anything else (including
- * `null`/unknown values, and the staff/faculty/student roles that have their
- * own shells) receives an EMPTY navigation — the fail-safe behaviour,
- * consistent with shell selection in `App.tsx`, which never renders this
- * shell for those roles in the first place.
- */
-const ADMIN_VIEW_PERMISSIONS: Readonly<Record<AdminView, readonly string[]>> = {
-  dashboard: [
-    'institution.read', 'users.read', 'students.read',
-    'faculty.read', 'staff.read', 'notices.read',
-  ],
-  approvals: ['students.read', 'students.approve', 'students.reject'],
+const VIEW_PERMISSIONS: Record<AdminView, readonly string[]> = {
+  profile: ['profile.own.read'],
   'staff-faculty': ['users.read'],
-  students: ['students.read'],
-  attendance: ['attendance.read'],
-  results: ['results.read'],
-  'test-results': ['results.read'],
+  approvals: ['students.read', 'students.approve', 'students.reject'],
   notices: ['notices.read'],
   documents: ['documents.read'],
   faqs: ['ai.knowledge.read'],
   assistant: ['ai.chat'],
-  profile: ['profile.own.read'],
   permissions: ['permissions.read'],
-  'faculty-assignments': ['faculty.assignments.manage'],
-  'academic-setup': ['departments.read', 'courses.read', 'academic_years.read', 'semesters.read'],
 }
-
-export function buildAdminNavigation(
-  role: string | null,
-  permissions?: readonly string[],
-): readonly AdminNavItem[] {
-  if (role === null) return []
-  if (!ADMIN_SHELL_ROLES.includes(role)) return []
-  if (permissions === undefined) return ADMIN_NAV_ITEMS
-  return ADMIN_NAV_ITEMS.filter((item) =>
-    (item.key === 'academic-setup' ? ADMIN_VIEW_PERMISSIONS[item.key].some((permission) => hasPermission(permissions, permission)) : ADMIN_VIEW_PERMISSIONS[item.key].every((permission) =>
-      hasPermission(permissions, permission),
-    )),
-  )
+/** Navigation is presentation only. Endpoints enforce role, tenant and permissions. */
+export function buildAdminNavigation(role: string | null, permissions?: readonly string[]): readonly AdminNavItem[] {
+  if (role !== 'admin') return []
+  return permissions === undefined
+    ? ADMIN_NAV_ITEMS
+    : ADMIN_NAV_ITEMS.filter((item) =>
+        VIEW_PERMISSIONS[item.key].every((permission) => hasPermission(permissions, permission)),
+      )
 }
-
-/** Human-readable heading for each view (used for the page `h1`). */
-export const ADMIN_VIEW_HEADINGS: Readonly<Record<AdminView, string>> = {
-  dashboard: 'Dashboard',
-  approvals: 'Student Approvals',
+export const ADMIN_VIEW_HEADINGS: Record<AdminView, string> = {
+  profile: 'Profile',
   'staff-faculty': 'Staff & Faculty',
-  students: 'Students',
-  attendance: 'Attendance',
-  results: 'Results',
-  'test-results': 'Test Results',
+  approvals: 'Student Approvals',
   notices: 'Notices',
   documents: 'Documents',
   faqs: 'FAQs',
   assistant: 'AI Assistant',
-  profile: 'Profile',
   permissions: 'Staff Permissions',
-  'faculty-assignments': 'Faculty Assignments',
-  'academic-setup': 'Academic Setup',
 }

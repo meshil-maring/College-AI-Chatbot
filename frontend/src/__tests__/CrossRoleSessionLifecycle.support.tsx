@@ -5,8 +5,6 @@ import { mockAllLoaded } from '../features/student/__tests__/studentTestFixtures
 import * as adminApi from '../services/admin/adminApi.ts'
 import * as authService from '../services/auth/auth.ts'
 import { notifySessionExpired, resetSessionExpiredListeners } from '../services/shared/sessionEvents.ts'
-import { emptyDashboardSummary } from '../test/adminDashboardFixtures.ts'
-import type { DashboardSummary } from '../types/admin.ts'
 import type { CurrentUser } from '../types/auth.ts'
 vi.mock('../services/auth/auth.ts', async () => {
   const actual = await vi.importActual<typeof import('../services/auth/auth.ts')>('../services/auth/auth.ts')
@@ -24,7 +22,7 @@ vi.mock('../services/students/studentApi.ts', () => ({
     readonly status = 0
     readonly code: string | null = null
   },
-  getMyAcademicProfile: vi.fn(),
+  getMyProfile: vi.fn(),
   getMyAttendanceSummary: vi.fn(),
   getMyResultsSummary: vi.fn(),
   getMyTestResultsSummary: vi.fn(),
@@ -84,8 +82,6 @@ export const SHELL_MARKERS: Readonly<Record<string, string>> = {
   student: 'Student navigation',
 }
 
-export const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
-
 /** A 401 reported by an authenticated request is what the client publishes. */
 export function reportSessionExpired(token: string): void {
   act(() => {
@@ -116,8 +112,6 @@ beforeEach(() => {
   resetSessionExpiredListeners()
   vi.mocked(authService.authenticate).mockReset()
   vi.mocked(authService.fetchCurrentUser).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
   vi.mocked(adminApi.listPendingStudents).mockReset()
   vi.mocked(adminApi.listPendingStudents).mockResolvedValue([])
   mockAllLoaded()

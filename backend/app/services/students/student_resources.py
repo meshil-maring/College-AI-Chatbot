@@ -10,7 +10,7 @@ Security model (identical to ``app.services.students.student_notices``):
 
     Authenticated JWT -> current_user -> student_context.get_student_context
         -> assert_student_context_tenant
-        -> student_dashboard.list_published_resources(student's OWN institution)
+        -> student_content.list_published_resources(student's OWN institution)
 
 The caller never supplies identity, so another institution's resources are
 structurally unreachable.
@@ -31,7 +31,7 @@ from typing import Any
 
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
-from app.repositories.students import student_dashboard as dashboard_repo
+from app.repositories.students import student_content as dashboard_repo
 from app.schemas.students.student_resources import StudentResource, StudentResourceList
 from app.services.students import student_context as student_context_service
 
@@ -107,7 +107,9 @@ def _to_resource(row: dict[str, Any]) -> StudentResource:
         resource_id=row["knowledge_source_id"],
         title=str(row.get("title") or "").strip(),
         description=(
-            str(description).strip() if description is not None and str(description).strip() else None
+            str(description).strip()
+            if description is not None and str(description).strip()
+            else None
         ),
         source_type=str(row.get("source_type") or "").strip(),
         effective_from=_as_text(effective_from),

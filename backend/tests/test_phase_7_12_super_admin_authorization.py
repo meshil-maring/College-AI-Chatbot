@@ -49,6 +49,19 @@ def test_platform_endpoint_denies_anonymous_user() -> None:
 
 def test_auth_me_exposes_server_resolved_super_admin_role() -> None:
     principal = _principal("super_admin")
+    principal.update(
+        permissions_resolved=True,
+        scoped_permissions_resolved=True,
+        role_assignments=[
+            {
+                "role": "super_admin",
+                "scope_type": "platform",
+                "scope_id": None,
+                "is_active": True,
+                "permissions": [],
+            }
+        ],
+    )
     with (
         patch(
             "app.core.security.tokens.verify_jwt",

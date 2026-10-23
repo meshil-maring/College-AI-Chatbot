@@ -25,7 +25,7 @@ vi.mock('../../../services/students/studentApi.ts', () => ({
       this.code = code ?? null
     }
   },
-  getMyAcademicProfile: vi.fn(),
+  getMyProfile: vi.fn(),
   getMyAttendanceSummary: vi.fn(),
   getMyResultsSummary: vi.fn(),
   getMyTestResultsSummary: vi.fn(),
@@ -37,19 +37,42 @@ import { ResourcesPage } from './ResourcesPage.tsx'
 
 const RESOURCES_FIXTURE: StudentResourceList = {
   items: [
-    { resource_id: 'id-hand', title: 'Course handbook', description: 'The official handbook.', source_type: 'handbook', effective_from: '2026-09-01T00:00:00Z', effective_until: null },
-    { resource_id: 'id-doc', title: 'Week 3 lecture notes', description: null, source_type: 'document', effective_from: null, effective_until: null },
+    {
+      resource_id: 'id-hand',
+      title: 'Course handbook',
+      description: 'The official handbook.',
+      source_type: 'handbook',
+      effective_from: '2026-09-01T00:00:00Z',
+      effective_until: null,
+    },
+    {
+      resource_id: 'id-doc',
+      title: 'Week 3 lecture notes',
+      description: null,
+      source_type: 'document',
+      effective_from: null,
+      effective_until: null,
+    },
   ],
   total: 2,
 }
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe('phase 6.16.3 learning resources page', () => {
   it('renders an unknown source type gracefully instead of crashing', async () => {
     vi.mocked(getMyResources).mockResolvedValue({
       items: [
-        { resource_id: 'id-mys', title: 'Mystery material', description: null, source_type: 'mystery-pack', effective_from: null, effective_until: null },
+        {
+          resource_id: 'id-mys',
+          title: 'Mystery material',
+          description: null,
+          source_type: 'mystery-pack',
+          effective_from: null,
+          effective_until: null,
+        },
       ],
       total: 1,
     })
@@ -61,7 +84,14 @@ describe('phase 6.16.3 learning resources page', () => {
   it('renders a non-string source type as the em-dash fallback', async () => {
     vi.mocked(getMyResources).mockResolvedValue({
       items: [
-        { resource_id: 'id-num', title: 'Numeric type', description: null, source_type: 7, effective_from: null, effective_until: null },
+        {
+          resource_id: 'id-num',
+          title: 'Numeric type',
+          description: null,
+          source_type: 7,
+          effective_from: null,
+          effective_until: null,
+        },
       ],
       total: 1,
     } as unknown as StudentResourceList)

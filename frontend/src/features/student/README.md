@@ -1,42 +1,26 @@
-# Student self-service feature
+# Student information workspace
 
-Keep pages, panels, and tests with their owning student workflow. The feature
-root contains this guide and domain folders. Import modules directly from their
-owning folder; update callers and mock targets together when moving code.
+| Folder                       | Current responsibility                                                   |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `workspace/`                 | Shell, navigation, approval/inactive-account gates and session lifecycle |
+| `profile/`                   | Read-only identity profile using `GET /students/me/profile`              |
+| `notices/`, `resources/`     | Published institution information                                        |
+| `shared/`                    | Resource loading, access-denial context, section UI and formatting       |
+| `integration/`, `__tests__/` | Information journeys, navigation and fixture support                     |
 
-| Folder         | Responsibility and entry points                                                         |
-| -------------- | --------------------------------------------------------------------------------------- |
-| `workspace/`   | `StudentShell.tsx`, navigation, account access, and session-expiry tests                |
-| `dashboard/`   | `StudentDashboard.tsx`, summary composition, and dashboard tests                        |
-| `attendance/`  | `AttendanceDetail.tsx`, dashboard panel, filters, records, and tests                    |
-| `results/`     | `ResultsDetail.tsx`, dashboard panel, record tables, and tests                          |
-| `profile/`     | `ProfilePage.tsx`, identity card, and profile tests                                     |
-| `notices/`     | `NoticesPage.tsx`, dashboard panel, and notice tests                                    |
-| `resources/`   | `ResourcesPage.tsx`, dashboard panel, and resource tests                                |
-| `shared/`      | Resource hook, access-denial context, section UI, formatting, and academic context card |
-| `integration/` | Academic detail and information journeys, navigation, and error-isolation tests         |
-| `__tests__/`   | Shared student data fixtures used by student and application tests                      |
+The shell loads account approval once and reuses the same identity result on the
+profile page. Pending, rejected and inactive accounts cannot mount student views.
+The shared ChatShell owns the assistant, and AuthProvider owns session lifecycle.
 
-The workspace composes the domain pages directly. Dashboard panels reuse their
-domain's rendering, and the profile's academic context card is shared with the
-dashboard and academic detail pages. API clients remain in
-`src/services/students/`; contracts remain in `src/types/student.ts`.
-Shared staff and faculty student-management UI belongs in `features/students/`.
-The **My Subject Package** page composes `features/academic-packages/`: students
-choose an initial complete package only when enabled and request later changes.
-That shared feature also serves authorized administrative and scoped faculty
-workspaces; each action uses backend capabilities and deadline validation.
+Attendance, results and subject-package pages have been removed. The former
+academic dashboard, its historical tests and `shared/AcademicContextCard.tsx`
+remain as disconnected source at the owner's request. Their dependencies include
+retired contracts; they are excluded individually from the active TypeScript
+project and Vitest suite. See the [removal record](../../../../docs/retirements/academic-setup/README.md).
 
-Keep tests beside their owning page or workflow. Shared mock setup belongs in
-that workflow's `__tests__/` folder and must be imported before the component
-under test. These fixture folders are excluded from the production TypeScript
-build. Keep assertions in test files.
-
-Preserve approval and inactive-account handling, server-authoritative permissions,
-session-expiry behavior, request limits, and the read-only student contracts.
-Keep the resource hook's identity and query scope, error reporting, retry
-behavior, and cache lifetime intact when extracting code.
-
-Keep every folder within 15 direct maintained files and each code file within
-250 physical lines. `npm run check:structure` checks both limits throughout this
-feature. Group further by responsibility before reaching either limit.
+Keep API transport in `services/students/`, contracts in `types/student.ts`, state
+in feature hooks and rendering in components. Preserve identity scopes, access
+denials, retries, query lifetime and server-authoritative permissions. Keep tests
+adjacent, fixture setup in `__tests__/`, files within 250 physical lines and
+folders within 15 direct files. `check:structure` also rejects active imports into
+retained legacy source; those files remain subject to maintenance limits.

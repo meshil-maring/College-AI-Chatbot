@@ -25,7 +25,7 @@ vi.mock('../../../services/students/studentApi.ts', () => ({
       this.code = code ?? null
     }
   },
-  getMyAcademicProfile: vi.fn(),
+  getMyProfile: vi.fn(),
   getMyAttendanceSummary: vi.fn(),
   getMyResultsSummary: vi.fn(),
   getMyTestResultsSummary: vi.fn(),
@@ -38,14 +38,43 @@ import { NoticesPage } from './NoticesPage.tsx'
 /** Exactly what the backend sends, in the backend's order (pinned, then newest). */
 const SERVER_ORDER: StudentNoticeList = {
   items: [
-    { notice_id: 'id-pin', title: 'Pinned maintenance', content: 'Water outage on Monday.', category: 'facilities', priority: 'high', is_pinned: true, published_at: '2026-09-01T00:00:00Z', expires_at: null },
-    { notice_id: 'id-new', title: 'Newer notice', content: 'Exams begin Friday.', category: 'exam', priority: 'normal', is_pinned: false, published_at: '2026-09-05T00:00:00Z', expires_at: null },
-    { notice_id: 'id-old', title: 'Older notice', content: 'Library hours changed.', category: 'general', priority: 'normal', is_pinned: false, published_at: '2026-09-03T00:00:00Z', expires_at: null },
+    {
+      notice_id: 'id-pin',
+      title: 'Pinned maintenance',
+      content: 'Water outage on Monday.',
+      category: 'facilities',
+      priority: 'high',
+      is_pinned: true,
+      published_at: '2026-09-01T00:00:00Z',
+      expires_at: null,
+    },
+    {
+      notice_id: 'id-new',
+      title: 'Newer notice',
+      content: 'Exams begin Friday.',
+      category: 'exam',
+      priority: 'normal',
+      is_pinned: false,
+      published_at: '2026-09-05T00:00:00Z',
+      expires_at: null,
+    },
+    {
+      notice_id: 'id-old',
+      title: 'Older notice',
+      content: 'Library hours changed.',
+      category: 'general',
+      priority: 'normal',
+      is_pinned: false,
+      published_at: '2026-09-03T00:00:00Z',
+      expires_at: null,
+    },
   ],
   total: 3,
 }
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe('phase 6.16.3 notices page', () => {
   it('renders the page and every student-facing notice field', async () => {
@@ -137,7 +166,16 @@ describe('phase 6.16.3 notices page', () => {
   it('renders a malformed/unknown category or priority without crashing', async () => {
     const weird = {
       items: [
-        { notice_id: 'id-y', title: 'Odd notice', content: 'Body', category: 42, priority: null, is_pinned: false, published_at: null, expires_at: null },
+        {
+          notice_id: 'id-y',
+          title: 'Odd notice',
+          content: 'Body',
+          category: 42,
+          priority: null,
+          is_pinned: false,
+          published_at: null,
+          expires_at: null,
+        },
       ],
       total: 1,
     } as unknown as StudentNoticeList

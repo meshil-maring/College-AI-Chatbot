@@ -26,5 +26,27 @@
     "types": ["@testing-library/jest-dom"]
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test", "src/**/__tests__/**"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/test",
+    "src/**/__tests__/**",
+    /* Retained at the owner's request, disconnected from the application.
+       check:structure rejects active imports into these exact legacy files. */
+    "src/features/admin/dashboard/AdminDashboard.tsx",
+    "src/features/admin/dashboard/DashboardCards.tsx",
+    "src/features/admin/students/StudentDirectory.tsx",
+    "src/features/admin/students/StudentImport.tsx",
+    "src/features/admin/students/studentImport.ts",
+    "src/features/admin/students/studentSections.ts",
+    "src/features/admin/shared/adminAcademicQueries.ts",
+    "src/features/faculty/dashboard/FacultyDashboard.tsx",
+    "src/features/student/dashboard/StudentDashboard.tsx",
+    "src/features/student/shared/AcademicContextCard.tsx",
+    "src/features/students/StudentRegistrationInvitations.tsx",
+    "src/features/students/StudentRosterFilters.tsx",
+    "src/features/students/StudentWorkspaceContext.tsx",
+    "src/features/students/studentsNavigation.ts",
+    "src/types/admin/dashboard.ts"
+  ]
 }

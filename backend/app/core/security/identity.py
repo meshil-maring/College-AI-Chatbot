@@ -8,6 +8,7 @@ from app.config import settings
 from app.core.errors import AppError
 from app.core.security import tokens
 from app.core.security.roles import resolve_primary_role
+from app.core.security.scoped_permissions import primary_scope_permissions
 
 
 PUBLIC_USER_ID: UUID = UUID("00000000-0000-0000-0000-000000000001")
@@ -57,6 +58,15 @@ async def get_current_user(
             status_code=403,
             code="ACCOUNT_INACTIVE",
         )
+    if (
+        user.get("permissions_resolved") is not True
+        or user.get("scoped_permissions_resolved") is not True
+    ):
+        raise AppError(
+            "You do not have permission to perform this action",
+            status_code=403,
+            code="FORBIDDEN",
+        )
 
     role_assignments = user.get("role_assignments") or []
     primary_role = resolve_primary_role(user.get("roles", []))
@@ -76,23 +86,7 @@ async def get_current_user(
         institution_id = user.get("student_institution_id", user.get("institution_id"))
     else:
         institution_id = None
-    effective_permissions = set(user.get("effective_permissions") or ())
-    active_staff_scopes = {
-        str(grant.get("scope_id"))
-        for grant in role_assignments
-        if grant.get("role") == "staff"
-        and grant.get("is_active", True)
-        and grant.get("scope_type") == "institution"
-        and grant.get("scope_id") is not None
-    }
-    for grant in user.get("direct_permission_grants") or ():
-        if (
-            institution_id is not None
-            and str(institution_id) in active_staff_scopes
-            and str(grant.get("institution_id")) == str(institution_id)
-            and isinstance(grant.get("permission"), str)
-        ):
-            effective_permissions.add(grant["permission"])
+    effective_permissions = primary_scope_permissions(user, primary_role)
 
     return {
         "user_id": user["user_id"],
@@ -108,4 +102,6 @@ async def get_current_user(
         "role_assignments": role_assignments,
         "effective_permissions": sorted(effective_permissions),
         "permissions_resolved": user.get("permissions_resolved", False),
+        "scoped_permissions_resolved": user.get("scoped_permissions_resolved", False),
+        "direct_permission_grants": user.get("direct_permission_grants") or [],
     }

@@ -80,7 +80,7 @@ class TestPrivilegedSurfaceDenial:
             assert path.startswith("/api/v1/students/me/"), path
         # The management routes keep their canonical (student-inaccessible)
         # locations: no management operation lives under /students/me/.
-        assert "/api/v1/students/me/academic-profile" in paths
+        assert "/api/v1/students/me/profile" in paths
 
     def test_the_admin_surface_remains_registered_and_protected(self):
         """The privileged surface keeps its server-side bearer requirement."""
@@ -100,18 +100,6 @@ class TestPrivilegedSurfaceDenial:
 class TestDataMinimization:
     """No student payload may carry internal, tenant, storage, or audit data."""
 
-    def test_academic_profile_projection_stays_minimal(self):
-        from app.schemas.students.student_profile import StudentAcademicProfile
-
-        dumped = set(StudentAcademicProfile.model_fields.keys())
-        assert dumped == {
-            "student_number", "register_number", "university_roll_number",
-            "email", "institution_name", "institution_code",
-            "program_name", "program_code",
-            "academic_year_name", "academic_year_code",
-            "current_semester_name", "current_semester_code",
-            "approval_status", "status",
-        }
 
     def test_notice_projection_stays_minimal(self):
         from app.schemas.students.student_notices import StudentNotice, StudentNoticeList

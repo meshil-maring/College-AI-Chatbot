@@ -8,24 +8,26 @@ URL prefix, permissions or request/response models.
 
 | Package | Router modules |
 | --- | --- |
-| `academics/` | `academic_setup.py`, `academic_packages.py` (curricula, packages, class setup, assignment and requests) |
 | `admin/` | `admin.py` assembles feature routers; see the [Admin API guide](admin/README.md) |
 | `ai/` | `conversations.py` |
 | `auth/` | Core auth feature routers, student login, registration and development tools; see the [Auth API guide](auth/README.md) |
 | `email/` | `mailgun_webhooks.py` |
-| `faculty/` | `faculty.py`, `faculty_tests.py`, `registrations.py`, and shared `dependencies.py` |
 | `invitations/` | `admin_invitations.py`, `super_admin_registration.py` |
 | `knowledge/` | `ingestion.py` |
-| `platform/` | `institutions.py`, `organizations.py`, `platform.py` |
+| `platform/` | `institutions.py`, `organizations.py`; `platform.py` assembles institution, invitation and audit routes with shared `dependencies.py` |
 | `students/` | `students.py`, `student_notifications.py` |
 
 `app/main.py` creates the application and uses `core/application_routes.py` to
-register feature routers explicitly. The faculty router continues to include
-the faculty examinations router. `auth/identity.py` owns identity bootstrap;
+register feature routers explicitly. Academic and faculty teaching routers have
+been retired. `auth/identity.py` owns account identity bootstrap;
 `ai/public_contract.py` owns the public chat response documentation.
 
+Platform leaf routers carry `/platform` on their own route templates, just as
+admin leaves carry `/admin`. The central permission dependencies inspect these
+templates and deny any operation without an explicit method/path policy.
+
 ```python
-from app.api.faculty.faculty import router as faculty_router
+from app.api.admin.admin import router as admin_router
 from app.api.students import students as students_api
 ```
 

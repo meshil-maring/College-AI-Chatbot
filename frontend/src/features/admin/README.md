@@ -1,45 +1,27 @@
-# Admin frontend
+# Administration workspace
 
-Keep each section's components, helpers, and tests in its own folder.
-`AdminShell.tsx` composes the sections; `adminNavigation.ts` defines their
-navigation labels, headings, and permission visibility.
+`AdminShell.tsx` composes account profile, staff/faculty account management,
+student account approvals, notices, documents, FAQs, chat and staff permissions.
+`adminNavigation.ts` filters those views using server-resolved grants. Backend
+endpoints remain authoritative for authorization and tenant isolation.
 
-| Folder | Section |
-| --- | --- |
-| `academic-setup/` | Academic setup, entity definitions, and field help |
-| `attendance/` | Attendance records |
-| `dashboard/` | Dashboard overview and quick actions |
-| `documents/` | Documents and knowledge sources |
-| `faculty-assignments/` | Teaching assignments, responsibilities, and validity editing |
-| `faqs/` | FAQ management |
-| `notices/` | Notice management |
-| `permissions/` | Staff permissions |
-| `profile/` | Admin profile and identity card |
-| `results/` | Student results and CSV uploads |
-| `staff-faculty/` | Staff and faculty management |
-| `students/` | Student records and student approvals |
-| `test-results/` | Test results |
-| `shared/` | Query keys and invalidation shared across admin sections |
+| Folder              | Current responsibility                                                 |
+| ------------------- | ---------------------------------------------------------------------- |
+| `documents/`        | Documents and knowledge sources                                        |
+| `faqs/`, `notices/` | Published institution information                                      |
+| `permissions/`      | Nonacademic staff permission management                                |
+| `profile/`          | Administrator identity                                                 |
+| `staff-faculty/`    | Staff and faculty account management                                   |
+| `students/`         | `StudentManager.tsx` and `AdminApprovals.tsx` retain account decisions |
 
-The AI Assistant uses the existing `../chat/ChatShell.tsx`. Shared API clients,
-types, and hooks remain in `src/services`, `src/types`, and `src/hooks`.
+Academic Setup, curricula/packages, attendance, results and teaching assignments
+have been removed. Legacy roster/import helpers and the old dashboard remain as
+source at the owner's request; they are disconnected from the active shell.
+See the [removal record](../../../../docs/retirements/academic-setup/README.md).
+Their exact exclusions are in `tsconfig.app.json` and `vitest.config.ts`.
+`check:structure` checks their maintenance limits and rejects active imports into
+excluded legacy source. Student account approval tests remain active.
 
-Academic Setup keeps its request and form lifecycle in `academic-setup/useAcademicSetup.ts`
-and directory filtering, selection, and pagination in `useAcademicDirectory.ts`.
-Its `ui/` folder owns summary cards, tables, record details, forms, and setup guidance;
-`styles/` contains the scoped dark and yellow theme. The UI calls degree programs
-“Courses” and keeps individual subjects in the “Subjects” workflow. All nine
-catalogue entities retain their existing API contracts and permission projections.
-
-Academic Setup also composes `../academic-packages/` through focused groups for
-named curricula/packages, Class Setup, and complete Package Assignment. That
-shared feature owns typed package forms, class policy/teaching mappings,
-placements, change requests, review, and revision history. Transport lives in
-`services/academics/`; student, staff, and scoped faculty shells reuse the same
-workflow with server-projected capabilities.
-
-Course Offering selectors combine existing Program Curriculum links with the
-catalogue's `offering_eligibility` metadata for named classes. Named eligibility
-matches the exact program, subject, and dated teaching term; it enables offering
-creation without writing a separate legacy curriculum link. Subjects are then
-offered, divided into teaching sections, and mapped back to the shared class.
+Keep state and requests in focused hooks, rendering in components, transport in
+`src/services/admin/`, and contracts in `src/types/admin/`. Keep source and tests
+within 250 physical lines and folders within 15 direct maintained files.

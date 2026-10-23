@@ -60,23 +60,25 @@ all four layers identical.
 
 | Feature | Owns |
 | --- | --- |
-| `academics` | Academic setup, attendance and results |
 | `admin` | Administrative workflows, dashboard and knowledge management |
-| `ai` | Chat, conversations, generation and personalization |
+| `ai` | Chat, conversations, generation and privacy safeguards |
 | `auth` | Authentication, account registration, sessions and access policy services |
 | `email` | Delivery, outbox and delivery webhooks |
-| `faculty` | Faculty attendance, students, responsibilities and examinations |
 | `invitations` | Invitations, acceptance and invitation recovery |
 | `knowledge` | Documents, ingestion, embeddings, retrieval and storage |
 | `platform` | Institutions, organizations, tenancy and platform operations |
-| `students` | Student profiles, academic experience, registrations and notifications |
+| `students` | Account identity profiles, notices, resources and notifications |
 | `shared` | Reusable repository paging helpers; currently only in `repositories` |
 
 Choose the owner of the operation rather than its audience alone. Student account
-creation belongs in `auth`, class registration in `students`, and signup
+creation belongs in `auth`, profile reads in `students`, and signup
 invitations in `invitations`. Cross-feature imports may reuse the owning module;
 do not duplicate implementations. Add a feature when a real domain requires it,
 and update this table, the checker and the affected layer guides together.
+
+Academic setup, curricula/packages, class registrations, attendance, results and
+faculty teaching workflows were retired. Their applied migrations remain as
+history; active application modules must not query the retired domain.
 
 ## Naming and module boundaries
 

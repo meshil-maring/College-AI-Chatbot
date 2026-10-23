@@ -32,7 +32,7 @@ from fastapi.testclient import TestClient
 
 from app.core.security import get_current_user
 from app.main import app
-from app.repositories.students import student_dashboard as dashboard_repo
+from app.repositories.students import student_content as dashboard_repo
 from app.schemas.students.student_notices import StudentNoticeList
 from app.schemas.students.student_resources import StudentResourceList
 from app.services.students import student_notices as notices_service

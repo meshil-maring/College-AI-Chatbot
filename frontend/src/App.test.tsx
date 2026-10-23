@@ -17,9 +17,7 @@ import App from './App.tsx'
 import * as adminApi from './services/admin/adminApi.ts'
 import * as platformApi from './services/platform/platformApi.ts'
 import * as platformInstitutionsApi from './services/platform/platformInstitutionsApi.ts'
-import type { DashboardSummary } from './types/admin.ts'
-import { emptyDashboardSummary } from './test/adminDashboardFixtures.ts'
-import { getMyAcademicProfile } from './services/students/studentApi.ts'
+import { getMyProfile } from './services/students/studentApi.ts'
 import { PROFILE } from './features/student/__tests__/studentTestFixtures.ts'
 
 vi.mock('./services/admin/adminApi.ts')
@@ -29,8 +27,6 @@ vi.mock('./services/platform/platformInstitutionsApi.ts')
 vi.mock('./services/auth/devAuth.ts', () => ({
   fetchDevAuthStatus: vi.fn().mockResolvedValue({ dev_test_mode: false }),
 }))
-
-const DASHBOARD_SUMMARY: DashboardSummary = emptyDashboardSummary()
 
 /** Mutable auth context so each test can drive the canonical role. */
 const authState = vi.hoisted(() => ({
@@ -49,7 +45,7 @@ vi.mock('./features/auth/session/AuthProvider.tsx', () => ({
 }))
 
 beforeEach(() => {
-  vi.mocked(getMyAcademicProfile).mockResolvedValue(PROFILE)
+  vi.mocked(getMyProfile).mockResolvedValue(PROFILE)
   authState.status = 'authenticated'
   authState.user = {
     authenticated: true,
@@ -64,8 +60,6 @@ beforeEach(() => {
   authState.error = null
   authState.logout.mockReset()
   vi.mocked(adminApi.getAdminIdentity).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockReset()
-  vi.mocked(adminApi.getDashboardSummary).mockResolvedValue(DASHBOARD_SUMMARY)
   vi.mocked(platformApi.getPlatformIdentity).mockResolvedValue({ role: 'super_admin', scope: 'platform' })
   vi.mocked(platformInstitutionsApi.listInstitutions).mockReset()
   vi.mocked(platformInstitutionsApi.listInstitutions).mockResolvedValue([])
@@ -95,9 +89,7 @@ describe('App shell selection from the canonical /auth/me role', () => {
     // Phase 7.13: the Institutions section is real; every other platform area
     // remains an explicit, non-functional placeholder.
     expect(await screen.findByRole('heading', { name: 'Institutions' })).toBeInTheDocument()
-    await waitFor(() =>
-      expect(platformInstitutionsApi.listInstitutions).toHaveBeenCalledWith('test-token'),
-    )
+    await waitFor(() => expect(platformInstitutionsApi.listInstitutions).toHaveBeenCalledWith('test-token'))
     expect(screen.getByRole('button', { name: /create institution/i })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })
@@ -123,7 +115,7 @@ describe('App shell selection from the canonical /auth/me role', () => {
   it('shows the student shell for the student role', async () => {
     authState.role = 'student'
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Profile' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })

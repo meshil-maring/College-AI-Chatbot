@@ -1,4 +1,4 @@
-/** Shared UI permission checks. API role, tenant and academic guards remain authoritative. */
+/** Shared UI permission checks. API role, tenant and permission guards remain authoritative. */
 import type { AuthRole } from '../../../types/auth.ts'
 import { PERMISSION_CODES, ROLE_DEFAULT_PERMISSIONS, type PermissionCode } from './rbacPolicy.generated.ts'
 
@@ -10,8 +10,7 @@ type Segments<Path extends string> = Path extends `${infer First}.${infer Rest}`
 
 /** Every catalog leaf exists, including explicitly false permissions. */
 export type PermissionTree<Paths extends string = PermissionCode> = {
-  readonly [First in Head<Paths>]: [Tail<Paths, First>] extends [never]
-    ? boolean : PermissionTree<Tail<Paths, First>>
+  readonly [First in Head<Paths>]: [Tail<Paths, First>] extends [never] ? boolean : PermissionTree<Tail<Paths, First>>
 }
 
 export type PermissionInput = {
@@ -48,8 +47,7 @@ function buildTree(granted: readonly string[] | undefined): PermissionTree {
     let branch = root
     for (const part of parts.slice(0, -1)) {
       const existing = branch[part]
-      branch = typeof existing === 'object' ? existing
-        : (branch[part] = Object.create(null) as MutableTree)
+      branch = typeof existing === 'object' ? existing : (branch[part] = Object.create(null) as MutableTree)
     }
     branch[parts[parts.length - 1]] = hasPermission(granted, code)
   }

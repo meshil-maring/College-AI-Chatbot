@@ -1,8 +1,8 @@
 import { screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, vi } from 'vitest'
 import { ACCESS_TOKEN_STORAGE_KEY } from '../../../auth/session/AuthProvider.tsx'
-import { ATTENDANCE, NOTICES, PROFILE, RESOURCES, RESULTS, TEST_RESULTS } from '../../__tests__/studentTestFixtures.ts'
-;('../../../chat/ChatShell.tsx', () => ({ default: () => <div>AI chat</div> }))
+import { NOTICES, PROFILE, RESOURCES } from '../../__tests__/studentTestFixtures.ts'
+vi.mock('../../../chat/ChatShell.tsx', () => ({ default: () => <div>AI chat</div> }))
 
 export const token = 'synthetic-student-session'
 
@@ -37,7 +37,7 @@ beforeEach(() => {
       role: 'student',
       institution_id: 'synthetic-tenant',
     })
-  attendanceReply = () => json(ATTENDANCE)
+  attendanceReply = () => json(NOTICES)
   refreshReply = () =>
     json({
       access_token: 'synthetic-renewed-session',
@@ -51,11 +51,8 @@ beforeEach(() => {
     vi.fn((input: string) => {
       if (input.endsWith('/auth/me')) return Promise.resolve(meReply())
       if (input.endsWith('/auth/refresh')) return Promise.resolve(refreshReply())
-      if (input.endsWith('/academic-profile')) return Promise.resolve(profileReply())
-      if (input.endsWith('/attendance/summary')) return Promise.resolve(attendanceReply())
-      if (input.endsWith('/test-results/summary')) return Promise.resolve(json(TEST_RESULTS))
-      if (input.endsWith('/results/summary')) return Promise.resolve(json(RESULTS))
-      if (input.includes('/notices?')) return Promise.resolve(json(NOTICES))
+      if (input.endsWith('/profile')) return Promise.resolve(profileReply())
+      if (input.includes('/notices?')) return Promise.resolve(attendanceReply())
       if (input.includes('/resources?')) return Promise.resolve(json(RESOURCES))
       if (input.endsWith('/auth/logout')) return Promise.resolve(json({ message: 'Signed out' }))
       if (input.endsWith('/auth/dev-status')) return Promise.resolve(json({ dev_test_mode: false }))

@@ -1,24 +1,8 @@
-"""Phase 7.21 — University Admin operational dashboard contract.
+"""Institution-scoped account, knowledge and communication summaries.
 
-The dashboard is a SUMMARY surface, not a management surface: it returns a
-small, explicitly-typed set of institution-scoped metrics for ONE institution,
-never a list of records and never a raw database row.
-
-Design rules enforced here:
-
-* Every section is a closed model. FastAPI serializes through these classes, so
-  an unexpected column can never reach the client even if a repository
-  projection widens later.
-* Only fields a University Admin may already see through the management pages
-  (``/admin/students``, ``/admin/knowledge-sources``, ``/admin/faqs``,
-  ``/admin/notices``, ``/admin/results``, ``/admin/test-results``,
-  ``/admin/attendance``) are represented here.
-* Internal identifiers are deliberately absent: no ``institution_id``,
-  ``user_id``, ``auth_user_id``, ``actor_user_id``, ``audit_id``,
-  ``notice_id`` or ``record_id``.
-* A metric the current schema cannot resolve is reported as ``None`` and
-  rendered by the UI as "Unavailable". A zero means "measured, none"; ``None``
-  means "not measurable". The dashboard never manufactures a number.
+Closed models expose display fields and measured counts only. Internal
+identifiers and retired academic metrics are excluded. None means that a
+metric is unavailable; zero means a measured empty result.
 """
 
 from pydantic import BaseModel, Field
@@ -42,7 +26,7 @@ class DashboardStudents(BaseModel):
 
     ``pending_approvals`` mirrors exactly the predicate the approval queue uses
     (``approval_status = 'pending'``), so the card and the queue can never
-    disagree. ``active`` is the academic lifecycle status (``status='active'``
+    disagree. ``active`` is the account profile status (``status='active'``
     AND ``is_active``), NOT the approval status.
     """
 
@@ -90,21 +74,6 @@ class DashboardCommunication(BaseModel):
     recent_notices: list[DashboardRecentNotice] = Field(default_factory=list)
 
 
-class DashboardAcademics(BaseModel):
-    """Academic record counts for ONE institution.
-
-    Each count is resolved through an ``!inner`` join onto the institution's own
-    ``students`` rows (documents resolve through ``knowledge_sources``), exactly
-    as Phase 7.20 established. There is no separate ``tests`` table in this
-    schema, so "tests" is represented by ``test_results`` rather than by an
-    invented parallel metric.
-    """
-
-    attendance_records: int = Field(ge=0)
-    test_results: int = Field(ge=0)
-    results: int = Field(ge=0)
-
-
 class DashboardQuickAction(BaseModel):
     """A navigation affordance pointing at an EXISTING admin screen.
 
@@ -126,5 +95,4 @@ class DashboardResponse(BaseModel):
     students: DashboardStudents
     knowledge: DashboardKnowledge
     communication: DashboardCommunication
-    academics: DashboardAcademics
     quick_actions: list[DashboardQuickAction] = Field(default_factory=list)

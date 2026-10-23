@@ -8,20 +8,19 @@ remain in their owning modules.
 
 | Package | Repository modules |
 | --- | --- |
-| `academics/` | `attendance.py`, `results.py`, `academic_packages.py` (service-only atomic RPCs) |
-| `admin/` | `admin_academics.py`, `admin_audit.py`, `admin_knowledge.py`, `admin_memberships.py` |
-| `ai/` | `ai_response.py`, `conversation.py`, `message.py`, `message_citation.py`, `personalization.py` |
+| `admin/` | `admin_academics.py` (student account identity and approvals), `admin_audit.py`, `admin_knowledge.py`, `admin_memberships.py` |
+| `ai/` | `ai_response.py`, `conversation.py`, `message.py`, `message_citation.py` |
 | `email/` | `email_outbox.py` |
 | `invitations/` | `platform_admin_invitations.py` |
 | `knowledge/` | `embeddings.py`, `ingestion.py`, `public_knowledge.py`, `retrieval_operation.py`, `vector_search.py` |
 | `platform/` | `platform_institutions.py`, `tenancy.py` |
-| `students/` | `student_academic_experience.py`, `student_assessments.py`, `student_dashboard.py`, `student_notifications.py`, `subject_assignments.py` |
+| `students/` | `student_content.py` (tenant-scoped notices and resources), `student_notifications.py` |
 | `shared/` | `query_pages.py` (shared row reads and pagination) |
 
 Import repositories and helpers explicitly:
 
 ```python
-from app.repositories.admin import admin_academics as academics_repo
+from app.repositories.admin import admin_academics as identity_repo
 from app.repositories.shared.query_pages import read_all
 ```
 
@@ -33,6 +32,10 @@ policy in the existing service/core layers.
 Callers pass database clients to repository operations. Preserve tenant scope,
 query projections and pagination behavior when extending these operations.
 Tests and mock targets use the same canonical module paths as application code.
+
+The retained `admin_academics.py` import path supports login, account
+registration and approvals. Its projections contain identity fields only;
+academic master references, rosters, results and attendance queries are removed.
 
 Historical phase reports and evidence snapshots may refer to former flat paths;
 Git history retains those versions.

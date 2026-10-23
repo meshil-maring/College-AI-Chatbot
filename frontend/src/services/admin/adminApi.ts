@@ -1,25 +1,3 @@
-export { getAcademicCatalogue, saveAcademicRecord } from './academics.ts'
-export {
-  createFacultyAssignment,
-  createFacultyResponsibility,
-  createScopedTeachingAssignment,
-  getFacultyAssignments,
-  getFacultyContext,
-  getFacultyResponsibilityManagement,
-  getFacultyResponsibilityReport,
-  getMyFacultyAssignments,
-  getScopedTeachingAssignments,
-  revokeFacultyAssignment,
-  revokeFacultyResponsibility,
-  revokeScopedTeachingAssignment,
-  updateFacultyResponsibility,
-  updateFacultyTeachingValidity,
-  updateScopedTeachingAssignment,
-  type FacultyAssignmentPayload,
-  type ScopedTeachingAssignmentManagement,
-} from './faculty.ts'
-export { AdminApiError } from './http.ts'
-export { getAdminIdentity, getDashboardSummary } from './identity.ts'
 export {
   createFaq,
   createKnowledgeSource,
@@ -50,29 +28,6 @@ export {
   type StaffPermissionEntry,
   type StaffPermissionState,
 } from './memberships.ts'
-export {
-  approvePendingStudent,
-  createAttendance,
-  createResult,
-  createStudent,
-  createTestResult,
-  deleteAttendance,
-  deleteResult,
-  deleteStudent,
-  deleteTestResult,
-  getMyAttendance,
-  getMyProfile,
-  getMyResults,
-  getMyTestResults,
-  listAttendance,
-  listPendingStudents,
-  listStudentResults,
-  listStudents,
-  listTestResults,
-  rejectPendingStudent,
-  updateAttendance,
-  updateResult,
-  updateStudent,
-  updateTestResult,
-  uploadResultsCsv,
-} from './students.ts'
+export { AdminApiError } from './http.ts'
+export { getAdminIdentity } from './identity.ts'
+export { listPendingStudents, approvePendingStudent, rejectPendingStudent } from './students.ts'

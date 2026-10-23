@@ -7,10 +7,18 @@ from pathlib import Path
 import re
 
 
-FEATURES = frozenset({
-    "academics", "admin", "ai", "auth", "email", "faculty", "invitations",
-    "knowledge", "platform", "students",
-})
+FEATURES = frozenset(
+    {
+        "admin",
+        "ai",
+        "auth",
+        "email",
+        "invitations",
+        "knowledge",
+        "platform",
+        "students",
+    }
+)
 LAYERS = ("api", "services", "repositories", "schemas")
 NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*\Z")
 
@@ -19,8 +27,7 @@ def source_files(directory: Path):
     """Skip generated caches and hidden directories while walking source."""
     for parent, directories, filenames in directory.walk():
         directories[:] = sorted(
-            name for name in directories
-            if not name.startswith((".", "__pycache__"))
+            name for name in directories if not name.startswith((".", "__pycache__"))
         )
         for name in sorted(filenames):
             yield parent / name
@@ -45,9 +52,15 @@ def check_structure(backend: Path) -> list[str]:
                 continue
             if child.is_dir():
                 if child.name not in allowed:
-                    report(child, "unknown feature; update STRUCTURE.md and FEATURES together")
+                    report(
+                        child,
+                        "unknown feature; update STRUCTURE.md and FEATURES together",
+                    )
             elif child.name not in {"__init__.py", "README.md"}:
-                report(child, "place implementation in its feature package; output belongs in logs/backend")
+                report(
+                    child,
+                    "place implementation in its feature package; output belongs in logs/backend",
+                )
 
     for path in source_files(app):
         if path.suffix in {".log", ".pyc", ".pyo"}:
@@ -69,29 +82,46 @@ def check_structure(backend: Path) -> list[str]:
             if path.suffix != ".py":
                 continue
             try:
-                tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
+                tree = ast.parse(
+                    path.read_text(encoding="utf-8-sig"), filename=str(path)
+                )
             except (SyntaxError, UnicodeError) as exc:
                 report(path, f"cannot parse Python source: {exc}")
                 continue
             relative = path.relative_to(app) if path.is_relative_to(app) else None
             if relative and relative.parts[0] in LAYERS and path.name == "__init__.py":
-                if any(not (
-                    isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant)
-                    and isinstance(node.value.value, str)
-                ) for node in tree.body):
-                    report(path, "feature-layer package markers must be empty or docstring-only")
+                if any(
+                    not (
+                        isinstance(node, ast.Expr)
+                        and isinstance(node.value, ast.Constant)
+                        and isinstance(node.value.value, str)
+                    )
+                    for node in tree.body
+                ):
+                    report(
+                        path,
+                        "feature-layer package markers must be empty or docstring-only",
+                    )
             for node in ast.walk(tree):
                 modules = []
                 if isinstance(node, ast.Import):
                     modules = [alias.name for alias in node.names]
-                elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                elif (
+                    isinstance(node, ast.ImportFrom) and node.level == 0 and node.module
+                ):
                     modules = [node.module]
                 for module in modules:
                     if module != "app" and not module.startswith("app."):
                         continue
                     target = backend.joinpath(*module.split("."))
-                    if not target.with_suffix(".py").is_file() and not (target / "__init__.py").is_file():
-                        report(path, f"line {node.lineno}: local import module does not exist: {module}")
+                    if (
+                        not target.with_suffix(".py").is_file()
+                        and not (target / "__init__.py").is_file()
+                    ):
+                        report(
+                            path,
+                            f"line {node.lineno}: local import module does not exist: {module}",
+                        )
 
     return sorted(set(errors))
 

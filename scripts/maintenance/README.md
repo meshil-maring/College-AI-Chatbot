@@ -1,9 +1,14 @@
 # Supabase application data reset
 
-For the 2026-10-22 Quest **academic-only** fresh start, use
-[the scoped academic reset](academic_reset/README.md). It preserves accounts,
-roles, and unrelated modules. The historical global scripts described below
-delete accounts and are not applicable to that request.
+For the 2026-10-23 academic domain removal, use the
+[decommission migration](../../supabase/migration_sources/academic_decommission/README.md)
+and [removal record](../../docs/retirements/academic-setup/README.md). The earlier
+academic reset workflow has been retired. The historical global scripts below
+delete accounts and are outside the academic removal scope.
+
+Current migrations also preserve immutable invitation audit triggers. The
+historical global reset deliberately refuses public TRUNCATE triggers; the local
+validator checks that refusal and account preservation without disabling them.
 
 These scripts support the authorized fresh start of College AI Chatbot,
 project `rjnfmjcvkfotneswpygr`. They do not replay or apply migrations.

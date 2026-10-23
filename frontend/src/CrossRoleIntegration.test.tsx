@@ -111,7 +111,7 @@ describe('role -> navigation isolation', () => {
     setIdentity(STAFF_A, 'staff')
     render(<App />)
     const labels = await navigationLabels('staff')
-    expect(labels).toContain('Students')
+    expect(labels).toContain('Student Approvals')
     for (const adminOnly of ['Test Results', 'Documents', 'FAQs']) {
       expect(labels).not.toContain(adminOnly)
     }
@@ -123,7 +123,7 @@ describe('role transition safety', () => {
     const { rerender } = render(<App />)
     // Phase 7.21: the admin dashboard is identified by its labelled overview
     // region rather than the removed flat "Overview" heading.
-    expect(await screen.findByRole('region', { name: 'Institution overview' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Profile', level: 1 })).toBeInTheDocument()
 
     setIdentity(STUDENT_B, 'student')
     rerender(<App />)
@@ -195,7 +195,7 @@ describe('stale view-state protection', () => {
     setIdentity(ADMIN_B, 'admin')
     rerender(<App />)
 
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Profile' })).toHaveAttribute('aria-current', 'page')
     expect(screen.queryByRole('heading', { level: 1, name: 'Documents' })).not.toBeInTheDocument()
     expect(screen.queryByText('Signed in as admin.a@college.edu')).not.toBeInTheDocument()
     expect(screen.getByText('Signed in as admin.b@college.edu')).toBeInTheDocument()
@@ -206,8 +206,8 @@ describe('stale view-state protection', () => {
     setIdentity(STAFF_A, 'staff')
     const { rerender } = render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Students', exact: true }))
-    expect(await screen.findByRole('link', { name: 'Waiting approval' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Student Approvals', exact: true }))
+    expect(await screen.findByText('No students are awaiting approval right now.')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'All Student' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Register', exact: true })).not.toBeInTheDocument()
 
@@ -215,7 +215,7 @@ describe('stale view-state protection', () => {
     rerender(<App />)
 
     expect(screen.queryByRole('link', { name: 'Waiting approval' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Students', exact: true })).not.toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByRole('button', { name: 'Student Approvals', exact: true })).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Profile' })).toHaveAttribute('aria-current', 'page')
   })
 })

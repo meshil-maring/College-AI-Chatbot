@@ -8,12 +8,13 @@ describe('central RBAC permission access', () => {
     expect(permissionsByRole.staff.students.approve).toBe(true)
     expect(permissionsByRole.staff.students.create).toBe(false)
     expect(permissionsByRole.staff.students.delete).toBe(false)
-    expect(permissionsByRole.student.attendance.own.read).toBe(true)
-    expect(permissionsByRole.student.attendance.manage).toBe(false)
-    expect(permissionsByRole.faculty.results.manage).toBe(true)
+    expect(permissionsByRole.student.profile.own.read).toBe(true)
+    expect(permissionsByRole.student.ai.chat).toBe(true)
+    expect(permissionsByRole.student.documents.create).toBe(false)
+    expect(permissionsByRole.faculty.profile.own.read).toBe(true)
     expect(permissionsByRole.faculty.students.approve).toBe(false)
     expect(permissionsByRole.super_admin.platform.audit.read).toBe(true)
-    expect(permissionsByRole.super_admin.attendance.manage).toBe(false)
+    expect(permissionsByRole.super_admin.students.approve).toBe(false)
   })
 
   it('checks effective grants without filling in role defaults', () => {
@@ -32,7 +33,7 @@ describe('central RBAC permission access', () => {
     const access = createPermissions(['students.*', 'profile.*'])
     expect(access.can('students', 'delete')).toBe(true)
     expect(access.can('profile', 'own', 'read')).toBe(true)
-    expect(access.can('results', 'manage')).toBe(false)
+    expect(access.can('documents', 'delete')).toBe(false)
     expect(createPermissions(['profile.own.*']).can('profile', 'own', 'read')).toBe(false)
     expect(createPermissions(['student.*']).can('students', 'read')).toBe(false)
     expect(createPermissions(['*']).permissions.platform.audit.read).toBe(true)
@@ -65,5 +66,21 @@ describe('central RBAC permission access', () => {
     expect(Reflect.set(permissionsByRole.admin.students, 'delete', false)).toBe(false)
     expect(Reflect.set(access.permissions.students, 'delete', true)).toBe(false)
     expect(access.permissions.students.delete).toBe(false)
+  })
+
+  it.each([
+    'academic.manage',
+    'attendance.own.read',
+    'attendance.manage',
+    'results.manage',
+    'faculty.assignments.manage',
+    'departments.read',
+    'courses.read',
+    'subjects.read',
+    'semesters.read',
+    'academic_years.read',
+  ])('rejects retired academic permission %s even with wildcard grants', (code) => {
+    expect(isPermissionCode(code)).toBe(false)
+    expect(Reflect.apply(createPermissions(['*']).can, null, [code])).toBe(false)
   })
 })

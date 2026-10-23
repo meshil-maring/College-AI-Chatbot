@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
 const frontend = fileURLToPath(new URL('../', import.meta.url))
 const limit = 250
@@ -47,7 +48,54 @@ for (const filename of files.sort()) {
   if (lines > limit) oversized.push(`${path.relative(frontend, filename)}: ${lines} lines`)
 }
 
-if (oversized.length || crowdedFolders.length) {
+// Kept legacy source must remain disconnected. Exclusion never exempts an
+// actively imported module from TypeScript, and this guard rejects that import.
+const appConfig = ts.parseConfigFileTextToJson(
+  'tsconfig.app.json',
+  await readFile(path.join(frontend, 'tsconfig.app.json'), 'utf8'),
+).config
+const legacyFiles = new Set(
+  appConfig.exclude
+    .filter((entry) => !entry.includes('*') && /\.(ts|tsx)$/.test(entry))
+    .map((entry) => path.resolve(frontend, entry)),
+)
+const legacyImports = []
+for (const filename of files) {
+  if (
+    !/\.(ts|tsx)$/.test(filename) ||
+    /[\\/](__tests__|test)[\\/]|\.test\./.test(filename) ||
+    legacyFiles.has(filename)
+  )
+    continue
+  const source = ts.createSourceFile(filename, await readFile(filename, 'utf8'), ts.ScriptTarget.Latest, true)
+  function inspect(node) {
+    const specifier =
+      ts.isImportDeclaration(node) || ts.isExportDeclaration(node)
+        ? node.moduleSpecifier
+        : ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword
+          ? node.arguments[0]
+          : undefined
+    if (specifier && ts.isStringLiteral(specifier) && specifier.text.startsWith('.')) {
+      const resolved = ts.resolveModuleName(
+        specifier.text,
+        filename,
+        { moduleResolution: ts.ModuleResolutionKind.Bundler },
+        ts.sys,
+      ).resolvedModule?.resolvedFileName
+      if (resolved && legacyFiles.has(path.resolve(resolved))) {
+        legacyImports.push(`${path.relative(frontend, filename)} imports ${specifier.text}`)
+      }
+    }
+    ts.forEachChild(node, inspect)
+  }
+  inspect(source)
+}
+
+if (oversized.length || crowdedFolders.length || legacyImports.length) {
+  if (legacyImports.length) {
+    console.error('Disconnect active imports into retained legacy source:')
+    console.error(legacyImports.join('\n'))
+  }
   if (oversized.length) {
     console.error(`Split these files into focused modules (maximum ${limit} lines, including comments and blanks):`)
     console.error(oversized.join('\n'))

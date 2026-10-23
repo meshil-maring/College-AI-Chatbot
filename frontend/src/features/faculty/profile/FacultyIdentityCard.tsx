@@ -43,12 +43,6 @@ export default function FacultyIdentityCard({ user }: { user: CurrentUser }) {
             {user.institution_id ? 'Linked to your institution' : 'No institution linked'}
           </dd>
         </div>
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Department
-          </dt>
-          <dd className="mt-1 text-sm text-slate-100">Not provided by your institution yet</dd>
-        </div>
       </dl>
     </section>
   )

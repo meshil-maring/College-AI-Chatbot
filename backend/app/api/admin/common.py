@@ -7,7 +7,6 @@ from app.core.security import assert_tenant_object, scope_tenant, user_tenant_id
 from app.db.supabase import get_admin_client
 from app.repositories.admin.admin_audit import record_admin_action
 from app.schemas.admin.admin import AdminAuditLogCreate
-from app.services.admin import admin_academics
 
 
 def scope_institution(current_user: dict, requested: UUID | None) -> UUID:
@@ -37,16 +36,6 @@ def assert_row_tenant(current_user: dict, institution_id: UUID | str | None) -> 
             code="TENANT_MISMATCH",
         )
     assert_tenant_object(current_user, institution_id)
-
-
-def assert_student_tenant(current_user: dict, student_id: UUID) -> None:
-    """Guard any operation referencing a student: the student's institution
-    must belong to the caller's tenant (no-op for platform admins)."""
-    if user_tenant_id(current_user) is None:
-        return
-    student = admin_academics.get_student(student_id)
-    if student is not None:
-        assert_row_tenant(current_user, student.get("institution_id"))
 
 
 def record_audit(

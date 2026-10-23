@@ -22,6 +22,7 @@ Follow the shared [backend structure rules](../../STRUCTURE.md).
 | `security/roles.py` | Supported roles and primary-role precedence |
 | `security/tenancy.py` | Tenant UUID resolution, scope selection and row guards |
 | `security/permissions.py` | Resolved permission checks and permission dependencies |
+| `security/scoped_permissions.py` | Permission provenance for the selected role and scope |
 | `security/dependencies.py` | Role, institution and platform Super Admin dependencies |
 
 Existing imports remain valid, for example:
@@ -65,3 +66,10 @@ Checks inspect local configuration only. They do not construct provider clients
 or make network requests. Details and summaries name configuration requirements
 without exposing configured values. Add new checks to the appropriate group and
 retain these reporting and environment boundaries.
+## Scoped permission provenance
+
+`security/scoped_permissions.py` aggregates role and staff permission grants for
+one server-selected scope. The identity projection retains each role's permission
+codes; institution dependencies recalculate permissions for their allowed roles
+and exact institution. The aggregate permission list must not authorize a
+different tenant or a role outside that operation's allowed roles.

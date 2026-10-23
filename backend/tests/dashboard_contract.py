@@ -8,7 +8,6 @@ tests cannot drift from the real schema.
 from __future__ import annotations
 
 from app.schemas.admin.admin_dashboard import (
-    DashboardAcademics,
     DashboardCommunication,
     DashboardInstitution,
     DashboardKnowledge,
@@ -35,9 +34,6 @@ def build_dashboard(
     active_faqs: int = 0,
     active_notices: int = 0,
     recent_notices: list[DashboardRecentNotice] | None = None,
-    attendance_records: int = 0,
-    test_results: int = 0,
-    results: int = 0,
     quick_actions: list[DashboardQuickAction] | None = None,
 ) -> DashboardResponse:
     """Build a fully-specified ``DashboardResponse`` with sensible defaults."""
@@ -59,11 +55,6 @@ def build_dashboard(
             active_faqs=active_faqs,
             active_notices=active_notices,
             recent_notices=list(recent_notices or []),
-        ),
-        academics=DashboardAcademics(
-            attendance_records=attendance_records,
-            test_results=test_results,
-            results=results,
         ),
         quick_actions=list(quick_actions or []),
     )

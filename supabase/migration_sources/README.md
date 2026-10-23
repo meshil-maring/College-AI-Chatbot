@@ -1,8 +1,8 @@
 # Maintained migration sources
 
-New academic curriculum/package migrations use focused, ordered SQL fragments
-in `academic_packages/`, assembled by
-`scripts/maintenance/migrations/build_academic_packages.py` into the flat
+The approved academic domain removal uses focused, ordered SQL fragments
+in [academic_decommission/](academic_decommission/README.md), assembled by
+`scripts/maintenance/migrations/build_academic_decommission.py` into the flat
 `supabase/migrations/` directory required by Supabase migration discovery.
 
 Edit the sources and regenerate the output. The generated migration has an

@@ -25,7 +25,6 @@
  */
 
 /** Request body accepted by POST /api/v1/auth/login (mirrors backend AuthRequest). */
-import type { FacultyContext } from './faculty.ts'
 
 export interface LoginRequest {
   email: string
@@ -80,8 +79,6 @@ export interface LoginResponse {
  */
 export type AuthRole = 'super_admin' | 'admin' | 'staff' | 'faculty' | 'student'
 
-
-
 /** Response returned by GET /api/v1/auth/me (mirrors main.py `auth_me`). */
 export interface CurrentUser {
   authenticated: boolean
@@ -105,5 +102,4 @@ export interface CurrentUser {
   institution_id: string | null
   /** Effective active grants resolved from the user's assigned database roles. */
   effective_permissions?: readonly string[]
-  faculty_context?: FacultyContext
 }
