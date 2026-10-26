@@ -9,6 +9,7 @@ import re
 
 FEATURES = frozenset(
     {
+        "academics",
         "admin",
         "ai",
         "auth",

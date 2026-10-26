@@ -1,13 +1,22 @@
 import { hasPermission } from '../auth/access/permissions.ts'
 
 export type AdminView =
-  'staff-faculty' | 'approvals' | 'notices' | 'documents' | 'faqs' | 'assistant' | 'profile' | 'permissions'
+  | 'staff-faculty'
+  | 'academic-setup'
+  | 'approvals'
+  | 'notices'
+  | 'documents'
+  | 'faqs'
+  | 'assistant'
+  | 'profile'
+  | 'permissions'
 export interface AdminNavItem {
   readonly key: AdminView
   readonly label: string
 }
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { key: 'profile', label: 'Profile' },
+  { key: 'academic-setup', label: 'Academic Setup' },
   { key: 'staff-faculty', label: 'Staff & Faculty' },
   { key: 'approvals', label: 'Student Approvals' },
   { key: 'notices', label: 'Notices' },
@@ -18,6 +27,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
 ]
 const VIEW_PERMISSIONS: Record<AdminView, readonly string[]> = {
   profile: ['profile.own.read'],
+  'academic-setup': ['departments.read', 'academic_years.read', 'semesters.read', 'courses.read'],
   'staff-faculty': ['users.read'],
   approvals: ['students.read', 'students.approve', 'students.reject'],
   notices: ['notices.read'],
@@ -32,11 +42,14 @@ export function buildAdminNavigation(role: string | null, permissions?: readonly
   return permissions === undefined
     ? ADMIN_NAV_ITEMS
     : ADMIN_NAV_ITEMS.filter((item) =>
-        VIEW_PERMISSIONS[item.key].every((permission) => hasPermission(permissions, permission)),
+        item.key === 'academic-setup'
+          ? VIEW_PERMISSIONS[item.key].some((permission) => hasPermission(permissions, permission))
+          : VIEW_PERMISSIONS[item.key].every((permission) => hasPermission(permissions, permission)),
       )
 }
 export const ADMIN_VIEW_HEADINGS: Record<AdminView, string> = {
   profile: 'Profile',
+  'academic-setup': 'Academic Setup',
   'staff-faculty': 'Staff & Faculty',
   approvals: 'Student Approvals',
   notices: 'Notices',

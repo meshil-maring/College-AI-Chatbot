@@ -7,6 +7,7 @@ continue to own database access and schemas continue to own request/response typ
 
 | Package | Related services |
 | --- | --- |
+| `academics/` | Export-aligned foundation, dated-semester, course, curriculum-link, offering and section setup |
 | `admin/` | Student account approvals, dashboard, documents, FAQs, memberships and notices |
 | `ai/` | Authenticated/public chat, conversation history and intent, context, generation, privacy safeguards and query rewriting |
 | `auth/` | Sign-in, sessions, account registration, authorization, RBAC and shared request-abuse controls |
@@ -34,9 +35,14 @@ approval and atomic role provisioning. It contains no academic setup workflow.
 `auth/authorization.py` coordinates account scope resolution with
 `scope_types.py`, `scope_policy.py` and `scope_lifecycle.py`.
 
-Academic setup, curricula/packages, class registrations, attendance, results,
-faculty responsibilities and teaching assignments have been retired. Chat
-retains institutional knowledge retrieval and refuses private record requests.
+`academics/academic_setup.py` coordinates the eight export-aligned entities.
+`academics/authorization.py` enforces exact institution-admin permission provenance
+and tenant/organization lifecycle. `parent_validation.py` checks active ancestry,
+semester dates and matching curriculum links. `database_errors.py` maps database
+errors to safe responses. Repositories derive tenant scope through parent joins;
+all writes use the atomic, audited `manage_academic_master_record` RPC.
+Attendance, results, academic packages, enrollment and teaching workflows remain
+retired. Chat continues to refuse private academic record requests.
 
 Add new services to the appropriate feature package. The services root contains
 only this guide and its package marker. Historical phase reports and evidence

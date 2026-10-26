@@ -13,11 +13,6 @@ from app.services.auth import phase81_rbac
 
 def test_retired_permission_families_are_absent_from_account_policy():
     retired = (
-        "departments.",
-        "courses.",
-        "subjects.",
-        "semesters.",
-        "academic_years.",
         "attendance.",
         "results.",
         "faculty.assignments.",
@@ -25,6 +20,22 @@ def test_retired_permission_families_are_absent_from_account_policy():
     )
     assert not any(code.startswith(retired) for code in PERMISSIONS)
     assert not any(code.startswith(retired) for code in DELEGABLE_STAFF_PERMISSIONS)
+    setup_permissions = {
+        f"{entity}.{action}"
+        for entity in (
+            "departments", "academic_years", "semesters", "courses",
+        )
+        for action in ("read", "manage")
+    }
+    assert setup_permissions.issubset(PERMISSIONS)
+    assert setup_permissions.issubset(DEFAULT_ROLE_PERMISSIONS["admin"])
+    setup_families = (
+        "departments.", "academic_years.", "semesters.", "courses.",
+    )
+    assert {code for code in PERMISSIONS if code.startswith(setup_families)} == setup_permissions
+    assert setup_permissions.isdisjoint(DELEGABLE_STAFF_PERMISSIONS)
+    for role in ("staff", "faculty", "student", "super_admin"):
+        assert setup_permissions.isdisjoint(DEFAULT_ROLE_PERMISSIONS[role])
     assert "students.approve" in DEFAULT_ROLE_PERMISSIONS["admin"]
     assert "faculty.update" in DEFAULT_ROLE_PERMISSIONS["admin"]
     assert "staff.update" in DEFAULT_ROLE_PERMISSIONS["admin"]
@@ -36,7 +47,6 @@ def test_retired_routes_are_unregistered_and_nonacademic_routes_remain():
 
     paths = set(app.openapi()["paths"])
     forbidden = (
-        "/api/v1/admin/academic-setup",
         "/api/v1/academic-packages",
         "/api/v1/faculty",
         "/api/v1/admin/student-workspace",
@@ -56,6 +66,9 @@ def test_retired_routes_are_unregistered_and_nonacademic_routes_remain():
     assert not any(path.startswith(forbidden) for path in paths)
     assert not any("faculty-responsibilities" in path for path in paths)
     assert {
+        "/api/v1/admin/academic-setup",
+        "/api/v1/admin/academic-setup/{entity}",
+        "/api/v1/admin/academic-setup/{entity}/{record_id}",
         "/api/v1/auth/me",
         "/api/v1/auth/student/login",
         "/api/v1/registration",

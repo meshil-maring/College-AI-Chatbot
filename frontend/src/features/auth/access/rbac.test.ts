@@ -74,13 +74,22 @@ describe('central RBAC permission access', () => {
     'attendance.manage',
     'results.manage',
     'faculty.assignments.manage',
-    'departments.read',
-    'courses.read',
-    'subjects.read',
-    'semesters.read',
-    'academic_years.read',
   ])('rejects retired academic permission %s even with wildcard grants', (code) => {
     expect(isPermissionCode(code)).toBe(false)
     expect(Reflect.apply(createPermissions(['*']).can, null, [code])).toBe(false)
+  })
+
+  it.each([
+    'courses.read',
+    'courses.manage',
+    'departments.read',
+    'departments.manage',
+    'academic_years.read',
+    'academic_years.manage',
+    'semesters.read',
+    'semesters.manage',
+  ])('recognizes approved Academic Setup permission %s', (code) => {
+    expect(isPermissionCode(code)).toBe(true)
+    expect(Reflect.apply(createPermissions(['*']).can, null, [code])).toBe(true)
   })
 })

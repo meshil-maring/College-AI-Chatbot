@@ -38,7 +38,12 @@ server-authoritative permissions when extracting code. Keep CSS import order.
 
 ## Retained inactive source
 
-Academic Setup and its dependent academic APIs and screens have been retired.
+`features/admin/academic-setup/` follows the owner-selected SQL export: departments,
+degree programs, academic years, dated semesters, courses, program-course links,
+course offerings and sections. Transport lives in `services/admin/academics.ts`
+and contracts in `types/academicSetup.ts`. Form controls and relationship choices
+live in `academic-setup/forms/`. Sections belong to one course offering.
+Attendance, results, enrollment and teaching workflows remain out of scope.
 The owner asked to keep a specific set of old roster/import/navigation/dashboard
 files as source. They remain at their original paths, disconnected from all
 active shells. Some import retired dependencies and are not runnable workflows.

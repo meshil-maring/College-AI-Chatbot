@@ -1,0 +1,10 @@
+CREATE UNIQUE INDEX "academic_courses_normalized_code" ON "public"."courses" USING "btree" ("department_id", "lower"("btrim"("code")));
+CREATE UNIQUE INDEX "academic_departments_normalized_code" ON "public"."departments" USING "btree" ("institution_id", "lower"("btrim"("code")));
+CREATE UNIQUE INDEX "academic_programs_normalized_code" ON "public"."programs" USING "btree" ("department_id", "lower"("btrim"("code")));
+CREATE UNIQUE INDEX "academic_sections_normalized_code" ON "public"."sections" USING "btree" ("course_offering_id", "lower"("btrim"("code")));
+CREATE UNIQUE INDEX "academic_semesters_normalized_code" ON "public"."semesters" USING "btree" ("academic_year_id", "lower"("btrim"("code")));
+CREATE UNIQUE INDEX "academic_years_normalized_code" ON "public"."academic_years" USING "btree" ("institution_id", "lower"("btrim"("code")));
+CREATE UNIQUE INDEX "academic_years_one_current_per_institution_idx" ON "public"."academic_years" USING "btree" ("institution_id") WHERE ("is_current" = true);
+CREATE INDEX "course_offerings_program_id_idx" ON "public"."course_offerings" USING "btree" ("program_id");
+CREATE INDEX "program_courses_course_id_idx" ON "public"."program_courses" USING "btree" ("course_id");
+CREATE UNIQUE INDEX "semesters_one_current_per_academic_year_idx" ON "public"."semesters" USING "btree" ("academic_year_id") WHERE ("is_current" = true);

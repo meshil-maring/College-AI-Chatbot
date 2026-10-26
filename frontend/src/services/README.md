@@ -15,8 +15,10 @@ mocks together when moving code.
 | `shared/`       | Session-expiry events                                                             |
 | `students/`     | Identity profile, notices and resources                                           |
 
-Academic catalogue, curricula/packages, faculty teaching, roster registration,
-attendance and result clients have been removed. Do not reconnect retained legacy
+`admin/academics.ts` owns department, degree-program, academic-year, dated-semester,
+course, program-course, offering and section reads/writes. Descendant
+`institution_id` values are server-derived API context. Faculty teaching,
+enrollment, attendance, results and academic packages remain removed. Do not reconnect retained legacy
 screens to retired endpoints; see the [removal record](../../../docs/retirements/academic-setup/README.md).
 
 Keep each folder within 15 direct maintained files and each source/test file

@@ -8,6 +8,7 @@ and serialization rules stay in their existing modules.
 
 | Package | Schema modules |
 | --- | --- |
+| `academics/` | `academic_setup.py`: departments, programs, years, dated semesters, courses, curriculum links, offerings and sections |
 | `admin/` | `admin.py`, `admin_dashboard.py`, `admin_memberships.py` |
 | `ai/` | `chat.py`, `chat_response.py`, `citation.py`, `conversation.py`, `generation.py`, `session.py` |
 | `auth/` | `auth.py`, `student_auth.py`, `users.py`, `phase81.py` (scoped permission requests) |
@@ -30,7 +31,8 @@ Add new models to their owning feature rather than to the schemas root.
 
 Shared contracts have one implementation. Reuse the owning feature's models
 instead of copying them into another package. Student profiles contain account
-identity fields; academic setup, participation and teaching schemas are retired.
+identity fields. Replacement setup contracts distinguish degree programs from
+subjects; participation and teaching schemas remain retired.
 
 `ai/generation.py` defines the generated-answer `AIResponse`;
 `ai/conversation.py` defines the persisted-response `AIResponse`. Their existing

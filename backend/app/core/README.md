@@ -6,6 +6,7 @@ Follow the shared [backend structure rules](../../STRUCTURE.md).
 | --- | --- |
 | `errors.py` | Application errors and their HTTP response handler |
 | `permissions.py` | Static permission catalog, role defaults and permission matching |
+| `permission_defaults.py` | Bootstrap role matrix and narrow staff delegation catalogue |
 | `security/` | Token verification, authenticated identity and authorization dependencies |
 | `startup_validation/` | Configuration checks, safe reports and startup enforcement |
 | `application.py` | Application creation, middleware and safe HTTP error handlers |

@@ -3,6 +3,7 @@ import { Bell, BookOpen, Bot, FileText, ShieldCheck, UserCircle, Users, type Luc
 import { useAuth } from '../auth/session/AuthProvider.tsx'
 import AdminFrame from './AdminFrame.tsx'
 import AdminProfile from './profile/AdminProfile.tsx'
+import AcademicSetup from './academic-setup/AcademicSetup.tsx'
 import StudentManager from './students/StudentManager.tsx'
 import StaffFacultyManager from './staff-faculty/StaffFacultyManager.tsx'
 import StaffPermissionManager from './permissions/StaffPermissionManager.tsx'
@@ -14,6 +15,7 @@ import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adm
 
 const icons: Record<AdminView, LucideIcon> = {
   profile: UserCircle,
+  'academic-setup': BookOpen,
   'staff-faculty': Users,
   approvals: Users,
   notices: Bell,
@@ -41,6 +43,7 @@ export default function AdminShell() {
         <>
           {view !== 'assistant' && <h1 className="mb-5 text-2xl font-bold text-white">{ADMIN_VIEW_HEADINGS[view]}</h1>}
           {view === 'profile' && <AdminProfile user={user} />}
+          {view === 'academic-setup' && <AcademicSetup />}
           {view === 'staff-faculty' && accessToken && <StaffFacultyManager accessToken={accessToken} />}
           {view === 'approvals' && <StudentManager />}
           {view === 'notices' && <NoticeManager />}

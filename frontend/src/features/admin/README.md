@@ -7,6 +7,7 @@ endpoints remain authoritative for authorization and tenant isolation.
 
 | Folder              | Current responsibility                                                 |
 | ------------------- | ---------------------------------------------------------------------- |
+| `academic-setup/`   | Departments, programs, years, dated semesters, courses, curriculum links, offerings and sections |
 | `documents/`        | Documents and knowledge sources                                        |
 | `faqs/`, `notices/` | Published institution information                                      |
 | `permissions/`      | Nonacademic staff permission management                                |
@@ -14,8 +15,14 @@ endpoints remain authoritative for authorization and tenant isolation.
 | `staff-faculty/`    | Staff and faculty account management                                   |
 | `students/`         | `StudentManager.tsx` and `AdminApprovals.tsx` retain account decisions |
 
-Academic Setup, curricula/packages, attendance, results and teaching assignments
-have been removed. Legacy roster/import helpers and the old dashboard remain as
+Academic Setup uses focused hooks, typed contracts and identity-scoped query keys.
+Semesters have dates within academic years. Courses are teaching subjects;
+programs are degrees. Link a course to its program before creating an offering
+for a year and semester. A section belongs to one offering, with optional capacity.
+Form definitions and ancestry-filtered choices live in `academic-setup/forms/`.
+Parent references and section codes are immutable; active children prevent
+parent deactivation. Attendance, results and teaching workflows remain removed.
+Legacy roster/import helpers and the old dashboard remain as
 source at the owner's request; they are disconnected from the active shell.
 See the [removal record](../../../../docs/retirements/academic-setup/README.md).
 Their exact exclusions are in `tsconfig.app.json` and `vitest.config.ts`.

@@ -1,0 +1,22 @@
+{
+  "supabase/migration_sources/academic_foundations/authorization.sql": "73f4d4b850703a1615040f73cb378989eb0f6ef2369228196eed94ca509226b9",
+  "supabase/migration_sources/academic_foundations/manifest.json": "9029f78ae10835deecf91dea536d215829abd8d8d3d4b20153f030910d59b913",
+  "supabase/migration_sources/academic_foundations/permissions.sql": "4f3dc06408ca24742e3b2eba83308dfeb0383311e7feb1791a0b07e3bc95e5a3",
+  "supabase/migration_sources/academic_foundations/README.md": "d199196d52f81e40afbdf548e8b78019e957e9962823026e3803ba97ac586e9f",
+  "supabase/migration_sources/academic_foundations/security.sql": "9c4917f2a69e65055acf050100182c1ea129082f41fdfc72796ad9c5133e7ee0",
+  "supabase/migration_sources/academic_foundations/tables.sql": "8bd478dbdff50e9c1dfbd1e235712a618b3a4df1bb76a8d61b2b4c99e9f8cccb",
+  "supabase/migration_sources/academic_foundations/validation.sql": "f3dd7e2af34d1a4bb02c6b50c47efcddee36a3dd5bb4473663037c008b6c23d3",
+  "supabase/migration_sources/academic_foundations/write.sql": "6dc9ee0b7777c8a727ca0f6be4f6db0bad9f878de6b3ee7490b9c1d14b62a661",
+  "scripts/maintenance/migrations/build_academic_foundations.py": "d4232a0ea110d38667be7a7132824d8849bf9b3102628f4ad6dc58043a969bfa",
+  "supabase/migration_sources/academic_structure/manifest.json": "d33cd32fdacaecacfc7ed766bab5ccf42ee81c8b0dcafceba41b2a1afa8933ec",
+  "supabase/migration_sources/academic_structure/parent_guards.sql": "5ce05cf3488b1c3cf7199d8506a96a1fe35e32075d360bd2e01683e842b86098",
+  "supabase/migration_sources/academic_structure/permissions.sql": "994533fa2b7117d9616b93b623513d3519ebb86b850842b73cd9f5afbdb2c3f5",
+  "supabase/migration_sources/academic_structure/README.md": "6abb0c34a26973e217463824de0e49afa1e5791d879ad3710ad958e69eb43ed1",
+  "supabase/migration_sources/academic_structure/security.sql": "0fb13814a40f40b39ec1fc1dee954583c50fb51fe41349dc42c65bbb53a73987",
+  "supabase/migration_sources/academic_structure/tables.sql": "6194c9c24f8a87215cf0f5c032b863a3d77f78c46f61566ae45bdc001afa1ba3",
+  "supabase/migration_sources/academic_structure/validation.sql": "d4f7f7256efeb42a47e677b0eb9b6c44b5673a103d798e84e5232462f26029d1",
+  "supabase/migration_sources/academic_structure/write.sql": "ca829c6c21e19fc76b56dad7cdd3fdf4252940c9ff0147cb45d540d700c8318b",
+  "scripts/maintenance/migrations/build_academic_structure.py": "a796ddc5654de4f00b609fceaa041ab885900fa692e4f5a784ca4c6ab0d8fb1d",
+  "supabase/migrations/20261023010000_academic_foundations.sql": "8396f0d6f4bdba1bdcbfd5cefbac5cb1171ff4813ab37c49bb00164f1f73f90d",
+  "supabase/migrations/20261024000000_academic_structure.sql": "61c207496b1cdaf947f17c70b001c53a5b0cd0c959c29f904d5bc68d87c6068f"
+}

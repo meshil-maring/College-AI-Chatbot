@@ -1,0 +1,1 @@
+"""Academic setup use cases."""

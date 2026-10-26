@@ -8,6 +8,7 @@ URL prefix, permissions or request/response models.
 
 | Package | Router modules |
 | --- | --- |
+| `academics/` | `academic_setup.py`: institution-admin catalogue and writes for the eight export-aligned setup entities |
 | `admin/` | `admin.py` assembles feature routers; see the [Admin API guide](admin/README.md) |
 | `ai/` | `conversations.py` |
 | `auth/` | Core auth feature routers, student login, registration and development tools; see the [Auth API guide](auth/README.md) |
@@ -18,8 +19,9 @@ URL prefix, permissions or request/response models.
 | `students/` | `students.py`, `student_notifications.py` |
 
 `app/main.py` creates the application and uses `core/application_routes.py` to
-register feature routers explicitly. Academic and faculty teaching routers have
-been retired. `auth/identity.py` owns account identity bootstrap;
+register feature routers explicitly. The replacement academic router enforces
+institution-admin scope and entity permissions independently. Faculty teaching
+routers remain retired. `auth/identity.py` owns account identity bootstrap;
 `ai/public_contract.py` owns the public chat response documentation.
 
 Platform leaf routers carry `/platform` on their own route templates, just as

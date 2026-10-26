@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { ADMIN_NAV_ITEMS, ADMIN_VIEW_HEADINGS, buildAdminNavigation } from './adminNavigation.ts'
 
-describe('administrator navigation after academic retirement', () => {
+describe('administrator navigation with approved Academic Setup', () => {
   it('contains account, knowledge and communication views', () => {
     expect(ADMIN_NAV_ITEMS.map((item) => item.key)).toEqual([
       'profile',
+      'academic-setup',
       'staff-faculty',
       'approvals',
       'notices',
@@ -30,8 +31,15 @@ describe('administrator navigation after academic retirement', () => {
     expect(buildAdminNavigation('admin', [])).toEqual([])
   })
   it('cannot restore retired screens through old grants', () => {
-    expect(
-      buildAdminNavigation('admin', ['courses.read', 'attendance.read', 'results.read', 'faculty.assignments.manage']),
-    ).toEqual([])
+    expect(buildAdminNavigation('admin', ['attendance.read', 'results.read', 'faculty.assignments.manage'])).toEqual([])
+  })
+  it.each(['departments.read', 'academic_years.read', 'semesters.read', 'courses.read'])(
+    'shows setup for %s alone',
+    (permission) => {
+      expect(buildAdminNavigation('admin', [permission]).map((item) => item.key)).toEqual(['academic-setup'])
+    },
+  )
+  it('does not present setup with only management grants', () => {
+    expect(buildAdminNavigation('admin', ['departments.manage']).map((item) => item.key)).toEqual([])
   })
 })

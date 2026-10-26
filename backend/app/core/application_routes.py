@@ -22,6 +22,7 @@ from app.api.students.student_notifications import (
 )
 from app.api.auth.dev_auth import router as dev_auth_router
 from app.api.auth.identity import router as identity_router
+from app.api.academics.academic_setup import router as academic_setup_router
 
 
 def register_feature_routes(app: FastAPI) -> None:
@@ -34,6 +35,7 @@ def register_feature_routes(app: FastAPI) -> None:
     app.include_router(users_router, prefix="/api/v1")
     app.include_router(conversations_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1")
+    app.include_router(academic_setup_router, prefix="/api/v1")
     app.include_router(students_router, prefix="/api/v1")
     app.include_router(student_notifications_router, prefix="/api/v1")
     app.include_router(dev_auth_router, prefix="/api/v1")  # DEVELOPMENT / TESTING ONLY

@@ -19,6 +19,7 @@ describe('administrator account workspace', () => {
         .map((item) => item.textContent),
     ).toEqual([
       'Profile',
+      'Academic Setup',
       'Staff & Faculty',
       'Student Approvals',
       'Notices',

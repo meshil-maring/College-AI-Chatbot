@@ -3,6 +3,14 @@
 import type { AuthRole } from '../../../types/auth.ts'
 
 export const PERMISSION_CODES = [
+  "courses.read",
+  "courses.manage",
+  "semesters.read",
+  "semesters.manage",
+  "departments.read",
+  "departments.manage",
+  "academic_years.read",
+  "academic_years.manage",
   "profile.own.read",
   "profile.own.update",
   "notifications.own.read",
@@ -85,6 +93,14 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     "audit.read",
   ],
   admin: [
+    "courses.read",
+    "courses.manage",
+    "semesters.read",
+    "semesters.manage",
+    "departments.read",
+    "departments.manage",
+    "academic_years.read",
+    "academic_years.manage",
     "profile.own.read",
     "profile.own.update",
     "users.read",

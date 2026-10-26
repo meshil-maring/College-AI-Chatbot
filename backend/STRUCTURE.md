@@ -60,6 +60,7 @@ all four layers identical.
 
 | Feature | Owns |
 | --- | --- |
+| `academics` | Academic Setup: departments, programs, years, dated semesters, courses, program-course links, offerings and sections |
 | `admin` | Administrative workflows, dashboard and knowledge management |
 | `ai` | Chat, conversations, generation and privacy safeguards |
 | `auth` | Authentication, account registration, sessions and access policy services |
@@ -76,9 +77,14 @@ invitations in `invitations`. Cross-feature imports may reuse the owning module;
 do not duplicate implementations. Add a feature when a real domain requires it,
 and update this table, the checker and the affected layer guides together.
 
-Academic setup, curricula/packages, class registrations, attendance, results and
-faculty teaching workflows were retired. Their applied migrations remain as
-history; active application modules must not query the retired domain.
+Academic Setup follows the owner-selected [schema export](../academic_state_check_latest.sql).
+Departments own degree programs and teaching courses. Academic years contain dated
+semesters. Program-course links define curricula; course offerings connect a
+linked course, program, year and semester. Sections belong to one offering.
+Descendant tenants derive from parent relationships, with server-owned institution
+context added to API records. Attendance, results, enrollment, teaching workflows
+and academic packages remain outside this implementation. Earlier setup tables
+are preserved privately by the [forward migration](../supabase/migration_sources/academic_export/README.md).
 
 ## Naming and module boundaries
 

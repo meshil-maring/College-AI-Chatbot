@@ -11,12 +11,17 @@ import ast
 import json
 from pathlib import Path
 import runpy
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 TARGET = ROOT / "frontend/src/features/auth/access/rbacPolicy.generated.ts"
 
 
 def render_policy() -> str:
+    # The policy imports only passive source constants, never application settings.
+    backend = str(ROOT / "backend")
+    if backend not in sys.path:
+        sys.path.insert(0, backend)
     catalog = runpy.run_path(str(ROOT / "backend/app/core/permissions.py"))
     roles_module = ast.parse((ROOT / "backend/app/core/security/roles.py").read_text(encoding="utf-8"))
     roles = next(

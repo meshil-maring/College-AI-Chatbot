@@ -1,0 +1,17 @@
+{
+  "version": "20261026000000",
+  "name": "academic_export_alignment",
+  "files": [
+    "transition.sql",
+    "tables.sql",
+    "constraints.sql",
+    "indexes.sql",
+    "preserve_foundations.sql",
+    "tenant.sql",
+    "validation.sql",
+    "write.sql",
+    "parent_guards.sql",
+    "permissions.sql",
+    "security.sql"
+  ]
+}

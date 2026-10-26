@@ -107,3 +107,4 @@ def create_application(settings):
     app.add_exception_handler(Exception, unhandled_error_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
     return app
+0

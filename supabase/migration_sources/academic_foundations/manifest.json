@@ -1,0 +1,5 @@
+{
+  "version": "20261023010000",
+  "name": "academic_foundations",
+  "files": ["tables.sql", "permissions.sql", "authorization.sql", "validation.sql", "write.sql", "security.sql"]
+}
