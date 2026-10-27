@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Bell, ChevronDown, LogOut, Menu, X, type LucideIcon } from 'lucide-react'
 import '../admin/adminWorkspace.css'
 
@@ -15,6 +15,11 @@ export default function WorkspaceFrame<View extends string>({
   onLogout,
   onProfile,
   onNotices,
+  brand,
+  headerContent,
+  workspaceClassName = '',
+  renderNavigationChildren,
+  collapsible = false,
 }: {
   children: ReactNode
   navigation: readonly { key: View; label: string }[]
@@ -28,8 +33,23 @@ export default function WorkspaceFrame<View extends string>({
   onLogout: () => void
   onProfile?: () => void
   onNotices?: () => void
+  brand?: ReactNode
+  headerContent?: ReactNode
+  workspaceClassName?: string
+  renderNavigationChildren?: (view: View, close: () => void) => ReactNode
+  collapsible?: boolean
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileViewport, setMobileViewport] = useState(() => window.matchMedia?.('(max-width: 760px)').matches ?? false)
+  useEffect(() => {
+    const media = window.matchMedia?.('(max-width: 760px)')
+    const update = () => {
+      setMobileViewport(Boolean(media?.matches))
+      setMobileOpen(false)
+    }
+    media?.addEventListener('change', update)
+    return () => media?.removeEventListener('change', update)
+  }, [])
   const initials =
     identityLabel
       .replace(/@.*$/, '')
@@ -43,7 +63,12 @@ export default function WorkspaceFrame<View extends string>({
     setMobileOpen(false)
   }
   return (
-    <div className="admin-workspace">
+    <div
+      className={`admin-workspace ${workspaceClassName} ${mobileOpen ? 'navigation-toggled' : ''}`}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') setMobileOpen(false)
+      }}
+    >
       {mobileOpen && (
         <button
           type="button"
@@ -54,9 +79,11 @@ export default function WorkspaceFrame<View extends string>({
       )}
       <aside id="workspace-sidebar" className={`admin-sidebar ${mobileOpen ? 'is-open' : ''}`}>
         <div className="admin-brand">
-          <span>
-            College<span>AI</span>
-          </span>
+          {brand ?? (
+            <span>
+              College<span>AI</span>
+            </span>
+          )}
           <button
             type="button"
             className="admin-mobile-toggle"
@@ -84,6 +111,7 @@ export default function WorkspaceFrame<View extends string>({
                       <Icon aria-hidden="true" />
                       <span>{item.label}</span>
                     </button>
+                    {renderNavigationChildren?.(item.key, () => setMobileOpen(false))}
                   </li>
                 )
               })}
@@ -102,15 +130,15 @@ export default function WorkspaceFrame<View extends string>({
         <header className="admin-topbar">
           <button
             type="button"
-            className="admin-mobile-toggle"
-            aria-label="Open navigation"
-            aria-expanded={mobileOpen}
+            className={`admin-mobile-toggle ${collapsible ? 'workspace-navigation-toggle' : ''}`}
+            aria-label={collapsible ? 'Toggle navigation' : 'Open navigation'}
+            aria-expanded={collapsible && !mobileViewport ? !mobileOpen : mobileOpen}
             aria-controls="workspace-sidebar"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             <Menu aria-hidden="true" />
           </button>
-          <span className="admin-topbar-label">Institution workspace</span>
+          {headerContent ?? <span className="admin-topbar-label">Institution workspace</span>}
           <div className="admin-topbar-account">
             {onNotices && (
               <button

@@ -1,0 +1,43 @@
+.academic-record-search-results {
+  margin-top: 18px;
+}
+.academic-record-search-results > h2 {
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.academic-record-search-results ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.academic-record-search-results button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-panel);
+  text-align: left;
+}
+.academic-record-search-results button:hover {
+  border-color: #8b753b;
+}
+.academic-record-search-results strong,
+.academic-record-search-results small {
+  display: block;
+}
+.academic-record-search-results small {
+  color: #b9c2cf;
+  font-size: 12px;
+}
+.academic-record-search-results svg {
+  width: 18px;
+  height: 18px;
+  color: var(--admin-yellow);
+}

@@ -1,0 +1,184 @@
+.academic-admin-workspace {
+  --admin-bg: #0d0d0d;
+  --admin-panel: #131619;
+  --admin-border: #292d32;
+  --admin-muted: #adb6c3;
+  --admin-yellow: #f5c542;
+  background: var(--admin-bg);
+  color: #f6f6f7;
+}
+.academic-admin-workspace .admin-sidebar {
+  width: 264px;
+  background: #101214;
+  border-color: var(--admin-border);
+  scrollbar-width: thin;
+  scrollbar-color: #34383c transparent;
+}
+.academic-admin-workspace .admin-brand {
+  min-height: 68px;
+  padding: 16px;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 20px;
+  letter-spacing: -0.6px;
+}
+.academic-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.academic-brand > svg {
+  width: 32px;
+  height: 32px;
+  color: var(--admin-yellow);
+  flex-shrink: 0;
+}
+.academic-brand > span > span {
+  color: var(--admin-yellow);
+}
+.academic-admin-workspace .admin-brand > .academic-brand > span {
+  color: #f6f6f7;
+}
+.academic-admin-workspace .admin-sidebar-caption {
+  display: none;
+}
+.academic-admin-workspace .admin-sidebar > nav {
+  padding: 14px 10px;
+}
+.academic-admin-workspace .admin-nav-item {
+  min-height: 44px;
+  padding: 10px 14px;
+  gap: 14px;
+  color: #c4cbd5;
+}
+.academic-admin-workspace .admin-nav-item.active {
+  background: var(--admin-yellow);
+  color: #111;
+  font-weight: 650;
+}
+.academic-admin-workspace .admin-nav-item:hover:not(.active) {
+  background: #202326;
+}
+.academic-subnav {
+  padding: 5px 0 10px;
+}
+.academic-nav-link,
+.academic-nav-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 37px;
+  width: 100%;
+  padding: 8px 14px 8px 28px;
+  border-radius: 7px;
+  color: #bdc5d0;
+  text-align: left;
+  font-size: 12px;
+  list-style: none;
+  cursor: pointer;
+}
+.academic-nav-group > summary::-webkit-details-marker {
+  display: none;
+}
+.academic-nav-link > svg,
+.academic-nav-group > summary > svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.academic-nav-link:hover,
+.academic-nav-group > summary:hover {
+  background: #1c1f22;
+  color: #fff;
+}
+.academic-nav-link.is-current {
+  position: relative;
+  background: #1d2022;
+  color: var(--admin-yellow);
+}
+.academic-nav-link.is-current::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--admin-yellow);
+}
+.academic-nav-link.is-nested {
+  padding-left: 48px;
+}
+.academic-nav-group > summary > .academic-nav-chevron {
+  margin-left: auto;
+  width: 13px;
+  transform: rotate(-90deg);
+}
+.academic-nav-group[open] > summary > .academic-nav-chevron {
+  transform: none;
+}
+.academic-admin-workspace .admin-sidebar-bottom {
+  border-color: var(--admin-border);
+}
+.academic-admin-workspace .admin-workspace-body {
+  margin-left: 264px;
+}
+.academic-admin-workspace .admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 68px;
+  background: #101214;
+  border-color: var(--admin-border);
+}
+.academic-admin-workspace .workspace-navigation-toggle {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  min-height: 36px;
+  color: #d5dae0;
+}
+.academic-admin-workspace .admin-main {
+  padding: 22px;
+  max-width: 1760px;
+}
+.academic-admin-workspace .academic-global-search {
+  width: min(65%, 740px);
+  background: #191c1f;
+  border-color: #32363b;
+}
+.academic-global-search button {
+  flex-shrink: 0;
+}
+.academic-global-search button > svg {
+  width: 16px;
+  height: 16px;
+}
+.academic-global-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.academic-admin-workspace .admin-avatar {
+  color: #131313;
+  background: var(--admin-yellow);
+  border-color: #ffe49a;
+}
+.academic-admin-workspace .admin-profile-label small {
+  color: var(--admin-muted);
+}
+.academic-admin-workspace .admin-notice-button {
+  border-color: var(--admin-border);
+}
+.academic-admin-workspace summary:focus-visible {
+  outline: 2px solid var(--admin-yellow);
+  outline-offset: 3px;
+}
+@media (min-width: 761px) {
+  .academic-admin-workspace.navigation-toggled .admin-sidebar {
+    display: none;
+  }
+  .academic-admin-workspace.navigation-toggled .admin-workspace-body {
+    margin-left: 0;
+  }
+  .academic-admin-workspace .admin-sidebar-scrim {
+    display: none;
+  }
+}

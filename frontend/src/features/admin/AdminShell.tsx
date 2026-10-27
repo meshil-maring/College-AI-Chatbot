@@ -3,7 +3,8 @@ import { Bell, BookOpen, Bot, FileText, ShieldCheck, UserCircle, Users, type Luc
 import { useAuth } from '../auth/session/AuthProvider.tsx'
 import AdminFrame from './AdminFrame.tsx'
 import AdminProfile from './profile/AdminProfile.tsx'
-import AcademicSetup from './academic-setup/AcademicSetup.tsx'
+import AcademicWorkspace from './academic-setup/overview/AcademicWorkspace.tsx'
+import type { AcademicPage } from './academic-setup/overview/academicOverviewModel.ts'
 import StudentManager from './students/StudentManager.tsx'
 import StaffFacultyManager from './staff-faculty/StaffFacultyManager.tsx'
 import StaffPermissionManager from './permissions/StaffPermissionManager.tsx'
@@ -27,6 +28,8 @@ const icons: Record<AdminView, LucideIcon> = {
 export default function AdminShell() {
   const { user, role, accessToken, logout } = useAuth()
   const [selected, setSelected] = useState<AdminView>('profile')
+  const [academicPage, setAcademicPage] = useState<AcademicPage>('overview')
+  const [academicSearch, setAcademicSearch] = useState('')
   const navigation = buildAdminNavigation(role, user?.effective_permissions)
   const view = navigation.some((item) => item.key === selected) ? selected : navigation[0]?.key
   if (!user || role !== 'admin') return <main role="status">Administrator access is unavailable.</main>
@@ -38,12 +41,31 @@ export default function AdminShell() {
       onNavigate={setSelected}
       identityLabel={user.email?.trim() || 'Administrator'}
       onLogout={logout}
+      academicPage={academicPage}
+      onAcademicNavigate={(page) => {
+        setAcademicPage(page)
+        setAcademicSearch('')
+      }}
+      academicSearch={academicSearch}
+      onAcademicSearch={(value) => {
+        setAcademicSearch(value)
+        setAcademicPage('overview')
+      }}
     >
       {view ? (
         <>
-          {view !== 'assistant' && <h1 className="mb-5 text-2xl font-bold text-white">{ADMIN_VIEW_HEADINGS[view]}</h1>}
+          {view !== 'assistant' && view !== 'academic-setup' && (
+            <h1 className="mb-5 text-2xl font-bold text-white">{ADMIN_VIEW_HEADINGS[view]}</h1>
+          )}
           {view === 'profile' && <AdminProfile user={user} />}
-          {view === 'academic-setup' && <AcademicSetup />}
+          {view === 'academic-setup' && (
+            <AcademicWorkspace
+              page={academicPage}
+              search={academicSearch}
+              onNavigate={setAcademicPage}
+              onClearSearch={() => setAcademicSearch('')}
+            />
+          )}
           {view === 'staff-faculty' && accessToken && <StaffFacultyManager accessToken={accessToken} />}
           {view === 'approvals' && <StudentManager />}
           {view === 'notices' && <NoticeManager />}

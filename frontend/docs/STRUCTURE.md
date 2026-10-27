@@ -38,6 +38,11 @@ server-authoritative permissions when extracting code. Keep CSS import order.
 
 ## Retained inactive source
 
+The active Academic Setup overview lives in `academic-setup/overview/`, with
+feature styles in `academic-setup/styles/`. It represents the eleven approved
+entities without changing the existing service contract. See the
+[design guide](ACADEMIC_SETUP_DESIGN.md) for the entity mapping and integration boundaries.
+
 `features/admin/academic-setup/` follows the owner-selected SQL export: departments,
 degree programs, academic years, dated semesters, courses, program-course links,
 course offerings and sections. Transport lives in `services/admin/academics.ts`

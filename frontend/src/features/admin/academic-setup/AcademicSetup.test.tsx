@@ -92,12 +92,16 @@ describe('Academic Setup Stage 1', () => {
     render(<AcademicSetup />)
     fireEvent.click(await screen.findByRole('button', { name: 'Academic years' }))
     fireEvent.click(screen.getByRole('button', { name: `Deactivate ${year.name}` }))
+    expect(api.updateAcademicRecord).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toHaveTextContent('clear its current designation')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deactivation' }))
     expect(await screen.findByRole('button', { name: `Activate ${year.name}` })).toBeEnabled()
     expect(api.updateAcademicRecord).toHaveBeenCalledWith('token-1', 'academic_years', year.academic_year_id, {
       is_active: false,
       is_current: false,
     })
     fireEvent.click(screen.getByRole('button', { name: `Activate ${year.name}` }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm activation' }))
     await screen.findByRole('button', { name: `Deactivate ${year.name}` })
     expect(api.updateAcademicRecord).toHaveBeenLastCalledWith('token-1', 'academic_years', year.academic_year_id, {
       is_active: true,
@@ -110,6 +114,7 @@ describe('Academic Setup Stage 1', () => {
     )
     render(<AcademicSetup />)
     fireEvent.click(await screen.findByRole('button', { name: `Deactivate ${department.name}` }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deactivation' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Deactivate active programs')
     expect(screen.queryByText('Saved successfully.')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: `Deactivate ${department.name}` })).toBeEnabled()
@@ -133,5 +138,14 @@ describe('Academic Setup Stage 1', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('End date must be after')
     expect(api.createAcademicRecord).not.toHaveBeenCalled()
+  })
+  it('cancels a sensitive transition without changing a record', async () => {
+    render(<AcademicSetup />)
+    fireEvent.click(await screen.findByRole('button', { name: `Deactivate ${department.name}` }))
+    expect(screen.getByRole('dialog')).toHaveTextContent(department.name)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(api.updateAcademicRecord).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: `Deactivate ${department.name}` })).toBeEnabled()
   })
 })

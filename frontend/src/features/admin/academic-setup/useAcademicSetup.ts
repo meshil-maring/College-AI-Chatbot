@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useApiMutation, useApiQuery } from '../../../hooks/useApiQuery.ts'
 import { createAcademicRecord, getAcademicSetup, updateAcademicRecord } from '../../../services/admin/academics.ts'
 import type { AcademicEntity, AcademicRecord } from '../../../types/academicSetup.ts'
+import { academicParents } from './academicSetupParents.ts'
 import {
   ACADEMIC_ENTITIES,
   ACADEMIC_SINGULAR,
@@ -12,15 +13,21 @@ import {
   makeAcademicDraft,
 } from './academicSetupForm.ts'
 
-export function useAcademicSetup(accessToken: string, identity: string) {
+export function useAcademicSetup(
+  accessToken: string,
+  identity: string,
+  initialEntity: AcademicEntity = 'departments',
+  createInitially = false,
+) {
   const query = useApiQuery(['admin', 'academic-setup', identity], () => getAcademicSetup(accessToken))
-  const [selected, setSelected] = useState<AcademicEntity>('departments')
+  const [selected, setSelected] = useState<AcademicEntity>(initialEntity)
   const [editing, setEditing] = useState<AcademicRecord | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [draft, setDraft] = useState(makeAcademicDraft)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const mounted = useRef(true)
+  const initialActionHandled = useRef(false)
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -34,6 +41,11 @@ export function useAcademicSetup(accessToken: string, identity: string) {
   const records: AcademicRecord[] = (query.data?.records[entity] ?? []).filter(
     (record) => record.institution_id === query.data?.institution_id,
   )
+  useEffect(() => {
+    if (!createInitially || initialActionHandled.current || !query.data) return
+    initialActionHandled.current = true
+    if (entity === initialEntity && manageable && !academicParents(query.data, entity).issue) setFormOpen(true)
+  }, [createInitially, entity, initialEntity, manageable, query.data])
   const mutation = useApiMutation<AcademicRecord, { record?: AcademicRecord; toggle?: boolean }>({
     mutationFn: async ({ record, toggle }) => {
       if (!manageable) throw new Error('You have read-only access to this catalogue.')

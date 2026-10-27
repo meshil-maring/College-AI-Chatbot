@@ -1,7 +1,9 @@
 import { beforeEach, vi } from 'vitest'
 import * as adminApi from '../../../services/admin/adminApi.ts'
+import * as academicApi from '../../../services/admin/academics.ts'
 
 vi.mock('../../../services/admin/adminApi.ts')
+vi.mock('../../../services/admin/academics.ts')
 vi.mock('../../chat/ChatShell.tsx', () => ({ default: () => <div>AI Assistant chat</div> }))
 const authState = vi.hoisted(() => ({
   status: 'authenticated',
@@ -26,5 +28,12 @@ beforeEach(() => {
   authState.user.effective_permissions = ['*']
   vi.mocked(adminApi.getAdminIdentity).mockReset()
   vi.mocked(adminApi.listPendingStudents).mockReset().mockResolvedValue([])
+  vi.mocked(academicApi.getAcademicSetup)
+    .mockReset()
+    .mockResolvedValue({
+      institution_id: 'inst-1',
+      records: { departments: [], programs: [], academic_years: [] },
+      manageable: [],
+    })
 })
 export { authState }

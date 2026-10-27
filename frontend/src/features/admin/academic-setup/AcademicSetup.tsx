@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import { ACADEMIC_HELP, ACADEMIC_LABELS } from './academicSetupForm.ts'
 import AcademicSetupForm from './AcademicSetupForm.tsx'
@@ -5,17 +6,30 @@ import { academicButtonClass } from './forms/academicFormControls.ts'
 import { academicParents } from './academicSetupParents.ts'
 import AcademicSetupRecords from './AcademicSetupRecords.tsx'
 import { useAcademicSetup } from './useAcademicSetup.ts'
+import type { AcademicEntity, AcademicRecord } from '../../../types/academicSetup.ts'
+import AcademicTransitionDialog from './transitions/AcademicTransitionDialog.tsx'
 
-export default function AcademicSetup() {
+interface Props {
+  initialEntity?: AcademicEntity
+  createInitially?: boolean
+}
+
+export default function AcademicSetup(props: Props) {
   const { accessToken, user, role } = useAuth()
   if (!accessToken || !user || role !== 'admin') return <p role="status">Administrator access is unavailable.</p>
   const identity = JSON.stringify([accessToken, user.user_id, user.institution_id, user.effective_permissions])
   // Identity changes remount all drafts and feedback; late mutations belong to the old instance.
-  return <AcademicSetupWorkspace key={identity} accessToken={accessToken} identity={identity} />
+  return <AcademicSetupWorkspace key={identity} accessToken={accessToken} identity={identity} {...props} />
 }
 
-function AcademicSetupWorkspace({ accessToken, identity }: { accessToken: string; identity: string }) {
-  const state = useAcademicSetup(accessToken, identity)
+function AcademicSetupWorkspace({
+  accessToken,
+  identity,
+  initialEntity,
+  createInitially,
+}: Props & { accessToken: string; identity: string }) {
+  const state = useAcademicSetup(accessToken, identity, initialEntity, createInitially)
+  const [pendingTransition, setPendingTransition] = useState<AcademicRecord | null>(null)
   if (state.query.isPending) return <p role="status">Loading Academic Setup…</p>
   if (!state.query.data)
     return (
@@ -101,8 +115,19 @@ function AcademicSetupWorkspace({ accessToken, identity }: { accessToken: string
         manageable={state.manageable}
         busy={state.busy}
         onEdit={state.open}
-        onToggle={state.toggle}
+        onToggle={setPendingTransition}
       />
+      {pendingTransition && (
+        <AcademicTransitionDialog
+          record={pendingTransition}
+          catalogue={parents.catalogue}
+          onCancel={() => setPendingTransition(null)}
+          onConfirm={() => {
+            state.toggle(pendingTransition)
+            setPendingTransition(null)
+          }}
+        />
+      )}
     </section>
   )
 }
