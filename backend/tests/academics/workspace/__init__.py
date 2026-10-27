@@ -1,0 +1,1 @@
+"""Academic workspace regression contracts."""

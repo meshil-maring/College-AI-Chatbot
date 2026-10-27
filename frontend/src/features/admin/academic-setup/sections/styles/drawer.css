@@ -1,0 +1,124 @@
+.section-drawer {
+  --admin-yellow: #ffca28;
+  position: fixed;
+  inset: 68px 0 0 auto;
+  width: 358px;
+  height: calc(100dvh - 68px);
+  max-width: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid #1c2832;
+  background: linear-gradient(110deg, #0d161c, #0b1218);
+  color: #f5f7fa;
+  color-scheme: dark;
+}
+.section-drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.section-drawer::backdrop {
+  background: rgb(0 0 0 / 48%);
+}
+.section-drawer > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 16px;
+}
+.section-drawer h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.section-drawer header p {
+  margin: 6px 0 0;
+  color: #b6c2d1;
+  font-size: 12px;
+}
+.section-drawer header button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  margin: -3px -3px 0 0;
+}
+.section-drawer header button svg {
+  width: 19px;
+  height: 19px;
+}
+.section-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 20px 20px;
+  scrollbar-width: thin;
+}
+.section-preview-note {
+  margin: 0 0 16px;
+  padding: 9px 11px;
+  border: 1px solid #554a29;
+  border-radius: 5px;
+  background: #211f15;
+  color: #e8d69c;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.section-drawer > footer {
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+  padding: 16px 20px max(20px, env(safe-area-inset-bottom));
+  border-top: 1px solid #1c2832;
+  background: #0b1319;
+}
+.section-drawer footer > button {
+  min-height: 41px;
+  font-size: 12px;
+}
+.section-drawer footer > .academic-primary-button {
+  flex: 1;
+}
+.section-drawer footer > .academic-secondary-button {
+  min-width: 110px;
+  background: transparent;
+  border-color: #2b3b49;
+}
+.section-form-error {
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid #82474d;
+  border-radius: 6px;
+  background: #211719;
+  color: #ffb2b2;
+  font-size: 12px;
+}
+.section-confirmation {
+  padding-block: 20px;
+  font-size: 14px;
+}
+.section-confirmation > svg {
+  width: 32px;
+  height: 32px;
+  color: #ffca28;
+}
+.section-details {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+}
+.section-details dt {
+  margin-bottom: 5px;
+  color: #acb9c9;
+  font-size: 12px;
+}
+.section-details dd {
+  margin: 0;
+  color: #f2f6fa;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -1,20 +1,22 @@
 import { useState } from 'react'
 import { ArrowRight, ChevronRight, Clock3, Link2, Search } from 'lucide-react'
 import type { AcademicCatalogue, AcademicEntity } from '../../../../types/academicSetup.ts'
+import type { StructureCatalogue } from '../../../../types/academicStructure.ts'
 import AcademicManagementCard from './AcademicManagementCard.tsx'
 import AcademicQuickLinks from './AcademicQuickLinks.tsx'
 import {
   allAcademicAreas,
   getAcademicArea,
   managementRows,
-  sampleActivities,
   summaryPages,
   type AcademicPage,
 } from './academicOverviewModel.ts'
 import { overviewRecords, searchAcademicRecords } from './useAcademicOverview.ts'
+import { searchStructureRecords } from './structureSearch.ts'
 
 interface Props {
   catalogue?: AcademicCatalogue
+  structure?: StructureCatalogue
   busy: boolean
   loading: boolean
   search: string
@@ -26,6 +28,7 @@ interface Props {
 
 export default function AcademicOverview({
   catalogue,
+  structure,
   busy,
   loading,
   search,
@@ -39,7 +42,9 @@ export default function AcademicOverview({
     .trim()
     .toLowerCase()
     .replace(/curricula\b/g, 'curriculum')
-  const matchingRecords = normalized ? searchAcademicRecords(catalogue, normalized) : []
+  const matchingRecords = normalized
+    ? [...searchAcademicRecords(catalogue, normalized), ...searchStructureRecords(catalogue, structure, normalized)]
+    : []
   const matches = allAcademicAreas.filter((area) =>
     `${area.title} ${area.description}`.toLowerCase().includes(normalized),
   )
@@ -85,7 +90,13 @@ export default function AcademicOverview({
             {matches.length ? (
               <div className="academic-search-grid">
                 {matches.map((area) => (
-                  <AcademicManagementCard key={area.page} area={area} catalogue={catalogue} onNavigate={onNavigate} />
+                  <AcademicManagementCard
+                    key={area.page}
+                    area={area}
+                    catalogue={catalogue}
+                    structure={structure}
+                    onNavigate={onNavigate}
+                  />
                 ))}
               </div>
             ) : !matchingRecords.length ? (
@@ -102,9 +113,14 @@ export default function AcademicOverview({
               <div className="academic-record-search-results">
                 <h2>Available records</h2>
                 <ul>
-                  {matchingRecords.map((record) => (
-                    <li key={`${record.entity}-${record.code}`}>
-                      <button type="button" onClick={() => onOpenRecords(record.entity)}>
+                  {matchingRecords.map((record, index) => (
+                    <li key={`${record.entity}-${record.code}-${index}`}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          'destination' in record ? onNavigate(record.destination) : onOpenRecords(record.entity)
+                        }
+                      >
                         <span>
                           <strong>{record.name}</strong>
                           <small>
@@ -124,7 +140,13 @@ export default function AcademicOverview({
             {managementRows.map((row, index) => (
               <div className={`academic-management-row academic-row-${row.length}`} key={index}>
                 {row.map((area) => (
-                  <AcademicManagementCard key={area.page} area={area} catalogue={catalogue} onNavigate={onNavigate} />
+                  <AcademicManagementCard
+                    key={area.page}
+                    area={area}
+                    catalogue={catalogue}
+                    structure={structure}
+                    onNavigate={onNavigate}
+                  />
                 ))}
               </div>
             ))}
@@ -136,29 +158,39 @@ export default function AcademicOverview({
           <div className="academic-panel-heading">
             <Clock3 aria-hidden="true" />
             <h2 id="academic-activity-heading">Recent Activities</h2>
-            <span className="academic-badge">Sample</span>
             <button type="button" onClick={() => setAllActivity(!allActivity)} aria-expanded={allActivity}>
               {allActivity ? 'Show less' : 'View all'}
               <ChevronRight aria-hidden="true" />
             </button>
           </div>
-          <p className="academic-panel-note">Illustrative examples · Activity feed not connected</p>
+          <p className="academic-panel-note">Recent saved changes in readable academic areas.</p>
           <ul className="academic-activity-list">
-            {sampleActivities.slice(0, allActivity ? undefined : 4).map((activity, index) => (
-              <li key={activity}>
+            {structure?.activities.slice(0, allActivity ? undefined : 4).map((activity, index) => (
+              <li key={activity.id}>
                 <span className={`academic-activity-dot academic-dot-${index % 3}`} />
-                <span>{activity}</span>
+                <span>
+                  {activity.name ?? activity.entity.replaceAll('_', ' ')} · {activity.action.split('.').at(-1)}
+                </span>
               </li>
             ))}
           </ul>
+          {!structure?.activities.length && (
+            <p className="academic-panel-note">{structure ? 'No recent academic changes.' : 'Activity unavailable.'}</p>
+          )}
         </section>
         <section className="academic-bottom-panel" aria-labelledby="academic-links-heading">
           <div className="academic-panel-heading">
             <Link2 aria-hidden="true" />
             <h2 id="academic-links-heading">Quick Links</h2>
           </div>
-          <p className="academic-panel-note">Available actions follow your permissions. New areas await integration.</p>
-          <AcademicQuickLinks catalogue={catalogue} busy={busy} onCreate={onCreate} />
+          <p className="academic-panel-note">Available actions follow your institution permissions.</p>
+          <AcademicQuickLinks
+            catalogue={catalogue}
+            structure={structure}
+            busy={busy}
+            onCreate={onCreate}
+            onNavigate={onNavigate}
+          />
         </section>
       </div>
       <p className="academic-footer-note">

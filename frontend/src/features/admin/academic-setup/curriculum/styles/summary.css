@@ -1,0 +1,65 @@
+.curriculum-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.curriculum-metric {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 88px;
+  padding: 14px;
+  border: 1px solid #16212a;
+  border-radius: 9px;
+  background: linear-gradient(115deg, #0e151b, #0b1116);
+}
+.curriculum-metric > div {
+  min-width: 0;
+}
+.curriculum-metric-icon,
+.curriculum-state-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #192024;
+  color: var(--curriculum-yellow);
+}
+.curriculum-metric-icon svg {
+  width: 31px;
+  height: 31px;
+}
+.curriculum-metric-icon:is(.active, .inactive) {
+  width: 40px;
+  height: 40px;
+  background: #131c23;
+}
+.curriculum-metric-icon:is(.active, .inactive) svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+.curriculum-metric-icon.active {
+  color: #13cc6b;
+}
+.curriculum-metric-icon.inactive {
+  color: #a2b1c8;
+}
+.curriculum-metric p {
+  margin: 0 0 3px;
+  color: #d6e0ed;
+  font-size: 12px;
+}
+.curriculum-metric strong {
+  display: block;
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+.curriculum-metric small {
+  color: var(--curriculum-muted);
+  font-size: 11px;
+}

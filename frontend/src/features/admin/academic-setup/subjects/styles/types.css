@@ -1,0 +1,18 @@
+.subject-type {
+  display: inline-block;
+  margin: 2px 3px 2px 0;
+  padding: 4px 10px;
+  border: 1px solid #2d3b46;
+  border-radius: 6px;
+  background: linear-gradient(110deg, #26333d, #1a242d);
+  color: #d2ddeb;
+  font-size: 11px;
+}
+.subject-type:is(.elective, .open_elective) {
+  border-color: #725600;
+  background: #221d08;
+  color: #ffcc16;
+}
+.subject-table abbr {
+  text-decoration: none;
+}

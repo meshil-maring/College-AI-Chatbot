@@ -8,7 +8,7 @@ and serialization rules stay in their existing modules.
 
 | Package | Schema modules |
 | --- | --- |
-| `academics/` | `academic_setup.py`: departments, programs, years, dated semesters, courses, curriculum links, offerings and sections |
+| `academics/` | `academic_setup.py`: existing contracts; `academic_structure.py`: strict create/update contracts for program semesters, curricula, cohorts, academic sections and offerings |
 | `admin/` | `admin.py`, `admin_dashboard.py`, `admin_memberships.py` |
 | `ai/` | `chat.py`, `chat_response.py`, `citation.py`, `conversation.py`, `generation.py`, `session.py` |
 | `auth/` | `auth.py`, `student_auth.py`, `users.py`, `phase81.py` (scoped permission requests) |

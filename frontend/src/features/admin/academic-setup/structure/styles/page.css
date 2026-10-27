@@ -1,0 +1,136 @@
+.structure-records-page {
+  --admin-yellow: #ffca28;
+  --curriculum-yellow: #ffca28;
+  --curriculum-muted: #acb9c9;
+  --curriculum-border: #1c2832;
+  color: #f5f7fa;
+}
+.structure-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.structure-summary article {
+  padding: 20px;
+  border: 1px solid #1c2832;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #10171d, #0b1217);
+}
+.structure-summary span {
+  display: block;
+  text-transform: capitalize;
+  color: #adbccd;
+}
+.structure-summary strong {
+  font-size: 28px;
+}
+.structure-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.structure-filters label {
+  flex: 1;
+  min-width: 160px;
+}
+.structure-filters span {
+  display: block;
+  margin-bottom: 6px;
+  color: #adbccd;
+  font-size: 12px;
+}
+.structure-filters input,
+.structure-filters select,
+.structure-field :is(input, select, textarea) {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #293845;
+  border-radius: 6px;
+  background: #10191f;
+  color: #f5f7fa;
+  color-scheme: dark;
+}
+.structure-table-panel {
+  border: 1px solid #1c2832;
+  border-radius: 8px;
+  overflow: auto;
+}
+.structure-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.structure-table th,
+.structure-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #1c2832;
+  overflow-wrap: anywhere;
+}
+.structure-table th {
+  background: #131d24;
+  font-weight: 500;
+}
+.structure-table td {
+  color: #d5deea;
+}
+.structure-status {
+  display: inline-block;
+  padding: 4px 9px;
+  border: 1px solid #39526a;
+  border-radius: 5px;
+  text-transform: capitalize;
+}
+.structure-status:is(.active, .published) {
+  border-color: #075b36;
+  background: #09251c;
+  color: #20dd76;
+}
+.structure-status.draft {
+  border-color: #6d5e22;
+  color: #ffca28;
+}
+.structure-actions {
+  display: flex;
+  gap: 8px;
+}
+.structure-actions button {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  min-height: 34px;
+  border: 1px solid #24323e;
+  border-radius: 6px;
+}
+.structure-actions svg {
+  width: 16px;
+  height: 16px;
+}
+.structure-pagination,
+.structure-pagination nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.structure-pagination {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  color: #adbccd;
+  font-size: 13px;
+}
+.structure-pagination button {
+  padding: 8px 12px;
+  border: 1px solid #24323e;
+  border-radius: 6px;
+}
+.structure-records-page button:disabled,
+.structure-drawer button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.structure-records-page :is(button, input, select):focus-visible,
+.structure-drawer :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid #ffca28;
+  outline-offset: 3px;
+}

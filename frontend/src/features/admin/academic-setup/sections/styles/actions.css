@@ -1,0 +1,96 @@
+.section-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+}
+.section-row-actions > button,
+.section-more > summary {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 1px solid #1c2a35;
+  border-radius: 6px;
+  background: #10191f;
+  color: #f1f5fa;
+  cursor: pointer;
+  list-style: none;
+}
+.section-more > summary::-webkit-details-marker {
+  display: none;
+}
+.section-row-actions svg {
+  width: 15px;
+  height: 15px;
+}
+.section-row-actions > button:hover,
+.section-more > summary:hover {
+  border-color: #8b7336;
+  color: #ffca28;
+}
+.section-more {
+  position: relative;
+}
+.section-more > div {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  bottom: 35px;
+  width: 150px;
+  padding: 5px;
+  border: 1px solid #334351;
+  border-radius: 7px;
+  background: #152029;
+  box-shadow: 0 8px 24px #0008;
+}
+.section-more > div button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  font-size: 12px;
+}
+.section-more > div button:hover {
+  background: #24333e;
+}
+.section-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 26px;
+  padding: 0 5px 10px;
+  color: var(--section-muted);
+  font-size: 12px;
+}
+.section-pagination p {
+  margin: 0;
+}
+.section-pagination nav {
+  display: flex;
+  gap: 7px;
+}
+.section-pagination button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 35px;
+  border: 1px solid #24323e;
+  border-radius: 6px;
+  background: #10191f;
+  color: #f1f5fa;
+}
+.section-pagination button[aria-current] {
+  border-color: #ffca28;
+  color: #ffca28;
+  background: #13170e;
+}
+.section-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.section-pagination button svg {
+  width: 16px;
+  height: 16px;
+}

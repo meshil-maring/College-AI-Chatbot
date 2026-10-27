@@ -1,0 +1,65 @@
+.section-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.section-metric {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  min-height: 96px;
+  padding: 14px;
+  border: 1px solid #16212a;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #10171d, #0b1217);
+}
+.section-metric > div {
+  min-width: 0;
+}
+.section-metric-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #1b2224;
+  color: #ffca28;
+}
+.section-metric-icon svg {
+  width: 30px;
+  height: 30px;
+  fill: currentColor;
+  stroke-width: 1.5px;
+}
+.section-metric-icon:is(.active, .inactive) {
+  width: 44px;
+  height: 44px;
+  background: #151e25;
+}
+.section-metric-icon:is(.active, .inactive) svg {
+  width: 22px;
+  height: 22px;
+}
+.section-metric-icon.active {
+  color: #22dd59;
+}
+.section-metric-icon.inactive {
+  color: #9faec6;
+}
+.section-metric p {
+  margin: 0 0 4px;
+  color: #dce3ee;
+  font-size: 12px;
+}
+.section-metric strong {
+  display: block;
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.section-metric small {
+  color: var(--section-muted);
+  font-size: 11px;
+}

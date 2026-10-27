@@ -15,6 +15,11 @@ endpoints remain authoritative for authorization and tenant isolation.
 | `academic-setup/programs/`    | Program list, department/degree/status filters, summaries and add/view/edit drawers               |
 | `academic-setup/calendar/`    | Academic years, dated semesters, summary cards, filters, dates/timeline and add/view/edit drawers |
 | `academic-setup/dialogs/`     | Shared academic modal keyboard, scroll and focus lifecycle                                        |
+| `academic-setup/subjects/`    | Subject catalogue, curriculum assignment filters, credits/hours and add/view/edit drawers         |
+| `academic-setup/curriculum/`  | Persisted curriculum versions, publication and history, plus retained existing mappings           |
+| `academic-setup/batches/`     | Stored admission cohorts, published curriculum assignment, filters and add/view/edit drawers      |
+| `academic-setup/sections/`    | Stored cohort-owned sections, program progression, dated terms and add/view/edit drawers          |
+| `academic-setup/structure/`   | Shared structure catalogue, mutation guards, forms and drawers for progression and offerings      |
 | `documents/`                  | Documents and knowledge sources                                                                   |
 | `faqs/`, `notices/`           | Published institution information                                                                 |
 | `permissions/`                | Nonacademic staff permission management                                                           |
@@ -24,10 +29,11 @@ endpoints remain authoritative for authorization and tenant isolation.
 
 Academic Setup opens on the black-and-yellow overview described in
 [the design guide](../../../docs/ACADEMIC_SETUP_DESIGN.md). Its eleven approved
-entities remain distinct from the existing eight-entity service contract.
-Only departments, programs, years and subjects use matching catalogue counts;
-unsupported areas are explicitly labeled design previews. Existing catalogues
-remain accessible without remapping their section or curriculum relationships.
+entities use the existing foundation API plus the additive academic-structure API.
+Counts and recent activity come from readable institution records. Existing
+catalogues remain accessible without remapping their section or curriculum
+relationships. Batches and Sections persist through audited database writes;
+unavailable enrollment counts never fall back to sample or capacity numbers.
 
 Academic Setup uses focused hooks, typed contracts and identity-scoped query keys.
 Semesters have dates within academic years. Courses are teaching subjects;
@@ -44,5 +50,5 @@ Their exact exclusions are in `tsconfig.app.json` and `vitest.config.ts`.
 excluded legacy source. Student account approval tests remain active.
 
 Keep state and requests in focused hooks, rendering in components, transport in
-`src/services/admin/`, and contracts in `src/types/admin/`. Keep source and tests
+`src/services/admin/`, and contracts in `src/types/`. Keep source and tests
 within 250 physical lines and folders within 15 direct maintained files.

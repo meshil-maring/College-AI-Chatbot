@@ -1,0 +1,13 @@
+{
+  "version": "20261027000000",
+  "name": "academic_workspace_integration",
+  "files": [
+    "tables.sql",
+    "parent_access.sql",
+    "relationships.sql",
+    "lifecycle.sql",
+    "write.sql",
+    "parent_guards.sql",
+    "security.sql"
+  ]
+}

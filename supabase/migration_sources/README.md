@@ -40,3 +40,8 @@ setup model through a forward migration. It preserves previous setup data in a
 private schema and carries common foundation IDs into the exported model.
 [Disposable PostgreSQL validation](../../scripts/validation/academic_export/README.md)
 covers replay, rollback, preservation, RPC behavior and privileges.
+
+[academic_workspace/](academic_workspace/README.md) adds versioned curricula,
+program progression, admission cohorts, class sections and subject offerings
+without replacing the export-aligned tables or APIs. Its generator is
+`scripts/maintenance/migrations/build_academic_workspace.py`.

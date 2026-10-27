@@ -8,7 +8,7 @@ URL prefix, permissions or request/response models.
 
 | Package | Router modules |
 | --- | --- |
-| `academics/` | `academic_setup.py`: institution-admin catalogue and writes for the eight export-aligned setup entities |
+| `academics/` | `academic_setup.py`: existing eight-entity API; `academic_structure.py`: versioned curricula, program semesters, cohorts, class sections and offerings |
 | `admin/` | `admin.py` assembles feature routers; see the [Admin API guide](admin/README.md) |
 | `ai/` | `conversations.py` |
 | `auth/` | Core auth feature routers, student login, registration and development tools; see the [Auth API guide](auth/README.md) |

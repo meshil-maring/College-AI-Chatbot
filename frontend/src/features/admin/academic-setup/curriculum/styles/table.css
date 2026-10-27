@@ -1,0 +1,103 @@
+.curriculum-table-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.curriculum-mapping-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.curriculum-mapping-table th {
+  padding: 8px 5px;
+  background: #101a22;
+  color: #d3deec;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 500;
+}
+.curriculum-mapping-table td {
+  padding: 7px 5px;
+  border-top: 1px solid #1d2a33;
+  vertical-align: middle;
+}
+.curriculum-mapping-table th:nth-child(2) {
+  width: 30%;
+}
+.curriculum-mapping-table th:last-child {
+  text-align: right;
+}
+.curriculum-mapping-table abbr {
+  text-decoration: none;
+}
+.curriculum-record-note {
+  display: block;
+  margin-top: 3px;
+  color: var(--curriculum-muted);
+  font-size: 9px;
+}
+.curriculum-type {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid #2d3b46;
+  border-radius: 5px;
+  background: linear-gradient(110deg, #26333d, #1a242d);
+  color: #d2ddeb;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.curriculum-type:is(.elective, .open_elective) {
+  border-color: #725600;
+  background: #221d08;
+  color: #ffcc16;
+}
+.curriculum-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.curriculum-row-actions button {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 27px;
+  border: 1px solid #24323d;
+  border-radius: 4px;
+  background: #111a21;
+}
+.curriculum-row-actions svg {
+  width: 13px;
+  height: 13px;
+}
+.curriculum-row-actions button:last-child {
+  color: #ff8b7c;
+}
+.curriculum-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  color: #d3deec;
+  font-size: 13px;
+}
+.curriculum-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: #ffca28;
+}
+.curriculum-preview-note {
+  margin: 0 0 22px;
+  padding: 10px 12px;
+  border: 1px solid #71591b;
+  border-radius: 6px;
+  background: #211e12;
+  color: #e6d6a3;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.curriculum-confirm-icon {
+  width: 36px;
+  height: 36px;
+  margin-top: 20px;
+  color: #ffca28;
+}

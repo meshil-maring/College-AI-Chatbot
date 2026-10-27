@@ -21,6 +21,11 @@ course, program-course, offering and section reads/writes. Descendant
 enrollment, attendance, results and academic packages remain removed. Do not reconnect retained legacy
 screens to retired endpoints; see the [removal record](../../../docs/retirements/academic-setup/README.md).
 
+`admin/academicStructure.ts` owns the additive program-semester, curriculum-version,
+curriculum-subject, admission-cohort, academic-section and academic-offering API.
+Its contracts live in `types/academicStructure.ts`. It uses the same authenticated
+transport, session-expiry events and server-selected tenant context.
+
 Keep each folder within 15 direct maintained files and each source/test file
 within 250 physical lines. `npm run check:structure` checks both service limits.
 Client modules depend on contracts and shared infrastructure, never feature UI.

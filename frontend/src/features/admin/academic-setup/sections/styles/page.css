@@ -1,0 +1,65 @@
+.academic-workspace.sections-page {
+  --section-muted: #aebccd;
+  --section-border: #1c2832;
+  --admin-yellow: #ffca28;
+  container: sections / inline-size;
+  gap: 12px;
+  margin-top: -12px;
+  color: #f5f7fa;
+}
+.sections-page .academic-page-header h1 {
+  font-size: 30px;
+}
+.sections-page .academic-page-header > button {
+  min-height: 42px;
+  padding-inline: 24px;
+  flex-shrink: 0;
+  font-size: 13px;
+  background: linear-gradient(110deg, #ffd333, #ffc224);
+}
+.section-integration-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: -3px 0;
+  color: var(--section-muted);
+  font-size: 11px;
+}
+.section-integration-note svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  color: var(--admin-yellow);
+}
+.section-save-notice {
+  margin: 0;
+  color: #32db87;
+  font-size: 12px;
+}
+.sections-page :is(button, summary, select, input):focus-visible,
+.section-drawer :is(button, select, input, textarea):focus-visible {
+  outline: 2px solid #ffca28;
+  outline-offset: 3px;
+}
+.section-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 20px;
+  text-align: center;
+}
+.section-empty > svg {
+  width: 36px;
+  height: 36px;
+  color: var(--admin-yellow);
+}
+.section-empty h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.section-empty p {
+  margin: 0 0 6px;
+  color: var(--section-muted);
+}

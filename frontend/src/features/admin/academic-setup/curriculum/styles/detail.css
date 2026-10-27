@@ -1,0 +1,179 @@
+.curriculum-detail {
+  min-width: 0;
+  border: 1px solid #1b2831;
+  border-radius: 7px;
+  background: #0a1117;
+}
+.curriculum-detail > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  border-bottom: 1px solid #1b2831;
+}
+.curriculum-detail header > div {
+  flex: 1;
+  min-width: 0;
+}
+.curriculum-detail h2 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.curriculum-detail header p {
+  margin: 6px 0 0;
+  color: var(--curriculum-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.curriculum-detail header .academic-secondary-button {
+  min-height: 34px;
+  padding: 6px 12px;
+  background: #101a22;
+}
+.curriculum-detail header svg {
+  width: 15px;
+  height: 15px;
+}
+.curriculum-detail .curriculum-tabs [role='tab'] {
+  flex: 1;
+  padding: 12px 10px;
+  font-size: 11px;
+}
+.curriculum-semesters {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+}
+.curriculum-detail-note,
+.curriculum-term-name {
+  margin: 0;
+  color: var(--curriculum-muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+.curriculum-detail > p {
+  padding: 15px;
+}
+.curriculum-term-name {
+  padding: 6px 10px;
+  border-bottom: 1px solid #1c2832;
+}
+.curriculum-semester {
+  min-width: 0;
+  border: 1px solid #1e2e38;
+  border-radius: 6px;
+}
+.curriculum-semester > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 9px;
+  border-radius: 6px;
+  background: linear-gradient(110deg, #121d25, #0d161d);
+  list-style: none;
+  cursor: pointer;
+}
+.curriculum-semester > summary::-webkit-details-marker {
+  display: none;
+}
+.curriculum-semester > summary > svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.curriculum-semester[open] > summary > svg {
+  transform: rotate(90deg);
+}
+.curriculum-semester summary strong {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+}
+.curriculum-semester summary > span {
+  color: var(--curriculum-muted);
+  font-size: 10px;
+  text-align: right;
+}
+.curriculum-semester footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 9px;
+}
+.curriculum-outline-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #ffca28;
+  border-radius: 6px;
+  background: #11180e;
+  color: #ffca28;
+  font-size: 12px;
+}
+.curriculum-outline-button svg {
+  width: 15px;
+  height: 15px;
+}
+.curriculum-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 280px;
+  padding: 24px;
+  text-align: center;
+}
+.curriculum-empty > svg {
+  width: 34px;
+  height: 34px;
+  color: #ffca28;
+}
+.curriculum-empty :is(h2, h3, p) {
+  margin: 0;
+}
+.curriculum-empty p {
+  max-width: 460px;
+  color: var(--curriculum-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.curriculum-overview {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  margin: 0;
+}
+.curriculum-overview dt {
+  color: var(--curriculum-muted);
+  font-size: 12px;
+}
+.curriculum-overview dd {
+  margin: 7px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.curriculum-subject-list {
+  padding: 12px;
+}
+.curriculum-subject-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.curriculum-subject-list h3 {
+  margin: 0;
+  font-size: 14px;
+}

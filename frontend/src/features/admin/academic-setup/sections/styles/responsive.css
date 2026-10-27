@@ -1,0 +1,204 @@
+@media (min-width: 1440px) {
+  .sections-page.has-drawer {
+    padding-right: 358px;
+  }
+  .section-drawer::backdrop {
+    background: transparent;
+  }
+}
+@container sections (max-width: 1050px) {
+  .section-filters {
+    gap: 10px;
+    grid-template-columns: minmax(190px, 2fr) minmax(115px, 1fr) minmax(140px, 1.1fr) minmax(100px, 0.9fr) minmax(
+        115px,
+        1fr
+      );
+  }
+  .section-metric {
+    gap: 12px;
+    padding: 12px;
+  }
+  .section-metric-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .section-metric-icon svg {
+    width: 27px;
+    height: 27px;
+  }
+  .section-identity {
+    gap: 10px;
+  }
+  .section-table :is(th, td) {
+    padding-inline: 8px;
+  }
+  .section-row-actions {
+    gap: 5px;
+  }
+}
+@container sections (max-width: 840px) {
+  .section-mobile-sort {
+    display: block;
+    grid-column: 1 / -1;
+  }
+  .section-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .section-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .section-search {
+    grid-column: 1 / -1;
+  }
+  .section-table,
+  .section-table tbody {
+    display: block;
+  }
+  .section-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .section-table thead:focus-within {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
+  }
+  .section-table tbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 12px;
+  }
+  .section-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #1c2832;
+    border-radius: 7px;
+  }
+  .section-table td {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: 0;
+  }
+  .section-table td:first-child,
+  .section-table td:last-child,
+  .section-table td[colspan] {
+    grid-column: 1 / -1;
+  }
+  .section-table td::before {
+    display: block;
+    margin-bottom: 5px;
+    color: #aebccd;
+    content: attr(data-label);
+    font-size: 10px;
+  }
+  .section-table td:first-child::before,
+  .section-table td:last-child::before,
+  .section-table td[colspan]::before {
+    display: none;
+  }
+  .section-table tr:has(td[colspan]) {
+    grid-column: 1 / -1;
+  }
+  .section-row-actions {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .section-row-actions > button,
+  .section-more > summary {
+    width: 36px;
+    height: 36px;
+  }
+  .section-more > div {
+    right: auto;
+    left: 0;
+  }
+}
+@container sections (max-width: 520px) {
+  .sections-page .academic-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sections-page .academic-page-header > button {
+    width: 100%;
+  }
+  .section-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .section-metric {
+    min-height: 86px;
+    gap: 9px;
+    padding: 10px;
+  }
+  .section-metric-icon,
+  .section-metric-icon:is(.active, .inactive) {
+    width: 32px;
+    height: 32px;
+  }
+  .section-metric-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .section-metric-icon:is(.active, .inactive) svg {
+    width: 17px;
+    height: 17px;
+  }
+  .section-metric p {
+    font-size: 10px;
+  }
+  .section-metric strong {
+    font-size: 23px;
+  }
+  .section-metric small {
+    font-size: 10px;
+  }
+  .section-table tbody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .section-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-top: 20px;
+  }
+}
+@media (max-width: 760px) {
+  .section-drawer {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+  }
+  .section-drawer > header {
+    padding: 20px 16px;
+  }
+  .section-drawer-body {
+    padding: 0 16px 24px;
+  }
+  .section-drawer > footer {
+    padding: 16px 16px max(16px, env(safe-area-inset-bottom));
+  }
+  .section-drawer header button,
+  .section-drawer footer > button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (pointer: coarse) {
+  .section-row-actions > button,
+  .section-more > summary,
+  .section-pagination button {
+    width: 44px;
+    height: 44px;
+  }
+  .section-filters select,
+  .section-field :is(input, select) {
+    min-height: 44px;
+  }
+}

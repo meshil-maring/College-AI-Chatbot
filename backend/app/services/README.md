@@ -44,6 +44,12 @@ all writes use the atomic, audited `manage_academic_master_record` RPC.
 Attendance, results, academic packages, enrollment and teaching workflows remain
 retired. Chat continues to refuse private academic record requests.
 
+`academics/academic_structure.py` coordinates the additive workspace entities.
+It reuses exact scoped authorization and safe database-error translation, and
+delegates writes to `manage_academic_structure_record`. Database constraints and
+triggers enforce publication, immutable cohort assignments, active ancestry and
+deactivation guards. The service never fabricates enrolled student counts.
+
 Add new services to the appropriate feature package. The services root contains
 only this guide and its package marker. Historical phase reports and evidence
 snapshots may refer to the former flat module paths; use Git history to inspect

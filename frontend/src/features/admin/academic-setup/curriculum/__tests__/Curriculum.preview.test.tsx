@@ -1,0 +1,96 @@
+import '../../__tests__/AcademicSetup.support.ts'
+import { catalogue, structureCatalogue } from '../../__tests__/AcademicSetup.support.ts'
+import { populateStructure } from '../../__tests__/academicStructureFixtures.ts'
+import * as api from '../../../../../services/admin/academicStructure.ts'
+import AcademicWorkspace from '../../overview/AcademicWorkspace.tsx'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+beforeEach(populateStructure)
+function renderVersions() {
+  return render(<AcademicWorkspace page="curriculum" search="" onNavigate={vi.fn()} onClearSearch={vi.fn()} />)
+}
+describe('Persisted curriculum versions', () => {
+  it('creates a real draft instead of a disconnected preview', async () => {
+    renderVersions()
+    const trigger = screen.getByRole('button', { name: 'Add Curriculum' })
+    await waitFor(() => expect(trigger).toBeEnabled())
+    fireEvent.click(trigger)
+    const drawer = within(screen.getByRole('dialog', { name: 'Add Curriculum' }))
+    fireEvent.change(drawer.getByRole('combobox', { name: 'Program' }), { target: { value: 'program-1' } })
+    fireEvent.change(drawer.getByRole('combobox', { name: 'Academic Year' }), { target: { value: 'year-1' } })
+    fireEvent.change(drawer.getByRole('textbox', { name: 'Curriculum Name' }), { target: { value: 'CSE 2027' } })
+    fireEvent.change(drawer.getByRole('textbox', { name: 'Version' }), { target: { value: '2.0' } })
+    fireEvent.click(drawer.getByRole('button', { name: 'Create Curriculum' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(api.createStructureRecord).toHaveBeenCalledWith(
+      'token-1',
+      'curriculum_versions',
+      expect.objectContaining({
+        program_id: 'program-1',
+        academic_year_id: 'year-1',
+        name: 'CSE 2027',
+        version: '2.0',
+        total_semesters: 8,
+      }),
+    )
+    expect(vi.mocked(api.createStructureRecord).mock.calls[0][2]).not.toHaveProperty('status')
+  })
+  it('requires confirmation before publishing and freezes published metadata', async () => {
+    structureCatalogue.records.curriculum_versions![0].status = 'draft'
+    structureCatalogue.records.curriculum_versions![0].published_at = null
+    renderVersions()
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit CSE Curriculum' }))
+    const drawer = within(screen.getByRole('dialog', { name: 'Edit Curriculum' }))
+    fireEvent.change(drawer.getByRole('combobox', { name: 'Publication Status' }), { target: { value: 'published' } })
+    fireEvent.click(drawer.getByRole('button', { name: 'Save Changes' }))
+    expect(screen.getByRole('alertdialog', { name: 'Confirm status change' })).toBeInTheDocument()
+    expect(api.updateStructureRecord).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Change' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Edit CSE Curriculum' }))
+    expect(screen.getByRole('textbox', { name: 'Curriculum Name' })).toBeDisabled()
+    expect(api.updateStructureRecord).toHaveBeenCalledWith('token-1', 'curriculum_versions', 'version-1', {
+      status: 'published',
+    })
+  })
+  it('maps reusable subjects to program progression within a draft curriculum', async () => {
+    structureCatalogue.records.curriculum_versions![0].status = 'draft'
+    structureCatalogue.records.curriculum_subjects = []
+    renderVersions()
+    await screen.findByRole('button', { name: 'View CSE Curriculum' })
+    fireEvent.click(screen.getByRole('tab', { name: 'Subject Mapping' }))
+    const trigger = screen.getByRole('button', { name: 'Add Subject Mapping' })
+    await waitFor(() => expect(trigger).toBeEnabled())
+    fireEvent.click(trigger)
+    const drawer = within(screen.getByRole('dialog', { name: 'Add Subject Mapping' }))
+    fireEvent.change(drawer.getByRole('combobox', { name: 'Curriculum Version' }), { target: { value: 'version-1' } })
+    fireEvent.change(drawer.getByRole('combobox', { name: 'Program Semester' }), { target: { value: 'stage-1' } })
+    fireEvent.change(drawer.getByRole('combobox', { name: 'Subject', exact: true }), {
+      target: { value: catalogue.records.courses![0].course_id },
+    })
+    fireEvent.click(drawer.getByRole('button', { name: 'Create Subject Mapping' }))
+    await waitFor(() =>
+      expect(api.createStructureRecord).toHaveBeenCalledWith(
+        'token-1',
+        'curriculum_subjects',
+        expect.objectContaining({
+          curriculum_version_id: 'version-1',
+          program_semester_id: 'stage-1',
+          course_type: 'core',
+          is_required: true,
+        }),
+      ),
+    )
+  })
+  it('displays stored publication history and retains the existing mapping workflow', async () => {
+    renderVersions()
+    await screen.findByRole('button', { name: 'View CSE Curriculum' })
+    fireEvent.click(screen.getByRole('tab', { name: 'Version History' }))
+    expect(screen.getByRole('region', { name: 'Published curriculum history' })).toHaveTextContent(
+      'CSE Curriculum · v1.0 · Published',
+    )
+    fireEvent.click(screen.getByRole('tab', { name: 'Existing Program Mappings' }))
+    expect(await screen.findByRole('region', { name: 'Curriculum summary' })).toBeInTheDocument()
+  })
+})

@@ -59,6 +59,33 @@ owns accessible drawers, validation and checkpointed year/semester saves;
 It uses the existing academic-year and semester contracts and identity-scoped
 catalogue query. Dated semesters remain separate from proposed program stages.
 
+The Subjects page lives in `academic-setup/subjects/`, with local `forms/`,
+`styles/` and `__tests__/` folders. It manages reusable teaching courses through
+the existing API. Semester and type displays/filters use institution-scoped
+program-course assignments; subject saves retain the immutable department and
+nullable credits/hours without adding curriculum relationships.
+
+The Curriculum screen lives in `academic-setup/curriculum/`. Its `versioning/`
+workflow manages stored drafts, publication, mapping structure and history.
+Existing program-course mappings remain a separate tab, with dated-term groups
+in `detail/` and mapping drawers in `editor/`. Shared course-type labels live in
+`academic-setup/forms/academicCourseTypes.ts` and also serve Subjects.
+
+The Batches screen lives in `academic-setup/batches/`, with focused `editor/`,
+`styles/` and `__tests__/` folders. Its `cohorts` destination reads and writes
+stored admission cohorts through an adapter, retaining each batch's published
+curriculum assignment. Identity replacement clears drafts and guards late saves.
+
+The Sections screen lives in `academic-setup/sections/`, with local `editor/`,
+`styles/` and `__tests__/` folders. It reads and writes cohort-owned sections,
+selecting a program semester and a dated term. The existing offering-owned
+section catalogue remains separate. Student enrollment counts remain unavailable.
+
+`academic-setup/structure/` shares the structure catalogue, identity-safe writes,
+forms and drawers used by progression, curriculum and offering screens. Transport
+and contracts live in `services/admin/academicStructure.ts` and
+`types/academicStructure.ts`; the eight-entity service remains unchanged.
+
 `features/admin/academic-setup/` follows the owner-selected SQL export: departments,
 degree programs, academic years, dated semesters, courses, program-course links,
 course offerings and sections. Transport lives in `services/admin/academics.ts`

@@ -100,7 +100,7 @@ describe('administrator account workspace', () => {
     await userEvent.click(within(nav).getByRole('button', { name: 'Academic Setup', exact: true }))
     expect(screen.getByRole('heading', { name: 'Academic Setup', level: 1 })).toBeInTheDocument()
     expect(screen.getAllByRole('article')).toHaveLength(9)
-    expect(screen.getByRole('status')).toHaveTextContent('Design preview')
+    expect(screen.getByRole('status')).toHaveTextContent('does not have academic catalogue access')
     expect(screen.getByRole('button', { name: 'Add Department', exact: true })).toBeDisabled()
     expect(academicApi.getAcademicSetup).not.toHaveBeenCalled()
     expect(academicApi.createAcademicRecord).not.toHaveBeenCalled()

@@ -1,5 +1,7 @@
 import { beforeEach, vi } from 'vitest'
 import * as api from '../../../../services/admin/academics.ts'
+import * as structureApi from '../../../../services/admin/academicStructure.ts'
+import type { StructureCatalogue, StructureEntity, StructureRecordMap } from '../../../../types/academicStructure.ts'
 import type { AcademicCatalogue, AcademicYear, DegreeProgram, Department } from '../../../../types/academicSetup.ts'
 import { academicRecordId } from '../academicSetupForm.ts'
 
@@ -11,6 +13,7 @@ const auth = vi.hoisted(() => ({
 }))
 vi.mock('../../../auth/session/AuthProvider.tsx', () => ({ useAuth: () => auth }))
 vi.mock('../../../../services/admin/academics.ts')
+vi.mock('../../../../services/admin/academicStructure.ts')
 
 export const department: Department = {
   department_id: 'department-1',
@@ -43,6 +46,10 @@ export const year: AcademicYear = {
   is_active: true,
 }
 export let catalogue: AcademicCatalogue
+export let structureCatalogue: StructureCatalogue
+export function setStructureCatalogue(value: StructureCatalogue) {
+  structureCatalogue = value
+}
 export function setCatalogue(value: AcademicCatalogue) {
   catalogue = value
 }
@@ -61,6 +68,50 @@ beforeEach(() => {
     manageable: ['departments', 'programs', 'academic_years'],
   }
   vi.mocked(api.getAcademicSetup).mockImplementation(async () => structuredClone(catalogue))
+  structureCatalogue = {
+    institution_id: 'institution-1',
+    records: {
+      program_semesters: [],
+      curriculum_versions: [],
+      curriculum_subjects: [],
+      admission_cohorts: [],
+      academic_sections: [],
+      academic_offerings: [],
+    },
+    manageable: [
+      'program_semesters',
+      'curriculum_versions',
+      'curriculum_subjects',
+      'admission_cohorts',
+      'academic_sections',
+      'academic_offerings',
+    ],
+    activities: [],
+  }
+  vi.mocked(structureApi.getAcademicStructure).mockImplementation(async () => structuredClone(structureCatalogue))
+  vi.mocked(structureApi.createStructureRecord).mockImplementation(async (_token, entity, payload) => {
+    const record = {
+      ...payload,
+      [`${entity.slice(0, -1)}_id`]: `new-${entity}`,
+      institution_id: structureCatalogue.institution_id,
+      created_at: '2026-10-27T00:00:00Z',
+      updated_at: '2026-10-27T00:00:00Z',
+      ...(entity === 'curriculum_versions' ? { status: 'draft', published_at: null } : {}),
+      ...(entity === 'admission_cohorts' ? { is_active: true } : {}),
+    }
+    structureCatalogue.records[entity]?.push(record as never)
+    return record as never
+  })
+  vi.mocked(structureApi.updateStructureRecord).mockImplementation(
+    async (_token, entity: StructureEntity, id, payload) => {
+      const row = (structureCatalogue.records[entity] as StructureRecordMap[StructureEntity][] | undefined)?.find(
+        (item) => (item as unknown as Record<string, unknown>)[`${entity.slice(0, -1)}_id`] === id,
+      )
+      if (!row) throw new Error('Record not found')
+      Object.assign(row, payload)
+      return structuredClone(row) as never
+    },
+  )
   vi.mocked(api.createAcademicRecord).mockImplementation(async (_token, entity, payload) => {
     const primaryKey = {
       departments: 'department_id',

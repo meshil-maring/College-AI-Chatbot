@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Zap } from 'lucide-react'
 import type { AcademicCatalogue, AcademicEntity } from '../../../../types/academicSetup.ts'
+import type { StructureCatalogue } from '../../../../types/academicStructure.ts'
+import type { AcademicPage } from './academicOverviewModel.ts'
 import AcademicQuickLinks from './AcademicQuickLinks.tsx'
 
 export default function AcademicQuickActions({
   catalogue,
+  structure,
+  onNavigate,
   busy,
   onCreate,
 }: {
   catalogue?: AcademicCatalogue
+  structure?: StructureCatalogue
+  onNavigate?: (page: AcademicPage) => void
   busy: boolean
   onCreate: (entity: AcademicEntity) => void
 }) {
@@ -45,6 +51,11 @@ export default function AcademicQuickActions({
         <div className="academic-action-popover">
           <AcademicQuickLinks
             catalogue={catalogue}
+            structure={structure}
+            onNavigate={(page) => {
+              close()
+              onNavigate?.(page)
+            }}
             busy={busy}
             compact
             onCreate={(entity) => {

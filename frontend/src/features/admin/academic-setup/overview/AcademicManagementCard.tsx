@@ -1,16 +1,20 @@
 import { ArrowRight } from 'lucide-react'
 import type { AcademicCatalogue } from '../../../../types/academicSetup.ts'
+import type { StructureCatalogue } from '../../../../types/academicStructure.ts'
 import { getAcademicArea, type AcademicArea, type AcademicPage } from './academicOverviewModel.ts'
 import { overviewRecords } from './useAcademicOverview.ts'
 
 interface Props {
   area: AcademicArea
   catalogue?: AcademicCatalogue
+  structure?: StructureCatalogue
   onNavigate: (page: AcademicPage) => void
 }
 
-export default function AcademicManagementCard({ area, catalogue, onNavigate }: Props) {
-  const records = overviewRecords(catalogue, area.entity)
+export default function AcademicManagementCard({ area, catalogue, structure, onNavigate }: Props) {
+  const records = area.structureEntity
+    ? structure?.records[area.structureEntity]
+    : overviewRecords(catalogue, area.entity)
   const active = records?.filter((record) => record.is_active).length
   return (
     <article className="academic-management-card" aria-labelledby={`academic-card-${area.page}`}>

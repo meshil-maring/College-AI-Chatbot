@@ -1,0 +1,105 @@
+.curriculum-drawer fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.curriculum-drawer fieldset:disabled {
+  opacity: 0.65;
+}
+.curriculum-field {
+  margin-bottom: 14px;
+}
+.curriculum-field > label,
+.curriculum-status-options legend {
+  display: block;
+  margin: 0 0 6px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.curriculum-field > label > span,
+.curriculum-status-options legend > span {
+  color: #ff5159;
+}
+.curriculum-form :is(input:not([type='radio'], [type='checkbox']), select, textarea) {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #293947;
+  border-radius: 7px;
+  background: #101a22;
+  color: #f5f7fa;
+  font-size: 13px;
+}
+.curriculum-form textarea {
+  min-height: 68px;
+  resize: vertical;
+}
+.curriculum-form :is(input, textarea)::placeholder {
+  color: #9baabd;
+}
+.curriculum-form select:disabled {
+  opacity: 0.65;
+}
+.curriculum-form [aria-invalid='true'] {
+  border-color: #ff9292;
+}
+.curriculum-field-error,
+.curriculum-field-help {
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.curriculum-field-error {
+  color: #ff9292;
+}
+.curriculum-field-help {
+  color: #acb9c9;
+}
+.curriculum-form .curriculum-status-options {
+  display: grid;
+  gap: 14px;
+  margin-top: 4px;
+}
+.curriculum-status-options legend {
+  margin-bottom: 12px;
+}
+.curriculum-status-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  cursor: pointer;
+}
+.curriculum-status-options input {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin: 0;
+  border: 4px solid #1d2932;
+  border-radius: 50%;
+  background: #0c141b;
+}
+.curriculum-status-options input:checked {
+  border-color: #0c141b;
+  outline: 1px solid #b18c16;
+  outline-offset: -1px;
+  background: #ffca28;
+  box-shadow: inset 0 0 0 2px #0c141b;
+}
+.curriculum-status-options strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.curriculum-status-options small {
+  display: block;
+  margin-top: 3px;
+  color: #acb9c9;
+  font-size: 11px;
+  line-height: 1.5;
+}

@@ -8,7 +8,7 @@ remain in their owning modules.
 
 | Package | Repository modules |
 | --- | --- |
-| `academics/` | `academic_setup.py`: tenant-scoped parent joins, derived API context and the audited exported writer |
+| `academics/` | `academic_setup.py`: existing tenant-scoped joins/writer; `academic_structure.py`: tenant-filtered workspace records, audit activity and the additive writer |
 | `admin/` | `admin_academics.py` (student account identity and approvals), `admin_audit.py`, `admin_knowledge.py`, `admin_memberships.py` |
 | `ai/` | `ai_response.py`, `conversation.py`, `message.py`, `message_citation.py` |
 | `email/` | `email_outbox.py` |

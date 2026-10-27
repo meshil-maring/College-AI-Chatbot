@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
+import type { StructureEntity } from '../../../../types/academicStructure.ts'
 
 export type AcademicPage =
   | 'overview'
@@ -39,6 +40,7 @@ export interface AcademicArea {
   action: string
   note: string
   entity?: AcademicEntity
+  structureEntity?: StructureEntity
   children?: readonly AcademicPage[]
   statuses?: readonly string[]
 }
@@ -82,6 +84,7 @@ export const academicAreas: readonly AcademicArea[] = [
   },
   {
     page: 'program-semesters',
+    structureEntity: 'program_semesters',
     title: 'Program Semesters',
     icon: Layers3,
     description: 'Define progression stages within each program, separate from dated academic terms.',
@@ -99,15 +102,17 @@ export const academicAreas: readonly AcademicArea[] = [
   },
   {
     page: 'cohorts',
-    title: 'Admission Cohorts',
+    structureEntity: 'admission_cohorts',
+    title: 'Batches',
     icon: Users,
     description: 'Group students by admission intake and retain their assigned published curriculum.',
-    action: 'Manage Admission Cohorts',
+    action: 'Manage Batches',
     note: 'Published curriculum assignment retained.',
     statuses: ['Planned', 'Active', 'Closed', 'Cancelled'],
   },
   {
     page: 'sections',
+    structureEntity: 'academic_sections',
     title: 'Academic Sections',
     icon: Network,
     description: 'Organize a cohort within one program semester and one academic term.',
@@ -117,6 +122,7 @@ export const academicAreas: readonly AcademicArea[] = [
   },
   {
     page: 'offerings',
+    structureEntity: 'academic_offerings',
     title: 'Academic Offerings',
     icon: LibraryBig,
     description: 'Manage individual subject offerings within academic sections.',
@@ -147,6 +153,7 @@ const childAreas: readonly AcademicArea[] = [
   },
   {
     page: 'curriculum-versions',
+    structureEntity: 'curriculum_versions',
     title: 'Curriculum Versions',
     icon: FileStack,
     description: 'Prepare and publish a program’s curriculum structure.',
@@ -156,6 +163,7 @@ const childAreas: readonly AcademicArea[] = [
   },
   {
     page: 'curriculum-subjects',
+    structureEntity: 'curriculum_subjects',
     title: 'Curriculum Subjects',
     icon: ListTree,
     description: 'Manage subject mappings within a curriculum version.',
@@ -182,8 +190,8 @@ export const quickActions: readonly { page: AcademicPage; label: string }[] = [
   { page: 'programs', label: 'Add Program' },
   { page: 'years', label: 'Configure Academic Year' },
   { page: 'subjects', label: 'Add Subject' },
-  { page: 'curriculum-versions', label: 'Create Curriculum Version' },
-  { page: 'cohorts', label: 'Create Admission Cohort' },
-  { page: 'sections', label: 'Create Academic Section' },
-  { page: 'offerings', label: 'Create Academic Offering' },
+  { page: 'curriculum-versions', label: 'Manage Curriculum Versions' },
+  { page: 'cohorts', label: 'Manage Batches' },
+  { page: 'sections', label: 'Manage Sections' },
+  { page: 'offerings', label: 'Manage Offerings' },
 ]

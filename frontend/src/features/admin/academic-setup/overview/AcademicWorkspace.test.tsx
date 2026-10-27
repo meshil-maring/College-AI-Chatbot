@@ -1,5 +1,5 @@
 import '../__tests__/AcademicSetup.support.ts'
-import { auth, catalogue, department, setCatalogue } from '../__tests__/AcademicSetup.support.ts'
+import { auth, catalogue, department, setCatalogue, structureCatalogue } from '../__tests__/AcademicSetup.support.ts'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -41,18 +41,20 @@ describe('Academic Setup overview', () => {
       'Subjects',
       'Curriculum Versions',
       'Curriculum Subjects',
-      'Admission Cohorts',
+      'Batches',
       'Academic Sections',
       'Academic Offerings',
     ]) {
       expect(within(nav).getByRole('button', { name, exact: true })).toBeInTheDocument()
     }
     expect(screen.getByRole('heading', { name: 'Academic Setup', level: 1 })).toBeInTheDocument()
-    fireEvent.click(within(nav).getByRole('button', { name: 'Academic Sections', exact: true }))
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Academic Sections')
     expect(screen.getByText(/One section can contain multiple subject offerings/)).toBeInTheDocument()
     expect(screen.getByText(/one program semester and one academic term/)).toBeInTheDocument()
-    expect(await screen.findByText('This area is awaiting integration')).toBeInTheDocument()
+    fireEvent.click(within(nav).getByRole('button', { name: 'Academic Sections', exact: true }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sections')
+    expect(screen.getByRole('region', { name: 'Section records' })).toBeInTheDocument()
+    fireEvent.click(within(nav).getByRole('button', { name: 'Academic Offerings', exact: true }))
+    expect(await screen.findByRole('heading', { name: 'Academic Offerings', level: 1 })).toBeInTheDocument()
     expect(api.createAcademicRecord).not.toHaveBeenCalled()
   })
 
@@ -92,7 +94,7 @@ describe('Academic Setup overview', () => {
   it('opens an authorized quick action in the existing form without creating anything', async () => {
     render(<Workspace />)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add Program', exact: true })).toBeEnabled())
-    expect(screen.getByRole('button', { name: /Create Academic Section/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Manage Sections', exact: true })).toBeEnabled()
     fireEvent.click(screen.getByRole('button', { name: 'Add Program', exact: true }))
     expect(await screen.findByRole('form', { name: 'New degree program' })).toBeInTheDocument()
     expect(api.createAcademicRecord).not.toHaveBeenCalled()
@@ -100,13 +102,14 @@ describe('Academic Setup overview', () => {
 
   it('hides existing write actions when server grants are read-only', async () => {
     catalogue.manageable = []
+    structureCatalogue.manageable = []
     render(<Workspace />)
     await waitFor(() =>
       expect(screen.getByRole('region', { name: 'Academic summary' })).toHaveAttribute('aria-busy', 'false'),
     )
     expect(screen.queryByRole('button', { name: 'Add Department', exact: true })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Add Program', exact: true })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Create Curriculum Version/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Manage Curriculum Versions', exact: true })).toBeDisabled()
   })
   it('mounts quick actions only while expanded and closes them with Escape', async () => {
     render(<Workspace />)
@@ -162,14 +165,14 @@ describe('Academic Setup overview', () => {
     ).toHaveTextContent('0Active departments')
   })
 
-  it('rejects mismatched top-level tenant data and labels all activity as illustrative', async () => {
+  it('rejects mismatched tenant data and replaces illustrative activity with saved events', async () => {
     catalogue.institution_id = 'foreign'
     render(<Workspace />)
     expect(await screen.findByRole('alert')).toHaveTextContent('unavailable for this institution')
     expect(screen.getByRole('button', { name: 'Add Department', exact: true })).toBeDisabled()
-    expect(screen.getByText(/Illustrative examples/)).toBeInTheDocument()
+    expect(screen.getByText('Recent saved changes in readable academic areas.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'View all' }))
-    expect(screen.getByText('Subject offering created')).toBeInTheDocument()
+    expect(screen.getByText('No recent academic changes.')).toBeInTheDocument()
   })
   it.each([[], ['profile.own.read'], ['departments.manage']])(
     'renders a preview without catalogue requests for grants %j',

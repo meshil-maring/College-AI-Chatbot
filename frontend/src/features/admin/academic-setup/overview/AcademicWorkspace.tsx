@@ -1,16 +1,19 @@
 import { useState } from 'react'
-import { ChevronRight, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { useAuth } from '../../../auth/session/AuthProvider.tsx'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
 import AcademicSetup from '../AcademicSetup.tsx'
-import AcademicOverview from './AcademicOverview.tsx'
-import AcademicAreaView from './AcademicAreaView.tsx'
-import AcademicQuickActions from './AcademicQuickActions.tsx'
+import AcademicOverviewSession from './AcademicOverviewSession.tsx'
 import DepartmentsPage from '../departments/DepartmentsPage.tsx'
 import ProgramsPage from '../programs/ProgramsPage.tsx'
+import SubjectsPage from '../subjects/SubjectsPage.tsx'
+import CurriculumPage from '../curriculum/CurriculumPage.tsx'
+import BatchesPage from '../batches/BatchesPage.tsx'
+import SectionsPage from '../sections/SectionsPage.tsx'
+import StructureRecordsPage from '../structure/StructureRecordsPage.tsx'
 import AcademicCalendarPage from '../calendar/AcademicCalendarPage.tsx'
-import { getAcademicArea, type AcademicPage } from './academicOverviewModel.ts'
-import { hasAcademicCatalogueReadAccess, useAcademicOverview } from './useAcademicOverview.ts'
+import { type AcademicPage } from './academicOverviewModel.ts'
+import { hasAcademicCatalogueReadAccess } from './useAcademicOverview.ts'
 import '../styles/overview.css'
 
 interface Props {
@@ -44,9 +47,46 @@ function AcademicWorkspaceSession(
   function openRecords(entity?: AcademicEntity, create = false) {
     setRequest({ entity, create })
     props.onNavigate(
-      entity === 'departments' || entity === 'programs' ? entity : entity === 'academic_years' ? 'years' : 'records',
+      entity === 'departments' || entity === 'programs'
+        ? entity
+        : entity === 'courses'
+          ? 'subjects'
+          : entity === 'academic_years'
+            ? 'years'
+            : 'records',
     )
   }
+  const structureContext = {
+    accessToken: props.accessToken,
+    identity: props.identity,
+    institutionId: props.institutionId,
+    canReadCatalogues: props.canReadCatalogues,
+  }
+  if (props.page === 'cohorts')
+    return <BatchesPage {...structureContext} onOverview={() => props.onNavigate('overview')} />
+  if (props.page === 'sections')
+    return <SectionsPage {...structureContext} onOverview={() => props.onNavigate('overview')} />
+  if (props.page === 'curriculum' || props.page === 'curriculum-versions' || props.page === 'curriculum-subjects')
+    return (
+      <CurriculumPage
+        key={props.page}
+        accessToken={props.accessToken}
+        identity={props.identity}
+        institutionId={props.institutionId}
+        canReadCatalogues={props.canReadCatalogues}
+        initialTab={props.page === 'curriculum-subjects' ? 'mapping' : 'list'}
+        onOverview={() => props.onNavigate('overview')}
+      />
+    )
+  if (props.page === 'program-semesters' || props.page === 'offerings')
+    return (
+      <StructureRecordsPage
+        key={props.page}
+        context={structureContext}
+        entity={props.page === 'program-semesters' ? 'program_semesters' : 'academic_offerings'}
+        onOverview={() => props.onNavigate('overview')}
+      />
+    )
   if (props.page === 'calendar' || props.page === 'years' || props.page === 'terms')
     return (
       <AcademicCalendarPage
@@ -61,15 +101,16 @@ function AcademicWorkspaceSession(
         onOverview={() => props.onNavigate('overview')}
       />
     )
-  if (props.page === 'departments' || props.page === 'programs') {
-    const Page = props.page === 'departments' ? DepartmentsPage : ProgramsPage
+  if (props.page === 'departments' || props.page === 'programs' || props.page === 'subjects') {
+    const Page =
+      props.page === 'departments' ? DepartmentsPage : props.page === 'programs' ? ProgramsPage : SubjectsPage
     return (
       <Page
         accessToken={props.accessToken}
         identity={props.identity}
         institutionId={props.institutionId}
         canReadCatalogues={props.canReadCatalogues}
-        createInitially={request.entity === props.page && request.create}
+        createInitially={request.entity === (props.page === 'subjects' ? 'courses' : props.page) && request.create}
         onCreateHandled={() => setRequest({ create: false })}
         onOverview={() => props.onNavigate('overview')}
       />
@@ -94,103 +135,5 @@ function AcademicWorkspaceSession(
       page={props.page === 'records' ? 'overview' : props.page}
       onOpenRecords={openRecords}
     />
-  )
-}
-
-function AcademicOverviewSession({
-  page,
-  search,
-  onNavigate,
-  onClearSearch,
-  accessToken,
-  identity,
-  institutionId,
-  canReadCatalogues,
-  onOpenRecords,
-}: Props & {
-  accessToken: string
-  identity: string
-  institutionId: string
-  canReadCatalogues: boolean
-  onOpenRecords: (entity?: AcademicEntity, create?: boolean) => void
-}) {
-  const { query, catalogue, error, loading } = useAcademicOverview(
-    accessToken,
-    identity,
-    institutionId,
-    canReadCatalogues,
-  )
-  const busy = query.isFetching || Boolean(error) || !catalogue
-  const title = page === 'overview' ? 'Academic Setup' : (getAcademicArea(page)?.title ?? 'Academic Setup')
-  return (
-    <div className="academic-workspace">
-      <nav className="academic-breadcrumbs" aria-label="Breadcrumb">
-        <span>Home</span>
-        <ChevronRight aria-hidden="true" />
-        <button type="button" onClick={() => onNavigate('overview')}>
-          Academic Setup
-        </button>
-        <ChevronRight aria-hidden="true" />
-        <span aria-current="page">{page === 'overview' ? 'Overview' : title}</span>
-      </nav>
-      <header className="academic-page-header">
-        <div>
-          <h1>{title}</h1>
-          <p>Manage your institution’s academic structure, programs, curricula, and calendar.</p>
-        </div>
-        <AcademicQuickActions
-          key={page}
-          catalogue={catalogue}
-          busy={busy}
-          onCreate={(entity) => onOpenRecords(entity, true)}
-        />
-      </header>
-      <p className="academic-information" role={canReadCatalogues ? undefined : 'status'}>
-        <Info aria-hidden="true" />
-        <span>
-          {canReadCatalogues
-            ? 'New academic areas are design previews. Counts use available catalogue data; activity examples are samples.'
-            : 'Design preview · Your account does not have academic catalogue access. Counts and record actions are unavailable.'}
-        </span>
-      </p>
-      {loading && (
-        <p className="sr-only" role="status">
-          Loading Academic Setup…
-        </p>
-      )}
-      {error && (
-        <div className="academic-request-error" role="alert">
-          <p>{error}</p>
-          <button
-            type="button"
-            className="academic-secondary-button"
-            disabled={query.isFetching}
-            onClick={() => void query.refetch()}
-          >
-            Retry
-          </button>
-        </div>
-      )}
-      {page === 'overview' ? (
-        <AcademicOverview
-          catalogue={catalogue}
-          busy={busy}
-          loading={loading}
-          search={search}
-          onClearSearch={onClearSearch}
-          onNavigate={onNavigate}
-          onCreate={(entity) => onOpenRecords(entity, true)}
-          onOpenRecords={onOpenRecords}
-        />
-      ) : (
-        <AcademicAreaView
-          page={page}
-          catalogue={catalogue}
-          busy={busy}
-          onNavigate={onNavigate}
-          onOpenRecords={onOpenRecords}
-        />
-      )}
-    </div>
   )
 }

@@ -1,159 +1,117 @@
-# Academic Setup overview
+# Academic Setup database integration
 
-The administrator sidebar opens Academic Setup on the responsive black-and-yellow
-overview. The feature retains the existing authenticated shell, account navigation,
-server grants and catalogue workflows. It does not change backend contracts or
-database relationships.
+All eleven Academic Setup entities use authenticated institution-scoped backend
+APIs. The black-and-yellow layouts retain responsive tables/cards, filters,
+pagination, accessible modal drawers and pinned actions. No sample records are
+inserted or substituted when the database is empty or unavailable.
 
-Academic Setup remains visible to authenticated administrators even when their
-account has no academic catalogue grants. In that case it opens the design
-preview without making catalogue requests; counts remain unavailable and record
-actions are disabled. Live catalogue reads require an existing academic read
-grant, and writes still depend on server-advertised manageable access.
+## Storage and API ownership
 
-## Entity mapping
+| Screen              | Storage               | Backend API                 |
+| ------------------- | --------------------- | --------------------------- |
+| Departments         | `departments`         | `/admin/academic-setup`     |
+| Programs            | `programs`            | `/admin/academic-setup`     |
+| Academic Years      | `academic_years`      | `/admin/academic-setup`     |
+| Academic Terms      | dated `semesters`     | `/admin/academic-setup`     |
+| Subjects            | reusable `courses`    | `/admin/academic-setup`     |
+| Program Semesters   | `program_semesters`   | `/admin/academic-structure` |
+| Curriculum Versions | `curriculum_versions` | `/admin/academic-structure` |
+| Curriculum Subjects | `curriculum_subjects` | `/admin/academic-structure` |
+| Batches             | `admission_cohorts`   | `/admin/academic-structure` |
+| Academic Sections   | `academic_sections`   | `/admin/academic-structure` |
+| Academic Offerings  | `academic_offerings`  | `/admin/academic-structure` |
 
-| Overview management area | Approved entities                        |
-| ------------------------ | ---------------------------------------- |
-| Departments              | Departments                              |
-| Programs                 | Programs                                 |
-| Academic Calendar        | Academic Years, Academic Terms           |
-| Subjects                 | Subjects                                 |
-| Program Semesters        | Program Semesters                        |
-| Curriculum               | Curriculum Versions, Curriculum Subjects |
-| Admission Cohorts        | Admission Cohorts                        |
-| Academic Sections        | Academic Sections                        |
-| Academic Offerings       | Academic Offerings                       |
+Each API exposes a readable catalogue plus server-advertised manageable entities,
+and POST/PATCH record operations. Public URLs include the existing `/api/v1`
+prefix. Actor and institution come from verified server authorization.
 
-The desktop grid uses four, three and two cards. Narrower desktop/tablet widths
-reflow cards to two columns; mobile uses one. Summary cards retain their icons.
-Desktop navigation can collapse; mobile navigation opens above a dismissible scrim.
+The existing eight-entity API and offering-owned `sections` retain their
+contracts and data. Existing program-course mappings remain available through
+Curriculum's Existing Program Mappings tab and the existing catalogue workflow.
+They are not silently converted into curriculum versions or class sections.
 
-Academic Terms describe dated teaching periods. Program Semesters describe program
-progression. A proposed Academic Section belongs to one cohort, one program semester
-and one academic term, and may contain multiple Academic Offerings. Cohorts retain
-their assigned published curriculum. These descriptions do not modify existing data.
+## Building the academic structure
 
-## Existing data and actions
+1. Create a department, degree program, academic year and dated teaching terms.
+2. Create reusable subjects and the program's progression semesters.
+3. Create a draft curriculum version for the program and academic year.
+4. Map subjects to that version's program semesters, retaining type and required
+   status. Program semesters must belong to the same program and fit the version.
+5. Publish the curriculum after adding at least one active mapping. Publication
+   records its timestamp and freezes metadata and subject mappings.
+6. Create a batch with a published curriculum for its program. Program,
+   curriculum, intake academic year and year boundaries remain immutable.
+7. Create a section for the batch, a program semester and a dated teaching term.
+   These relationships and its code remain immutable after creation.
+8. Create academic offerings by selecting subjects from the section's assigned
+   curriculum and progression semester.
 
-Departments, programs, academic years and teaching courses have compatible summary
-concepts. Subject summaries read the existing teaching-course catalogue. Counts use
-only records matching the response institution and authenticated institution.
-Missing catalogues display an em dash; confirmed empty catalogues display zero.
+A cohort retains its curriculum even after that version is archived. Published
+versions cannot revert to draft, and archived versions cannot be republished.
+Archival does not reassign any historical cohort. Subject catalogue metadata is
+reusable; publication freezes mapping structure rather than copying subjects.
 
-Search covers the approved academic areas and readable names/codes from these four
-compatible catalogues. Search results open the existing catalogue for the record.
-Unreadable or foreign-institution records never appear in results.
+Academic Terms describe dates within an academic year. Program Semesters describe
+progression within a degree. They remain separate selectors and relationships.
+Subjects display assignments from both existing dated-term mappings and versioned
+program-semester mappings, with labels that distinguish their meanings.
 
-The four compatible creation shortcuts open the existing forms only when the
-response advertises readable and manageable access and required parents exist.
-The form independently rechecks its own catalogue response. It sends no mutation
-until the user submits the existing Save action. Activation/deactivation requires
-confirmation, with an additional explanation when clearing a current designation.
+## Access, errors and lifecycle
 
-## Departments management
+Every operation requires exact institution-scoped administrator authority and
+active institution/organization ancestry. Existing grants are reused:
+`departments.read/manage` covers programs, progression semesters and batches;
+`courses.read/manage` covers subjects, curricula and class delivery. Years and
+dated terms retain their own grants. Browser table access and direct service
+writes are denied; database writes use audited security-definer RPCs.
 
-The Departments destination now opens its own dark-and-yellow management page in
-`academic-setup/departments/`. It uses the existing department catalogue and
-create/update endpoints; it does not introduce a replacement academic contract.
-The overview's Add Department shortcut opens this page's drawer directly. Other
-catalogues and the eleven-entity navigation remain unchanged.
+Catalogue records and parent choices are tenant-verified. Missing catalogues show
+Unavailable, confirmed empty catalogues show zero, and denied reads expose no
+records. Failed refreshes mark retained data stale and block changes until Retry
+succeeds. Identity replacement remounts screens, clears drafts and prevents late
+save callbacks from changing or refetching replacement-identity state.
 
-Institution-scoped totals show total, active and inactive departments. The table
-supports name/code search, status filtering, name/code sorting and five-record
-pagination. Associated program counts and details use only the readable,
-institution-scoped program catalogue; unavailable program data is never zero.
-Read-only and disconnected states disable mutations, and denied reads expose no
-records. Failed refreshes label retained records as stale and disable changes.
+Forms keep drafts after conflicts, validation failures and network errors.
+Repeated submission is blocked while saving. Changed drafts require discard
+confirmation; existing status changes and publication require explicit
+confirmation. Database uniqueness, active-parent checks, composite tenant foreign
+keys, immutable assignments and deactivation guards remain authoritative.
+All academic writes share the same tenant advisory lock and audit atomically.
 
-Add, View and Edit use a keyboard-accessible modal drawer with mobile record
-cards, a full-screen mobile drawer and pinned footer actions. Forms preserve
-entries after errors, require an explicit creation status and use the existing
-API's text limits (name 160, code 32, description 2000). Codes are trimmed without
-inventing case or syntax rules; duplicate conflicts remain server-authoritative.
-Discarding edits and changing an existing status require confirmation. There is
-no deletion action, Campus field, Head of Department relationship or new grant.
-Pending mutations cannot update a replacement identity's UI or trigger its reads.
+Maximum capacity and expected intake remain separate from enrollment. No student
+enrollment source is connected in this task, so enrolled-student totals display
+Unavailable rather than invented zeros or old sample counts. Attendance,
+results, teaching assignments and program-outcome authoring remain separate work.
 
-The existing service assigns sections to offerings. This differs from the proposed
-section model, so existing sections and offerings are not relabeled or silently
-mapped to the proposed Academic Sections and Academic Offerings.
+## Overview and implementation
 
-## Programs management
+The overview's management cards read available catalogue counts. Quick links
+navigate to manageable structure areas; foundation creation shortcuts open their
+existing drawers. Recent activities come from tenant-filtered successful academic
+audit entries and expose no actor or unrelated administrative audit details.
 
-The Programs destination opens the dedicated `academic-setup/programs/` page.
-It follows the supplied dark-and-yellow design with four summary cards, combined
-name/code, department, degree-type and status filters, sortable table columns and
-eight-record pagination. Narrow content widths use record cards. Add, View and
-Edit share a modal drawer with pinned actions and a full-screen mobile layout.
-The overview's Add Program shortcut opens this drawer directly.
+Transport lives in `services/admin/academics.ts` and `academicStructure.ts`;
+contracts live in `types/academicSetup.ts` and `academicStructure.ts`.
+`academic-setup/structure/` owns the shared identity-scoped structure query,
+mutation guard, declarative controls and record drawers used by real consumers.
+Batches and Sections retain their focused feature hooks, adapters, components,
+editors, styles and adjacent regression tests. Curriculum's versioned workflow
+lives in `curriculum/versioning/`; existing mapping UI remains separate.
 
-Records, department choices and totals use only readable institution-scoped
-catalogues. Missing department data displays Unavailable. Creation requires an
-active readable department, and mutations require the existing server-advertised
-program access. Denied reads hide records; failed refreshes label retained data
-as stale and disable writes. Identity replacement clears the screen and prevents
-late mutation results from triggering replacement-identity reads.
+Database sources live in `supabase/migration_sources/academic_workspace/`.
+Generate the forward migration with
+`python scripts/maintenance/migrations/build_academic_workspace.py`; add
+`--check` to verify parity. Historical migrations and archived data are retained.
 
-Forms use the existing program endpoints and field limits (name/degree type 160,
-code 32, description 2000), retain custom existing degree types and fractional
-durations, and preserve nullable credits. New programs default to Active as in
-the reference. A saved program's department remains immutable. Status changes
-and discarding unsaved entries require confirmation; duplicate and request
-errors retain the draft. Both department and program drawers use the shared
-keyboard and focus lifecycle in `academic-setup/dialogs/`.
+The confirmed project received prerequisites 20261023010000, 20261024000000,
+20261024010000 and 20261026000000, followed by the additive 20261027000000
+integration on 2026-10-27. Live catalogue reads, table security and migration
+history were verified. Review each target's actual history before deployment.
+Unrelated unapplied historical approval migrations must not be included merely
+to make a broad migration push succeed. Local deployment evidence and rollback
+rehearsal results belong in `logs/backend/`; frontend checks and browser evidence
+belong in `logs/frontend/`.
 
-## Academic Calendar management
-
-Academic Calendar and its Years/Terms destinations open `academic-setup/calendar/`.
-The page follows the supplied dark-and-yellow reference with four summary cards,
-expandable year records and nested dated semesters, search/status/sort controls,
-pagination and responsive record cards. Its four tabs expose Academic Years,
-Semesters, Important Dates and Overview Timeline. Dates come from existing year
-and semester boundaries; timeline bars open semester details. Dated semesters
-retain their existing meaning and do not stand in for proposed program stages.
-
-Add/View/Edit use the shared accessible modal lifecycle with pinned actions and
-a full-screen mobile drawer. The overview's Configure Academic Year shortcut
-opens the year drawer. Creation supports two, three or custom initial semesters
-when both catalogues are readable and the server advertises both management
-capabilities. Initial dates divide the selected year and remain editable. Year
-descriptions and independent event records have no existing API fields and are
-not offered as editable data.
-
-Writes retain existing text limits, date bounds, active/current flags and the
-immutable semester parent. Status/current changes and discarding unsaved entries
-require confirmation. Multi-request creation checkpoints each saved record;
-after partial failure, the drawer locks saved values and retries only remaining
-semesters. Already saved records remain if the draft is discarded. Unknown
-network outcomes still require the server's existing conflict handling.
-
-Counts and records use tenant-verified catalogues. Current badges and current
-summary counts use server flags. Display statuses otherwise derive from dates
-and active flags. Denied reads hide data; failed refreshes mark retained data
-stale and block writes until Retry succeeds. Identity replacement discards UI
-state and stops further requests in a pending multi-request save.
-
-## Integration previews and states
-
-New areas expose descriptions, distinct child destinations and relevant proposed
-status labels. Their records and mutation controls await separate integration.
-Proposed creation shortcuts are disabled and marked Not connected; they do not
-invent permission grants. The activities panel is explicitly illustrative.
-
-Loading preserves the four-card summary layout. Failed requests provide Retry and
-block creation shortcuts. Search has a distinct no-results state and Clear search.
-Existing forms retain required-field/date validation and server error feedback.
-Inactive entities remain visible in existing records. Draft/Published apply only
-to curriculum versions; other proposed lifecycle states are labeled as proposals.
-No publish or historical curriculum reassignment action is connected.
-
-Queries and local record requests are scoped to the authenticated identity. Token,
-tenant or permission replacement remounts the feature and discards pending UI state.
-
-## Remaining integration decisions
-
-- Approved contracts and grants for the eleven-entity model.
-- Supported lifecycle states and transitions per entity.
-- Real recent activity feed and cross-entity search for the new areas.
-- A separate authorized workflow for exceptional historical curriculum changes.
+From `backend/`, `python scripts/validation/verify_academic_workspace.py` runs a
+read-only catalogue check using a database-resolved administrator scope. It
+prints counts and capabilities without exposing identities or record contents.

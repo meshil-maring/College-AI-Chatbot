@@ -60,7 +60,7 @@ all four layers identical.
 
 | Feature | Owns |
 | --- | --- |
-| `academics` | Academic Setup: departments, programs, years, dated semesters, courses, program-course links, offerings and sections |
+| `academics` | Academic Setup foundations, dated terms, subjects, legacy mappings, versioned curricula, program progression, admission cohorts, sections and offerings |
 | `admin` | Administrative workflows, dashboard and knowledge management |
 | `ai` | Chat, conversations, generation and privacy safeguards |
 | `auth` | Authentication, account registration, sessions and access policy services |
@@ -85,6 +85,15 @@ Descendant tenants derive from parent relationships, with server-owned instituti
 context added to API records. Attendance, results, enrollment, teaching workflows
 and academic packages remain outside this implementation. Earlier setup tables
 are preserved privately by the [forward migration](../supabase/migration_sources/academic_export/README.md).
+
+The additive [workspace migration](../supabase/migration_sources/academic_workspace/README.md)
+connects program semesters, curriculum versions/subjects, admission cohorts,
+academic sections and academic offerings through `academic_structure.py` modules
+in the four academic layers. It preserves all export-aligned tables and APIs.
+Cohorts retain their published curriculum; sections reference a cohort, program
+semester and dated term. Subject offerings must match that assignment. All
+writes use exact institution-admin grants, the existing tenant advisory lock and
+atomic auditing. Enrollment counts and teaching workflows remain separate work.
 
 ## Naming and module boundaries
 

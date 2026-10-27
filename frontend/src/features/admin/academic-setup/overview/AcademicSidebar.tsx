@@ -43,7 +43,7 @@ export default function AcademicSidebar({ page, onNavigate }: Props) {
       {sidebarPages
         .map((page) => getAcademicArea(page)!)
         .map((area) =>
-          area.page === 'calendar' ? (
+          area.page === 'calendar' || area.page === 'curriculum' ? (
             <div key={area.page} className="academic-nav-group">
               {item(area.page)}
               {area.children?.map((child) => item(child, true))}

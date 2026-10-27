@@ -1,0 +1,194 @@
+@media (min-width: 1440px) {
+  .batches-page.has-drawer {
+    padding-right: 358px;
+  }
+  .batch-drawer::backdrop {
+    background: transparent;
+  }
+}
+@container batches (max-width: 1050px) {
+  .batch-filters {
+    gap: 10px;
+    grid-template-columns: minmax(190px, 2fr) minmax(115px, 1fr) minmax(140px, 1.1fr) minmax(100px, 0.9fr) minmax(
+        115px,
+        1fr
+      );
+  }
+  .batch-metric {
+    gap: 12px;
+    padding: 12px;
+  }
+  .batch-metric-icon {
+    width: 48px;
+    height: 48px;
+  }
+  .batch-metric-icon svg {
+    width: 27px;
+    height: 27px;
+  }
+  .batch-identity {
+    gap: 10px;
+  }
+  .batch-table :is(th, td) {
+    padding-inline: 8px;
+  }
+  .batch-row-actions {
+    gap: 5px;
+  }
+}
+@container batches (max-width: 840px) {
+  .batch-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .batch-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .batch-search {
+    grid-column: 1 / -1;
+  }
+  .batch-table,
+  .batch-table tbody {
+    display: block;
+  }
+  .batch-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .batch-table tbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 12px;
+  }
+  .batch-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #1c2832;
+    border-radius: 7px;
+  }
+  .batch-table td {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: 0;
+  }
+  .batch-table td:first-child,
+  .batch-table td:last-child,
+  .batch-table td[colspan] {
+    grid-column: 1 / -1;
+  }
+  .batch-table td::before {
+    display: block;
+    margin-bottom: 5px;
+    color: #aebccd;
+    content: attr(data-label);
+    font-size: 10px;
+  }
+  .batch-table td:first-child::before,
+  .batch-table td:last-child::before,
+  .batch-table td[colspan]::before {
+    display: none;
+  }
+  .batch-table tr:has(td[colspan]) {
+    grid-column: 1 / -1;
+  }
+  .batch-row-actions {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .batch-row-actions > button,
+  .batch-more > summary {
+    width: 36px;
+    height: 36px;
+  }
+  .batch-more > div {
+    right: auto;
+    left: 0;
+  }
+}
+@container batches (max-width: 520px) {
+  .batches-page .academic-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .batches-page .academic-page-header > button {
+    width: 100%;
+  }
+  .batch-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .batch-metric {
+    min-height: 86px;
+    gap: 9px;
+    padding: 10px;
+  }
+  .batch-metric-icon,
+  .batch-metric-icon:is(.active, .inactive) {
+    width: 32px;
+    height: 32px;
+  }
+  .batch-metric-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .batch-metric-icon:is(.active, .inactive) svg {
+    width: 17px;
+    height: 17px;
+  }
+  .batch-metric p {
+    font-size: 10px;
+  }
+  .batch-metric strong {
+    font-size: 23px;
+  }
+  .batch-metric small {
+    font-size: 10px;
+  }
+  .batch-table tbody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .batch-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-top: 20px;
+  }
+}
+@media (max-width: 760px) {
+  .batch-drawer {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+  }
+  .batch-drawer > header {
+    padding: 20px 16px;
+  }
+  .batch-drawer-body {
+    padding: 0 16px 24px;
+  }
+  .batch-drawer > footer {
+    padding: 16px 16px max(16px, env(safe-area-inset-bottom));
+  }
+  .batch-drawer header button,
+  .batch-drawer footer > button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (pointer: coarse) {
+  .batch-row-actions > button,
+  .batch-more > summary,
+  .batch-pagination button {
+    width: 44px;
+    height: 44px;
+  }
+  .batch-filters select,
+  .batch-field :is(input, select) {
+    min-height: 44px;
+  }
+}

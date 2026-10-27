@@ -1,0 +1,99 @@
+.batch-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.batch-field {
+  min-width: 0;
+}
+.batch-field > label,
+.batch-status-options legend {
+  display: block;
+  margin-bottom: 6px;
+  color: #f5f7fa;
+  font-size: 12px;
+  font-weight: 500;
+}
+.batch-field label > span,
+.batch-status-options legend > span {
+  color: #ff5252;
+}
+.batch-field :is(input, select, textarea) {
+  display: block;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid #2a3a47;
+  border-radius: 6px;
+  background: linear-gradient(110deg, #111b23, #0e171d);
+  color: #f4f6fa;
+  font-size: 12px;
+}
+.batch-field :is(input, textarea)::placeholder {
+  color: #9eacbd;
+  opacity: 1;
+}
+.batch-field select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.batch-field textarea {
+  resize: vertical;
+  min-height: 60px;
+  max-height: 220px;
+}
+.batch-field p {
+  margin: 4px 0 0;
+  color: #aebccd;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.batch-year-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.batch-status-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.batch-status-options legend {
+  margin-bottom: 10px;
+}
+.batch-status-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+.batch-status-options input {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border: 3px solid #202a32;
+  border-radius: 50%;
+  background: #0a1117;
+}
+.batch-status-options input:checked {
+  border: 4px solid #0b141a;
+  outline: 1px solid #ffca28;
+  background: #ffca28;
+}
+.batch-status-options label strong {
+  display: block;
+  color: #f5f7fa;
+  font-size: 12px;
+  font-weight: 400;
+}
+.batch-status-options label small {
+  display: block;
+  margin-top: 2px;
+  color: #aebccd;
+  font-size: 11px;
+}
