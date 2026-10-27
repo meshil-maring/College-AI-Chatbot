@@ -85,6 +85,9 @@ section catalogue remains separate. Student enrollment counts remain unavailable
 forms and drawers used by progression, curriculum and offering screens. Transport
 and contracts live in `services/admin/academicStructure.ts` and
 `types/academicStructure.ts`; the eight-entity service remains unchanged.
+Academic workspace identity includes the authenticated session generation, user,
+institution and permissions. Same-session token renewal preserves drafts;
+replacement identity or grants discard them.
 
 `features/admin/academic-setup/` follows the owner-selected SQL export: departments,
 degree programs, academic years, dated semesters, courses, program-course links,

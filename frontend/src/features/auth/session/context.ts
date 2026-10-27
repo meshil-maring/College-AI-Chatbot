@@ -11,6 +11,8 @@ export interface AuthContextValue {
    */
   readonly role: CurrentUser['role']
   readonly accessToken: string | null
+  /** Stable through token renewal; changes when a login replaces the session. */
+  readonly sessionGeneration?: number
   /** User-safe error message from the last failed operation (never secrets). */
   readonly error: string | null
   /**

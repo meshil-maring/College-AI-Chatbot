@@ -21,17 +21,19 @@ from app.main import app
 from app.schemas.admin.admin_dashboard import DashboardRecentNotice
 
 from tests.dashboard_contract import build_dashboard
+from tests.auth_fixtures.principals import institution_grant, resolved_principal
 
 client = TestClient(app, raise_server_exceptions=False)
 
-ADMIN_USER = {
+ADMIN_USER = resolved_principal({
     "user_id": "70000000-0000-0000-0000-000000000001",
     "auth_user_id": "70000000-0000-0000-0000-0000000000aa",
     "email": "admin@example.com",
     "roles": ["admin"],
     "status": "active",
     "institution_id": "30000000-0000-0000-0000-000000000001",
-}
+    "role_assignments": [institution_grant("admin", "30000000-0000-0000-0000-000000000001")],
+})
 
 STUDENT_USER = {
     "user_id": "70000000-0000-0000-0000-000000000002",
@@ -59,6 +61,11 @@ def admin_auth():
     app.dependency_overrides[_ADMIN] = lambda: ADMIN_USER
     app.dependency_overrides[_APPROVAL] = lambda: ADMIN_USER
     with (
+        patch("app.services.auth.authorization.get_admin_client", return_value=MagicMock()),
+        patch(
+            "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
+            return_value={"institution_id": INSTITUTION_ID, "status": "active", "is_active": True},
+        ),
         patch(
             "app.repositories.admin.admin_knowledge.get_knowledge_source_detail",
             return_value={

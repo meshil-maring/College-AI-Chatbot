@@ -22,6 +22,7 @@ from app.core.security import (
 )
 
 from app.main import app
+from tests.auth_fixtures.principals import resolved_principal
 
 from app.services.knowledge.ingestion import _safe_filename, _validate
 
@@ -43,7 +44,7 @@ CLAIMS = {"sub": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "email": "p@college.edu
 
 
 def _user(role="student", tenant=TENANT_A):
-    return {
+    return resolved_principal({
         "user_id": USER_ID,
         "auth_user_id": CLAIMS["sub"],
         "email": f"{role}@college.edu",
@@ -59,7 +60,7 @@ def _user(role="student", tenant=TENANT_A):
                 "is_active": True,
             }
         ],
-    }
+    })
 
 
 @pytest.fixture(autouse=True)

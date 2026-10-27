@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from app.core.errors import AppError
 
 from app.main import app
+from tests.auth_fixtures.principals import resolved_principal
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -36,7 +37,7 @@ CLAIMS = {"sub": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "email": "demo@college.
 
 
 def _user(role="student", tenant=INSTITUTION_A, user_id=USER_ID):
-    return {
+    return resolved_principal({
         "user_id": user_id,
         "auth_user_id": CLAIMS["sub"],
         "email": f"{role}@college.edu",
@@ -52,7 +53,7 @@ def _user(role="student", tenant=INSTITUTION_A, user_id=USER_ID):
                 "is_active": True,
             }
         ],
-    }
+    })
 
 
 @pytest.fixture(autouse=True)

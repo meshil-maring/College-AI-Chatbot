@@ -30,3 +30,18 @@ result in `platform_role_audit_log`. It does not create or delete Auth users.
 verified loopback stack. It refuses to run without an explicit ephemeral
 password, never contacts a remote Auth instance, and never prints the
 service-role credential.
+
+The [Academic Setup fictional-data runner](validation/academic_workspace/README.md)
+replays all migrations into an owned, network-isolated PostgreSQL container,
+inserts realistic fictional college records and verifies consistency, duplicate
+rejection, tenant boundaries, permissions, publication and lifecycle behavior.
+
+The [retained offerings loader](validation/academic_workspace/offerings/README.md)
+adds complete fictional degree plans, cohorts, sections and subject offerings to
+an explicitly selected development institution, preserving the data for manual
+testing and verifying real catalogue reads and API mutations.
+
+The [real browser journey](validation/academic_workspace/browser/README.md)
+checks password login, academic creation, save recovery and session renewal against
+the configured development database. Its run-owned administrator is disabled
+afterward; the fictional academic records and audit history remain inspectable.

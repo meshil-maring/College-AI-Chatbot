@@ -12,6 +12,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useSessionLifecycle(session)
   const { login, logout, logoutAll } = useSessionActions(session)
   const { status, user, accessToken, error } = session
+  const sessionGeneration = session.sessionGenerationRef.current
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -19,12 +20,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       role: user?.role ?? null,
       accessToken,
+      sessionGeneration,
       error,
       login,
       logout,
       logoutAll,
     }),
-    [status, user, accessToken, error, login, logout, logoutAll],
+    [status, user, accessToken, sessionGeneration, error, login, logout, logoutAll],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

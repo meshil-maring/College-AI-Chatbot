@@ -27,7 +27,7 @@ DEFAULT_TESTS = [
     "test_phase_7_12_super_admin_authorization.py",
     "test_phase_8_1_authorization.py",
     "test_role_scope_enforcement_phase_6_13_7.py",
-    "test_organization_institution_phase_6_13_1.py",
+    "platform_tenancy",
     "test_student_approval_phase_6_4.py",
     "test_phase_7_17_email_outbox_worker.py",
 ]

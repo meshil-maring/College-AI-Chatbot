@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
 
 from app.main import app
+from tests.auth_fixtures.principals import resolved_principal
 
 from app.repositories.admin.admin_academics import STUDENT_APPROVAL_COLUMNS
 
@@ -46,7 +47,7 @@ def _staff_user(institution_id=INSTITUTION_A):
     A tenant-less staff account holds a platform grant, never an institution
     grant, so the approval/ingestion scope can never widen to a global queue.
     """
-    return {
+    return resolved_principal({
         "id": USER_ID,
         "user_id": USER_ID,
         "auth_user_id": STAFF_CLAIMS["sub"],
@@ -63,7 +64,7 @@ def _staff_user(institution_id=INSTITUTION_A):
                 "is_active": True,
             }
         ],
-    }
+    })
 
 
 STAFF_USER = _staff_user()

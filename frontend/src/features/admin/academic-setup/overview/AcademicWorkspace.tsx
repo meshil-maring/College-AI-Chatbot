@@ -24,10 +24,15 @@ interface Props {
 }
 
 export default function AcademicWorkspace(props: Props) {
-  const { accessToken, user, role } = useAuth()
+  const { accessToken, sessionGeneration, user, role } = useAuth()
   if (!accessToken || !user || role !== 'admin' || !user.institution_id)
     return <p role="status">Administrator access is unavailable.</p>
-  const identity = JSON.stringify([accessToken, user.user_id, user.institution_id, user.effective_permissions])
+  const identity = JSON.stringify([
+    sessionGeneration ?? accessToken,
+    user.user_id,
+    user.institution_id,
+    user.effective_permissions,
+  ])
   return (
     <AcademicWorkspaceSession
       key={identity}

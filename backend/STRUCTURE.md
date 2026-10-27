@@ -157,6 +157,11 @@ It currently does not check numeric folder or file size limits; review affected
 folders and files against the mandatory 15-file and 250-line rules as well.
 
 The automated suite also runs this check through `tests/test_backend_structure.py`.
+Authentication fixtures shared by legacy account tests live in `tests/auth_fixtures/`.
+JWT/identity and hardening tests live in `tests/authentication/`, document pipeline
+tests in `tests/knowledge/`, history tests in `tests/ai/history/`, and organization
+foundation tests in `tests/platform_tenancy/`. These groups preserve the original
+test cases while keeping support and behavior-specific modules within size limits.
 For a code move, additionally check affected mock targets and imports, run the
 relevant regression tests, and compare API contracts when routers or schemas
 are affected. Check the frontend RBAC snapshot when permission/role sources

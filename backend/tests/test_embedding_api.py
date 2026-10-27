@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from app.core.errors import AppError
 from app.main import app
+from tests.auth_fixtures.principals import resolved_principal
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -66,7 +67,7 @@ def _patch_auth():
         patch("app.core.security.tokens.verify_jwt", return_value=FAKE_CLAIMS),
         patch(
             "app.db.supabase.get_user_by_auth_id",
-            new=AsyncMock(return_value=FAKE_USER),
+            new=AsyncMock(return_value=resolved_principal(FAKE_USER)),
         ),
     )
 

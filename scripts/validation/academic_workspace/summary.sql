@@ -1,0 +1,20 @@
+SELECT jsonb_build_object(
+    'fictional_institutions',2,
+    'fictional_accounts',6,
+    'academic_records',jsonb_build_object(
+        'departments',(SELECT count(*) FROM public.departments),
+        'programs',(SELECT count(*) FROM public.programs),
+        'academic_years',(SELECT count(*) FROM public.academic_years),
+        'semesters',(SELECT count(*) FROM public.semesters),
+        'courses',(SELECT count(*) FROM public.courses),
+        'program_courses',(SELECT count(*) FROM public.program_courses),
+        'course_offerings',(SELECT count(*) FROM public.course_offerings),
+        'sections',(SELECT count(*) FROM public.sections),
+        'program_semesters',(SELECT count(*) FROM public.program_semesters),
+        'curriculum_versions',(SELECT count(*) FROM public.curriculum_versions),
+        'curriculum_subjects',(SELECT count(*) FROM public.curriculum_subjects),
+        'admission_cohorts',(SELECT count(*) FROM public.admission_cohorts),
+        'academic_sections',(SELECT count(*) FROM public.academic_sections),
+        'academic_offerings',(SELECT count(*) FROM public.academic_offerings)),
+    'passed_assertions',(SELECT count(*) FROM workspace_fixture.results),
+    'academic_audit_events',(SELECT count(*) FROM public.admin_audit_log WHERE action LIKE 'academic.%'));

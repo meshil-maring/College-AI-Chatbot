@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from app.core.security import SUPPORTED_ROLES, resolve_primary_role
 
 from app.main import app
+from tests.auth_fixtures.principals import resolved_principal
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -55,7 +56,7 @@ def _user(role: str | None, institution_id: str | None = INSTITUTION_A) -> dict:
     grant (``role_assignments``); a tenant-less account holds a platform grant.
     """
     roles = [] if role is None else [role]
-    return {
+    return resolved_principal({
         "user_id": USER_ID,
         "auth_user_id": CLAIMS["sub"],
         "email": f"{role or 'unsupported'}@college.edu",
@@ -72,7 +73,7 @@ def _user(role: str | None, institution_id: str | None = INSTITUTION_A) -> dict:
             }
             for role in roles
         ],
-    }
+    })
 
 
 @pytest.fixture(autouse=True)

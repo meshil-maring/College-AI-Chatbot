@@ -13,6 +13,7 @@ from app.core.security import SUPPORTED_ROLES, resolve_primary_role
 from app.main import app
 
 from tests.dashboard_contract import build_dashboard
+from tests.auth_fixtures.principals import resolved_principal
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -44,7 +45,7 @@ def _assignment(role: str) -> dict:
     }
 
 
-ADMIN_USER = {
+ADMIN_USER = resolved_principal({
     "user_id": USER_ID,
     "auth_user_id": ADMIN_CLAIMS["sub"],
     "email": ADMIN_CLAIMS["email"],
@@ -52,7 +53,7 @@ ADMIN_USER = {
     "roles": ["admin"],
     "institution_id": INSTITUTION_A,
     "role_assignments": [_assignment("admin")],
-}
+})
 
 NON_ADMIN_USERS = {
     "student": {
@@ -138,7 +139,7 @@ def _patch_admin_auth(user=ADMIN_USER):
 @contextmanager
 def _patch_role_auth(role: str):
     """Authenticate every request as a non-admin principal."""
-    user = NON_ADMIN_USERS[role]
+    user = resolved_principal(NON_ADMIN_USERS[role])
     claims = dict(ADMIN_CLAIMS, email=user["email"])
     with ExitStack() as stack:
         stack.enter_context(
