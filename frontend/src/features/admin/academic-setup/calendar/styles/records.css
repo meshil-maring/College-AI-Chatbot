@@ -1,0 +1,217 @@
+.calendar-year-heading,
+.calendar-year-row {
+  display: grid;
+  grid-template-columns:
+    minmax(185px, 2.5fr) minmax(60px, 0.85fr) repeat(2, minmax(85px, 1.1fr)) minmax(55px, 0.7fr)
+    minmax(90px, 1fr) 70px;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 13px;
+  font-size: 12px;
+}
+.calendar-year-heading {
+  min-height: 50px;
+  border: 1px solid var(--calendar-border);
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(120deg, #111b22, #0c1419);
+  font-weight: 550;
+}
+.calendar-year-card {
+  margin-bottom: 8px;
+  border: 1px solid var(--calendar-border);
+  border-radius: 8px;
+  background: linear-gradient(120deg, #0c151a, #0a1116);
+}
+.calendar-year-card:first-of-type {
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+.calendar-year-row {
+  min-height: 70px;
+  padding-block: 14px;
+}
+.calendar-year-row > span {
+  overflow-wrap: anywhere;
+}
+.calendar-year-title {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+  min-height: 35px;
+  color: #eaf0f7;
+  text-align: left;
+}
+.calendar-year-title > svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+.calendar-year-title strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.calendar-year-title > span > small {
+  display: block;
+  margin-top: 6px;
+  color: var(--calendar-muted);
+  font-size: 11px;
+}
+.calendar-current {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #0c291c;
+  color: #32ed80;
+  font-size: 10px;
+  font-weight: 400;
+  vertical-align: middle;
+}
+.calendar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  border: 1px solid #31588d;
+  border-radius: 5px;
+  background: #0b1a30;
+  color: #68aaff;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.calendar-badge > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.calendar-badge.active {
+  border-color: #176837;
+  background: #092018;
+  color: #36ed69;
+}
+.calendar-badge.upcoming {
+  border-color: #715b14;
+  background: #231e0c;
+  color: #ffcb17;
+}
+.calendar-badge.inactive {
+  border-color: #48535d;
+  background: #20272e;
+  color: #b3c0cc;
+}
+.calendar-record-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.calendar-record-actions button {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 1px solid var(--calendar-border);
+  border-radius: 6px;
+  background: #0e181e;
+  color: #e9eff5;
+}
+.calendar-record-actions svg {
+  width: 15px;
+  height: 15px;
+}
+.calendar-year-contents {
+  padding: 0 18px 15px;
+}
+.calendar-semester-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--calendar-border);
+  border-radius: 7px;
+}
+.calendar-semester-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #dfe8f2;
+  text-align: left;
+  font-size: 11px;
+}
+.calendar-semester-table :is(th, td) {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--calendar-border);
+}
+.calendar-semester-table thead {
+  background: #101a21;
+  color: #c5d0dd;
+}
+.calendar-semester-table thead th {
+  padding-block: 10px;
+}
+.calendar-semester-table th {
+  font-weight: 500;
+}
+.calendar-semester-table tbody th {
+  color: #fff;
+}
+.calendar-semester-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.calendar-year-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.calendar-outline-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid #e8bd00;
+  border-radius: 7px;
+  color: #ffce18;
+  font-size: 12px;
+}
+.calendar-outline-button svg {
+  width: 16px;
+  height: 16px;
+}
+.calendar-inline-empty {
+  margin: 0;
+  padding: 17px;
+  color: var(--calendar-muted);
+  font-size: 12px;
+}
+.calendar-add-semester {
+  align-self: flex-end;
+}
+.calendar-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  color: var(--calendar-muted);
+  font-size: 12px;
+}
+.calendar-pagination > div {
+  display: flex;
+  gap: 9px;
+}
+.calendar-pagination :is(button, span) {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 36px;
+  border: 1px solid #2a3a47;
+  border-radius: 6px;
+  background: #101a21;
+}
+.calendar-pagination [aria-current] {
+  border-color: #ffca16;
+  color: #ffca16;
+}
+.calendar-pagination svg {
+  width: 16px;
+  height: 16px;
+}

@@ -52,6 +52,13 @@ form controls, scoped styles and adjacent tests. It uses the existing program
 transport and immutable department relationship. Department and program drawers
 share their modal focus lifecycle in `academic-setup/dialogs/`.
 
+The Academic Calendar page lives in `academic-setup/calendar/`. It owns year and
+dated-semester views, filters, summaries, dates and timeline. Its `editor/` folder
+owns accessible drawers, validation and checkpointed year/semester saves;
+`styles/` and `__tests__/` keep its presentation and regression coverage local.
+It uses the existing academic-year and semester contracts and identity-scoped
+catalogue query. Dated semesters remain separate from proposed program stages.
+
 `features/admin/academic-setup/` follows the owner-selected SQL export: departments,
 degree programs, academic years, dated semesters, courses, program-course links,
 course offerings and sections. Transport lives in `services/admin/academics.ts`

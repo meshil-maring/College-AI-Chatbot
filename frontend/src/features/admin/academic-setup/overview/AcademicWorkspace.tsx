@@ -8,6 +8,7 @@ import AcademicAreaView from './AcademicAreaView.tsx'
 import AcademicQuickActions from './AcademicQuickActions.tsx'
 import DepartmentsPage from '../departments/DepartmentsPage.tsx'
 import ProgramsPage from '../programs/ProgramsPage.tsx'
+import AcademicCalendarPage from '../calendar/AcademicCalendarPage.tsx'
 import { getAcademicArea, type AcademicPage } from './academicOverviewModel.ts'
 import { hasAcademicCatalogueReadAccess, useAcademicOverview } from './useAcademicOverview.ts'
 import '../styles/overview.css'
@@ -42,8 +43,24 @@ function AcademicWorkspaceSession(
   const [request, setRequest] = useState<{ entity?: AcademicEntity; create: boolean }>({ create: false })
   function openRecords(entity?: AcademicEntity, create = false) {
     setRequest({ entity, create })
-    props.onNavigate(entity === 'departments' || entity === 'programs' ? entity : 'records')
+    props.onNavigate(
+      entity === 'departments' || entity === 'programs' ? entity : entity === 'academic_years' ? 'years' : 'records',
+    )
   }
+  if (props.page === 'calendar' || props.page === 'years' || props.page === 'terms')
+    return (
+      <AcademicCalendarPage
+        key={props.page}
+        accessToken={props.accessToken}
+        identity={props.identity}
+        institutionId={props.institutionId}
+        canReadCatalogues={props.canReadCatalogues}
+        initialTab={props.page === 'terms' ? 'semesters' : 'years'}
+        createInitially={request.entity === 'academic_years' && request.create}
+        onCreateHandled={() => setRequest({ create: false })}
+        onOverview={() => props.onNavigate('overview')}
+      />
+    )
   if (props.page === 'departments' || props.page === 'programs') {
     const Page = props.page === 'departments' ? DepartmentsPage : ProgramsPage
     return (

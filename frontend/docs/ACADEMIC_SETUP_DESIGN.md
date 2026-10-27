@@ -103,6 +103,37 @@ and discarding unsaved entries require confirmation; duplicate and request
 errors retain the draft. Both department and program drawers use the shared
 keyboard and focus lifecycle in `academic-setup/dialogs/`.
 
+## Academic Calendar management
+
+Academic Calendar and its Years/Terms destinations open `academic-setup/calendar/`.
+The page follows the supplied dark-and-yellow reference with four summary cards,
+expandable year records and nested dated semesters, search/status/sort controls,
+pagination and responsive record cards. Its four tabs expose Academic Years,
+Semesters, Important Dates and Overview Timeline. Dates come from existing year
+and semester boundaries; timeline bars open semester details. Dated semesters
+retain their existing meaning and do not stand in for proposed program stages.
+
+Add/View/Edit use the shared accessible modal lifecycle with pinned actions and
+a full-screen mobile drawer. The overview's Configure Academic Year shortcut
+opens the year drawer. Creation supports two, three or custom initial semesters
+when both catalogues are readable and the server advertises both management
+capabilities. Initial dates divide the selected year and remain editable. Year
+descriptions and independent event records have no existing API fields and are
+not offered as editable data.
+
+Writes retain existing text limits, date bounds, active/current flags and the
+immutable semester parent. Status/current changes and discarding unsaved entries
+require confirmation. Multi-request creation checkpoints each saved record;
+after partial failure, the drawer locks saved values and retries only remaining
+semesters. Already saved records remain if the draft is discarded. Unknown
+network outcomes still require the server's existing conflict handling.
+
+Counts and records use tenant-verified catalogues. Current badges and current
+summary counts use server flags. Display statuses otherwise derive from dates
+and active flags. Denied reads hide data; failed refreshes mark retained data
+stale and block writes until Retry succeeds. Identity replacement discards UI
+state and stops further requests in a pending multi-request save.
+
 ## Integration previews and states
 
 New areas expose descriptions, distinct child destinations and relevant proposed

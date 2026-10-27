@@ -1,0 +1,175 @@
+@media (min-width: 1440px) {
+  .calendar-page.has-drawer {
+    padding-right: 408px;
+  }
+  .calendar-drawer::backdrop {
+    background: transparent;
+  }
+}
+@container calendar (max-width: 1000px) {
+  .calendar-metric {
+    gap: 9px;
+    padding: 11px 9px;
+  }
+  .calendar-metric-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .calendar-metric-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+  .calendar-metric p {
+    font-size: 11px;
+  }
+  .calendar-year-row,
+  .calendar-year-heading {
+    gap: 7px;
+    padding-inline: 10px;
+    font-size: 11px;
+  }
+  .calendar-year-title {
+    gap: 9px;
+  }
+  .calendar-year-title strong {
+    font-size: 13px;
+  }
+  .calendar-year-contents {
+    padding-inline: 14px;
+  }
+}
+@container calendar (max-width: 780px) {
+  .calendar-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .calendar-year-heading {
+    display: none;
+  }
+  .calendar-year-card:first-of-type {
+    border-top: 1px solid var(--calendar-border);
+    border-radius: 8px;
+  }
+  .calendar-year-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+    padding: 16px;
+  }
+  .calendar-year-title {
+    grid-column: 1 / -1;
+  }
+  .calendar-year-row > [data-label]::before {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--calendar-muted);
+    content: attr(data-label);
+    font-size: 10px;
+  }
+  .calendar-year-row > .calendar-record-actions {
+    align-self: end;
+  }
+  .calendar-semester-table,
+  .calendar-semester-table tbody {
+    display: block;
+  }
+  .calendar-semester-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .calendar-semester-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+  .calendar-semester-table tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    padding: 12px;
+    border: 1px solid var(--calendar-border);
+    border-radius: 6px;
+  }
+  .calendar-semester-table :is(td, th) {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+  .calendar-semester-table tbody th {
+    grid-column: 1 / -1;
+  }
+  .calendar-semester-table [data-label]::before {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--calendar-muted);
+    content: attr(data-label);
+    font-size: 10px;
+  }
+  .calendar-semester-table td:last-child {
+    align-self: end;
+  }
+  .calendar-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .calendar-search {
+    grid-column: 1 / -1;
+  }
+}
+@container calendar (max-width: 500px) {
+  .calendar-page .academic-page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .calendar-tabs button {
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+  .calendar-year-row,
+  .calendar-semester-table tr {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .calendar-year-row > .calendar-record-actions,
+  .calendar-semester-table td:last-child {
+    grid-column: 1 / -1;
+  }
+  .calendar-pagination {
+    flex-wrap: wrap;
+  }
+  .calendar-dates > article {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .calendar-dates > article > div:not(.calendar-record-actions) {
+    width: 100%;
+  }
+}
+@media (max-width: 760px) {
+  .calendar-drawer {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+  }
+  .calendar-drawer > header,
+  .calendar-drawer-body,
+  .calendar-drawer > footer {
+    padding-inline: 16px;
+  }
+  .calendar-drawer header button,
+  .calendar-drawer footer > button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (pointer: coarse) {
+  .calendar-record-actions button,
+  .calendar-pagination button {
+    width: 44px;
+    height: 44px;
+  }
+  .calendar-planned-semester button {
+    min-height: 44px;
+  }
+}

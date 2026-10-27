@@ -64,8 +64,8 @@ describe('administrator account workspace', () => {
     expect(screen.getAllByRole('article')).toHaveLength(9)
     const nav = screen.getByRole('navigation', { name: 'Academic Setup navigation' })
     await userEvent.click(within(nav).getByRole('button', { name: 'Academic Terms', exact: true }))
-    expect(screen.getByRole('heading', { name: 'Academic Terms', level: 1 })).toBeInTheDocument()
-    expect(screen.getByText(/when teaching takes place, not program progression/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Academic Calendar', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Semesters' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('button', { name: 'Student Approvals', exact: true })).toBeInTheDocument()
   })
   it('supports desktop navigation collapse and search from the academic header', async () => {

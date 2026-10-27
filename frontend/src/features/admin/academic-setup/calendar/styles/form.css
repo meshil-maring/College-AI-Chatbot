@@ -1,0 +1,155 @@
+.calendar-drawer fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.calendar-drawer fieldset:disabled {
+  opacity: 0.7;
+}
+.calendar-field {
+  min-width: 0;
+  margin-bottom: 19px;
+}
+.calendar-field > label,
+.calendar-semester-options legend {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.calendar-field label > span,
+.calendar-semester-options legend > span {
+  color: #ff454e;
+}
+#calendar-form :is(input:not([type='radio'], [type='checkbox']), select) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding: 8px 12px;
+  border: 1px solid #2a3b48;
+  border-radius: 7px;
+  background: #101a22;
+  color: #e6eef8;
+  font-size: 12px;
+}
+#calendar-form input[type='date'] {
+  padding-inline: 9px;
+}
+#calendar-form [aria-invalid='true'] {
+  border-color: #ff9393;
+}
+.calendar-field-help,
+.calendar-field-error {
+  margin: 6px 0 0;
+  color: #b4c1d1;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.calendar-field-error {
+  color: #ffaaaa;
+}
+.calendar-form-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.calendar-current-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 0 24px;
+  font-size: 12px;
+}
+.calendar-current-option input {
+  width: 17px;
+  height: 17px;
+  accent-color: #ffca16;
+}
+#calendar-form .calendar-semester-options {
+  display: grid;
+  gap: 11px;
+  margin-bottom: 23px;
+}
+.calendar-semester-options legend {
+  margin-bottom: 14px;
+}
+.calendar-semester-options label {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.calendar-semester-options input {
+  appearance: none;
+  width: 23px;
+  height: 23px;
+  margin: 0;
+  border: 4px solid #202c35;
+  border-radius: 50%;
+  background: #0d161d;
+}
+.calendar-semester-options input:checked {
+  border-color: #0d161d;
+  outline: 2px solid #ffca16;
+  outline-offset: -2px;
+  background: #ffca16;
+  box-shadow: inset 0 0 0 2px #0d161d;
+}
+.calendar-semester-plan {
+  display: grid;
+  gap: 12px;
+  margin-top: 5px;
+  padding: 12px 8px 8px;
+  border: 1px solid #263641;
+  border-radius: 6px;
+  background: #0d161d;
+}
+#calendar-form .calendar-planned-semester {
+  display: grid;
+  grid-template-columns: 55px repeat(2, minmax(0, 1fr)) 22px;
+  align-items: end;
+  gap: 7px;
+}
+.calendar-planned-semester legend {
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.calendar-planned-semester label {
+  display: grid;
+  gap: 6px;
+  color: #bfcbd9;
+  font-size: 10px;
+}
+#calendar-form .calendar-planned-semester input {
+  min-height: 36px;
+  padding: 6px;
+  font-size: 10px;
+}
+.calendar-planned-semester button {
+  display: grid;
+  place-items: center;
+  height: 36px;
+  color: #ff575f;
+}
+.calendar-planned-semester svg {
+  width: 14px;
+  height: 14px;
+}
+.calendar-add-planned {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 35px;
+  border: 1px dashed #7d6617;
+  border-radius: 5px;
+  color: #ffca16;
+  font-size: 11px;
+}
+.calendar-add-planned svg {
+  width: 15px;
+  height: 15px;
+}
