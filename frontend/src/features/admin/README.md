@@ -7,16 +7,19 @@ Academic Setup also exposes its static design preview to administrators without
 academic grants; catalogue requests and record actions remain gated. Backend
 endpoints remain authoritative for authorization and tenant isolation.
 
-| Folder                     | Current responsibility                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------------------------ |
-| `academic-setup/`          | Departments, programs, years, dated semesters, courses, curriculum links, offerings and sections |
-| `academic-setup/overview/` | Eleven-entity design overview, academic navigation, search and integration previews              |
-| `documents/`               | Documents and knowledge sources                                                                  |
-| `faqs/`, `notices/`        | Published institution information                                                                |
-| `permissions/`             | Nonacademic staff permission management                                                          |
-| `profile/`                 | Administrator identity                                                                           |
-| `staff-faculty/`           | Staff and faculty account management                                                             |
-| `students/`                | `StudentManager.tsx` and `AdminApprovals.tsx` retain account decisions                           |
+| Folder                        | Current responsibility                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| `academic-setup/`             | Departments, programs, years, dated semesters, courses, curriculum links, offerings and sections |
+| `academic-setup/overview/`    | Eleven-entity design overview, academic navigation, search and integration previews              |
+| `academic-setup/departments/` | Department list, filters, summaries, add/view/edit drawers and related permission/error states   |
+| `academic-setup/programs/`    | Program list, department/degree/status filters, summaries and add/view/edit drawers              |
+| `academic-setup/dialogs/`     | Shared academic modal keyboard, scroll and focus lifecycle                                       |
+| `documents/`                  | Documents and knowledge sources                                                                  |
+| `faqs/`, `notices/`           | Published institution information                                                                |
+| `permissions/`                | Nonacademic staff permission management                                                          |
+| `profile/`                    | Administrator identity                                                                           |
+| `staff-faculty/`              | Staff and faculty account management                                                             |
+| `students/`                   | `StudentManager.tsx` and `AdminApprovals.tsx` retain account decisions                           |
 
 Academic Setup opens on the black-and-yellow overview described in
 [the design guide](../../../docs/ACADEMIC_SETUP_DESIGN.md). Its eleven approved

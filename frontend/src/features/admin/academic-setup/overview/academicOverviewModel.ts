@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CalendarRange,
   FileStack,
+  GraduationCap,
   Layers3,
   LibraryBig,
   ListTree,
@@ -55,7 +56,7 @@ export const academicAreas: readonly AcademicArea[] = [
   {
     page: 'programs',
     title: 'Programs',
-    icon: Users,
+    icon: GraduationCap,
     description: 'Manage degree programs offered by each department.',
     action: 'Manage Programs',
     note: 'Degree programs, organized by department.',

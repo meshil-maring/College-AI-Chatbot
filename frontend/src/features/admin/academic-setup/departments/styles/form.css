@@ -1,0 +1,113 @@
+.department-required-note {
+  margin: 0 0 28px;
+  color: #b0b8c5;
+  font-size: 12px;
+}
+.department-drawer fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.department-drawer fieldset:disabled {
+  opacity: 0.65;
+}
+#department-form > fieldset > label,
+.department-status-options legend {
+  display: block;
+  margin: 26px 0 10px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+#department-form > fieldset > label:first-child {
+  margin-top: 0;
+}
+#department-form label > span,
+.department-status-options legend > span,
+.department-required-note > span {
+  color: #ff9292;
+}
+#department-form label > small {
+  margin-left: 4px;
+  color: #b0b8c5;
+  font-size: 13px;
+  font-weight: 400;
+}
+#department-form :is(input:not([type='radio']), textarea) {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid #2b3239;
+  border-radius: 7px;
+  background: #101417;
+  color: #f3f4f6;
+  font-size: 14px;
+}
+#department-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+#department-form :is(input, textarea)::placeholder {
+  color: #9da8b5;
+}
+#department-form [aria-invalid='true']:not([type='radio']) {
+  border-color: #ff9292;
+}
+.department-field-error,
+.department-field-help {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.department-field-error {
+  color: #ff9292;
+}
+.department-field-help {
+  color: #b0b8c5;
+}
+#department-form .department-status-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 26px;
+}
+#department-form .department-status-options legend {
+  margin: 0 0 10px;
+}
+.department-status-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 74px;
+  padding: 16px;
+  border: 1px solid #2b3239;
+  border-radius: 8px;
+  background: #101417;
+  cursor: pointer;
+}
+.department-status-options label.is-selected {
+  border-color: #f5c542;
+  background: #211e14;
+}
+.department-status-options input {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  margin: 1px 0 0;
+  accent-color: #f5c542;
+}
+#department-form .department-status-options label > span {
+  color: #f3f4f6;
+}
+.department-status-options strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.department-status-options small {
+  display: block;
+  margin-top: 6px;
+  color: #b0b8c5;
+  font-size: 12px;
+  line-height: 1.5;
+}

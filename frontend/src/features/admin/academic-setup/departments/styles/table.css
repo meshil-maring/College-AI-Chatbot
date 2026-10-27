@@ -1,0 +1,209 @@
+.department-table-panel {
+  overflow: hidden;
+  border: 1px solid var(--department-border);
+  border-radius: 9px;
+  background: #121619;
+}
+.department-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.department-table th {
+  padding: 18px 16px;
+  background: #1b2025;
+  font-weight: 600;
+  text-align: left;
+}
+.department-table th:first-child {
+  width: 40%;
+}
+.department-table th:nth-child(2) {
+  width: 12%;
+}
+.department-table th:nth-child(3) {
+  width: 14%;
+}
+.department-table th:nth-child(4) {
+  width: 17%;
+}
+.department-table th:last-child {
+  width: 17%;
+}
+.department-table th button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  text-align: left;
+}
+.department-table th svg {
+  width: 13px;
+  height: 13px;
+  color: var(--department-muted);
+}
+.department-table td {
+  height: 86px;
+  padding: 16px;
+  border-top: 1px solid var(--department-border);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.department-table td[colspan] {
+  padding: 0;
+}
+.department-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.department-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #164447;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+}
+.department-avatar.tone-1 {
+  background: #15564b;
+}
+.department-avatar.tone-2 {
+  background: #6b5518;
+}
+.department-avatar.tone-3 {
+  background: #594c23;
+}
+.department-avatar.tone-4 {
+  background: #453179;
+}
+.department-identity > div {
+  min-width: 0;
+}
+.department-identity strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.department-identity p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: var(--department-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.department-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid #49515b;
+  border-radius: 6px;
+  background: #20252b;
+  color: #b0b8c5;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.department-badge.is-active {
+  border-color: #2e6442;
+  background: #14261c;
+  color: #73d995;
+}
+.department-badge > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.department-unavailable {
+  color: var(--department-muted);
+}
+.department-unavailable small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+}
+.department-row-actions {
+  display: flex;
+  gap: 8px;
+}
+.department-row-actions button,
+.department-pagination nav > :is(button, span) {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--department-border);
+  border-radius: 6px;
+  background: #101417;
+}
+.department-row-actions svg,
+.department-pagination svg {
+  width: 17px;
+  height: 17px;
+}
+.department-row-actions button:hover:not(:disabled) {
+  border-color: #f5c542;
+}
+.department-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 74px;
+  padding: 16px;
+  border-top: 1px solid var(--department-border);
+  color: var(--department-muted);
+  font-size: 13px;
+}
+.department-pagination p {
+  margin: 0;
+}
+.department-pagination nav {
+  display: flex;
+  gap: 9px;
+}
+.department-pagination nav > span {
+  border-color: #f5c542;
+  background: #242117;
+  color: #f5c542;
+}
+.department-list-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 390px;
+  padding: 32px 24px;
+  text-align: center;
+}
+.department-list-state h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 600;
+}
+.department-list-state p {
+  max-width: 450px;
+  margin: 0;
+  color: var(--department-muted);
+  line-height: 1.7;
+}
+.department-state-icon {
+  width: 60px;
+  height: 60px;
+}
+.department-state-icon svg {
+  width: 28px;
+  height: 28px;
+}

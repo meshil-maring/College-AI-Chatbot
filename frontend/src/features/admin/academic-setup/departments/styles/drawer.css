@@ -1,0 +1,183 @@
+.department-drawer {
+  position: fixed;
+  inset: 68px 0 0 auto;
+  width: 440px;
+  height: calc(100dvh - 68px);
+  max-width: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid #2b3239;
+  background: #121619;
+  color: #f3f4f6;
+  color-scheme: dark;
+}
+.department-drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.department-drawer::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.department-drawer > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 22px 22px 28px;
+  border-bottom: 1px solid #2b3239;
+}
+.department-drawer h2 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.department-drawer header p {
+  margin: 8px 0 0;
+  color: #b0b8c5;
+  font-size: 14px;
+}
+.department-drawer header button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  margin-top: -8px;
+  color: #b0b8c5;
+}
+.department-drawer header button svg {
+  width: 21px;
+  height: 21px;
+}
+.department-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 28px;
+  scrollbar-width: thin;
+}
+.department-drawer > footer {
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+  padding: 20px 28px max(20px, env(safe-area-inset-bottom));
+  border-top: 1px solid #2b3239;
+  background: #121619;
+}
+.department-drawer footer > button {
+  min-height: 44px;
+  font-size: 13px;
+}
+.department-drawer footer > .academic-primary-button {
+  flex: 1;
+}
+.department-drawer footer > .academic-secondary-button {
+  min-width: 100px;
+}
+.department-form-error {
+  margin: 0 0 20px;
+  padding: 12px;
+  border: 1px solid #82474d;
+  border-radius: 7px;
+  background: #211719;
+  color: #ffb2b2;
+  font-size: 13px;
+}
+.department-details .department-identity {
+  margin-bottom: 20px;
+}
+.department-details h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.department-details .department-avatar {
+  width: 48px;
+  height: 48px;
+}
+.department-details dl {
+  margin: 28px 0;
+}
+.department-details dt {
+  margin-top: 24px;
+  color: #b0b8c5;
+  font-size: 13px;
+}
+.department-details dd {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 14px;
+}
+.department-details > section {
+  padding-top: 24px;
+  border-top: 1px solid #2b3239;
+}
+.department-details section > p {
+  margin-top: 16px;
+  color: #b0b8c5;
+  font-size: 14px;
+}
+.department-programs-unavailable {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #2b3239;
+  border-radius: 8px;
+  background: #101417;
+}
+.department-programs-unavailable > svg {
+  width: 24px;
+  color: #b0b8c5;
+}
+.department-programs-unavailable p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #b0b8c5;
+  font-size: 13px;
+}
+.department-program-list {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.department-program-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2b3239;
+}
+.department-program-list strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.department-program-list small {
+  display: block;
+  margin-top: 5px;
+  color: #b0b8c5;
+}
+.department-confirm-icon {
+  width: 36px;
+  height: 36px;
+  margin: 10px 0 20px;
+  color: #f5c542;
+}
+.department-drawer.is-confirming h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.department-drawer.is-confirming .department-drawer-body p {
+  color: #b0b8c5;
+  line-height: 1.8;
+}

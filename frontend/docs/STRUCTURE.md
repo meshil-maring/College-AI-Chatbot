@@ -42,6 +42,15 @@ The active Academic Setup overview lives in `academic-setup/overview/`, with
 feature styles in `academic-setup/styles/`. It represents the eleven approved
 entities without changing the existing service contract. See the
 [design guide](ACADEMIC_SETUP_DESIGN.md) for the entity mapping and integration boundaries.
+The dedicated Departments page, drawer, state hooks and adjacent tests live in
+`academic-setup/departments/`, with its own scoped `styles/` folder. It reuses
+the existing department/program contracts and transport without remapping other
+academic entities.
+
+The dedicated Programs page lives in `academic-setup/programs/`, with focused
+form controls, scoped styles and adjacent tests. It uses the existing program
+transport and immutable department relationship. Department and program drawers
+share their modal focus lifecycle in `academic-setup/dialogs/`.
 
 `features/admin/academic-setup/` follows the owner-selected SQL export: departments,
 degree programs, academic years, dated semesters, courses, program-course links,

@@ -1,0 +1,98 @@
+.program-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.program-row-actions > button,
+.program-more > summary,
+.program-pagination button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 1px solid #1b2731;
+  border-radius: 6px;
+  background: linear-gradient(120deg, #111b22, #0b1218);
+  cursor: pointer;
+}
+.program-row-actions svg,
+.program-pagination svg {
+  width: 15px;
+  height: 15px;
+}
+.program-more {
+  position: relative;
+}
+.program-more > summary {
+  list-style: none;
+}
+.program-more > summary::-webkit-details-marker {
+  display: none;
+}
+.program-more > div {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 10;
+  min-width: 185px;
+  padding: 6px;
+  border: 1px solid #34424e;
+  border-radius: 7px;
+  background: #111c24;
+  box-shadow: 0 8px 25px #0008;
+}
+.program-more > div button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px;
+  text-align: left;
+}
+.programs-page button:hover:not(:disabled),
+.program-more > summary:hover {
+  border-color: var(--program-yellow);
+}
+.program-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 70px;
+  padding: 16px 12px;
+  border-top: 1px solid #17222b;
+  color: #c2cede;
+  font-size: 12px;
+}
+.program-pagination p {
+  margin: 0;
+}
+.program-pagination nav,
+.program-page-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.program-pagination button {
+  width: 34px;
+  height: 35px;
+}
+.program-pagination [aria-current='page'] {
+  border-color: var(--program-yellow);
+  color: var(--program-yellow);
+  box-shadow: inset 0 0 0 1px #ffca2822;
+}
+.programs-page :is(button, select, summary):focus-visible,
+.program-drawer :is(button, input, select, textarea):focus-visible,
+.program-search:focus-within {
+  outline: 2px solid #ffca28;
+  outline-offset: 3px;
+}
+.programs-page button:disabled,
+.programs-page select:disabled,
+.program-drawer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

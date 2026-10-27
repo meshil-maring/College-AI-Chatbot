@@ -51,9 +51,57 @@ The form independently rechecks its own catalogue response. It sends no mutation
 until the user submits the existing Save action. Activation/deactivation requires
 confirmation, with an additional explanation when clearing a current designation.
 
+## Departments management
+
+The Departments destination now opens its own dark-and-yellow management page in
+`academic-setup/departments/`. It uses the existing department catalogue and
+create/update endpoints; it does not introduce a replacement academic contract.
+The overview's Add Department shortcut opens this page's drawer directly. Other
+catalogues and the eleven-entity navigation remain unchanged.
+
+Institution-scoped totals show total, active and inactive departments. The table
+supports name/code search, status filtering, name/code sorting and five-record
+pagination. Associated program counts and details use only the readable,
+institution-scoped program catalogue; unavailable program data is never zero.
+Read-only and disconnected states disable mutations, and denied reads expose no
+records. Failed refreshes label retained records as stale and disable changes.
+
+Add, View and Edit use a keyboard-accessible modal drawer with mobile record
+cards, a full-screen mobile drawer and pinned footer actions. Forms preserve
+entries after errors, require an explicit creation status and use the existing
+API's text limits (name 160, code 32, description 2000). Codes are trimmed without
+inventing case or syntax rules; duplicate conflicts remain server-authoritative.
+Discarding edits and changing an existing status require confirmation. There is
+no deletion action, Campus field, Head of Department relationship or new grant.
+Pending mutations cannot update a replacement identity's UI or trigger its reads.
+
 The existing service assigns sections to offerings. This differs from the proposed
 section model, so existing sections and offerings are not relabeled or silently
 mapped to the proposed Academic Sections and Academic Offerings.
+
+## Programs management
+
+The Programs destination opens the dedicated `academic-setup/programs/` page.
+It follows the supplied dark-and-yellow design with four summary cards, combined
+name/code, department, degree-type and status filters, sortable table columns and
+eight-record pagination. Narrow content widths use record cards. Add, View and
+Edit share a modal drawer with pinned actions and a full-screen mobile layout.
+The overview's Add Program shortcut opens this drawer directly.
+
+Records, department choices and totals use only readable institution-scoped
+catalogues. Missing department data displays Unavailable. Creation requires an
+active readable department, and mutations require the existing server-advertised
+program access. Denied reads hide records; failed refreshes label retained data
+as stale and disable writes. Identity replacement clears the screen and prevents
+late mutation results from triggering replacement-identity reads.
+
+Forms use the existing program endpoints and field limits (name/degree type 160,
+code 32, description 2000), retain custom existing degree types and fractional
+durations, and preserve nullable credits. New programs default to Active as in
+the reference. A saved program's department remains immutable. Status changes
+and discarding unsaved entries require confirmation; duplicate and request
+errors retain the draft. Both department and program drawers use the shared
+keyboard and focus lifecycle in `academic-setup/dialogs/`.
 
 ## Integration previews and states
 
