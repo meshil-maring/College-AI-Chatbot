@@ -1,80 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
-import {
-  changeMembershipStatus,
-  decideMembershipRequest,
-  listMembershipRequests,
-  listMembershipRoster,
-} from '../../../services/admin/adminApi.ts'
-import type { MembershipRequest, MembershipRole, MembershipRosterEntry } from '../../../types/admin.ts'
-
-type RequestFilter = 'all' | MembershipRole | 'pending'
+import { useStaffFacultyManagement } from './useStaffFacultyManagement.ts'
 
 export default function StaffFacultyManager({ accessToken }: { accessToken: string }) {
-  const [requestFilter, setRequestFilter] = useState<RequestFilter>('pending')
-  const [requests, setRequests] = useState<MembershipRequest[]>([])
-  const [members, setMembers] = useState<MembershipRosterEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [actionKey, setActionKey] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const role = requestFilter === 'staff' || requestFilter === 'faculty' ? requestFilter : undefined
-      const status = requestFilter === 'pending' ? 'pending' : undefined
-      const [requestData, rosterData] = await Promise.all([
-        listMembershipRequests(accessToken, role, status),
-        listMembershipRoster(accessToken),
-      ])
-      setRequests(requestData.requests)
-      setMembers(rosterData.members)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load Staff & Faculty management.')
-    } finally {
-      setLoading(false)
-    }
-  }, [accessToken, requestFilter])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  async function decide(request: MembershipRequest, decision: 'approve' | 'reject') {
-    const verb = decision === 'approve' ? 'approve' : 'reject'
-    if (!window.confirm(`${verb[0].toUpperCase()}${verb.slice(1)} ${request.full_name || request.email}?`)) return
-    setActionKey(`${decision}:${request.request_id}`)
-    setError(null)
-    setSuccess(null)
-    try {
-      const result = await decideMembershipRequest(accessToken, request.request_id, decision)
-      setSuccess(result.message)
-      await load()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : `Could not ${verb} this request.`)
-    } finally {
-      setActionKey(null)
-    }
-  }
-
-  async function lifecycle(member: MembershipRosterEntry, action: 'deactivate' | 'reactivate') {
-    if (!member.user_id) return
-    if (!window.confirm(`${action === 'deactivate' ? 'Deactivate' : 'Reactivate'} ${member.name || member.email}?`))
-      return
-    setActionKey(`${action}:${member.user_id}`)
-    setError(null)
-    setSuccess(null)
-    try {
-      const result = await changeMembershipStatus(accessToken, member.user_id, action)
-      setSuccess(result.message)
-      await load()
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : `Could not ${action} this member.`)
-    } finally {
-      setActionKey(null)
-    }
-  }
+  const { requestFilter, setRequestFilter, requests, members, loading, actionKey, error, success, decide, lifecycle } =
+    useStaffFacultyManagement(accessToken)
 
   const buttonClass =
     'rounded-lg border border-control px-3 py-2 text-xs font-medium hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50'
@@ -96,6 +24,9 @@ export default function StaffFacultyManager({ accessToken }: { accessToken: stri
         <h2 id="membership-requests-heading" className="font-semibold text-content text-section">
           Requests
         </h2>
+        <p className="mt-2 text-sm text-muted">
+          If an approved account cannot sign in, choose All, Staff or Faculty and retry its sign-in setup.
+        </p>
         <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Request filters">
           {(['all', 'staff', 'faculty', 'pending'] as const).map((filter) => (
             <button
@@ -149,6 +80,15 @@ export default function StaffFacultyManager({ accessToken }: { accessToken: stri
                       {actionKey === `reject:${request.request_id}` ? 'Rejecting…' : 'Reject'}
                     </button>
                   </>
+                ) : request.status === 'approved' ? (
+                  <button
+                    type="button"
+                    disabled={actionKey !== null}
+                    onClick={() => void decide(request, 'approve')}
+                    className={buttonClass}
+                  >
+                    {actionKey === `approve:${request.request_id}` ? 'Retrying…' : 'Retry sign-in setup'}
+                  </button>
                 ) : null}
               </article>
             ))}

@@ -110,6 +110,15 @@ def approve_and_grant_role(
         data = data[0] if data else None
     if not isinstance(data, dict):
         raise RuntimeError("membership approval transaction returned no result")
+    if "already_applied" in data and (
+        "role_granted" not in data or "audit_persisted" not in data
+    ):
+        raise AppError(
+            "Staff and faculty approval needs a database update. Contact your "
+            "platform administrator, then retry sign-in setup for this request.",
+            503,
+            "MEMBERSHIP_APPROVAL_UNAVAILABLE",
+        )
     return data
 
 

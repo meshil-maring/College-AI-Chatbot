@@ -7,7 +7,7 @@ handlers; request models live in `app/schemas/auth/auth.py`.
 | --- | --- |
 | `auth.py` | Router composition and the shared `auth` tag |
 | `signup.py` | Provider signup and signup-specific password validation |
-| `login.py` | Email login, account eligibility and pending registration responses |
+| `login.py` | Email login, account eligibility, pending registration and incomplete email confirmation responses |
 | `password_recovery.py` | Recovery emails, recovery-session freshness and single-use password reset |
 | `password_change.py` | Current-password verification, password changes and revoking other sessions |
 | `sessions.py` | Refresh, current-session logout and global logout |
@@ -35,6 +35,12 @@ access and refresh tokens. Password reset still requires a recent provider
 recovery session and consumes it once. Password change still verifies the
 current credential and revokes other sessions. Protected handlers retain their
 `get_current_user` dependency; public handlers retain their existing rate limits.
+
+A verified password blocked by provider email confirmation returns
+`EMAIL_CONFIRMATION_REQUIRED`; pending staff/faculty keep `REGISTRATION_PENDING`.
+Incorrect passwords retain the generic credentials error. An administrator can
+retry an approved membership's sign-in setup through the existing approval route,
+which rechecks the durable role grant before confirming the email.
 
 ## Adding or testing a route
 

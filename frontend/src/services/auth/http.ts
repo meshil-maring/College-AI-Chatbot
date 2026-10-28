@@ -67,6 +67,9 @@ export async function buildAuthError(response: Response, operation: AuthOperatio
   if (code === 'REGISTRATION_PENDING') {
     return new AuthError('registration_pending', status, code)
   }
+  if (code === 'EMAIL_CONFIRMATION_REQUIRED') {
+    return new AuthError('email_confirmation_required', status, code)
+  }
   if (code === 'PASSWORD_VERIFICATION_FAILED') {
     return new AuthError('password_verification', status, code)
   }

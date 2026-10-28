@@ -82,6 +82,16 @@ async def _authenticate_email_login(body: AuthRequest, request: Request) -> dict
             pending = _pending_registration_for_email(str(body.email))
             if pending is not None:
                 _raise_registration_pending(pending)
+            common.record_auth_security_event(
+                event="login", status="failure", request=request,
+            )
+            raise AppError(
+                "Confirm your email address before signing in. If your staff or "
+                "faculty registration is already approved, ask your institution "
+                "administrator to retry sign-in setup in Staff & Faculty.",
+                status_code=403,
+                code="EMAIL_CONFIRMATION_REQUIRED",
+            ) from None
         common.record_auth_security_event(
             event="login",
             status="failure",

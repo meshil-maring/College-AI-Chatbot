@@ -1,0 +1,5 @@
+{
+  "version": "20261028000000",
+  "name": "membership_approval_deployment_repair",
+  "files": ["approval.sql", "rejection.sql"]
+}

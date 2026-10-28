@@ -10,6 +10,10 @@ explicit generator header and per-fragment hashes; generated output is outside
 the maintained source size/count limits. Existing historical migrations retain
 their original paths and bytes; this convention does not rewrite applied files.
 
+[membership_approval/](membership_approval/README.md) repairs deployed staff and
+faculty approval/rejection contracts without installing the B05 invitation draft.
+Generate it with `scripts/maintenance/migrations/build_membership_approval.py`.
+
 Fragments must contain at most 250 physical lines, and each source folder at
 most 15 directly contained maintained files. Use meaningful responsibility
 subfolders as needed. The manifest lists dependency order explicitly.

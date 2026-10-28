@@ -44,6 +44,22 @@ describe('Phase 6.15.3 critical classification: login 401 ≠ session 401', () =
 })
 
 describe('transport failures', () => {
+  it('explains incomplete confirmation after approval without calling it a bad password', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(403, {
+          error: { code: 'EMAIL_CONFIRMATION_REQUIRED', message: 'Email not confirmed' },
+        }),
+      ),
+    )
+
+    const err = await login({ email: 'staff@example.com', password: 'secret123' }).catch((e) => e)
+    expect(err.kind).toBe<AuthErrorKind>('email_confirmation_required')
+    expect(authErrorMessage(err)).toContain('retry sign-in setup in Staff & Faculty')
+    expect(authErrorMessage(err)).not.toContain('Invalid login credentials')
+  })
+
   it('maps a fetch-level failure to network', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
 

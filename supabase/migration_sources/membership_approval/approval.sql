@@ -1,0 +1,110 @@
+-- Older deployments committed approval without the backend's audit result.
+-- Preserve the separately reviewed B05 implementation when it is installed.
+DO $repair$
+BEGIN
+    IF to_regprocedure('public.b05_grant_institution_role(uuid,uuid,uuid,text)') IS NOT NULL THEN
+        RETURN;
+    END IF;
+    EXECUTE $definition$
+    CREATE OR REPLACE FUNCTION public.phase723_approve_membership_and_grant_role(
+        p_request_id uuid, p_institution_id uuid, p_decided_by uuid, p_reason text
+    ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $body$
+    DECLARE
+        applicant public.institution_membership_requests%ROWTYPE;
+        membership_role uuid;
+        already_approved boolean;
+        grant_created boolean;
+    BEGIN
+        IF COALESCE(auth.role(), '') <> 'service_role' THEN
+            RAISE EXCEPTION 'Service role required' USING ERRCODE = '42501';
+        END IF;
+        PERFORM public.phase81_assert_institution_admin(p_decided_by, p_institution_id);
+        PERFORM 1 FROM public.users u
+        JOIN public.user_roles ur ON ur.user_id = u.id
+        JOIN public.roles r ON r.id = ur.role_id
+        JOIN public.institutions i ON i.institution_id = p_institution_id
+        JOIN public.organizations o ON o.organization_id = i.organization_id
+        WHERE u.id = p_decided_by AND u.status = 'active' AND u.auth_user_id IS NOT NULL
+          AND r.name = 'admin' AND r.is_active AND ur.scope_type = 'institution'
+          AND ur.scope_id = i.institution_id AND ur.scope_organization_id = i.organization_id
+          AND i.status = 'active' AND i.is_active AND o.status = 'active'
+        FOR SHARE OF u, ur, r, i, o;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Active institution administrator required' USING ERRCODE = '42501';
+        END IF;
+
+        SELECT * INTO applicant FROM public.institution_membership_requests
+        WHERE request_id = p_request_id AND institution_id = p_institution_id FOR UPDATE;
+        IF NOT FOUND THEN RETURN jsonb_build_object('not_found', true); END IF;
+        IF applicant.status NOT IN ('pending', 'approved') THEN
+            RETURN jsonb_build_object('conflict', true);
+        END IF;
+        IF applicant.requested_role NOT IN ('staff', 'faculty') THEN
+            RETURN jsonb_build_object('invalid_role', true);
+        END IF;
+        PERFORM 1 FROM public.users u
+        JOIN public.institutions i ON i.institution_id = p_institution_id
+        WHERE u.id = applicant.user_id AND u.status = 'active' AND u.auth_user_id IS NOT NULL
+          AND lower(u.email) = lower(applicant.official_email)
+          AND i.organization_id = applicant.organization_id FOR UPDATE OF u;
+        IF NOT FOUND THEN RETURN jsonb_build_object('invalid_state', true); END IF;
+        SELECT id INTO membership_role FROM public.roles
+        WHERE name = applicant.requested_role AND is_active FOR SHARE;
+        IF membership_role IS NULL THEN
+            RETURN jsonb_build_object('role_not_configured', true);
+        END IF;
+
+        already_approved := applicant.status = 'approved';
+        IF NOT already_approved THEN
+            INSERT INTO public.user_roles(user_id, role_id, scope_type, scope_id, scope_organization_id)
+            VALUES(applicant.user_id, membership_role, 'institution', p_institution_id, applicant.organization_id)
+            ON CONFLICT(user_id, role_id) DO NOTHING;
+            grant_created := FOUND;
+        END IF;
+        -- A retry cannot restore a revoked grant or move a different tenant's role.
+        PERFORM 1 FROM public.user_roles
+        WHERE user_id = applicant.user_id AND role_id = membership_role
+          AND scope_type = 'institution' AND scope_id = p_institution_id
+          AND scope_organization_id = applicant.organization_id FOR SHARE;
+        IF NOT FOUND THEN
+            IF already_approved THEN RETURN jsonb_build_object('invalid_state', true); END IF;
+            RAISE EXCEPTION 'Existing role belongs to another scope' USING ERRCODE = '42501';
+        END IF;
+        IF NOT already_approved THEN
+            UPDATE public.institution_membership_requests
+            SET status = 'approved', decided_by_user_id = p_decided_by,
+                decided_at = clock_timestamp(), decision_reason = p_reason, updated_at = clock_timestamp()
+            WHERE request_id = p_request_id RETURNING * INTO applicant;
+            IF grant_created THEN
+                INSERT INTO public.admin_audit_log
+                    (actor_user_id, institution_id, action, table_name, record_id, record_data, status)
+                VALUES(p_decided_by, p_institution_id, 'role.assignment', 'user_roles', applicant.user_id::text,
+                    jsonb_build_object('role', applicant.requested_role, 'institution_id', p_institution_id,
+                        'membership_request_id', p_request_id), 'success');
+            END IF;
+        END IF;
+        -- The request lock serializes decisions and audit repair. This baseline
+        -- has no B05 decision_key column; do not install unrelated invitation schema.
+        IF NOT EXISTS(SELECT 1 FROM public.admin_audit_log
+            WHERE institution_id = p_institution_id AND action = 'membership_request_approved'
+              AND table_name = 'institution_membership_requests' AND record_id = p_request_id::text
+              AND record_data->>'access_granted' = 'true' AND status = 'success') THEN
+            INSERT INTO public.admin_audit_log
+                (actor_user_id, institution_id, action, table_name, record_id, record_data, status)
+            VALUES(applicant.decided_by_user_id, p_institution_id, 'membership_request_approved',
+                'institution_membership_requests', p_request_id::text,
+                jsonb_build_object('role', applicant.requested_role, 'status', 'approved', 'access_granted', true),
+                'success');
+        END IF;
+        RETURN jsonb_build_object('already_applied', already_approved,
+            'role_granted', true, 'audit_persisted', true);
+    END;
+    $body$;
+    $definition$;
+END;
+$repair$;
+
+REVOKE ALL ON FUNCTION public.phase723_approve_membership_and_grant_role(uuid,uuid,uuid,text)
+    FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.phase723_approve_membership_and_grant_role(uuid,uuid,uuid,text)
+    TO service_role;

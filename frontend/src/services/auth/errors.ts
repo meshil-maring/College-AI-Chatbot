@@ -15,6 +15,7 @@ export type AuthOperation = 'login' | 'session' | 'mutation'
 export type AuthErrorKind =
   | 'invalid_credentials' // 400 INVALID_CREDENTIALS (/auth/login) or 401 INVALID_CREDENTIALS (/auth/student/login)
   | 'registration_pending' // verified faculty/staff credentials awaiting admin approval
+  | 'email_confirmation_required' // provider verified the password but email setup is incomplete
   | 'account_inactive' // existing ACCOUNT_INACTIVE denial while validating a session
   | 'validation' // 422 FastAPI request validation failure
   | 'session_invalid' // 401/404 from /auth/me — token rejected or user gone
@@ -34,6 +35,8 @@ export function messageFor(kind: AuthErrorKind): string {
       return 'Invalid login credentials. Please check your details and try again. For help with account approval or access, contact your administrator.'
     case 'registration_pending':
       return 'Your registration is pending. You can sign in after your institution approves it. Contact your institution administrator if you need help.'
+    case 'email_confirmation_required':
+      return 'Confirm your email address before signing in. If your staff or faculty registration is already approved, ask your institution administrator to retry sign-in setup in Staff & Faculty.'
     case 'account_inactive':
       return 'Your account is inactive. Contact your institution administrator for help with access.'
     case 'validation':

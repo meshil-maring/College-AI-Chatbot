@@ -7,6 +7,12 @@ Academic Setup also exposes its static design preview to administrators without
 academic grants; catalogue requests and record actions remain gated. Backend
 endpoints remain authoritative for authorization and tenant isolation.
 
+`staff-faculty/useStaffFacultyManagement.ts` owns request loading and account
+actions. Approved requests expose **Retry sign-in setup** through the existing
+approval endpoint, so a provider confirmation failure can be retried without
+creating a new registration. Failed decisions refresh the recorded state before
+showing the error; late responses from a replaced session are discarded.
+
 | Folder                        | Current responsibility                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------- |
 | `academic-setup/`             | Departments, programs, years, dated semesters, courses, curriculum links, offerings and sections  |
