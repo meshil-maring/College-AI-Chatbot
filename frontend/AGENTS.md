@@ -7,6 +7,9 @@ loading every workspace into context.
 Follow [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for visual changes: shared colors,
 typography, spacing, component states and responsive behavior.
 
+Follow [SERVER_STATE.md](docs/SERVER_STATE.md) for new or migrated data workflows:
+domain query keys, colocated query functions, mutation reconciliation and page states.
+
 - Before creating a file, follow the [shared project rules](../AGENTS.md): inspect
   the existing structure, search for reusable code, and choose the owning feature.
 - Keep each folder at or below 15 directly contained, project-maintained files.

@@ -13,12 +13,16 @@ maintenance limits. Logs belong in repository-level `logs/frontend/`.
 Follow the [design system](DESIGN_SYSTEM.md) for colors, typography, spacing,
 component states and responsive layouts when creating or updating UI.
 
+Follow the [server-state architecture](SERVER_STATE.md) for consistent TanStack Query
+ownership, feature query modules, identity boundaries, mutations and data states.
+It includes TypeScript recipes and an adoption checklist for new and migrated pages.
+
 | Location                                   | Responsibility                                                         |
 | ------------------------------------------ | ---------------------------------------------------------------------- |
 | `src/main.tsx`, `src/App.tsx`              | Bootstrap and public/authenticated route composition                   |
 | `src/app/`                                 | Path parsing, authentication gates and identity-scoped workspaces      |
-| `src/styles/`                              | Shared design tokens, Tailwind theme, base controls and UI primitives |
-| `src/features/workspace/`                  | Common role workspace frame, page header and responsive shell styles |
+| `src/styles/`                              | Shared design tokens, Tailwind theme, base controls and UI primitives  |
+| `src/features/workspace/`                  | Common role workspace frame, page header and responsive shell styles   |
 | `src/features/auth/`                       | Session, sign-in, password, registration and server-grant helpers      |
 | `src/features/admin/`                      | Institution account administration, approvals and knowledge management |
 | `src/features/staff/`                      | Staff identity, student account approvals and chat                     |
