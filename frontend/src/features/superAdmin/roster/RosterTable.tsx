@@ -28,9 +28,9 @@ export function deliveryLabel(status: string | null, attempts: number | null): s
 }
 
 export function deliveryClass(status: string | null): string {
-  if (status === 'failed') return 'text-rose-300'
-  if (status === 'sent' || status === 'delivered') return 'text-emerald-300'
-  return 'text-slate-400'
+  if (status === 'failed') return 'text-danger'
+  if (status === 'sent' || status === 'delivered') return 'text-success'
+  return 'text-muted'
 }
 
 export function expiryLabel(expiresAt: string | null): string {
@@ -75,19 +75,19 @@ export function RosterTable({
 }) {
   if (roster.admins.length === 0 && roster.pending_invitations.length === 0) {
     return (
-      <p className="mt-4 rounded-xl border border-slate-700 bg-slate-950 px-5 py-6 text-center text-sm text-slate-400">
+      <p className="mt-4 rounded-xl border border-line bg-canvas px-5 py-6 text-center text-sm text-muted">
         No University Admins yet. Use &quot;+ Invite Admin&quot; to invite the first one.
       </p>
     )
   }
   return (
     <>
-      <p className="mt-4 text-sm text-slate-400">
+      <p className="mt-4 text-sm text-muted">
         {roster.admin_count} active {roster.admin_count === 1 ? 'admin' : 'admins'} for {institutionCode}.
       </p>
       <table className="mt-4 w-full text-left text-sm">
         <caption className="sr-only">University Admins and pending invitations for {institutionCode}</caption>
-        <thead className="border-b border-slate-700 bg-slate-800/60 text-xs uppercase tracking-wide text-slate-400">
+        <thead className="border-b border-line bg-surface text-xs uppercase tracking-wide text-muted">
           <tr>
             <th scope="col" className="px-4 py-3 font-semibold">
               Email
@@ -102,15 +102,15 @@ export function RosterTable({
         </thead>
         <tbody>
           {roster.admins.map((entry) => (
-            <tr key={`admin-${entry.user_id ?? entry.email}`} className="border-b border-slate-800">
-              <td className="px-4 py-3 text-slate-200">{entry.email}</td>
-              <td className="px-4 py-3 text-slate-300">Active</td>
+            <tr key={`admin-${entry.user_id ?? entry.email}`} className="border-b border-line">
+              <td className="px-4 py-3 text-content">{entry.email}</td>
+              <td className="px-4 py-3 text-muted">Active</td>
               <td className="px-4 py-3">
                 <button
                   type="button"
                   onClick={() => onRevoke(entry)}
                   disabled={busy !== null || entry.user_id === null}
-                  className="rounded-lg border border-rose-500/50 px-3 py-1.5 text-xs font-medium text-rose-200 hover:bg-rose-500/10 focus:outline-none focus:ring-2 focus:ring-rose-300 disabled:opacity-50"
+                  className="rounded-lg border border-danger px-3 py-2 text-xs font-medium text-danger hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
                 >
                   Revoke
                 </button>
@@ -118,18 +118,18 @@ export function RosterTable({
             </tr>
           ))}
           {roster.pending_invitations.map((entry) => (
-            <tr key={`invite-${entry.invitation_id ?? entry.email}`} className="border-b border-slate-800">
-              <td className="px-4 py-3 text-slate-200">{entry.email}</td>
+            <tr key={`invite-${entry.invitation_id ?? entry.email}`} className="border-b border-line">
+              <td className="px-4 py-3 text-content">{entry.email}</td>
               <td className="px-4 py-3">
-                <div className="text-slate-300">{statusLabel(entry.status)}</div>
+                <div className="text-muted">{statusLabel(entry.status)}</div>
                 <div className={`mt-0.5 text-xs ${deliveryClass(entry.email_delivery_status)}`}>
                   {deliveryLabel(entry.email_delivery_status, entry.email_delivery_attempts)}
                 </div>
                 {expiryLabel(entry.expires_at) !== '' ? (
-                  <div className="mt-0.5 text-xs text-slate-500">{expiryLabel(entry.expires_at)}</div>
+                  <div className="mt-0.5 text-xs text-muted">{expiryLabel(entry.expires_at)}</div>
                 ) : null}
                 {entry.resend_count !== null && entry.resend_count > 0 ? (
-                  <div className="mt-0.5 text-xs text-slate-500">Resent {entry.resend_count}&times;</div>
+                  <div className="mt-0.5 text-xs text-muted">Resent {entry.resend_count}&times;</div>
                 ) : null}
               </td>
               <td className="px-4 py-3">
@@ -139,7 +139,7 @@ export function RosterTable({
                       type="button"
                       disabled={busy !== null}
                       onClick={() => onResend(entry)}
-                      className="rounded-lg border border-violet-500/60 px-3 py-1.5 text-xs font-medium text-violet-100 hover:bg-violet-500/20 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-50"
+                      className="rounded-lg border border-accent px-3 py-2 text-xs font-medium text-accent hover:bg-raised focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
                     >
                       {busy === 'resend' ? 'Resending...' : 'Resend'}
                     </button>
@@ -149,12 +149,12 @@ export function RosterTable({
                       type="button"
                       disabled={busy !== null}
                       onClick={() => onCancel(entry)}
-                      className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:opacity-50"
+                      className="rounded-lg border border-control px-3 py-2 text-xs font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
                     >
                       {busy === 'cancel' ? 'Cancelling...' : 'Cancel'}
                     </button>
                   ) : (
-                    <span className="text-xs text-slate-500">No action</span>
+                    <span className="text-xs text-muted">No action</span>
                   )}
                 </div>
               </td>

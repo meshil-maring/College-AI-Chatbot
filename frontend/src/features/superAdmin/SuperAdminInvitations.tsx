@@ -35,7 +35,11 @@ export default function SuperAdminInvitations() {
     err instanceof SuperAdminInvitationError ? err.message : 'Something went wrong. Please try again.'
 
   const refresh = async (): Promise<void> => {
-    try { await invitationsQuery.refetch() } catch (err) { setError(message(err)) }
+    try {
+      await invitationsQuery.refetch()
+    } catch (err) {
+      setError(message(err))
+    }
   }
 
   const invite = async (event: React.FormEvent): Promise<void> => {
@@ -65,36 +69,63 @@ export default function SuperAdminInvitations() {
 
   return (
     <section aria-labelledby="sa-invites-title" className="space-y-6">
-      <h2 id="sa-invites-title" className="text-xl font-bold text-white">Super Admins</h2>
+      <h2 id="sa-invites-title" className="font-bold text-content text-section">
+        Super Admins
+      </h2>
       {canManage ? (
-        <form onSubmit={(e) => { void invite(e) }} className="flex gap-3">
+        <form
+          onSubmit={(e) => {
+            void invite(e)
+          }}
+          className="flex gap-3"
+        >
           <input
             type="email"
             aria-label="Invitee email"
             value={email}
             maxLength={320}
-            onChange={(e) => { setEmail(e.target.value) }}
+            onChange={(e) => {
+              setEmail(e.target.value)
+            }}
             placeholder="new.admin@example.com"
-            className="flex-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            className="flex-1 rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content"
           />
-          <button type="submit" disabled={busy} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={busy}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink disabled:opacity-60"
+          >
             Invite Super Admin
           </button>
         </form>
       ) : null}
-      {error !== null ? <p role="alert" className="text-sm text-red-400">{error}</p> : null}
+      {error !== null ? (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
       {link !== null ? (
-        <p role="status" className="break-all rounded-lg border border-emerald-700 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+        <p role="status" className="break-all rounded-lg border border-success bg-success-bg p-3 text-sm text-success">
           Share this single-use link (shown once, valid 24 hours): {link}
         </p>
       ) : null}
-      <ul className="divide-y divide-slate-800 rounded-lg border border-slate-800">
-        {invitations.length === 0 ? <li className="p-3 text-sm text-slate-400">No invitations yet.</li> : null}
+      <ul className="divide-y divide-slate-800 rounded-lg border border-line">
+        {invitations.length === 0 ? <li className="p-3 text-sm text-muted">No invitations yet.</li> : null}
         {invitations.map((item) => (
           <li key={item.invitation_id} className="flex items-center justify-between gap-3 p-3 text-sm">
-            <span>{item.email} · <span className="text-slate-400">{item.status}</span></span>
+            <span>
+              {item.email} · <span className="text-muted">{item.status}</span>
+            </span>
             {canManage && item.status === 'invited' ? (
-              <button type="button" onClick={() => { void cancel(item.invitation_id) }} className="text-xs text-amber-300 underline">Cancel</button>
+              <button
+                type="button"
+                onClick={() => {
+                  void cancel(item.invitation_id)
+                }}
+                className="text-xs text-warning underline"
+              >
+                Cancel
+              </button>
             ) : null}
           </li>
         ))}

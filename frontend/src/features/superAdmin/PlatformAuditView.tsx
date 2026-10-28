@@ -1,14 +1,7 @@
 import { useState } from 'react'
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
-import {
-  PlatformInstitutionError,
-  listPlatformAudit,
-} from '../../services/platform/platformInstitutionsApi.ts'
-import type {
-  PlatformAuditAction,
-  PlatformAuditEntry,
-  PlatformAuditPage,
-} from '../../types/platform.ts'
+import { PlatformInstitutionError, listPlatformAudit } from '../../services/platform/platformInstitutionsApi.ts'
+import type { PlatformAuditAction, PlatformAuditEntry, PlatformAuditPage } from '../../types/platform.ts'
 import { useAuth } from '../auth/session/AuthProvider.tsx'
 
 const PAGE_SIZE = 25
@@ -61,51 +54,51 @@ export default function PlatformAuditView() {
   const [action, setAction] = useState<PlatformAuditAction | ''>('')
   const auditQuery = useApiQuery<PlatformAuditPage>(
     ['platform', 'audit', token, offset, action],
-    () => listPlatformAudit(token, {
-      limit: PAGE_SIZE,
-      offset,
-      ...(action === '' ? {} : { action }),
-    }),
+    () =>
+      listPlatformAudit(token, {
+        limit: PAGE_SIZE,
+        offset,
+        ...(action === '' ? {} : { action }),
+      }),
     token !== '',
   )
   const page = auditQuery.data ?? null
   const loading = auditQuery.isFetching
   const error = auditQuery.isError
-    ? (auditQuery.error instanceof PlatformInstitutionError
+    ? auditQuery.error instanceof PlatformInstitutionError
       ? auditQuery.error.message
-      : 'Could not load the platform audit log. Please try again.')
+      : 'Could not load the platform audit log. Please try again.'
     : null
-  const refresh = () => { void auditQuery.refetch() }
+  const refresh = () => {
+    void auditQuery.refetch()
+  }
 
   const entries: readonly PlatformAuditEntry[] = page?.entries ?? []
   const total = page?.total ?? 0
   const canGoBack = offset > 0
   const canGoForward = offset + PAGE_SIZE < total
-return (
+  return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
-          Platform
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-white">Platform Audit</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-          A read-only record of every platform management action: who acted, what they did and
-          which institution it affected. Records cannot be edited or removed from this view or
-          from the API.
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Platform</p>
+        <h1 className="mt-2 font-bold text-content text-page">Platform Audit</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+          A read-only record of every platform management action: who acted, what they did and which institution it
+          affected. Records cannot be edited or removed from this view or from the API.
         </p>
       </header>
 
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label
-            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400"
+            className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted"
             htmlFor="audit-action-filter"
           >
             Filter by action
           </label>
           <select
             id="audit-action-filter"
-            className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400"
+            className="rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             value={action}
             onChange={(event) => {
               setOffset(0)
@@ -122,48 +115,40 @@ return (
         </div>
         <button
           type="button"
-          onClick={() => { void refresh() }}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300"
+          onClick={() => {
+            void refresh()
+          }}
+          className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Refresh
         </button>
       </div>
 
       {error !== null ? (
-        <p
-          role="alert"
-          className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
-        >
+        <p role="alert" className="rounded-xl border border-danger bg-danger-bg px-4 py-3 text-sm text-danger">
           {error}
         </p>
       ) : null}
 
       {loading ? (
-        <p role="status" className="text-sm text-slate-400">Loading audit records...</p>
+        <p role="status" className="text-sm text-muted">
+          Loading audit records...
+        </p>
       ) : entries.length === 0 ? (
-        <p className="rounded-xl border border-slate-700 bg-slate-900 px-5 py-8 text-center text-sm text-slate-400">
+        <p className="rounded-xl border border-line bg-surface px-5 py-8 text-center text-sm text-muted">
           No audit records match this view yet.
         </p>
       ) : (
-        <ul className="divide-y divide-slate-800 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+        <ul className="divide-y divide-slate-800 overflow-hidden rounded-xl border border-line bg-surface">
           {entries.map((entry) => (
-            <li
-              key={entry.audit_id}
-              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-5 py-4"
-            >
-              <span className="w-44 shrink-0 text-xs text-slate-500">
-                {formatTimestamp(entry.performed_at)}
-              </span>
-              <span className="w-56 shrink-0 truncate text-sm text-slate-300">
+            <li key={entry.audit_id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-5 py-4">
+              <span className="w-44 shrink-0 text-xs text-muted">{formatTimestamp(entry.performed_at)}</span>
+              <span className="w-56 shrink-0 truncate text-sm text-muted">
                 {entry.actor_email ?? 'Platform operator'}
               </span>
-              <span className="text-sm text-slate-100">{labelFor(entry.action)}</span>
-              <span className="text-xs text-slate-500">
-                {entry.institution_name ?? entry.institution_id}
-              </span>
-              {entry.result !== 'success' ? (
-                <span className="text-xs text-amber-300">{entry.result}</span>
-              ) : null}
+              <span className="text-sm text-content">{labelFor(entry.action)}</span>
+              <span className="text-xs text-muted">{entry.institution_name ?? entry.institution_id}</span>
+              {entry.result !== 'success' ? <span className="text-xs text-warning">{entry.result}</span> : null}
             </li>
           ))}
         </ul>
@@ -173,21 +158,23 @@ return (
         <button
           type="button"
           disabled={!canGoBack || loading}
-          onClick={() => { setOffset(Math.max(0, offset - PAGE_SIZE)) }}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-40"
+          onClick={() => {
+            setOffset(Math.max(0, offset - PAGE_SIZE))
+          }}
+          className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-40"
         >
           Previous
         </button>
-        <span className="text-xs text-slate-500">
-          {total === 0
-            ? 'No records'
-            : `${offset + 1}–${Math.min(offset + PAGE_SIZE, total)} of ${total}`}
+        <span className="text-xs text-muted">
+          {total === 0 ? 'No records' : `${offset + 1}–${Math.min(offset + PAGE_SIZE, total)} of ${total}`}
         </span>
         <button
           type="button"
           disabled={!canGoForward || loading}
-          onClick={() => { setOffset(offset + PAGE_SIZE) }}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-40"
+          onClick={() => {
+            setOffset(offset + PAGE_SIZE)
+          }}
+          className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-40"
         >
           Next
         </button>

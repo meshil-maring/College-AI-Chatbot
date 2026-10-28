@@ -13,18 +13,11 @@
 
 import type { ChatUsage } from '../../types/chat.ts'
 
-export default function UsageBadge({
-  usage,
-  modelUsed,
-}: {
-  usage: ChatUsage | null
-  modelUsed: string | null
-}) {
+export default function UsageBadge({ usage, modelUsed }: { usage: ChatUsage | null; modelUsed: string | null }) {
   const input = usage?.input_tokens
   const output = usage?.output_tokens
   const hasUsage =
-    (typeof input === 'number' && Number.isFinite(input)) ||
-    (typeof output === 'number' && Number.isFinite(output))
+    (typeof input === 'number' && Number.isFinite(input)) || (typeof output === 'number' && Number.isFinite(output))
 
   if (!hasUsage && !modelUsed) {
     return null
@@ -39,7 +32,7 @@ export default function UsageBadge({
   }
 
   return (
-    <p className="text-[11px] text-slate-500" aria-label="Response metadata">
+    <p className="text-xs text-muted" aria-label="Response metadata">
       {parts.length > 0 ? <span>{parts.join(' · ')}</span> : null}
       {parts.length > 0 && modelUsed ? ' · ' : null}
       {modelUsed ? `Model: ${modelUsed}` : null}

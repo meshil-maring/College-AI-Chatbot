@@ -24,23 +24,23 @@ export default function StaffIdentityCard({ user }: { user: CurrentUser }) {
   return (
     <section
       aria-labelledby="staff-identity-heading"
-      className="rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-lg"
+      className="rounded-xl border border-line bg-surface p-6 shadow-none"
     >
-      <h2 id="staff-identity-heading" className="text-lg font-semibold text-white">
+      <h2 id="staff-identity-heading" className="font-semibold text-content text-section">
         Staff identity
       </h2>
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Email</dt>
-          <dd className="mt-1 break-words text-sm text-slate-100">{email ?? 'Not provided'}</dd>
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted">Email</dt>
+          <dd className="mt-1 break-words text-sm text-content">{email ?? 'Not provided'}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Role</dt>
-          <dd className="mt-1 text-sm text-slate-100">Staff</dd>
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted">Role</dt>
+          <dd className="mt-1 text-sm text-content">Staff</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-400">Institution</dt>
-          <dd className="mt-1 text-sm text-slate-100">
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted">Institution</dt>
+          <dd className="mt-1 text-sm text-content">
             {user.institution_id ? 'Linked to your institution' : 'No institution linked'}
           </dd>
         </div>

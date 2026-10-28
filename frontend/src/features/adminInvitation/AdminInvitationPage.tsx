@@ -27,30 +27,28 @@ export default function AdminInvitationPage(props: Parameters<typeof useInvitati
   const { phase, recoveryMode, membershipMode, localError } = model
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
-      <section className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
-          University Admin Invitation
-        </p>
+    <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-content">
+      <section className="w-full max-w-lg rounded-xl border border-line bg-surface p-8 shadow-none">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">University Admin Invitation</p>
 
         {phase.kind === 'loading' ? (
-          <p role="status" className="mt-4 text-sm text-slate-400">
+          <p role="status" className="mt-4 text-sm text-muted">
             Verifying your invitation…
           </p>
         ) : null}
 
         {phase.kind === 'unusable' ? (
           <>
-            <h1 className="mt-2 text-2xl font-bold text-white">This invitation cannot be used</h1>
-            <p role="alert" className="mt-4 text-sm leading-6 text-slate-300">
+            <h1 className="mt-2 font-bold text-content text-page">This invitation cannot be used</h1>
+            <p role="alert" className="mt-4 text-sm leading-6 text-muted">
               {phase.message}
             </p>
-            <p className="mt-4 text-sm leading-6 text-slate-400">
+            <p className="mt-4 text-sm leading-6 text-muted">
               Contact your administrator for help with this invitation.
             </p>
             <a
               href="/login/admin"
-              className="mt-6 inline-block rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              className="mt-6 inline-block rounded-lg bg-raised px-4 py-2 text-sm font-semibold text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
               Go to admin login
             </a>
@@ -59,16 +57,16 @@ export default function AdminInvitationPage(props: Parameters<typeof useInvitati
 
         {phase.kind === 'accepted' ? (
           <>
-            <h1 className="mt-2 text-2xl font-bold text-white">Your account is ready</h1>
-            <p role="status" className="mt-4 text-sm leading-6 text-emerald-200">
+            <h1 className="mt-2 font-bold text-content text-page">Your account is ready</h1>
+            <p role="status" className="mt-4 text-sm leading-6 text-success">
               {phase.message}
             </p>
-            <p className="mt-3 text-sm text-slate-400">
+            <p className="mt-3 text-sm text-muted">
               You were added as {phase.role === 'admin' ? 'a University Admin' : phase.role} of {phase.institutionName}.
             </p>
             <a
               href={`/login/${phase.role}`}
-              className="mt-6 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              className="mt-6 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
               Continue to {phase.role === 'admin' ? 'admin' : phase.role} login
             </a>
@@ -77,9 +75,9 @@ export default function AdminInvitationPage(props: Parameters<typeof useInvitati
 
         {phase.kind === 'ready' || phase.kind === 'submitting' ? (
           <>
-            <h1 className="mt-2 text-2xl font-bold text-white">Join {phase.invitation.institution_name}</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              This invitation is for <strong className="text-slate-200">{phase.invitation.email}</strong>.
+            <h1 className="mt-2 font-bold text-content text-page">Join {phase.invitation.institution_name}</h1>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              This invitation is for <strong className="text-content">{phase.invitation.email}</strong>.
               {recoveryMode
                 ? ' Finish confirming the account you already created.'
                 : membershipMode
@@ -93,22 +91,22 @@ export default function AdminInvitationPage(props: Parameters<typeof useInvitati
                 also the server's, never a local flag. */}
             <p
               data-testid="invite-email-binding"
-              className="mt-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300"
+              className="mt-2 rounded-lg border border-line bg-canvas px-3 py-2 text-xs text-muted"
             >
-              This membership is bound to <strong className="text-slate-100">{phase.invitation.email}</strong>. This
+              This membership is bound to <strong className="text-content">{phase.invitation.email}</strong>. This
               address cannot be changed during setup.
             </p>
-            <p data-testid="invite-verification-state" className="mt-2 text-xs text-slate-500">
+            <p data-testid="invite-verification-state" className="mt-2 text-xs text-muted">
               {phase.invitation.email_verified
                 ? 'Email verified'
                 : 'Invitation valid — email will be verified when you complete setup.'}
             </p>
-            <p className="mt-2 text-xs text-slate-500">Expires: {formatExpiry(phase.invitation.expires_at)}</p>
+            <p className="mt-2 text-xs text-muted">Expires: {formatExpiry(phase.invitation.expires_at)}</p>
 
             {localError !== null ? (
               <p
                 role="alert"
-                className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
+                className="mt-4 rounded-xl border border-danger bg-danger-bg px-4 py-3 text-sm text-danger"
               >
                 {localError}
               </p>

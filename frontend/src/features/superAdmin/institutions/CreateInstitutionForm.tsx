@@ -19,7 +19,7 @@ export function CreateInstitutionForm({
 
   return (
     <form
-      className="rounded-2xl border border-slate-700 bg-slate-900 p-6"
+      className="rounded-xl border border-line bg-surface p-6"
       onSubmit={(event) => {
         event.preventDefault()
         if (!canSubmit) return
@@ -31,10 +31,8 @@ export function CreateInstitutionForm({
         })
       }}
     >
-      <h3 className="text-lg font-semibold text-white">Create institution</h3>
-      <p className="mt-1 text-sm text-slate-400">
-        Only the name and code are required. Branding can be configured later.
-      </p>
+      <h3 className="font-semibold text-content text-card">Create institution</h3>
+      <p className="mt-1 text-sm text-muted">Only the name and code are required. Branding can be configured later.</p>
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <div>
           <label className={labelClass} htmlFor="create-name">
@@ -65,7 +63,7 @@ export function CreateInstitutionForm({
             placeholder="UNICO"
             required
           />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted">
             2-32 characters: letters, digits, hyphens or underscores. Used in the public URL.
           </p>
         </div>
@@ -102,14 +100,14 @@ export function CreateInstitutionForm({
         <button
           type="submit"
           disabled={!canSubmit}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
         >
           {busy ? 'Creating...' : 'Create institution'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-muted hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Cancel
         </button>

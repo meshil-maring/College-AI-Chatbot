@@ -2,21 +2,21 @@
   min-width: 0;
 }
 .batch-table-panel {
-  border: 1px solid #192630;
-  border-radius: 8px;
-  background: linear-gradient(115deg, #0c1419, #090f13);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
 }
 .batch-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 11px;
+  font-size: var(--ui-type-small);
 }
 .batch-table th {
   height: 60px;
-  padding: 10px;
-  background: #131d24;
-  color: #f0f4f9;
+  padding: 12px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
   text-align: left;
   font-weight: 500;
 }
@@ -51,8 +51,8 @@
 .batch-table th button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 34px;
+  gap: 8px;
+  min-height: var(--ui-control-height);
 }
 .batch-table th button svg {
   width: 12px;
@@ -60,33 +60,33 @@
 }
 .batch-table td {
   height: 50px;
-  padding: 7px 10px;
-  border-top: 1px solid #1a252e;
-  color: #c8d2df;
+  padding: 8px 12px;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
   overflow-wrap: anywhere;
 }
 .batch-table tbody tr:hover {
-  background: #111b22;
+  background: var(--ui-surface);
 }
 .batch-identity {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 12px;
 }
 .batch-identity > div {
   min-width: 0;
 }
 .batch-identity strong {
   display: block;
-  color: #f5f7fa;
-  font-size: 12px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-small);
   font-weight: 500;
 }
 .batch-identity small {
   display: block;
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--batch-muted);
-  font-size: 10px;
+  font-size: var(--ui-type-small);
   line-height: 1.25;
 }
 .batch-avatar {
@@ -97,42 +97,42 @@
   flex-shrink: 0;
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 50%;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 500;
   color: #fff;
 }
 .batch-avatar.gold {
-  background: linear-gradient(120deg, #ffdf55, #ffbf16);
-  color: #17140a;
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
 }
 .batch-avatar.teal {
-  background: linear-gradient(120deg, #00636a, #00a5a9);
+  background: var(--ui-surface);
 }
 .batch-avatar.blue {
-  background: linear-gradient(120deg, #2261dc, #4786ff);
+  background: var(--ui-surface);
 }
 .batch-avatar.ochre {
-  background: linear-gradient(120deg, #645112, #9f7d16);
+  background: var(--ui-surface);
 }
 .batch-avatar.purple {
-  background: linear-gradient(120deg, #3f25bc, #6335dc);
+  background: var(--ui-surface);
 }
 .batch-avatar.pink {
-  background: linear-gradient(120deg, #e81f7e, #ff3c9b);
+  background: var(--ui-surface);
 }
 .batch-avatar.orange {
-  background: linear-gradient(120deg, #ff7200, #ff9d12);
+  background: var(--ui-accent);
 }
 .batch-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 7px;
-  border: 1px solid #075b36;
-  border-radius: 5px;
-  background: #09251c;
-  color: #20dd76;
-  font-size: 10px;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+  font-size: var(--ui-type-small);
   white-space: nowrap;
 }
 .batch-status > span {
@@ -144,19 +144,19 @@
 }
 .batch-status.completed {
   border-color: #20457c;
-  background: #0d1c33;
-  color: #5c9bff;
+  background: var(--ui-success-bg);
+  color: var(--ui-info);
 }
 .batch-status.inactive {
-  border-color: #3e4a59;
-  background: #1b222b;
-  color: #afbacb;
+  border-color: var(--ui-border);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
 }
 .batch-row-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 .batch-row-actions > button,
 .batch-more > summary {
@@ -164,10 +164,10 @@
   place-items: center;
   width: 29px;
   height: 29px;
-  border: 1px solid #1c2a35;
-  border-radius: 6px;
-  background: #10191f;
-  color: #f1f5fa;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   cursor: pointer;
   list-style: none;
 }
@@ -180,8 +180,8 @@
 }
 .batch-row-actions > button:hover,
 .batch-more > summary:hover {
-  border-color: #8b7336;
-  color: #ffca28;
+  border-color: var(--ui-danger);
+  color: var(--ui-accent);
 }
 .batch-more {
   position: relative;
@@ -192,53 +192,53 @@
   right: 0;
   bottom: 35px;
   width: 150px;
-  padding: 5px;
-  border: 1px solid #334351;
-  border-radius: 7px;
-  background: #152029;
+  padding: 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
   box-shadow: 0 8px 24px #0008;
 }
 .batch-more > div button {
   display: block;
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--ui-type-body);
 }
 .batch-more > div button:hover {
-  background: #24333e;
+  background: var(--ui-surface-raised);
 }
 .batch-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 26px;
-  padding: 0 5px 10px;
+  margin-top: 28px;
+  padding: 0 4px 12px;
   color: var(--batch-muted);
-  font-size: 12px;
+  font-size: var(--ui-type-small);
 }
 .batch-pagination p {
   margin: 0;
 }
 .batch-pagination nav {
   display: flex;
-  gap: 7px;
+  gap: 8px;
 }
 .batch-pagination button {
   display: grid;
   place-items: center;
   width: 34px;
   height: 35px;
-  border: 1px solid #24323e;
-  border-radius: 6px;
-  background: #10191f;
-  color: #f1f5fa;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 .batch-pagination button[aria-current] {
-  border-color: #ffca28;
-  color: #ffca28;
-  background: #13170e;
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
+  background: var(--ui-surface);
 }
 .batch-pagination button:disabled {
   opacity: 0.4;

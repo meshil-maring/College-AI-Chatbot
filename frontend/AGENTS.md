@@ -4,6 +4,9 @@ Read [STRUCTURE.md](docs/STRUCTURE.md) for module ownership and [ROUTES.md](docs
 for routes. Start with the relevant feature and its adjacent tests instead of
 loading every workspace into context.
 
+Follow [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) for visual changes: shared colors,
+typography, spacing, component states and responsive behavior.
+
 - Before creating a file, follow the [shared project rules](../AGENTS.md): inspect
   the existing structure, search for reusable code, and choose the owning feature.
 - Keep each folder at or below 15 directly contained, project-maintained files.

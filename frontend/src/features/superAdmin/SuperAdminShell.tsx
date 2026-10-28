@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { Building2, ScrollText, ShieldCheck, type LucideIcon } from 'lucide-react'
+import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
+import WorkspacePageHeader from '../workspace/WorkspacePageHeader.tsx'
 import { useApiQuery } from '../../hooks/useApiQuery.ts'
 import { getPlatformIdentity } from '../../services/platform/platformApi.ts'
 import { useAuth } from '../auth/session/AuthProvider.tsx'
@@ -17,6 +20,11 @@ const PLATFORM_AREAS = [
 ] as const
 
 type PlatformSection = 'institutions' | 'audit' | 'super-admins'
+const icons: Record<PlatformSection, LucideIcon> = {
+  institutions: Building2,
+  audit: ScrollText,
+  'super-admins': ShieldCheck,
+}
 
 /**
  * Phase 7.14 platform shell.
@@ -38,112 +46,92 @@ export default function SuperAdminShell() {
     () => getPlatformIdentity(accessToken as string),
     accessToken !== null,
   )
-  const authorization: 'checking' | 'allowed' | 'denied' = accessToken === null
-    ? 'denied'
-    : authorizationQuery.isPending
-      ? 'checking'
-      : authorizationQuery.isSuccess ? 'allowed' : 'denied'
-  const [section, setSection] = useState<PlatformSection>(() =>
-    canReadPlatform ? 'institutions' : 'audit',
-  )
+  const authorization: 'checking' | 'allowed' | 'denied' =
+    accessToken === null
+      ? 'denied'
+      : authorizationQuery.isPending
+        ? 'checking'
+        : authorizationQuery.isSuccess
+          ? 'allowed'
+          : 'denied'
+  const [section, setSection] = useState<PlatformSection>(() => (canReadPlatform ? 'institutions' : 'audit'))
 
   if (authorization === 'checking') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
+      <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-content">
         <p>Verifying platform authorization…</p>
       </main>
     )
   }
   if (authorization === 'denied') {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center text-slate-100">
-        <section className="max-w-lg rounded-2xl border border-amber-900/50 bg-amber-500/10 p-10">
-          <h1 className="text-2xl font-bold text-amber-300">Platform access restricted</h1>
-          <p className="mt-4 text-slate-300">Your current session is not authorized for platform administration.</p>
-          <button type="button" onClick={logout} className="mt-6 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white">Sign out</button>
+      <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-center text-content">
+        <section className="max-w-lg rounded-xl border border-warning bg-warning-bg p-10">
+          <h1 className="font-bold text-warning text-page">Platform access restricted</h1>
+          <p className="mt-4 text-muted">Your current session is not authorized for platform administration.</p>
+          <button
+            type="button"
+            onClick={logout}
+            className="mt-6 rounded-lg bg-raised px-4 py-2 text-sm font-medium text-content"
+          >
+            Sign out
+          </button>
         </section>
       </main>
     )
   }
+  const navigation: { key: PlatformSection; label: string }[] = [
+    ...(canReadPlatform
+      ? [
+          { key: 'institutions' as const, label: 'Institutions' },
+          { key: 'super-admins' as const, label: 'Super Admins' },
+        ]
+      : []),
+    ...(canReadAudit ? [{ key: 'audit' as const, label: 'Platform Audit' }] : []),
+  ]
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-violet-500/20 bg-slate-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-8 py-5">
-          <div>
-            <p className="text-lg font-bold text-white">College AI</p>
-            <p className="text-xs text-violet-300">Platform-level workspace · Demo</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-slate-400">{user?.email ?? 'Platform administrator'}</span>
-            <button type="button" onClick={logout} className="rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300">Sign out</button>
-          </div>
-        </div>
-      </header>
-
-      {/* Desktop-first 1280px+ layout: fixed platform sidebar + content area. */}
-      <div className="mx-auto flex max-w-7xl gap-10 px-8 py-12">
-        <nav aria-label="Platform sections" className="w-56 shrink-0">
-          <ul className="space-y-1">
-            {canReadPlatform ? (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { setSection('institutions') }}
-                  aria-current={section === 'institutions' ? 'page' : undefined}
-                  className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
-                >
-                  Institutions
-                </button>
-              </li>
-            ) : null}
-            {canReadPlatform ? (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { setSection('super-admins') }}
-                  aria-current={section === 'super-admins' ? 'page' : undefined}
-                  className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
-                >
-                  Super Admins
-                </button>
-              </li>
-            ) : null}
-            {canReadAudit ? (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => { setSection('audit') }}
-                  aria-current={section === 'audit' ? 'page' : undefined}
-                  className="block w-full rounded-lg bg-violet-500/15 px-4 py-2 text-left text-sm font-semibold text-violet-200"
-                >
-                  Platform Audit
-                </button>
-              </li>
-            ) : null}
+    <WorkspaceFrame<PlatformSection>
+      navigation={navigation}
+      currentView={section}
+      icons={icons}
+      onNavigate={setSection}
+      panelLabel="Platform Administration"
+      navigationLabel="Platform sections"
+      identityLabel={user?.email ?? 'Platform administrator'}
+      identityRole="Platform administrator"
+      onLogout={logout}
+      headerContent={<span className="admin-topbar-label">Platform-level workspace</span>}
+      sidebarContent={
+        <section className="workspace-upcoming" aria-label="Upcoming platform areas">
+          <p>Coming soon</p>
+          <ul>
             {PLATFORM_AREAS.map((area) => (
               <li key={area}>
-                <span className="flex items-center justify-between gap-2 rounded-lg px-4 py-2 text-sm text-slate-500">
-                  {area}
-                  <span className="rounded-full bg-slate-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-                    Soon
-                  </span>
-                </span>
+                <span>{area}</span>
+                <span>Soon</span>
               </li>
             ))}
           </ul>
-        </nav>
-
-        <main className="min-w-0 flex-1">
-          {section === 'institutions' && canReadPlatform ? <InstitutionManagement /> : null}
-          {section === 'audit' && canReadAudit ? <PlatformAuditView /> : null}
-          {section === 'super-admins' && canReadPlatform ? <SuperAdminInvitations /> : null}
-          {!canReadPlatform && !canReadAudit ? (
-            <p role="status" className="text-sm text-slate-400">
-              Your account has no platform sections available.
-            </p>
-          ) : null}
-        </main>
-      </div>
-    </div>
+        </section>
+      }
+    >
+      {section === 'institutions' && canReadPlatform ? <InstitutionManagement /> : null}
+      {section === 'audit' && canReadAudit ? <PlatformAuditView /> : null}
+      {section === 'super-admins' && canReadPlatform ? (
+        <>
+          <WorkspacePageHeader
+            title="Super Admins"
+            eyebrow="Platform Administration"
+            description="Invite and manage platform administrator access."
+          />
+          <SuperAdminInvitations />
+        </>
+      ) : null}
+      {!canReadPlatform && !canReadAudit ? (
+        <p role="status" className="text-sm text-muted">
+          Your account has no platform sections available.
+        </p>
+      ) : null}
+    </WorkspaceFrame>
   )
 }

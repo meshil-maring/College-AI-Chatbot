@@ -24,10 +24,10 @@ import type { ReactNode } from 'react'
 /** Neutral, non-alarming loading indicator for one dashboard section. */
 export function LoadingBlock({ label }: { label: string }) {
   return (
-    <p role="status" className="flex items-center gap-2 text-sm text-slate-400">
+    <p role="status" className="flex items-center gap-2 text-sm text-muted">
       <span
         aria-hidden="true"
-        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-500 border-t-transparent"
+        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-control border-t-transparent"
       />
       <span>{label}</span>
     </p>
@@ -36,7 +36,7 @@ export function LoadingBlock({ label }: { label: string }) {
 
 /** Empty state: data genuinely does not exist yet (never a failure). */
 export function EmptyBlock({ message }: { message: string }) {
-  return <p className="text-sm text-slate-400">{message}</p>
+  return <p className="text-sm text-muted">{message}</p>
 }
 
 /** Error state: user-safe message plus an optional retry action. */
@@ -50,13 +50,13 @@ export function ErrorBlock({
   retryLabel?: string
 }) {
   return (
-    <div role="alert" className="rounded-lg border border-red-900/50 bg-red-500/10 px-3 py-2">
-      <p className="text-sm text-red-300">{message}</p>
+    <div role="alert" className="rounded-lg border border-danger bg-danger-bg px-3 py-2">
+      <p className="text-sm text-danger">{message}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-2 rounded-lg border border-red-800/60 px-3 py-1 text-xs font-medium text-red-200 hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-400"
+          className="mt-2 rounded-lg border border-danger px-3 py-1 text-xs font-medium text-danger hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-accent"
         >
           {retryLabel}
         </button>
@@ -83,12 +83,9 @@ export function SectionCard({
   action?: ReactNode
 }) {
   return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-2xl border border-slate-700 bg-slate-800/60 p-4 sm:p-5"
-    >
+    <section aria-labelledby={headingId} className="rounded-xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <h2 id={headingId} className="min-w-0 flex-1 break-words text-base font-semibold text-white">
+        <h2 id={headingId} className="min-w-0 flex-1 break-words font-semibold text-content text-section">
           {title}
         </h2>
         {action ? <div className="shrink-0">{action}</div> : null}
@@ -101,9 +98,9 @@ export function SectionCard({
 /** A labelled value inside the identity / academic-context definitions. */
 export function Definition({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900/40 px-3 py-2">
-      <dt className="text-xs text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium break-words text-white">{value}</dd>
+    <div className="rounded-lg border border-line bg-surface px-3 py-2">
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="mt-0.5 text-sm font-medium break-words text-content">{value}</dd>
     </div>
   )
 }

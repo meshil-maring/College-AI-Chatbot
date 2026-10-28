@@ -121,14 +121,14 @@ export function InvitationAcceptanceForm({ model }: { model: AdminInvitationPage
                   required
                 />
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 Your password is sent only to the College AI authentication service and is never stored or displayed by
                 this page.
               </p>
               <button
                 type="submit"
                 disabled={phase.kind === 'submitting'}
-                className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+                className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
               >
                 {phase.kind === 'submitting' ? 'Setting up your account…' : 'Create my account'}
               </button>

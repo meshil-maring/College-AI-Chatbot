@@ -22,11 +22,7 @@ export default function ResetPasswordForm({ onBackToLogin }: ResetPasswordFormPr
     const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     const token = fragment.get('access_token')
     const recovery = fragment.get('type') === 'recovery'
-    window.history.replaceState(
-      null,
-      '',
-      `${window.location.pathname}${window.location.search}`,
-    )
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
     if (recovery && token) {
       setAccessToken(token)
     } else {
@@ -66,20 +62,26 @@ export default function ResetPasswordForm({ onBackToLogin }: ResetPasswordFormPr
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <main className="max-w-md w-full py-16">
-        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl">
-          <h1 className="text-3xl font-bold text-white tracking-tight">Choose a new password</h1>
-          <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+        <div className="rounded-xl border border-line bg-surface p-8 shadow-none">
+          <h1 className="font-bold text-content tracking-tight text-page">Choose a new password</h1>
+          <p className="mt-2 text-sm text-muted leading-relaxed">
             Recovery is verified by the authentication provider. The link is single-use.
           </p>
           {error !== null && (
-            <div role="alert" className="mt-4 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+            <div
+              role="alert"
+              className="mt-4 rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger"
+            >
               {error}
             </div>
           )}
           {completed && (
-            <div role="status" className="mt-4 rounded-lg border border-emerald-900/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">
+            <div
+              role="status"
+              className="mt-4 rounded-lg border border-success bg-success-bg px-4 py-2 text-sm text-success"
+            >
               Password reset successfully. Please sign in with your new password.
             </div>
           )}
@@ -115,7 +117,7 @@ export default function ResetPasswordForm({ onBackToLogin }: ResetPasswordFormPr
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-accent px-4 py-2 font-semibold text-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busy ? 'Resetting password…' : 'Reset password'}
               </button>
@@ -125,7 +127,7 @@ export default function ResetPasswordForm({ onBackToLogin }: ResetPasswordFormPr
             <button
               type="button"
               onClick={onBackToLogin}
-              className="mt-6 w-full rounded-lg bg-slate-700 px-4 py-2 font-semibold text-white hover:bg-slate-600"
+              className="mt-6 w-full rounded-lg bg-raised px-4 py-2 font-semibold text-content hover:bg-hover"
             >
               Back to Login
             </button>

@@ -1,7 +1,7 @@
 .program-row-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 7px;
+  gap: 8px;
 }
 .program-row-actions > button,
 .program-more > summary,
@@ -11,9 +11,9 @@
   width: 30px;
   height: 30px;
   flex-shrink: 0;
-  border: 1px solid #1b2731;
-  border-radius: 6px;
-  background: linear-gradient(120deg, #111b22, #0b1218);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
   cursor: pointer;
 }
 .program-row-actions svg,
@@ -36,10 +36,10 @@
   bottom: calc(100% + 6px);
   z-index: 10;
   min-width: 185px;
-  padding: 6px;
-  border: 1px solid #34424e;
-  border-radius: 7px;
-  background: #111c24;
+  padding: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
   box-shadow: 0 8px 25px #0008;
 }
 .program-more > div button {
@@ -47,7 +47,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 40px;
+  min-height: var(--ui-control-height);
   padding: 8px;
   text-align: left;
 }
@@ -62,9 +62,9 @@
   gap: 16px;
   min-height: 70px;
   padding: 16px 12px;
-  border-top: 1px solid #17222b;
-  color: #c2cede;
-  font-size: 12px;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .program-pagination p {
   margin: 0;
@@ -87,7 +87,7 @@
 .programs-page :is(button, select, summary):focus-visible,
 .program-drawer :is(button, input, select, textarea):focus-visible,
 .program-search:focus-within {
-  outline: 2px solid #ffca28;
+  outline: 2px solid var(--ui-accent);
   outline-offset: 3px;
 }
 .programs-page button:disabled,

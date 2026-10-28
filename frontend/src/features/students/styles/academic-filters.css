@@ -1,9 +1,9 @@
 .students-academic-filters {
-  margin-bottom: 22px;
-  padding: 18px;
-  border: 1px solid #2c3b50;
-  border-radius: 10px;
-  background: #121c28;
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface-raised);
 }
 .students-academic-filters-heading {
   display: flex;
@@ -16,20 +16,20 @@
 .students-academic-filters-heading h2 {
   display: flex;
   align-items: center;
-  gap: 9px;
-  color: #e1e8f8;
-  font-size: 14px;
+  gap: 8px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
   font-weight: 600;
 }
 .students-academic-filters-heading h2 svg {
   width: 17px;
   height: 17px;
-  color: #ffc72c;
+  color: var(--ui-accent);
 }
 .students-academic-filter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 .students-academic-filter-grid .students-filter-label {
   align-items: stretch;
@@ -40,7 +40,7 @@
   width: 100%;
   min-width: 0;
   height: 40px;
-  font-size: 12px;
+  font-size: var(--ui-type-control);
 }
 .students-academic-filter-grid select:disabled {
   opacity: 0.55;
@@ -50,31 +50,31 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-top: 12px;
-  color: #a4b4cd;
-  font-size: 12px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .students-file-info select {
   width: 100%;
   max-width: 520px;
-  margin-top: 6px;
-  padding: 8px 26px 8px 10px;
-  border: 1px solid #3b4c65;
-  border-radius: 6px;
-  background: #141d2a;
-  color: #e1e8f8;
-  font-size: 12px;
+  margin-top: 8px;
+  padding: 8px 28px 8px 12px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font-size: var(--ui-type-control);
 }
 .students-file-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-left: auto;
 }
 .students-directory {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
 }

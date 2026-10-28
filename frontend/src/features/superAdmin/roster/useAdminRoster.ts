@@ -12,9 +12,9 @@ import type {
 } from '../../../types/platform.ts'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 export const inputClass =
-  'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400'
+  'w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent'
 
-export const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400'
+export const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-muted'
 
 export function useAdminRoster({
   institutionId,

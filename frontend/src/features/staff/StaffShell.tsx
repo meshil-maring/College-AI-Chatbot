@@ -7,6 +7,7 @@ import StaffApprovals from './StaffApprovals.tsx'
 import StaffProfile from './StaffProfile.tsx'
 import { buildStaffNavigation, STAFF_VIEW_HEADINGS, type StaffView } from './staffNavigation.ts'
 import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
+import WorkspacePageHeader from '../workspace/WorkspacePageHeader.tsx'
 
 const icons: Record<StaffView, LucideIcon> = { approvals: Users, assistant: Bot, profile: UserCircle }
 export default function StaffShell() {
@@ -30,7 +31,16 @@ export default function StaffShell() {
     >
       {view ? (
         <>
-          {view !== 'assistant' && <h1 className="mb-5 text-2xl font-bold text-white">{STAFF_VIEW_HEADINGS[view]}</h1>}
+          {view !== 'assistant' && (
+            <WorkspacePageHeader
+              title={STAFF_VIEW_HEADINGS[view]}
+              description={
+                view === 'profile'
+                  ? 'Your staff identity and institution details.'
+                  : 'Review student registration requests for your institution.'
+              }
+            />
+          )}
           {view === 'profile' && <StaffProfile user={user} />}
           {view === 'approvals' && accessToken && (
             <StaffApprovals

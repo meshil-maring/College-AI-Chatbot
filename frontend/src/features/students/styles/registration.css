@@ -12,24 +12,24 @@
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  border: 1px solid #304862;
-  border-radius: 9px;
-  background: #121c28;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface-raised);
 }
 .students-auto-invite input {
   flex: 0 0 auto;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 .students-auto-invite strong {
   display: block;
-  color: #e1e8f8;
-  font-size: 13px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
 }
 .students-auto-invite small {
   display: block;
-  margin-top: 5px;
-  color: #a4b4cd;
-  font-size: 12px;
+  margin-top: 4px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .students-registration-complete {
   padding: 24px;
@@ -37,33 +37,33 @@
 .students-invitation-results {
   margin-top: 20px;
   padding: 20px;
-  border: 1px solid #304862;
-  border-radius: 9px;
-  background: #0d1c2c;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface-raised);
   text-align: left;
 }
 .students-invitation-results h3 {
   display: flex;
   align-items: center;
-  gap: 9px;
-  color: #e1e8f8;
-  font-size: 16px;
+  gap: 8px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-card);
   font-weight: 600;
 }
 .students-invitation-results h3 svg {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  color: #ffc72c;
+  color: var(--ui-accent);
 }
 .students-invitation-results p {
   max-width: none;
-  margin: 10px 0;
-  color: #a4b4cd;
-  font-size: 12px;
+  margin: 12px 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .students-invitation-results ul {
-  margin: 15px 0;
+  margin: 16px 0;
   padding: 0;
   list-style: none;
 }
@@ -71,20 +71,20 @@
   display: grid;
   gap: 4px;
   padding: 12px 0;
-  border-bottom: 1px solid #26394e;
-  font-size: 12px;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: var(--ui-type-small);
   overflow-wrap: anywhere;
 }
 .students-invitation-results li strong {
-  color: #e1e8f8;
+  color: var(--ui-text);
 }
 .students-invitation-results li span {
-  color: #a4b4cd;
+  color: var(--ui-text-muted);
 }
 .students-invitation-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-top: 16px;
 }
 @media (max-width: 760px) {

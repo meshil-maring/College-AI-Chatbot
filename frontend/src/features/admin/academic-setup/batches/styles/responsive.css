@@ -1,6 +1,6 @@
 @media (min-width: 1440px) {
   .batches-page.has-drawer {
-    padding-right: 358px;
+    padding-right: 416px;
   }
   .batch-drawer::backdrop {
     background: transparent;
@@ -8,7 +8,7 @@
 }
 @container batches (max-width: 1050px) {
   .batch-filters {
-    gap: 10px;
+    gap: 12px;
     grid-template-columns: minmax(190px, 2fr) minmax(115px, 1fr) minmax(140px, 1.1fr) minmax(100px, 0.9fr) minmax(
         115px,
         1fr
@@ -27,13 +27,13 @@
     height: 27px;
   }
   .batch-identity {
-    gap: 10px;
+    gap: 12px;
   }
   .batch-table :is(th, td) {
     padding-inline: 8px;
   }
   .batch-row-actions {
-    gap: 5px;
+    gap: 4px;
   }
 }
 @container batches (max-width: 840px) {
@@ -66,10 +66,10 @@
   .batch-table tbody tr {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
     padding: 16px;
-    border: 1px solid #1c2832;
-    border-radius: 7px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md);
   }
   .batch-table td {
     display: block;
@@ -84,10 +84,10 @@
   }
   .batch-table td::before {
     display: block;
-    margin-bottom: 5px;
-    color: #aebccd;
+    margin-bottom: 4px;
+    color: var(--ui-text-muted);
     content: attr(data-label);
-    font-size: 10px;
+    font-size: var(--ui-type-small);
   }
   .batch-table td:first-child::before,
   .batch-table td:last-child::before,
@@ -115,7 +115,7 @@
   .batches-page .academic-page-header {
     align-items: flex-start;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
   .batches-page .academic-page-header > button {
     width: 100%;
@@ -125,8 +125,8 @@
   }
   .batch-metric {
     min-height: 86px;
-    gap: 9px;
-    padding: 10px;
+    gap: 8px;
+    padding: 12px;
   }
   .batch-metric-icon,
   .batch-metric-icon:is(.active, .inactive) {
@@ -142,13 +142,13 @@
     height: 17px;
   }
   .batch-metric p {
-    font-size: 10px;
+    font-size: var(--ui-type-small);
   }
   .batch-metric strong {
-    font-size: 23px;
+    font-size: var(--ui-type-section);
   }
   .batch-metric small {
-    font-size: 10px;
+    font-size: var(--ui-type-small);
   }
   .batch-table tbody {
     grid-template-columns: minmax(0, 1fr);

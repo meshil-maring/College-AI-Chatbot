@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import type { AdminNavItem, AdminView } from './adminNavigation.ts'
 import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
-import { GraduationCap } from 'lucide-react'
 import AcademicSidebar from './academic-setup/overview/AcademicSidebar.tsx'
 import AcademicSearch from './academic-setup/overview/AcademicSearch.tsx'
 import type { AcademicPage } from './academic-setup/overview/academicOverviewModel.ts'
@@ -28,18 +27,8 @@ export default function AdminFrame(props: Props) {
       panelLabel="Admin Panel"
       navigationLabel="Admin navigation"
       identityRole="Administrator"
-      collapsible={academic}
+      collapsible
       workspaceClassName={academic ? 'academic-admin-workspace' : undefined}
-      brand={
-        academic ? (
-          <span className="academic-brand">
-            <GraduationCap aria-hidden="true" />
-            <span>
-              CollegeAI<span>Chatbot</span>
-            </span>
-          </span>
-        ) : undefined
-      }
       headerContent={
         academic ? <AcademicSearch value={props.academicSearch} onChange={props.onAcademicSearch} /> : undefined
       }

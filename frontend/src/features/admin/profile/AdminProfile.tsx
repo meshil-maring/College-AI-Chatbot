@@ -17,15 +17,14 @@ export default function AdminProfile({ user }: { user: CurrentUser }) {
       <AdminIdentityCard user={user} />
       <section
         aria-labelledby="admin-profile-context-heading"
-        className="rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-lg"
+        className="rounded-xl border border-line bg-surface p-6 shadow-none"
       >
-        <h2 id="admin-profile-context-heading" className="text-lg font-semibold text-white">
+        <h2 id="admin-profile-context-heading" className="font-semibold text-content text-section">
           Profile details
         </h2>
-        <p className="mt-2 text-sm text-slate-300">
-          No additional profile details (designation, department, or contact
-          information) are linked to administrator accounts yet. When the
-          backend provides them, they will appear here.
+        <p className="mt-2 text-sm text-muted">
+          No additional profile details (designation, department, or contact information) are linked to administrator
+          accounts yet. When the backend provides them, they will appear here.
         </p>
       </section>
     </div>

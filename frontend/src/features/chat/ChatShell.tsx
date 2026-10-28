@@ -24,19 +24,13 @@ import { useAuth } from '../auth/session/AuthProvider.tsx'
 import { useChat } from '../../hooks/useChat.ts'
 import { useConversationHistory } from '../../hooks/useConversationHistory.ts'
 import ChatInput from './ChatInput.tsx'
+import ChatHeader from './ChatHeader.tsx'
 import MessageList from './MessageList.tsx'
 import ConversationList from './ConversationList.tsx'
 
 export default function ChatShell() {
   const { user, accessToken, logout } = useAuth()
-  const {
-    messages,
-    isLoading,
-    error,
-    sendMessage,
-    resetChat,
-    loadConversation,
-  } = useChat()
+  const { messages, isLoading, error, sendMessage, resetChat, loadConversation } = useChat()
   const {
     conversations,
     selectedConversationId,
@@ -98,75 +92,42 @@ export default function ChatShell() {
   )
 
   return (
-    <div className="h-screen bg-slate-900 flex flex-col">
-      <header className="border-b border-slate-700 bg-slate-800/60 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label={sidebarOpen ? 'Close conversation history' : 'Open conversation history'}
-            aria-expanded={sidebarOpen}
-            className="lg:hidden rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-          >
-            {sidebarOpen ? 'Close' : 'History'}
-          </button>
-          <h1 className="text-lg font-bold text-white tracking-tight">
-            College AI Chatbot
-          </h1>
-          <span className="rounded-full border border-emerald-700 bg-emerald-900/50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
-            Chat
-          </span>
-          {user?.email ? (
-            <span className="text-xs text-slate-400">
-              Signed in as {user.email}
-            </span>
-          ) : null}
-          <div className="ml-auto flex gap-2">
-            <button
-              type="button"
-              onClick={handleNewChat}
-              disabled={isLoading}
-              className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              New chat
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="ui-chat relative">
+      <ChatHeader
+        email={user?.email ?? undefined}
+        busy={isLoading}
+        historyOpen={sidebarOpen}
+        onToggleHistory={() => setSidebarOpen(!sidebarOpen)}
+        onNewChat={handleNewChat}
+        onSignOut={handleLogout}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {sidebarOpen ? (
           <div
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            className="absolute inset-0 z-40 bg-black/50 lg:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-hidden="true"
           />
         ) : null}
 
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-700 bg-slate-900 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 lg:transform-none ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`absolute inset-y-0 left-0 z-50 w-72 transform border-r border-line bg-surface transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 lg:transform-none ${
+            sidebarOpen ? 'translate-x-0 visible' : '-translate-x-full invisible lg:visible'
           }`}
           aria-label="Conversation history sidebar"
         >
           <div className="flex h-full flex-col">
-            <div className="border-b border-slate-700 px-4 py-3 lg:hidden">
-              <h2 className="text-sm font-semibold text-white">Conversations</h2>
+            <div className="border-b border-line px-4 py-3 lg:hidden">
+              <h2 className="font-semibold text-content text-section">Conversations</h2>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <div className="border-b border-slate-700 p-2 lg:hidden">
+              <div className="border-b border-line p-2 lg:hidden">
                 <button
                   type="button"
                   onClick={handleNewChat}
                   disabled={isLoading}
-                  className="w-full rounded-lg border border-dashed border-slate-600 bg-slate-800 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="w-full rounded-lg border border-dashed border-control bg-surface px-3 py-2 text-sm font-medium text-content hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   + New chat
                 </button>
@@ -191,7 +152,7 @@ export default function ChatShell() {
           {error !== null ? (
             <div
               role="alert"
-              className="mx-4 mt-3 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-300"
+              className="mx-4 mt-3 rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger"
             >
               {error}
             </div>
@@ -200,32 +161,23 @@ export default function ChatShell() {
           {messagesError !== null ? (
             <div
               role="alert"
-              className="mx-4 mt-3 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-300"
+              className="mx-4 mt-3 rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger"
             >
               {messagesError}
             </div>
           ) : null}
 
-          <main
-            className="flex-1 overflow-y-auto px-4 py-4"
-            aria-label="Chat conversation"
-          >
-            <MessageList
-              messages={messages}
-              isLoading={isLoading || messagesLoading}
-            />
+          <main className="ui-chat-reading flex-1 overflow-y-auto px-4 py-4" aria-label="Chat conversation">
+            <MessageList messages={messages} isLoading={isLoading || messagesLoading} />
           </main>
 
-          <footer className="border-t border-slate-700 bg-slate-800/60 px-4 py-3">
+          <footer className="ui-chat-reading border-t border-line bg-surface px-4 py-4">
             {!isAuthenticated ? (
-              <p role="alert" className="mb-2 text-xs text-red-300">
+              <p role="alert" className="mb-2 text-xs text-danger">
                 You are not authenticated. Please sign in to continue the chat.
               </p>
             ) : null}
-            <ChatInput
-              onSend={handleSend}
-              disabled={isLoading || !isAuthenticated}
-            />
+            <ChatInput onSend={handleSend} disabled={isLoading || !isAuthenticated} />
           </footer>
         </div>
       </div>

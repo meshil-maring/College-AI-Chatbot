@@ -25,23 +25,15 @@ export default function SourceCard({ source }: { source: StructuredSource }) {
   const section = source.section?.trim()
 
   return (
-    <article className="rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-2">
+    <article className="rounded-lg border border-control bg-surface px-3 py-2">
       <header className="flex items-start justify-between gap-2">
-        <h4 className="text-xs font-semibold text-slate-200">
+        <h4 className="text-xs font-semibold text-content">
           {title}
-          {section ? (
-            <span className="text-slate-400"> · {section}</span>
-          ) : null}
+          {section ? <span className="text-muted"> · {section}</span> : null}
         </h4>
-        {relevance !== null ? (
-          <span className="shrink-0 text-[11px] text-slate-400">
-            Relevance {relevance}
-          </span>
-        ) : null}
+        {relevance !== null ? <span className="shrink-0 text-xs text-muted">Relevance {relevance}</span> : null}
       </header>
-      <blockquote className="mt-1 text-xs italic text-slate-300">
-        “{source.quote}”
-      </blockquote>
+      <blockquote className="mt-1 text-xs italic text-muted">“{source.quote}”</blockquote>
     </article>
   )
 }

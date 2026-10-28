@@ -26,11 +26,11 @@
   flex-shrink: 0;
   width: 45px;
   height: 45px;
-  border: 2px solid #687695;
+  border: 2px solid var(--ui-border);
   border-radius: 50%;
   box-shadow: inset 0 0 8px #ffffff08;
-  color: #c5d1e9;
-  font-size: 20px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .students-step-number svg {
@@ -39,15 +39,15 @@
 }
 .students-stepper strong {
   display: block;
-  font-size: 12px;
+  font-size: var(--ui-type-small);
   font-weight: 500;
   white-space: nowrap;
 }
 .students-stepper small {
   display: block;
-  margin-top: 2px;
-  color: #a4b5d0;
-  font-size: 11px;
+  margin-top: 4px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
   white-space: nowrap;
 }
 .students-stepper .is-current .students-step-number {
@@ -64,10 +64,10 @@
   gap: 20px;
   align-items: center;
   margin-bottom: 16px;
-  padding: 16px 18px;
-  border: 1px solid #293446;
-  border-radius: 11px;
-  background: linear-gradient(110deg, #18212e, #151d28);
+  padding: 16px 20px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
 }
 .students-file-icon {
   display: grid;
@@ -75,9 +75,9 @@
   flex-shrink: 0;
   width: 42px;
   height: 44px;
-  border-radius: 5px;
-  background: #155c3c;
-  color: #85e4b1;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+  color: var(--ui-success);
   box-shadow: 5px -4px 0 -1px #6ecca4;
 }
 .students-file-icon svg {
@@ -92,14 +92,14 @@
 .students-file strong {
   display: block;
   overflow-wrap: anywhere;
-  font-size: 14px;
+  font-size: var(--ui-type-body);
   font-weight: 600;
 }
 .students-file p {
-  margin: 3px 0 0;
-  color: #afbfda;
-  font-size: 12px;
+  margin: 4px 0 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .students-file p span {
-  padding: 0 9px;
+  padding: 0 8px;
 }

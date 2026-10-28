@@ -57,8 +57,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   // institution-scoped by the backend contract, so the institution code is
   // required — the field is shown only in that case (email login never needs
   // it, so email users see no extra field).
-  const requiresInstitutionCode =
-    identifier.trim() !== '' && !isEmailAddress(identifier.trim())
+  const requiresInstitutionCode = identifier.trim() !== '' && !isEmailAddress(identifier.trim())
 
   const busy = status === 'authenticating'
   const showStudentApprovalHelp = audience === 'general' || audience === 'student'
@@ -88,9 +87,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
     return (
       <RegistrationForm
         onBackToLogin={() => setShowRegistration(false)}
-        registrationType={
-          audience === 'faculty' ? 'faculty' : audience === 'staff' ? 'staff' : 'student'
-        }
+        registrationType={audience === 'faculty' ? 'faculty' : audience === 'staff' ? 'staff' : 'student'}
       />
     )
   }
@@ -104,30 +101,29 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   const displayedError = fieldError ?? error
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <main className="max-w-md w-full py-16">
-        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl">
-          <a href="/" className="mb-5 inline-block rounded-sm text-sm text-slate-400 underline hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+        <div className="rounded-xl border border-line bg-surface p-8 shadow-none">
+          <a
+            href="/"
+            className="mb-5 inline-block rounded-sm text-sm text-muted underline hover:text-content focus:outline-none focus:ring-2 focus:ring-accent"
+          >
             Back to platform gateway
           </a>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">
-            {AUDIENCE_LABELS[audience]}
-          </p>
-          <h1 className="text-3xl font-bold text-white tracking-tight">College AI Chatbot</h1>
-          <p className="mt-2 text-sm text-slate-300 leading-relaxed">
-            Sign in with your account details to continue.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{AUDIENCE_LABELS[audience]}</p>
+          <h1 className="font-bold text-content tracking-tight text-page">College AI Chatbot</h1>
+          <p className="mt-2 text-sm text-muted leading-relaxed">Sign in with your account details to continue.</p>
           {showStudentApprovalHelp && (
-            <p id="student-approval-help" className="mt-3 text-sm text-slate-400 leading-relaxed">
-              New student accounts need institutional approval before signing in.
-              {' '}For questions about your registration or account access, contact your institution administrator.
+            <p id="student-approval-help" className="mt-3 text-sm text-muted leading-relaxed">
+              New student accounts need institutional approval before signing in. For questions about your registration
+              or account access, contact your institution administrator.
             </p>
           )}
 
           {displayedError !== null && (
             <div
               role="alert"
-              className="mt-5 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-400"
+              className="mt-5 rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger"
             >
               {displayedError}
             </div>
@@ -149,7 +145,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
               void login(identifier, password, institutionCode || undefined)
             }}
           >
-            <label className="flex flex-col gap-1 text-sm text-slate-300">
+            <label className="flex flex-col gap-1 text-sm text-muted">
               Email, Register Number or University Roll Number
               <input
                 type="text"
@@ -159,7 +155,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
                 aria-describedby={showStudentApprovalHelp ? 'student-approval-help' : undefined}
                 disabled={busy}
                 placeholder="student@college.edu or REG2026001"
-                className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                className="rounded-lg border border-control bg-surface px-3 py-2 text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                 value={identifier}
                 onChange={(event) => {
                   setIdentifier(event.target.value)
@@ -169,7 +165,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
             </label>
             {requiresInstitutionCode && (
               <>
-                <label className="flex flex-col gap-1 text-sm text-slate-300">
+                <label className="flex flex-col gap-1 text-sm text-muted">
                   Institution Code
                   <input
                     type="text"
@@ -178,7 +174,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
                     autoComplete="off"
                     disabled={busy}
                     placeholder="e.g., GIT"
-                    className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                    className="rounded-lg border border-control bg-surface px-3 py-2 text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                     value={institutionCode}
                     onChange={(event) => {
                       setInstitutionCode(event.target.value)
@@ -186,7 +182,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
                     }}
                   />
                 </label>
-                <p className="-mt-3 text-xs text-slate-500">
+                <p className="-mt-3 text-xs text-muted">
                   Required when signing in with a register number or roll number.
                 </p>
               </>
@@ -209,7 +205,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
             <button
               type="submit"
               disabled={busy}
-              className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-lg bg-accent px-4 py-2 font-semibold text-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
@@ -217,19 +213,19 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
               type="button"
               disabled={busy}
               onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-slate-400 hover:text-slate-200 underline"
+              className="text-sm text-muted hover:text-content underline"
             >
               Forgot password?
             </button>
           </form>
 
-          <p className="mt-6 text-sm text-slate-400">
+          <p className="mt-6 text-sm text-muted">
             Don't have an account?{' '}
             <button
               type="button"
               disabled={busy}
               onClick={() => setShowRegistration(true)}
-              className="font-medium text-emerald-400 underline hover:text-emerald-300"
+              className="font-medium text-accent underline hover:text-accent-hover"
             >
               {audience === 'faculty'
                 ? 'Register as Faculty'

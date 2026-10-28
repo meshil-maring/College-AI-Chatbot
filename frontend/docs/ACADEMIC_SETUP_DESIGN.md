@@ -1,5 +1,8 @@
 # Academic Setup database integration
 
+For visual rules, follow the shared [design system](DESIGN_SYSTEM.md). This guide
+defines Academic Setup's storage, behavior and integration boundaries.
+
 All eleven Academic Setup entities use authenticated institution-scoped backend
 APIs. The black-and-yellow layouts retain responsive tables/cards, filters,
 pagination, accessible modal drawers and pinned actions. No sample records are

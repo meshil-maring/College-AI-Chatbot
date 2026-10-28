@@ -16,16 +16,14 @@ export default function StaffProfile({ user }: { user: CurrentUser }) {
       <StaffIdentityCard user={user} />
       <section
         aria-labelledby="staff-profile-context-heading"
-        className="rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-lg"
+        className="rounded-xl border border-line bg-surface p-6 shadow-none"
       >
-        <h2 id="staff-profile-context-heading" className="text-lg font-semibold text-white">
+        <h2 id="staff-profile-context-heading" className="font-semibold text-content text-section">
           Profile details
         </h2>
-        <p className="mt-2 text-sm text-slate-300">
-          Your institution has not linked additional profile details
-          (department, designation, or assignment information) to staff
-          accounts yet. When your institution provides them, they will appear
-          here.
+        <p className="mt-2 text-sm text-muted">
+          Your institution has not linked additional profile details (department, designation, or assignment
+          information) to staff accounts yet. When your institution provides them, they will appear here.
         </p>
       </section>
     </div>

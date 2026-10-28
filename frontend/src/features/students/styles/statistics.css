@@ -8,14 +8,14 @@
   --status-color: #bdcceb;
   --status-rgb: 114, 147, 203;
   display: flex;
-  gap: 15px;
+  gap: 16px;
   align-items: flex-start;
   min-width: 0;
   min-height: 105px;
-  padding: 15px;
+  padding: 16px;
   border: 1px solid rgba(var(--status-rgb), 0.22);
-  border-radius: 9px;
-  background: linear-gradient(115deg, rgba(var(--status-rgb), 0.12), rgba(var(--status-rgb), 0.06));
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
   text-align: left;
   transition: border-color 0.15s;
 }
@@ -43,23 +43,23 @@
 }
 .students-stat strong {
   display: block;
-  font-size: 24px;
+  font-size: var(--ui-type-section);
   line-height: 1.25;
   color: var(--status-color);
   font-weight: 700;
 }
 .students-stat b {
   display: block;
-  margin-top: 2px;
-  color: #eef2fb;
-  font-size: 13px;
+  margin-top: 4px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
   font-weight: 550;
 }
 .students-stat small {
   display: block;
   margin-top: 4px;
-  color: #a5b8d2;
-  font-size: 11px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .valid {
   --status-color: #75dfb5;
@@ -70,7 +70,7 @@
   --status-rgb: 35, 111, 233;
 }
 .invalid {
-  --status-color: #ffca37;
+  --status-color: var(--ui-accent);
   --status-rgb: 215, 163, 12;
 }
 .conflicting {

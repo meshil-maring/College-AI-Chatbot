@@ -2,7 +2,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 .section-row-actions > button,
 .section-more > summary {
@@ -10,10 +10,10 @@
   place-items: center;
   width: 29px;
   height: 29px;
-  border: 1px solid #1c2a35;
-  border-radius: 6px;
-  background: #10191f;
-  color: #f1f5fa;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   cursor: pointer;
   list-style: none;
 }
@@ -26,8 +26,8 @@
 }
 .section-row-actions > button:hover,
 .section-more > summary:hover {
-  border-color: #8b7336;
-  color: #ffca28;
+  border-color: var(--ui-danger);
+  color: var(--ui-accent);
 }
 .section-more {
   position: relative;
@@ -38,53 +38,53 @@
   right: 0;
   bottom: 35px;
   width: 150px;
-  padding: 5px;
-  border: 1px solid #334351;
-  border-radius: 7px;
-  background: #152029;
+  padding: 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
   box-shadow: 0 8px 24px #0008;
 }
 .section-more > div button {
   display: block;
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--ui-type-body);
 }
 .section-more > div button:hover {
-  background: #24333e;
+  background: var(--ui-surface-raised);
 }
 .section-pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 26px;
-  padding: 0 5px 10px;
+  margin-top: 28px;
+  padding: 0 4px 12px;
   color: var(--section-muted);
-  font-size: 12px;
+  font-size: var(--ui-type-small);
 }
 .section-pagination p {
   margin: 0;
 }
 .section-pagination nav {
   display: flex;
-  gap: 7px;
+  gap: 8px;
 }
 .section-pagination button {
   display: grid;
   place-items: center;
   width: 34px;
   height: 35px;
-  border: 1px solid #24323e;
-  border-radius: 6px;
-  background: #10191f;
-  color: #f1f5fa;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 .section-pagination button[aria-current] {
-  border-color: #ffca28;
-  color: #ffca28;
-  background: #13170e;
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
+  background: var(--ui-surface);
 }
 .section-pagination button:disabled {
   opacity: 0.4;

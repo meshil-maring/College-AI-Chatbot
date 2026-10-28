@@ -1,16 +1,16 @@
 .department-drawer {
   position: fixed;
   inset: 68px 0 0 auto;
-  width: 440px;
+  width: min(400px, 100vw);
   height: calc(100dvh - 68px);
   max-width: 100%;
   max-height: none;
   margin: 0;
   padding: 0;
   border: 0;
-  border-left: 1px solid #2b3239;
-  background: #121619;
-  color: #f3f4f6;
+  border-left: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   color-scheme: dark;
 }
 .department-drawer[open] {
@@ -18,26 +18,26 @@
   flex-direction: column;
 }
 .department-drawer::backdrop {
-  background: rgb(0 0 0 / 45%);
+  background: var(--ui-overlay);
 }
 .department-drawer > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 24px 22px 22px 28px;
-  border-bottom: 1px solid #2b3239;
+  padding: 24px 24px 24px 28px;
+  border-bottom: 1px solid var(--ui-border);
 }
 .department-drawer h2 {
   margin: 0;
-  font-size: 23px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
   line-height: 1.35;
 }
 .department-drawer header p {
   margin: 8px 0 0;
-  color: #b0b8c5;
-  font-size: 14px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .department-drawer header button {
   display: grid;
@@ -45,8 +45,8 @@
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  margin-top: -8px;
-  color: #b0b8c5;
+  margin-top: 0;
+  color: var(--ui-text-muted);
 }
 .department-drawer header button svg {
   width: 21px;
@@ -61,15 +61,15 @@
 }
 .department-drawer > footer {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   flex-shrink: 0;
   padding: 20px 28px max(20px, env(safe-area-inset-bottom));
-  border-top: 1px solid #2b3239;
-  background: #121619;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface);
 }
 .department-drawer footer > button {
   min-height: 44px;
-  font-size: 13px;
+  font-size: var(--ui-type-body);
 }
 .department-drawer footer > .academic-primary-button {
   flex: 1;
@@ -80,18 +80,18 @@
 .department-form-error {
   margin: 0 0 20px;
   padding: 12px;
-  border: 1px solid #82474d;
-  border-radius: 7px;
-  background: #211719;
-  color: #ffb2b2;
-  font-size: 13px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+  font-size: var(--ui-type-body);
 }
 .department-details .department-identity {
   margin-bottom: 20px;
 }
 .department-details h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .department-details .department-avatar {
@@ -103,23 +103,23 @@
 }
 .department-details dt {
   margin-top: 24px;
-  color: #b0b8c5;
-  font-size: 13px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .department-details dd {
   margin: 8px 0 0;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-  font-size: 14px;
+  font-size: var(--ui-type-body);
 }
 .department-details > section {
   padding-top: 24px;
-  border-top: 1px solid #2b3239;
+  border-top: 1px solid var(--ui-border);
 }
 .department-details section > p {
   margin-top: 16px;
-  color: #b0b8c5;
-  font-size: 14px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .department-programs-unavailable {
   display: grid;
@@ -128,19 +128,19 @@
   gap: 16px;
   margin-top: 20px;
   padding: 20px;
-  border: 1px solid #2b3239;
-  border-radius: 8px;
-  background: #101417;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
 }
 .department-programs-unavailable > svg {
   width: 24px;
-  color: #b0b8c5;
+  color: var(--ui-text-muted);
 }
 .department-programs-unavailable p {
   grid-column: 1 / -1;
   margin: 0;
-  color: #b0b8c5;
-  font-size: 13px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .department-program-list {
   display: grid;
@@ -155,29 +155,29 @@
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #2b3239;
+  border-bottom: 1px solid var(--ui-border);
 }
 .department-program-list strong {
-  font-size: 14px;
+  font-size: var(--ui-type-body);
   overflow-wrap: anywhere;
 }
 .department-program-list small {
   display: block;
-  margin-top: 5px;
-  color: #b0b8c5;
+  margin-top: 4px;
+  color: var(--ui-text-muted);
 }
 .department-confirm-icon {
   width: 36px;
   height: 36px;
-  margin: 10px 0 20px;
-  color: #f5c542;
+  margin: 12px 0 20px;
+  color: var(--ui-accent);
 }
 .department-drawer.is-confirming h3 {
   margin: 0 0 16px;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .department-drawer.is-confirming .department-drawer-body p {
-  color: #b0b8c5;
+  color: var(--ui-text-muted);
   line-height: 1.8;
 }

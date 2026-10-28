@@ -12,17 +12,17 @@ export function StatusPill({ status }: { status: string }) {
           : 'Rejected'
   const tone =
     status === 'active'
-      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+      ? 'border-success bg-success-bg text-success'
       : status === 'suspended'
-        ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-        : 'border-slate-500/40 bg-slate-500/10 text-slate-300'
+        ? 'border-warning bg-warning-bg text-warning'
+        : 'border-control bg-raised text-muted'
   return <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${tone}`}>{label}</span>
 }
 
 export const inputClass =
-  'w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400'
+  'w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent'
 
-export const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400'
+export const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-muted'
 
 export function InstitutionTable({
   institutions,
@@ -35,23 +35,23 @@ export function InstitutionTable({
 }) {
   if (loading) {
     return (
-      <p role="status" className="text-sm text-slate-400">
+      <p role="status" className="text-sm text-muted">
         Loading institutions...
       </p>
     )
   }
   if (institutions.length === 0) {
     return (
-      <p className="rounded-xl border border-slate-700 bg-slate-900 px-5 py-8 text-center text-sm text-slate-400">
+      <p className="rounded-xl border border-line bg-surface px-5 py-8 text-center text-sm text-muted">
         No institutions have been created yet. Use "Create Institution" to add the first one.
       </p>
     )
   }
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+    <div className="overflow-hidden rounded-xl border border-line bg-surface">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">Institutions registered on the platform</caption>
-        <thead className="border-b border-slate-700 bg-slate-800/60 text-xs uppercase tracking-wide text-slate-400">
+        <thead className="border-b border-line bg-surface text-xs uppercase tracking-wide text-muted">
           <tr>
             <th scope="col" className="px-5 py-3 font-semibold">
               Institution
@@ -72,20 +72,20 @@ export function InstitutionTable({
         </thead>
         <tbody className="divide-y divide-slate-800">
           {institutions.map((institution) => (
-            <tr key={institution.id} className="hover:bg-slate-800/40">
-              <td className="px-5 py-4 font-medium text-white">{institution.name}</td>
-              <td className="px-5 py-4 font-mono text-xs text-slate-400">{institution.code}</td>
+            <tr key={institution.id} className="hover:bg-hover">
+              <td className="px-5 py-4 font-medium text-content">{institution.name}</td>
+              <td className="px-5 py-4 font-mono text-xs text-muted">{institution.code}</td>
               <td className="px-5 py-4">
                 <StatusPill status={institution.status} />
               </td>
-              <td className="px-5 py-4 text-slate-300">{institution.admin_count}</td>
+              <td className="px-5 py-4 text-muted">{institution.admin_count}</td>
               <td className="px-5 py-4 text-right">
                 <button
                   type="button"
                   onClick={() => {
                     onOpen(institution.id)
                   }}
-                  className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                  className="rounded-lg border border-control px-3 py-2 text-xs font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   Manage
                 </button>

@@ -5,8 +5,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .academic-summary-card {
-    gap: 10px;
-    padding: 13px;
+    gap: 12px;
+    padding: 12px;
   }
   .academic-summary-icon {
     width: 48px;
@@ -17,26 +17,10 @@
     height: 28px;
   }
   .academic-card-heading h2 {
-    font-size: 14px;
+    font-size: var(--ui-type-body);
   }
 }
 @media (max-width: 1150px) {
-  .academic-admin-workspace .admin-sidebar {
-    width: 230px;
-  }
-  .academic-admin-workspace .admin-workspace-body {
-    margin-left: 230px;
-  }
-  .academic-admin-workspace .admin-brand {
-    padding-inline: 12px;
-    font-size: 17px;
-  }
-  .academic-brand {
-    gap: 7px;
-  }
-  .academic-brand > svg {
-    width: 27px;
-  }
   .academic-row-3,
   .academic-search-grid,
   .academic-summary-grid {
@@ -60,42 +44,13 @@
     gap: 16px;
   }
 }
-@media (min-width: 761px) and (max-width: 1150px) {
-  .academic-admin-workspace.navigation-toggled .admin-workspace-body {
-    margin-left: 0;
-  }
-}
 @media (max-width: 760px) {
-  .academic-admin-workspace .admin-sidebar {
-    width: min(280px, calc(100vw - 48px));
-    visibility: hidden;
-  }
-  .academic-admin-workspace .admin-sidebar.is-open {
-    visibility: visible;
-  }
-  .academic-admin-workspace .admin-workspace-body {
-    margin-left: 0;
-  }
-  .academic-admin-workspace .admin-brand {
-    font-size: 18px;
-  }
-  .academic-admin-workspace .admin-topbar {
-    gap: 8px;
-    padding-inline: 12px;
-  }
-  .academic-admin-workspace .academic-global-search {
-    width: auto;
-    flex: 1;
-  }
-  .academic-admin-workspace .admin-main {
-    padding: 18px 14px;
-  }
   .academic-page-header {
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 16px;
   }
   .academic-page-header p {
-    font-size: 13px;
+    font-size: var(--ui-type-body);
   }
   .academic-quick-actions {
     margin-left: auto;
@@ -105,7 +60,7 @@
   }
   .academic-summary-card {
     padding: 12px;
-    gap: 9px;
+    gap: 8px;
     min-height: 96px;
   }
   .academic-summary-icon {
@@ -113,10 +68,10 @@
     height: 42px;
   }
   .academic-summary-copy {
-    font-size: 11px;
+    font-size: var(--ui-type-small);
   }
   .academic-summary-copy strong {
-    font-size: 25px;
+    font-size: var(--ui-type-metric);
   }
   .academic-summary-card > svg {
     width: 14px;
@@ -130,10 +85,10 @@
     padding: 16px;
   }
   .academic-card-heading h2 {
-    font-size: 16px;
+    font-size: var(--ui-type-card);
   }
   .academic-manage-button {
-    min-height: 42px;
+    min-height: var(--ui-control-height);
   }
   .academic-area-children {
     grid-template-columns: minmax(0, 1fr);
@@ -148,6 +103,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .academic-page-header h1 {
-    font-size: 25px;
+    font-size: var(--ui-type-title);
   }
 }

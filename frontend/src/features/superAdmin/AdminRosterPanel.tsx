@@ -1,4 +1,8 @@
-import { cancelInvitation, resendInvitation, revokeInstitutionAdmin } from '../../services/platform/platformInstitutionsApi.ts'
+import {
+  cancelInvitation,
+  resendInvitation,
+  revokeInstitutionAdmin,
+} from '../../services/platform/platformInstitutionsApi.ts'
 import { InvitationLinkNotice, ResendConfirmation, RevokeConfirmation, RosterTable } from './AdminRosterViews.tsx'
 /**
  * Phase 7.14 University Admin roster: invite, cancel and revoke.
@@ -46,9 +50,9 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
   } = model
 
   return (
-    <section aria-labelledby="admin-roster-heading" className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+    <section aria-labelledby="admin-roster-heading" className="rounded-xl border border-line bg-surface p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 id="admin-roster-heading" className="font-semibold text-white">
+        <h3 id="admin-roster-heading" className="font-semibold text-content text-card">
           University Admins
         </h3>
         <button
@@ -58,25 +62,19 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
             setError(null)
             setNotice(null)
           }}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           + Invite Admin
         </button>
       </div>
 
       {error !== null ? (
-        <p
-          role="alert"
-          className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
-        >
+        <p role="alert" className="mt-4 rounded-xl border border-danger bg-danger-bg px-4 py-3 text-sm text-danger">
           {error}
         </p>
       ) : null}
       {notice !== null ? (
-        <p
-          role="status"
-          className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
-        >
+        <p role="status" className="mt-4 rounded-xl border border-success bg-success-bg px-4 py-3 text-sm text-success">
           {notice}
         </p>
       ) : null}
@@ -106,7 +104,7 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
 
       {showInvite ? (
         <form
-          className="mt-4 rounded-xl border border-slate-700 bg-slate-950 p-4"
+          className="mt-4 rounded-xl border border-line bg-canvas p-4"
           onSubmit={(event) => {
             event.preventDefault()
             if (email.trim() === '' || busy !== null) return
@@ -127,7 +125,7 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
             placeholder="dean@university.example"
             required
           />
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             Invitation expires in 24 hours. No password is set here — the invited person creates their own when they
             open the link.
           </p>
@@ -135,7 +133,7 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
             <button
               type="submit"
               disabled={busy !== null || email.trim() === ''}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
             >
               {busy === 'invite' ? 'Creating invitation...' : 'Create Invitation'}
             </button>
@@ -144,7 +142,7 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
               onClick={() => {
                 setShowInvite(false)
               }}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-muted hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
               Cancel
             </button>
@@ -152,7 +150,7 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
         </form>
       ) : null}
       {loading ? (
-        <p role="status" className="mt-4 text-sm text-slate-400">
+        <p role="status" className="mt-4 text-sm text-muted">
           Loading admin roster...
         </p>
       ) : roster === null ? null : (

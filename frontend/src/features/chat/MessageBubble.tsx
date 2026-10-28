@@ -20,14 +20,14 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
 
   const bubbleClass = isUser
-    ? 'ml-auto rounded-2xl rounded-tr-sm border border-emerald-700 bg-emerald-900/60 px-4 py-2.5 text-sm text-slate-100 max-w-[85%]'
-    : 'mr-auto rounded-2xl rounded-tl-sm border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm text-slate-100 max-w-[85%]'
+    ? 'ml-auto rounded-xl rounded-tr-sm border border-line bg-raised px-4 py-4 text-reading text-content max-w-[85%]'
+    : 'mr-auto rounded-xl rounded-tl-sm border border-line bg-surface px-4 py-4 text-reading text-content max-w-[85%]'
 
   const label = isUser ? 'You' : 'College AI'
 
   return (
     <li className="flex flex-col gap-1">
-      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-xs text-muted">{label}</span>
       <div className={bubbleClass}>
         {isUser ? (
           <p className="whitespace-pre-wrap">{message.content}</p>
@@ -47,12 +47,7 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
           </ul>
         ) : null}
 
-        {!isUser ? (
-          <UsageBadge
-            usage={message.usage ?? null}
-            modelUsed={message.modelUsed ?? null}
-          />
-        ) : null}
+        {!isUser ? <UsageBadge usage={message.usage ?? null} modelUsed={message.modelUsed ?? null} /> : null}
       </div>
     </li>
   )

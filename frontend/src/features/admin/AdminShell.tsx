@@ -13,6 +13,17 @@ import DocumentManager from './documents/DocumentManager.tsx'
 import FaqManager from './faqs/FaqManager.tsx'
 import ChatShell from '../chat/ChatShell.tsx'
 import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adminNavigation.ts'
+import WorkspacePageHeader from '../workspace/WorkspacePageHeader.tsx'
+
+const descriptions: Partial<Record<AdminView, string>> = {
+  profile: 'Your administrator identity and institution details.',
+  'staff-faculty': 'Review membership requests and manage your institution’s staff and faculty accounts.',
+  approvals: 'Review student registration requests for your institution.',
+  notices: 'Create and manage information shared with your institution.',
+  documents: 'Manage the documents and knowledge sources used by your institution’s AI.',
+  faqs: 'Maintain clear answers to frequently asked questions.',
+  permissions: 'Manage the access granted to staff in your institution.',
+}
 
 const icons: Record<AdminView, LucideIcon> = {
   profile: UserCircle,
@@ -55,7 +66,7 @@ export default function AdminShell() {
       {view ? (
         <>
           {view !== 'assistant' && view !== 'academic-setup' && (
-            <h1 className="mb-5 text-2xl font-bold text-white">{ADMIN_VIEW_HEADINGS[view]}</h1>
+            <WorkspacePageHeader title={ADMIN_VIEW_HEADINGS[view]} description={descriptions[view]} />
           )}
           {view === 'profile' && <AdminProfile user={user} />}
           {view === 'academic-setup' && (

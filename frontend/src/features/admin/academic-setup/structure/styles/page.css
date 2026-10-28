@@ -1,9 +1,9 @@
 .structure-records-page {
-  --admin-yellow: #ffca28;
-  --curriculum-yellow: #ffca28;
-  --curriculum-muted: #acb9c9;
-  --curriculum-border: #1c2832;
-  color: #f5f7fa;
+  --admin-yellow: var(--ui-accent);
+  --curriculum-yellow: var(--ui-accent);
+  --curriculum-muted: var(--ui-text-muted);
+  --curriculum-border: var(--ui-border);
+  color: var(--ui-text);
 }
 .structure-summary {
   display: grid;
@@ -12,17 +12,17 @@
 }
 .structure-summary article {
   padding: 20px;
-  border: 1px solid #1c2832;
-  border-radius: 8px;
-  background: linear-gradient(110deg, #10171d, #0b1217);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
 }
 .structure-summary span {
   display: block;
   text-transform: capitalize;
-  color: #adbccd;
+  color: var(--ui-text-muted);
 }
 .structure-summary strong {
-  font-size: 28px;
+  font-size: var(--ui-type-metric);
 }
 .structure-filters {
   display: flex;
@@ -35,61 +35,61 @@
 }
 .structure-filters span {
   display: block;
-  margin-bottom: 6px;
-  color: #adbccd;
-  font-size: 12px;
+  margin-bottom: 8px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .structure-filters input,
 .structure-filters select,
 .structure-field :is(input, select, textarea) {
   width: 100%;
-  min-height: 38px;
+  min-height: var(--ui-control-height);
   padding: 8px 12px;
-  border: 1px solid #293845;
-  border-radius: 6px;
-  background: #10191f;
-  color: #f5f7fa;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   color-scheme: dark;
 }
 .structure-table-panel {
-  border: 1px solid #1c2832;
-  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
   overflow: auto;
 }
 .structure-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--ui-type-body);
 }
 .structure-table th,
 .structure-table td {
   padding: 16px;
   text-align: left;
-  border-bottom: 1px solid #1c2832;
+  border-bottom: 1px solid var(--ui-border);
   overflow-wrap: anywhere;
 }
 .structure-table th {
-  background: #131d24;
+  background: var(--ui-surface);
   font-weight: 500;
 }
 .structure-table td {
-  color: #d5deea;
+  color: var(--ui-text);
 }
 .structure-status {
   display: inline-block;
-  padding: 4px 9px;
-  border: 1px solid #39526a;
-  border-radius: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
   text-transform: capitalize;
 }
 .structure-status:is(.active, .published) {
-  border-color: #075b36;
-  background: #09251c;
-  color: #20dd76;
+  border-color: var(--ui-border);
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
 }
 .structure-status.draft {
-  border-color: #6d5e22;
-  color: #ffca28;
+  border-color: var(--ui-border);
+  color: var(--ui-accent);
 }
 .structure-actions {
   display: flex;
@@ -99,9 +99,9 @@
   display: grid;
   place-items: center;
   min-width: 34px;
-  min-height: 34px;
-  border: 1px solid #24323e;
-  border-radius: 6px;
+  min-height: var(--ui-control-height);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
 }
 .structure-actions svg {
   width: 16px;
@@ -116,13 +116,13 @@
 .structure-pagination {
   justify-content: space-between;
   flex-wrap: wrap;
-  color: #adbccd;
-  font-size: 13px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .structure-pagination button {
   padding: 8px 12px;
-  border: 1px solid #24323e;
-  border-radius: 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
 }
 .structure-records-page button:disabled,
 .structure-drawer button:disabled {
@@ -131,6 +131,6 @@
 }
 .structure-records-page :is(button, input, select):focus-visible,
 .structure-drawer :is(button, input, select, textarea):focus-visible {
-  outline: 2px solid #ffca28;
+  outline: 2px solid var(--ui-accent);
   outline-offset: 3px;
 }

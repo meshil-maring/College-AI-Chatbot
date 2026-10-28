@@ -1,36 +1,36 @@
 .structure-drawer {
-  --admin-yellow: #ffca28;
+  --admin-yellow: var(--ui-accent);
   position: fixed;
   inset: 68px 0 0 auto;
-  width: 400px;
+  width: min(400px, 100vw);
   max-width: 100%;
   height: calc(100dvh - 68px);
   max-height: none;
   margin: 0;
   padding: 0;
   border: 0;
-  border-left: 1px solid #1c2832;
-  background: #0d161c;
-  color: #f5f7fa;
+  border-left: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 .structure-drawer[open] {
   display: flex;
   flex-direction: column;
 }
 .structure-drawer::backdrop {
-  background: #0009;
+  background: var(--ui-overlay);
 }
 .structure-drawer header,
 .structure-drawer footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding: 20px;
 }
 .structure-drawer h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--ui-type-section);
 }
 .structure-drawer header button {
   width: 36px;
@@ -47,33 +47,33 @@
 }
 .structure-drawer footer {
   flex-shrink: 0;
-  border-top: 1px solid #1c2832;
+  border-top: 1px solid var(--ui-border);
   padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 .structure-drawer form {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 .structure-field label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
+  margin-bottom: 8px;
+  font-size: var(--ui-type-body);
 }
 .structure-field label span {
-  color: #ff5252;
+  color: var(--ui-danger);
 }
 .structure-field input[type='checkbox'] {
   width: 22px;
-  min-height: 22px;
-  accent-color: #ffca28;
+  min-height: var(--ui-control-height);
+  accent-color: var(--ui-accent);
 }
 .structure-field :disabled {
   opacity: 0.6;
 }
 .structure-field p {
-  margin: 5px 0 0;
-  font-size: 12px;
-  color: #adbccd;
+  margin: 4px 0 0;
+  font-size: var(--ui-type-small);
+  color: var(--ui-text-muted);
 }
 .structure-field textarea {
   resize: vertical;
@@ -83,8 +83,8 @@
   gap: 20px;
 }
 .structure-details dt {
-  color: #adbccd;
-  font-size: 12px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .structure-details dd {
   margin: 4px 0 0;
@@ -111,9 +111,9 @@
   .structure-table tr {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
     padding: 16px;
-    border-bottom: 1px solid #293845;
+    border-bottom: 1px solid var(--ui-border);
   }
   .structure-table td {
     display: block;
@@ -123,8 +123,8 @@
   .structure-table td::before {
     display: block;
     content: attr(data-label);
-    color: #adbccd;
-    font-size: 11px;
+    color: var(--ui-text-muted);
+    font-size: var(--ui-type-small);
     margin-bottom: 4px;
   }
   .structure-table td:first-child,

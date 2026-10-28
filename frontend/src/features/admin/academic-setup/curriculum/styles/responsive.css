@@ -1,6 +1,6 @@
 @media (min-width: 1440px) {
   .curriculum-page.has-drawer {
-    padding-right: 350px;
+    padding-right: 416px;
   }
   .curriculum-drawer::backdrop {
     background: transparent;
@@ -8,7 +8,7 @@
 }
 @container curriculum (max-width: 1000px) {
   .curriculum-metric {
-    gap: 10px;
+    gap: 12px;
     padding: 12px;
   }
   .curriculum-metric-icon {
@@ -16,7 +16,7 @@
     height: 46px;
   }
   .curriculum-filters {
-    gap: 14px;
+    gap: 16px;
     grid-template-columns: minmax(210px, 1.8fr) repeat(3, minmax(120px, 1fr));
   }
 }
@@ -51,7 +51,7 @@
   .curriculum-metric {
     align-items: flex-start;
     gap: 8px;
-    padding: 12px 9px;
+    padding: 12px 8px;
   }
   .curriculum-metric-icon,
   .curriculum-metric-icon:is(.active, .inactive) {
@@ -63,7 +63,7 @@
     height: 21px;
   }
   .curriculum-metric p {
-    font-size: 11px;
+    font-size: var(--ui-type-small);
   }
   .curriculum-page .academic-page-header > button {
     width: 100%;
@@ -83,16 +83,16 @@
   .curriculum-mapping-table tr {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    padding: 14px;
-    border-top: 1px solid #25333e;
+    gap: 16px;
+    padding: 16px;
+    border-top: 1px solid var(--ui-border);
   }
   .curriculum-mapping-table td {
     display: block;
     padding: 0;
     border: 0;
     overflow-wrap: anywhere;
-    font-size: 12px;
+    font-size: var(--ui-type-small);
   }
   .curriculum-mapping-table td:nth-child(-n + 2),
   .curriculum-mapping-table td:last-child {
@@ -100,10 +100,10 @@
   }
   .curriculum-mapping-table td::before {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     content: attr(data-label);
     color: var(--curriculum-muted);
-    font-size: 10px;
+    font-size: var(--ui-type-small);
   }
   .curriculum-mapping-table td:last-child::before {
     display: none;

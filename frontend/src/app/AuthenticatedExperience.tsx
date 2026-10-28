@@ -92,15 +92,15 @@ export function UnsupportedRoleShell({
   message?: string
 }) {
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <main className="max-w-xl w-full text-center py-16">
-        <div className="rounded-2xl border border-amber-900/50 bg-amber-500/10 p-10 shadow-xl">
-          <h1 className="text-2xl font-bold text-amber-300">Access restricted</h1>
-          <p className="mt-4 text-slate-300">{message}</p>
+        <div className="rounded-xl border border-warning bg-warning-bg p-10 shadow-none">
+          <h1 className="font-bold text-warning text-page">Access restricted</h1>
+          <p className="mt-4 text-muted">{message}</p>
           <button
             type="button"
             onClick={onSignOut}
-            className="mt-6 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            className="mt-6 rounded-lg bg-raised px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
           >
             Sign out
           </button>

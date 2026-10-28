@@ -1,6 +1,6 @@
 @media (min-width: 1440px) {
   .calendar-page.has-drawer {
-    padding-right: 408px;
+    padding-right: 416px;
   }
   .calendar-drawer::backdrop {
     background: transparent;
@@ -8,8 +8,8 @@
 }
 @container calendar (max-width: 1000px) {
   .calendar-metric {
-    gap: 9px;
-    padding: 11px 9px;
+    gap: 8px;
+    padding: 12px 8px;
   }
   .calendar-metric-icon {
     width: 44px;
@@ -20,22 +20,22 @@
     height: 28px;
   }
   .calendar-metric p {
-    font-size: 11px;
+    font-size: var(--ui-type-small);
   }
   .calendar-year-row,
   .calendar-year-heading {
-    gap: 7px;
-    padding-inline: 10px;
-    font-size: 11px;
+    gap: 8px;
+    padding-inline: 12px;
+    font-size: var(--ui-type-small);
   }
   .calendar-year-title {
-    gap: 9px;
+    gap: 8px;
   }
   .calendar-year-title strong {
-    font-size: 13px;
+    font-size: var(--ui-type-body);
   }
   .calendar-year-contents {
-    padding-inline: 14px;
+    padding-inline: 16px;
   }
 }
 @container calendar (max-width: 780px) {
@@ -47,11 +47,11 @@
   }
   .calendar-year-card:first-of-type {
     border-top: 1px solid var(--calendar-border);
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
   }
   .calendar-year-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 15px;
+    gap: 16px;
     padding: 16px;
   }
   .calendar-year-title {
@@ -59,10 +59,10 @@
   }
   .calendar-year-row > [data-label]::before {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     color: var(--calendar-muted);
     content: attr(data-label);
-    font-size: 10px;
+    font-size: var(--ui-type-body);
   }
   .calendar-year-row > .calendar-record-actions {
     align-self: end;
@@ -80,16 +80,16 @@
   }
   .calendar-semester-table tbody {
     display: grid;
-    gap: 10px;
-    padding: 10px;
+    gap: 12px;
+    padding: 12px;
   }
   .calendar-semester-table tr {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
     padding: 12px;
     border: 1px solid var(--calendar-border);
-    border-radius: 6px;
+    border-radius: var(--ui-radius-sm);
   }
   .calendar-semester-table :is(td, th) {
     display: block;
@@ -101,10 +101,10 @@
   }
   .calendar-semester-table [data-label]::before {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     color: var(--calendar-muted);
     content: attr(data-label);
-    font-size: 10px;
+    font-size: var(--ui-type-body);
   }
   .calendar-semester-table td:last-child {
     align-self: end;
@@ -121,11 +121,11 @@
   .calendar-page .academic-page-header {
     align-items: stretch;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
   .calendar-tabs button {
     padding-inline: 12px;
-    font-size: 12px;
+    font-size: var(--ui-type-body);
   }
   .calendar-year-row,
   .calendar-semester-table tr {

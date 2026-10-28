@@ -30,17 +30,17 @@ export default function SuperAdminRegisterEntryPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
-      <section className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">Platform administration</p>
-        <h1 className="mt-2 text-2xl font-bold">Register as Super Admin</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-400">
+    <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-content">
+      <section className="w-full max-w-lg rounded-xl border border-line bg-surface p-8 shadow-none">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Platform administration</p>
+        <h1 className="mt-2 font-bold text-page">Register as Super Admin</h1>
+        <p className="mt-3 text-sm leading-6 text-muted">
           Super Admin accounts are invitation-only. Ask an existing Super Admin to invite your email address, then paste
           the single-use link or code you were given.
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
           <div>
-            <label htmlFor="sa-invite" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <label htmlFor="sa-invite" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">
               Invitation link or code
             </label>
             <input
@@ -48,17 +48,30 @@ export default function SuperAdminRegisterEntryPage() {
               value={value}
               maxLength={600}
               autoComplete="off"
-              onChange={(e) => { setValue(e.target.value); setError(null) }}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400"
+              onChange={(e) => {
+                setValue(e.target.value)
+                setError(null)
+              }}
+              className="w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
-          {error !== null ? <p role="alert" className="text-sm text-red-400">{error}</p> : null}
-          <button type="submit" className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500">
+          {error !== null ? (
+            <p role="alert" className="text-sm text-danger">
+              {error}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover"
+          >
             Continue
           </button>
         </form>
-        <p className="mt-6 text-sm text-slate-400">
-          Already registered? <a href="/super-admin" className="text-violet-300 underline">Super Admin login</a>
+        <p className="mt-6 text-sm text-muted">
+          Already registered?{' '}
+          <a href="/super-admin" className="text-accent underline">
+            Super Admin login
+          </a>
         </p>
       </section>
     </main>

@@ -99,9 +99,9 @@ export default function InstitutionManagement() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">Platform</p>
-          <h1 className="mt-2 text-3xl font-bold text-white">Institutions</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Platform</p>
+          <h1 className="mt-2 font-bold text-content text-page">Institutions</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             Manage the universities and colleges registered on the platform. This view shows platform metadata only and
             never exposes student data.
           </p>
@@ -116,7 +116,7 @@ export default function InstitutionManagement() {
                 setError(null)
                 setNotice(null)
               }}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300"
+              className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
               Back to all institutions
             </button>
@@ -128,7 +128,7 @@ export default function InstitutionManagement() {
               setError(null)
               setNotice(null)
             }}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
           >
             + Create Institution
           </button>
@@ -136,15 +136,12 @@ export default function InstitutionManagement() {
       </header>
 
       {error !== null ? (
-        <p role="alert" className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+        <p role="alert" className="rounded-xl border border-danger bg-danger-bg px-4 py-3 text-sm text-danger">
           {error}
         </p>
       ) : null}
       {notice !== null ? (
-        <p
-          role="status"
-          className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
-        >
+        <p role="status" className="rounded-xl border border-success bg-success-bg px-4 py-3 text-sm text-success">
           {notice}
         </p>
       ) : null}

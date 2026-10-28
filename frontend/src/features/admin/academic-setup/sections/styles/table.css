@@ -2,21 +2,21 @@
   min-width: 0;
 }
 .section-table-panel {
-  border: 1px solid #192630;
-  border-radius: 8px;
-  background: linear-gradient(115deg, #0c1419, #090f13);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
 }
 .section-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 11px;
+  font-size: var(--ui-type-small);
 }
 .section-table th {
   height: 52px;
-  padding: 10px;
-  background: #131d24;
-  color: #f0f4f9;
+  padding: 12px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
   text-align: left;
   font-weight: 500;
 }
@@ -51,8 +51,8 @@
 .section-table th button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 34px;
+  gap: 8px;
+  min-height: var(--ui-control-height);
 }
 .section-table th button svg {
   width: 12px;
@@ -60,33 +60,33 @@
 }
 .section-table td {
   height: 48px;
-  padding: 7px 10px;
-  border-top: 1px solid #1a252e;
-  color: #c8d2df;
+  padding: 8px 12px;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
   overflow-wrap: anywhere;
 }
 .section-table tbody tr:hover {
-  background: #111b22;
+  background: var(--ui-surface);
 }
 .section-identity {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 12px;
 }
 .section-identity > div {
   min-width: 0;
 }
 .section-identity strong {
   display: block;
-  color: #f5f7fa;
-  font-size: 12px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-small);
   font-weight: 500;
 }
 .section-identity small {
   display: block;
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--section-muted);
-  font-size: 10px;
+  font-size: var(--ui-type-small);
   line-height: 1.25;
 }
 .section-avatar {
@@ -97,51 +97,51 @@
   flex-shrink: 0;
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 50%;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 500;
   color: #fff;
 }
 .section-avatar.gold {
-  background: linear-gradient(120deg, #ffdf55, #ffbf16);
-  color: #17140a;
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
 }
 .section-avatar.teal {
-  background: linear-gradient(120deg, #00636a, #00a5a9);
+  background: var(--ui-surface);
 }
 .section-avatar.blue {
-  background: linear-gradient(120deg, #2261dc, #4786ff);
+  background: var(--ui-surface);
 }
 .section-avatar.ochre {
-  background: linear-gradient(120deg, #645112, #9f7d16);
+  background: var(--ui-surface);
 }
 .section-avatar.purple {
-  background: linear-gradient(120deg, #3f25bc, #6335dc);
+  background: var(--ui-surface);
 }
 .section-avatar.pink {
-  background: linear-gradient(120deg, #e81f7e, #ff3c9b);
+  background: var(--ui-surface);
 }
 .section-avatar.orange {
-  background: linear-gradient(120deg, #ff7200, #ff9d12);
+  background: var(--ui-accent);
 }
 .section-avatar.red {
-  background: linear-gradient(120deg, #ed3727, #b71e15);
+  background: var(--ui-surface);
 }
 .section-avatar.green {
-  background: linear-gradient(120deg, #65ad24, #387318);
+  background: var(--ui-surface);
 }
 .section-avatar.indigo {
-  background: linear-gradient(120deg, #4236ff, #2113c9);
+  background: var(--ui-surface);
 }
 .section-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 7px;
-  border: 1px solid #075b36;
-  border-radius: 5px;
-  background: #09251c;
-  color: #20dd76;
-  font-size: 10px;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+  font-size: var(--ui-type-small);
   white-space: nowrap;
 }
 .section-status > span {
@@ -152,7 +152,7 @@
   background: currentColor;
 }
 .section-status.inactive {
-  border-color: #3e4a59;
-  background: #1b222b;
-  color: #afbacb;
+  border-color: var(--ui-border);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
 }

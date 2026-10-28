@@ -8,60 +8,60 @@
   opacity: 0.65;
 }
 .subject-field {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .subject-field > label,
 .subject-status-options legend {
   display: block;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--ui-type-body);
   font-weight: 500;
   line-height: 1.4;
 }
 .subject-field > label > span,
 .subject-status-options legend > span {
-  color: #ff5159;
+  color: var(--ui-danger);
 }
 #subject-form :is(input:not([type='radio']), select, textarea) {
   display: block;
   width: 100%;
-  min-height: 38px;
+  min-height: var(--ui-control-height);
   padding: 8px 12px;
-  border: 1px solid #293947;
-  border-radius: 7px;
-  background: #101a22;
-  color: #f5f7fa;
-  font-size: 13px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: var(--ui-type-control);
 }
 #subject-form textarea {
   min-height: 68px;
   resize: vertical;
 }
 #subject-form :is(input, textarea)::placeholder {
-  color: #9baabd;
+  color: var(--ui-text-muted);
 }
 #subject-form select:disabled {
   opacity: 0.65;
 }
 #subject-form [aria-invalid='true'] {
-  border-color: #ff9292;
+  border-color: var(--ui-danger);
 }
 .subject-field-error,
 .subject-field-help {
-  margin: 5px 0 0;
-  font-size: 11px;
+  margin: 4px 0 0;
+  font-size: var(--ui-type-small);
   line-height: 1.45;
 }
 .subject-field-error {
-  color: #ff9292;
+  color: var(--ui-accent);
 }
 .subject-field-help {
-  color: #acb9c9;
+  color: var(--ui-text-muted);
 }
 #subject-form .subject-status-options {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   margin-top: 4px;
 }
 .subject-status-options legend {
@@ -70,7 +70,7 @@
 .subject-status-options label {
   display: flex;
   align-items: flex-start;
-  gap: 13px;
+  gap: 12px;
   cursor: pointer;
 }
 .subject-status-options input {
@@ -81,26 +81,26 @@
   height: 24px;
   flex-shrink: 0;
   margin: 0;
-  border: 4px solid #1d2932;
+  border: 4px solid var(--ui-border-control);
   border-radius: 50%;
-  background: #0c141b;
+  background: var(--ui-surface);
 }
 .subject-status-options input:checked {
-  border-color: #0c141b;
-  outline: 1px solid #b18c16;
+  border-color: var(--ui-border-control);
+  outline: 1px solid var(--ui-danger);
   outline-offset: -1px;
-  background: #ffca28;
+  background: var(--ui-accent);
   box-shadow: inset 0 0 0 2px #0c141b;
 }
 .subject-status-options strong {
-  font-size: 12px;
+  font-size: var(--ui-type-small);
   font-weight: 500;
 }
 .subject-status-options small {
   display: block;
-  margin-top: 3px;
-  color: #acb9c9;
-  font-size: 11px;
+  margin-top: 4px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
   line-height: 1.5;
 }
 .subject-hours {
@@ -109,14 +109,14 @@
   gap: 12px;
 }
 .subject-hours .subject-field > label {
-  font-size: 11px;
+  font-size: var(--ui-type-body);
 }
 .subject-curriculum-note {
   margin: 0 0 16px;
-  padding: 10px;
-  border: 1px solid #293947;
-  border-radius: 6px;
-  color: #acb9c9;
-  font-size: 12px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
   line-height: 1.5;
 }

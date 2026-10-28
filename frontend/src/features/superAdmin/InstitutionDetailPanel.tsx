@@ -34,11 +34,11 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-700 bg-slate-900 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-line bg-surface p-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">{institution.name}</h2>
-          <p className="mt-1 font-mono text-sm text-slate-400">{institution.code}</p>
-          <p className="mt-3 text-xs text-slate-500">
+          <h2 className="font-bold text-content text-section">{institution.name}</h2>
+          <p className="mt-1 font-mono text-sm text-muted">{institution.code}</p>
+          <p className="mt-3 text-xs text-muted">
             Public AI entry: <span className="font-mono">/u/{institution.code.toLowerCase()}/ai</span>
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
                 setConfirmApproval(true)
               }}
               disabled={busy !== null}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
             >
               {busy === 'activate' ? 'Approving...' : 'Approve & Activate'}
             </button>
@@ -60,7 +60,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
               type="button"
               onClick={onActivate}
               disabled={busy !== null}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
             >
               {busy === 'activate' ? 'Activating...' : 'Activate Institution'}
             </button>
@@ -71,7 +71,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
                 setConfirmSuspend(true)
               }}
               disabled={busy !== null}
-              className="rounded-lg border border-amber-500/50 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/10 focus:outline-none focus:ring-2 focus:ring-amber-300 disabled:opacity-50"
+              className="rounded-lg border border-warning px-4 py-2 text-sm font-semibold text-warning hover:bg-warning-bg focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
             >
               Suspend Institution
             </button>
@@ -80,7 +80,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
       </div>
 
       {localError !== null ? (
-        <p role="alert" className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+        <p role="alert" className="rounded-xl border border-danger bg-danger-bg px-4 py-3 text-sm text-danger">
           {localError}
         </p>
       ) : null}
@@ -89,10 +89,10 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
         <div
           role="alertdialog"
           aria-label="Confirm institution approval"
-          className="rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-6"
+          className="rounded-xl border border-success bg-success-bg p-6"
         >
-          <h3 className="text-lg font-semibold text-emerald-200">Approve {institution.name}?</h3>
-          <p className="mt-2 text-sm leading-6 text-emerald-100/90">
+          <h3 className="font-semibold text-success text-card">Approve {institution.name}?</h3>
+          <p className="mt-2 text-sm leading-6 text-success">
             This activates the university and allows its assigned University Admins to use the protected institution
             workspace.
           </p>
@@ -102,7 +102,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
               onClick={() => {
                 setConfirmApproval(false)
               }}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+              className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
               Cancel
             </button>
@@ -113,7 +113,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
                 onActivate()
               }}
               disabled={busy !== null}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
             >
               {busy === 'activate' ? 'Approving...' : 'Approve & Activate'}
             </button>
@@ -125,10 +125,10 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
         <div
           role="alertdialog"
           aria-label="Confirm suspension"
-          className="rounded-2xl border border-amber-500/50 bg-amber-500/10 p-6"
+          className="rounded-xl border border-warning bg-warning-bg p-6"
         >
-          <h3 className="text-lg font-semibold text-amber-200">Suspend {institution.name}?</h3>
-          <p className="mt-2 text-sm leading-6 text-amber-100/90">
+          <h3 className="font-semibold text-warning text-card">Suspend {institution.name}?</h3>
+          <p className="mt-2 text-sm leading-6 text-warning">
             Existing data will be retained and no accounts are revoked. Institutional access will be restricted until
             the institution is activated again.
           </p>
@@ -138,7 +138,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
               onClick={() => {
                 setConfirmSuspend(false)
               }}
-              className="rounded-lg border border-amber-500/50 px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-500/10 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              className="rounded-lg border border-warning px-4 py-2 text-sm font-medium text-warning hover:bg-warning-bg focus:outline-none focus:ring-2 focus:ring-accent"
             >
               Cancel
             </button>
@@ -149,7 +149,7 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
                 onSuspend()
               }}
               disabled={busy !== null}
-              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-300 disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
             >
               {busy === 'suspend' ? 'Suspending...' : 'Suspend Institution'}
             </button>
@@ -169,14 +169,14 @@ export default function InstitutionDetailPanel(props: Parameters<typeof useInsti
           </div>
           <div>
             <dt className={labelClass}>Availability</dt>
-            <dd className="text-sm text-slate-200">{institution.is_active ? 'Active' : 'Restricted'}</dd>
+            <dd className="text-sm text-content">{institution.is_active ? 'Active' : 'Restricted'}</dd>
           </div>
           <div>
             <dt className={labelClass}>University admins</dt>
-            <dd className="text-sm text-slate-200">{institution.admin_count}</dd>
+            <dd className="text-sm text-content">{institution.admin_count}</dd>
           </div>
         </dl>
-        <p className="mt-4 text-xs leading-5 text-slate-500">
+        <p className="mt-4 text-xs leading-5 text-muted">
           Status changes only through the Approve / Suspend / Activate actions above, and each change is recorded in the
           platform audit ledger.
         </p>

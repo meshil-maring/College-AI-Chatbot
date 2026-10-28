@@ -39,11 +39,11 @@ export default function RegistrationForm(props: Parameters<typeof useRegistratio
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <main className="max-w-md w-full py-16">
-        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl">
-          <h1 className="text-3xl font-bold text-white tracking-tight">College AI Chatbot</h1>
-          <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+        <div className="rounded-xl border border-line bg-surface p-8 shadow-none">
+          <h1 className="font-bold text-content tracking-tight text-page">College AI Chatbot</h1>
+          <p className="mt-2 text-sm text-muted leading-relaxed">
             {registrationType === 'student' ? 'Student' : registrationType === 'faculty' ? 'Faculty' : 'Staff'}{' '}
             Registration. Submit your details for review by your institution before signing in.
           </p>
@@ -51,7 +51,7 @@ export default function RegistrationForm(props: Parameters<typeof useRegistratio
           {error !== null && (
             <div
               role="alert"
-              className="mt-5 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-400"
+              className="mt-5 rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger"
             >
               {error}
             </div>

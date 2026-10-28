@@ -18,32 +18,23 @@
  * description so the dashboard card and the section page never disagree.
  */
 
-import {
-  FACULTY_WORKSPACE_SURFACES,
-  type FacultyView,
-} from './facultyNavigation.ts'
+import { FACULTY_WORKSPACE_SURFACES, type FacultyView } from './facultyNavigation.ts'
 
 export default function FacultyComingSoon({ view }: { view: FacultyView }) {
   const surface = FACULTY_WORKSPACE_SURFACES.find((item) => item.key === view)
 
   return (
-    <section
-      aria-label="Coming soon"
-      className="rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-lg"
-    >
-      <span className="inline-block rounded-full bg-slate-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+    <section aria-label="Coming soon" className="rounded-xl border border-line bg-surface p-6 shadow-none">
+      <span className="inline-block rounded-full bg-raised px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Coming Soon
       </span>
-      <p className="mt-4 text-sm font-medium text-white">
-        No information is available for this section yet.
+      <p className="mt-4 text-sm font-medium text-content">No information is available for this section yet.</p>
+      <p className="mt-2 text-sm text-muted">
+        {surface?.description ?? 'This section is not available for faculty accounts yet.'}
       </p>
-      <p className="mt-2 text-sm text-slate-300">
-        {surface?.description ??
-          'This section is not available for faculty accounts yet.'}
-      </p>
-      <p className="mt-3 text-xs text-slate-400">
-        Nothing on this page is loaded or simulated. When your institution
-        enables this area, real data and actions will appear here.
+      <p className="mt-3 text-xs text-muted">
+        Nothing on this page is loaded or simulated. When your institution enables this area, real data and actions will
+        appear here.
       </p>
     </section>
   )

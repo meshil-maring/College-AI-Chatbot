@@ -1,17 +1,17 @@
 .calendar-drawer {
-  --admin-yellow: #ffca16;
+  --admin-yellow: var(--ui-accent);
   position: fixed;
   inset: 68px 0 0 auto;
-  width: 408px;
+  width: min(400px, 100vw);
   height: calc(100dvh - 68px);
   max-width: 100%;
   max-height: none;
   margin: 0;
   padding: 0;
   border: 0;
-  border-left: 1px solid #1c2933;
-  background: linear-gradient(110deg, #0d151b, #0a1117);
-  color: #f5f7fa;
+  border-left: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   color-scheme: dark;
 }
 .calendar-drawer[open] {
@@ -19,24 +19,24 @@
   flex-direction: column;
 }
 .calendar-drawer::backdrop {
-  background: rgb(0 0 0 / 45%);
+  background: var(--ui-overlay);
 }
 .calendar-drawer > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 23px 22px 20px;
+  padding: 24px 24px 20px;
 }
 .calendar-drawer h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .calendar-drawer header p {
-  margin: 7px 0 0;
-  color: #bac7d7;
-  font-size: 12px;
+  margin: 8px 0 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
   line-height: 1.6;
 }
 .calendar-drawer header button {
@@ -56,20 +56,20 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 2px 22px 22px;
+  padding: 4px 24px 24px;
   scrollbar-width: thin;
 }
 .calendar-drawer > footer {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   flex-shrink: 0;
-  padding: 17px 22px max(20px, env(safe-area-inset-bottom));
-  border-top: 1px solid #1e2b35;
-  background: #0a1218;
+  padding: 16px 24px max(20px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface);
 }
 .calendar-drawer footer > button {
-  min-height: 42px;
-  font-size: 12px;
+  min-height: var(--ui-control-height);
+  font-size: var(--ui-type-body);
 }
 .calendar-drawer footer > .academic-primary-button {
   flex: 1;
@@ -77,24 +77,24 @@
 .calendar-drawer footer > .academic-secondary-button {
   min-width: 100px;
   background: transparent;
-  border-color: #2d3e4b;
+  border-color: var(--ui-border-control);
 }
 .calendar-form-error,
 .calendar-partial-notice {
   padding: 12px;
-  border: 1px solid #80474a;
-  border-radius: 7px;
-  background: #26181c;
-  color: #ffb4b4;
-  font-size: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+  font-size: var(--ui-type-small);
   line-height: 1.6;
 }
 .calendar-partial-notice {
-  border-color: #726323;
-  background: #262211;
-  color: #f5d979;
+  border-color: var(--ui-danger);
+  background: var(--ui-surface);
+  color: var(--ui-accent);
 }
 .calendar-drawer h3 {
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   overflow-wrap: anywhere;
 }

@@ -14,13 +14,7 @@ import type { ChatMessage } from './chatTypes.ts'
 import LoadingIndicator from './LoadingIndicator.tsx'
 import MessageBubble from './MessageBubble.tsx'
 
-export default function MessageList({
-  messages,
-  isLoading,
-}: {
-  messages: ChatMessage[]
-  isLoading: boolean
-}) {
+export default function MessageList({ messages, isLoading }: { messages: ChatMessage[]; isLoading: boolean }) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -31,15 +25,10 @@ export default function MessageList({
     return (
       <div className="flex h-full items-center justify-center px-4">
         <div className="max-w-md text-center">
-          <p className="text-lg font-semibold text-slate-200">
-            College AI Chatbot
-          </p>
-          <p className="mt-2 text-sm text-slate-400">
-            Ask a question about your college. For example:
-          </p>
-          <p className="mt-1 text-sm text-slate-400">
-            “What attendance level do I need in a course to be allowed to take
-            the regular end-semester exam?”
+          <p className="text-lg font-semibold text-content">College AI Chatbot</p>
+          <p className="mt-2 text-sm text-muted">Ask a question about your college. For example:</p>
+          <p className="mt-1 text-sm text-muted">
+            “What attendance level do I need in a course to be allowed to take the regular end-semester exam?”
           </p>
         </div>
       </div>
@@ -47,19 +36,14 @@ export default function MessageList({
   }
 
   return (
-    <div
-      role="log"
-      aria-live="polite"
-      aria-label="Chat messages"
-      className="flex flex-col gap-4"
-    >
+    <div role="log" aria-live="polite" aria-label="Chat messages" className="flex flex-col gap-4">
       <ol className="flex flex-col gap-4">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}
         {isLoading ? (
           <li className="mr-auto">
-            <div className="rounded-2xl rounded-tl-sm border border-slate-600 bg-slate-800 px-4 py-2.5">
+            <div className="rounded-xl rounded-tl-sm border border-control bg-surface px-4 py-3">
               <LoadingIndicator />
             </div>
           </li>

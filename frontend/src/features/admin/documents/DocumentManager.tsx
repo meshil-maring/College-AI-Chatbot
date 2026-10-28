@@ -38,41 +38,41 @@ export default function DocumentManager() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-white">Documents</h2>
+      <h2 className="font-bold text-content text-section">Documents</h2>
       {error !== null && (
-        <div role="alert" className="rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+        <div role="alert" className="rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger">
           {error}
         </div>
       )}
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 space-y-3">
+      <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
         <label className="block">
-          <span className="text-xs text-slate-400">Knowledge Source</span>
+          <span className="text-xs text-muted">Knowledge Source</span>
           {institutionId === null ? (
-            <p role="status" className="mt-1 text-sm text-slate-400">
+            <p role="status" className="mt-1 text-sm text-muted">
               No institution is linked to your administrator account, so there are no knowledge sources to manage yet.
             </p>
           ) : isSourcesLoading ? (
-            <p className="mt-1 text-sm text-slate-400">Loading knowledge sources…</p>
+            <p className="mt-1 text-sm text-muted">Loading knowledge sources…</p>
           ) : sourcesError !== null ? (
             <div className="mt-1 space-y-2">
-              <p role="alert" className="text-sm text-red-300">
+              <p role="alert" className="text-sm text-danger">
                 {sourcesError}
               </p>
               <button
                 type="button"
                 onClick={() => void loadSources()}
-                className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="rounded-lg border border-control bg-surface px-3 py-2 text-xs font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 Retry
               </button>
             </div>
           ) : knowledgeSources.length === 0 ? (
             <div className="mt-1 space-y-2">
-              <p className="text-sm text-slate-400">No knowledge sources yet. Create one to upload documents.</p>
+              <p className="text-sm text-muted">No knowledge sources yet. Create one to upload documents.</p>
               <button
                 type="button"
                 onClick={() => void handleCreateKnowledgeSource()}
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 New Knowledge Source
               </button>
@@ -82,7 +82,7 @@ export default function DocumentManager() {
               <select
                 value={knowledgeSourceId}
                 onChange={(e) => setKnowledgeSourceId(e.target.value)}
-                className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                className="w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               >
                 {knowledgeSources.map((ks) => (
                   <option key={ks.knowledge_source_id} value={ks.knowledge_source_id}>
@@ -94,7 +94,7 @@ export default function DocumentManager() {
                 type="button"
                 onClick={() => void handleCreateKnowledgeSource()}
                 title="New knowledge source"
-                className="shrink-0 rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="shrink-0 rounded-lg border border-control bg-surface px-3 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
               >
                 +
               </button>
@@ -103,47 +103,47 @@ export default function DocumentManager() {
         </label>
         <div>
           <label className="block">
-            <span className="text-xs text-slate-400">Upload Document</span>
+            <span className="text-xs text-muted">Upload Document</span>
             <input
               type="file"
               onChange={handleUpload}
               disabled={uploading || knowledgeSourceId.trim().length === 0}
-              className="mt-1 block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-500 disabled:file:opacity-50"
+              className="mt-1 block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink hover:file:bg-accent-hover disabled:file:opacity-50"
             />
           </label>
-          {uploadStatus !== null && <p className="mt-1 text-xs text-slate-400">{uploadStatus}</p>}
+          {uploadStatus !== null && <p className="mt-1 text-xs text-muted">{uploadStatus}</p>}
         </div>
         {uploading && (
-          <div className="rounded-lg border border-slate-700 bg-slate-900 p-3">
-            <div className="flex items-center gap-2 text-xs text-slate-300">
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400" aria-hidden="true" />
+          <div className="rounded-lg border border-line bg-surface p-3">
+            <div className="flex items-center gap-2 text-xs text-muted">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-success-bg" aria-hidden="true" />
               Processing: upload → extraction → chunking → embedding → ready
             </div>
           </div>
         )}
       </div>
       {isLoading ? (
-        <p className="text-sm text-slate-400">Loading documents…</p>
+        <p className="text-sm text-muted">Loading documents…</p>
       ) : documents.length === 0 ? (
-        <p className="text-sm text-slate-400">No documents found.</p>
+        <p className="text-sm text-muted">No documents found.</p>
       ) : (
         <ul className="space-y-2">
           {documents.map((doc) => {
             const versions = doc.versions ?? []
             const latest = versions[0]
             return (
-              <li key={doc.document_id} className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-white truncate block">
+              <li key={doc.document_id} className="rounded-lg border border-line bg-surface px-4 py-3">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1 basis-full sm:basis-0">
+                    <span className="text-sm font-medium text-content break-words block">
                       {latest?.original_filename ?? 'Untitled'}
                     </span>
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-muted">
                       {versions.length} version{versions.length !== 1 ? 's' : ''} · {latest?.file_type ?? 'unknown'}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <label className="cursor-pointer rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer rounded border border-control bg-surface px-2 py-1 text-xs text-content hover:bg-hover">
                       New version
                       <input
                         type="file"
@@ -154,7 +154,7 @@ export default function DocumentManager() {
                     <button
                       type="button"
                       onClick={() => handleDelete(doc.document_id)}
-                      className="shrink-0 rounded border border-red-900/50 bg-red-500/10 px-2 py-1 text-xs text-red-300 hover:bg-red-500/20"
+                      className="shrink-0 rounded border border-danger bg-danger-bg px-2 py-1 text-xs text-danger hover:bg-danger-bg"
                     >
                       Delete
                     </button>

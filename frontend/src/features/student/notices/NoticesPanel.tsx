@@ -34,20 +34,18 @@ export default function NoticesPanel({
       {visible.map((notice, index) => (
         <li
           key={`${typeof notice?.notice_id === 'string' ? notice.notice_id : 'notice'}-${index}`}
-          className="min-w-0 rounded-lg border border-slate-700 bg-slate-900/40 px-3 py-2"
+          className="min-w-0 rounded-lg border border-line bg-surface px-3 py-2"
         >
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <p className="min-w-0 flex-1 break-words text-sm font-medium text-white">
-              {formatText(notice?.title)}
-            </p>
+            <p className="min-w-0 flex-1 break-words text-sm font-medium text-content">{formatText(notice?.title)}</p>
             {notice?.is_pinned === true ? (
-              <span className="shrink-0 rounded-full border border-amber-700/60 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300">
+              <span className="shrink-0 rounded-full border border-warning bg-warning-bg px-2 py-0.5 text-xs text-warning">
                 Pinned
               </span>
             ) : null}
           </div>
-          <p className="mt-1 break-words text-sm text-slate-300">{formatText(notice?.content)}</p>
-          <p className="mt-1 break-words text-xs text-slate-500">
+          <p className="mt-1 break-words text-sm text-muted">{formatText(notice?.content)}</p>
+          <p className="mt-1 break-words text-xs text-muted">
             {formatLabel(notice?.category)} · {formatLabel(notice?.priority)} ·{' '}
             {formatDate(typeof notice?.published_at === 'string' ? notice.published_at : null)}
           </p>

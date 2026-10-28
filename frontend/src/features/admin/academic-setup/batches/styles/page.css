@@ -1,45 +1,45 @@
 .academic-workspace.batches-page {
-  --batch-muted: #aebccd;
-  --batch-border: #1c2832;
-  --admin-yellow: #ffca28;
+  --batch-muted: var(--ui-text-muted);
+  --batch-border: var(--ui-border);
+  --admin-yellow: var(--ui-accent);
   container: batches / inline-size;
   gap: 12px;
-  margin-top: -12px;
-  color: #f5f7fa;
+  margin-top: 0;
+  color: var(--ui-text);
 }
 .batches-page .academic-page-header h1 {
-  font-size: 30px;
+  font-size: var(--ui-type-title);
 }
 .batches-page .academic-page-header > button {
-  min-height: 42px;
+  min-height: var(--ui-control-height);
   padding-inline: 24px;
   flex-shrink: 0;
-  font-size: 13px;
-  background: linear-gradient(110deg, #ffd333, #ffc224);
+  font-size: var(--ui-type-body);
+  background: var(--ui-accent);
 }
 .batch-integration-note {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
+  gap: 8px;
   margin: -3px 0;
   color: var(--batch-muted);
-  font-size: 11px;
+  font-size: var(--ui-type-small);
 }
 .batch-integration-note svg {
   width: 14px;
   height: 14px;
-  margin-top: 1px;
+  margin-top: 0px;
   flex-shrink: 0;
   color: var(--admin-yellow);
 }
 .batch-save-notice {
   margin: 0;
-  color: #32db87;
-  font-size: 12px;
+  color: var(--ui-success);
+  font-size: var(--ui-type-small);
 }
 .batches-page :is(button, summary, select, input):focus-visible,
 .batch-drawer :is(button, select, input, textarea):focus-visible {
-  outline: 2px solid #ffca28;
+  outline: 2px solid var(--ui-accent);
   outline-offset: 3px;
 }
 .batch-empty {
@@ -57,9 +57,9 @@
 }
 .batch-empty h2 {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--ui-type-section);
 }
 .batch-empty p {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   color: var(--batch-muted);
 }

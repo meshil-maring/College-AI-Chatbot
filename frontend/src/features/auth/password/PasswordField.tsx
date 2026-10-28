@@ -42,16 +42,16 @@ export interface PasswordFieldProps {
 }
 
 const INPUT_BASE_CLASS =
-  'min-w-0 flex-1 rounded-lg border bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1'
+  'min-w-0 flex-1 rounded-lg border bg-surface px-3 py-2 text-content placeholder-muted focus:outline-none focus:ring-1'
 
 const INPUT_ACCENT_CLASS: Record<PasswordFieldAccent, string> = {
-  emerald: 'border-slate-600 focus:border-emerald-400 focus:ring-emerald-400',
-  amber: 'border-slate-600 focus:border-amber-400 focus:ring-amber-400',
+  emerald: 'border-control focus:border-accent focus:ring-accent',
+  amber: 'border-control focus:border-accent focus:ring-accent',
 }
 
 const TOGGLE_ACCENT_CLASS: Record<PasswordFieldAccent, string> = {
-  emerald: 'border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-emerald-400',
-  amber: 'border-amber-600/60 text-amber-300 hover:bg-slate-700 focus:ring-amber-400',
+  emerald: 'border-control text-content hover:bg-hover focus:ring-accent',
+  amber: 'border-warning text-warning hover:bg-hover focus:ring-accent',
 }
 
 export default function PasswordField({
@@ -78,7 +78,7 @@ export default function PasswordField({
   const errorId = `${name}-error`
 
   return (
-    <div className="flex flex-col gap-1 text-sm text-slate-300">
+    <div className="flex flex-col gap-1 text-sm text-muted">
       <label htmlFor={inputId}>{label}</label>
       <div className="flex items-center gap-2">
         <input
@@ -111,7 +111,7 @@ export default function PasswordField({
         </button>
       </div>
       {error !== null && (
-        <p id={errorId} role="alert" className="text-sm text-red-400">
+        <p id={errorId} role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Bell, ChevronDown, LogOut, Menu, X, type LucideIcon } from 'lucide-react'
-import '../admin/adminWorkspace.css'
+import { Bell, ChevronDown, GraduationCap, LogOut, Menu, X, type LucideIcon } from 'lucide-react'
+import './workspace.css'
 
 export default function WorkspaceFrame<View extends string>({
   children,
@@ -19,7 +19,8 @@ export default function WorkspaceFrame<View extends string>({
   headerContent,
   workspaceClassName = '',
   renderNavigationChildren,
-  collapsible = false,
+  sidebarContent,
+  collapsible = true,
 }: {
   children: ReactNode
   navigation: readonly { key: View; label: string }[]
@@ -37,6 +38,7 @@ export default function WorkspaceFrame<View extends string>({
   headerContent?: ReactNode
   workspaceClassName?: string
   renderNavigationChildren?: (view: View, close: () => void) => ReactNode
+  sidebarContent?: ReactNode
   collapsible?: boolean
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -80,8 +82,11 @@ export default function WorkspaceFrame<View extends string>({
       <aside id="workspace-sidebar" className={`admin-sidebar ${mobileOpen ? 'is-open' : ''}`}>
         <div className="admin-brand">
           {brand ?? (
-            <span>
-              College<span>AI</span>
+            <span className="workspace-brand">
+              <GraduationCap aria-hidden="true" />
+              <span>
+                College<span>AI</span>
+              </span>
             </span>
           )}
           <button
@@ -118,6 +123,7 @@ export default function WorkspaceFrame<View extends string>({
             </ul>
           </nav>
         )}
+        {sidebarContent}
         <div className="admin-sidebar-bottom">
           <span className="admin-institution-mark" />
           <span>Institution workspace</span>
@@ -138,7 +144,7 @@ export default function WorkspaceFrame<View extends string>({
           >
             <Menu aria-hidden="true" />
           </button>
-          {headerContent ?? <span className="admin-topbar-label">Institution workspace</span>}
+          {headerContent ?? <span className="admin-topbar-label">{identityRole} workspace</span>}
           <div className="admin-topbar-account">
             {onNotices && (
               <button

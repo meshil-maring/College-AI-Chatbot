@@ -9,10 +9,10 @@
   gap: 16px;
   min-width: 0;
   min-height: 96px;
-  padding: 14px;
-  border: 1px solid #16212a;
-  border-radius: 8px;
-  background: linear-gradient(110deg, #10171d, #0b1217);
+  padding: 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
 }
 .batch-metric > div {
   min-width: 0;
@@ -24,8 +24,8 @@
   height: 56px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #1b2224;
-  color: #ffca28;
+  background: var(--ui-surface);
+  color: var(--ui-accent);
 }
 .batch-metric-icon svg {
   width: 30px;
@@ -36,30 +36,30 @@
 .batch-metric-icon:is(.active, .inactive) {
   width: 44px;
   height: 44px;
-  background: #151e25;
+  background: var(--ui-surface);
 }
 .batch-metric-icon:is(.active, .inactive) svg {
   width: 22px;
   height: 22px;
 }
 .batch-metric-icon.active {
-  color: #22dd59;
+  color: var(--ui-success);
 }
 .batch-metric-icon.inactive {
-  color: #9faec6;
+  color: var(--ui-text-muted);
 }
 .batch-metric p {
   margin: 0 0 4px;
-  color: #dce3ee;
-  font-size: 12px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-small);
 }
 .batch-metric strong {
   display: block;
-  font-size: 26px;
+  font-size: var(--ui-type-metric);
   font-weight: 650;
   line-height: 1.2;
 }
 .batch-metric small {
   color: var(--batch-muted);
-  font-size: 11px;
+  font-size: var(--ui-type-small);
 }

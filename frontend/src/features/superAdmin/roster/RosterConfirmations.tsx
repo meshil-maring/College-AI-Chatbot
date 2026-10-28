@@ -22,12 +22,12 @@ export function ResendConfirmation({
     <div
       role="alertdialog"
       aria-labelledby="resend-heading"
-      className="mt-4 rounded-xl border border-violet-500/40 bg-violet-500/10 p-4"
+      className="mt-4 rounded-xl border border-accent bg-raised p-4"
     >
-      <p id="resend-heading" className="text-sm font-semibold text-violet-100">
+      <p id="resend-heading" className="text-sm font-semibold text-accent">
         Send a new invitation link to {entry.email}?
       </p>
-      <p className="mt-1 text-xs text-violet-200/90">
+      <p className="mt-1 text-xs text-accent">
         A new one-time link will be generated and emailed. The previous link stops working immediately &mdash; it is not
         reactivated by sending this one.
       </p>
@@ -36,14 +36,14 @@ export function ResendConfirmation({
           type="button"
           disabled={busy || entry.invitation_id === null}
           onClick={onConfirm}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
         >
           {busy ? 'Sending...' : 'Send new link'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-muted hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Keep current link
         </button>
@@ -74,12 +74,12 @@ export function RevokeConfirmation({
     <div
       role="alertdialog"
       aria-labelledby="revoke-heading"
-      className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4"
+      className="mt-4 rounded-xl border border-danger bg-danger-bg p-4"
     >
-      <p id="revoke-heading" className="text-sm font-semibold text-rose-100">
+      <p id="revoke-heading" className="text-sm font-semibold text-danger">
         Revoke University Admin access for {entry.email}?
       </p>
-      <p className="mt-1 text-xs text-rose-200/90">
+      <p className="mt-1 text-xs text-danger">
         This removes only this institution&apos;s admin role. The account itself and any other role it holds are
         preserved, and the action is recorded in the platform audit.
       </p>
@@ -88,14 +88,14 @@ export function RevokeConfirmation({
           type="button"
           disabled={busy || entry.user_id === null}
           onClick={onConfirm}
-          className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-300 disabled:opacity-50"
+          className="rounded-lg bg-danger-bg px-4 py-2 text-sm font-semibold text-content hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
         >
           {busy ? 'Revoking...' : 'Revoke admin'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-muted hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Keep admin
         </button>

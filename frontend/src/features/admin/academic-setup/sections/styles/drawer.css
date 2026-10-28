@@ -1,17 +1,17 @@
 .section-drawer {
-  --admin-yellow: #ffca28;
+  --admin-yellow: var(--ui-accent);
   position: fixed;
   inset: 68px 0 0 auto;
-  width: 358px;
+  width: min(400px, 100vw);
   height: calc(100dvh - 68px);
   max-width: 100%;
   max-height: none;
   margin: 0;
   padding: 0;
   border: 0;
-  border-left: 1px solid #1c2832;
-  background: linear-gradient(110deg, #0d161c, #0b1218);
-  color: #f5f7fa;
+  border-left: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   color-scheme: dark;
 }
 .section-drawer[open] {
@@ -19,7 +19,7 @@
   flex-direction: column;
 }
 .section-drawer::backdrop {
-  background: rgb(0 0 0 / 48%);
+  background: var(--ui-overlay);
 }
 .section-drawer > header {
   display: flex;
@@ -30,13 +30,13 @@
 }
 .section-drawer h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .section-drawer header p {
-  margin: 6px 0 0;
-  color: #b6c2d1;
-  font-size: 12px;
+  margin: 8px 0 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .section-drawer header button {
   display: grid;
@@ -59,25 +59,25 @@
 }
 .section-preview-note {
   margin: 0 0 16px;
-  padding: 9px 11px;
-  border: 1px solid #554a29;
-  border-radius: 5px;
-  background: #211f15;
+  padding: 8px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-warning-bg);
   color: #e8d69c;
-  font-size: 11px;
+  font-size: var(--ui-type-small);
   line-height: 1.5;
 }
 .section-drawer > footer {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   flex-shrink: 0;
   padding: 16px 20px max(20px, env(safe-area-inset-bottom));
-  border-top: 1px solid #1c2832;
-  background: #0b1319;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface);
 }
 .section-drawer footer > button {
-  min-height: 41px;
-  font-size: 12px;
+  min-height: var(--ui-control-height);
+  font-size: var(--ui-type-body);
 }
 .section-drawer footer > .academic-primary-button {
   flex: 1;
@@ -85,40 +85,40 @@
 .section-drawer footer > .academic-secondary-button {
   min-width: 110px;
   background: transparent;
-  border-color: #2b3b49;
+  border-color: var(--ui-border-control);
 }
 .section-form-error {
   margin: 0 0 16px;
   padding: 12px;
-  border: 1px solid #82474d;
-  border-radius: 6px;
-  background: #211719;
-  color: #ffb2b2;
-  font-size: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+  font-size: var(--ui-type-small);
 }
 .section-confirmation {
   padding-block: 20px;
-  font-size: 14px;
+  font-size: var(--ui-type-body);
 }
 .section-confirmation > svg {
   width: 32px;
   height: 32px;
-  color: #ffca28;
+  color: var(--ui-accent);
 }
 .section-details {
   display: grid;
-  gap: 18px;
+  gap: 20px;
   margin: 0;
 }
 .section-details dt {
-  margin-bottom: 5px;
-  color: #acb9c9;
-  font-size: 12px;
+  margin-bottom: 4px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .section-details dd {
   margin: 0;
-  color: #f2f6fa;
-  font-size: 14px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

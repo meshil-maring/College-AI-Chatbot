@@ -56,28 +56,28 @@ function AcademicSetupWorkspace({
             onClick={() => {
               state.select(entity)
             }}
-            className={`${academicButtonClass} ${entity === state.entity ? 'bg-emerald-800' : 'bg-slate-800'}`}
+            className={`${academicButtonClass} ${entity === state.entity ? 'bg-accent text-ink' : 'bg-surface'}`}
           >
             {ACADEMIC_LABELS[entity]}
           </button>
         ))}
       </nav>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold text-white">{ACADEMIC_LABELS[state.entity]}</h2>
+        <h2 className="font-semibold text-content text-section">{ACADEMIC_LABELS[state.entity]}</h2>
         {state.manageable && (
           <button
             type="button"
             disabled={state.busy || parents.issue !== null}
             onClick={() => state.open()}
-            className={`${academicButtonClass} bg-emerald-700`}
+            className={`${academicButtonClass} bg-accent text-ink`}
           >
             Add {state.singular}
           </button>
         )}
       </div>
-      <p className="text-sm text-slate-300">{ACADEMIC_HELP[state.entity]}</p>
-      {!state.manageable && <p className="text-sm text-slate-400">Read-only access.</p>}
-      {state.manageable && parents.issue && <p className="text-sm text-amber-200">{parents.issue}</p>}
+      <p className="text-sm text-muted">{ACADEMIC_HELP[state.entity]}</p>
+      {!state.manageable && <p className="text-sm text-muted">Read-only access.</p>}
+      {state.manageable && parents.issue && <p className="text-sm text-warning">{parents.issue}</p>}
       {state.query.isError && (
         <div className="space-y-2">
           <p role="alert">Could not refresh Academic Setup. Retry before making further changes.</p>
@@ -87,12 +87,12 @@ function AcademicSetupWorkspace({
         </div>
       )}
       {state.error && (
-        <p role="alert" className="rounded-lg border border-red-700 p-3 text-red-200">
+        <p role="alert" className="rounded-lg border border-danger p-3 text-danger">
           {state.error}
         </p>
       )}
       {state.notice && (
-        <p role="status" className="text-emerald-300">
+        <p role="status" className="text-success">
           {state.notice}
         </p>
       )}

@@ -1,7 +1,7 @@
 .students-page-links {
   position: relative;
-  margin-top: 6px;
-  padding-bottom: 6px;
+  margin-top: 8px;
+  padding-bottom: 8px;
 }
 
 .students-page-links::before {
@@ -11,7 +11,7 @@
   bottom: 0;
   left: 21px;
   width: 1px;
-  background: #293341;
+  background: var(--ui-surface-raised);
   content: '';
   pointer-events: none;
 }
@@ -20,21 +20,21 @@
 .students-page-links > span {
   position: relative;
   display: block;
-  padding: 12px 12px 12px 43px;
-  border-radius: 8px;
-  color: #b9c3d1;
-  font-size: 13px;
+  padding: 12px 12px 12px 44px;
+  border-radius: var(--ui-radius-md);
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
   line-height: 20px;
   text-decoration: none;
 }
 
 .students-page-links a:hover {
-  background: #162333;
+  background: var(--ui-surface-raised);
   color: #fff;
 }
 
 .students-page-links [aria-current='page'] {
-  background: #242d39;
+  background: var(--ui-surface-raised);
   color: #fff;
 }
 
@@ -48,12 +48,12 @@
 }
 
 .students-page-links [aria-disabled='true'] {
-  color: #7c899a;
+  color: var(--ui-text-muted);
   cursor: not-allowed;
 }
 
 .students-page-links a:focus-visible {
-  outline: 2px solid #ffc72c;
+  outline: 2px solid var(--ui-danger);
   outline-offset: -2px;
 }
 
@@ -91,5 +91,5 @@
   padding-inline: 0;
 }
 .admin-sidebar nav.students-page-links {
-  padding: 0 0 6px;
+  padding: 0 0 8px;
 }

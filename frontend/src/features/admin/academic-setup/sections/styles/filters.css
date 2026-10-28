@@ -5,7 +5,7 @@
       1fr
     );
   align-items: end;
-  gap: 14px;
+  gap: 16px;
   margin-top: 4px;
 }
 .section-mobile-sort {
@@ -13,22 +13,22 @@
 }
 .section-filters > label > span:not(.sr-only) {
   display: block;
-  margin-bottom: 5px;
-  color: #d3dce8;
-  font-size: 11px;
+  margin-bottom: 4px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
 }
 .section-filters select,
 .section-search {
   width: 100%;
-  min-height: 36px;
-  border: 1px solid #293845;
-  border-radius: 6px;
-  background: #0b1116;
-  color: #f5f7fa;
-  font-size: 12px;
+  min-height: var(--ui-control-height);
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: var(--ui-type-control);
 }
 .section-filters select {
-  padding: 8px 10px;
+  padding: 8px 12px;
   color-scheme: dark;
   text-overflow: ellipsis;
 }
@@ -37,9 +37,9 @@
   align-items: center;
   gap: 12px;
   min-height: 51px;
-  padding: 0 14px;
-  border-color: #192630;
-  background: linear-gradient(110deg, #121c23, #0e171d);
+  padding: 0 16px;
+  border-color: var(--ui-border-control);
+  background: var(--ui-surface);
 }
 .section-search > svg {
   width: 21px;
@@ -54,7 +54,7 @@
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: 12px;
+  font-size: var(--ui-type-control);
 }
 .section-search input::placeholder {
   color: var(--section-muted);
@@ -66,7 +66,7 @@
   display: grid;
   place-items: center;
   min-width: 28px;
-  min-height: 40px;
+  min-height: var(--ui-control-height);
 }
 .section-search button svg {
   width: 15px;

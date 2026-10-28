@@ -33,13 +33,13 @@ export default function ResourcesPanel({
       {visible.map((resource, index) => (
         <li
           key={`${typeof resource?.resource_id === 'string' ? resource.resource_id : 'resource'}-${index}`}
-          className="min-w-0 rounded-lg border border-slate-700 bg-slate-900/40 px-3 py-2"
+          className="min-w-0 rounded-lg border border-line bg-surface px-3 py-2"
         >
-          <p className="break-words text-sm font-medium text-white">{formatText(resource?.title)}</p>
+          <p className="break-words text-sm font-medium text-content">{formatText(resource?.title)}</p>
           {typeof resource?.description === 'string' && resource.description.trim() ? (
-            <p className="mt-1 break-words text-sm text-slate-300">{resource.description}</p>
+            <p className="mt-1 break-words text-sm text-muted">{resource.description}</p>
           ) : null}
-          <p className="mt-1 break-words text-xs text-slate-500">
+          <p className="mt-1 break-words text-xs text-muted">
             {formatLabel(resource?.source_type)} · Effective from{' '}
             {formatDate(typeof resource?.effective_from === 'string' ? resource.effective_from : null)}
           </p>

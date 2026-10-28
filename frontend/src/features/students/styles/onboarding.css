@@ -2,35 +2,35 @@
 .students-table td.students-empty {
   padding: 60px 20px;
   text-align: center;
-  background: #121a25;
-  color: #a4b7d3;
+  background: var(--ui-surface);
+  color: var(--ui-text-muted);
   white-space: normal;
 }
 .students-empty > svg {
   width: 34px;
   height: 34px;
   margin: 0 auto 16px;
-  color: #7d94b7;
+  color: var(--ui-text-muted);
 }
 .students-empty h2 {
-  margin-bottom: 7px;
-  font-size: 17px;
+  margin-bottom: 8px;
+  font-size: var(--ui-type-card);
   font-weight: 600;
-  color: #e4ecfa;
+  color: var(--ui-text);
 }
 .students-empty p {
   margin-bottom: 16px;
-  font-size: 12px;
+  font-size: var(--ui-type-small);
 }
 .students-empty .students-text-button {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .students-table.directory {
   min-width: 700px;
 }
 .students-table.directory td {
-  padding-top: 13px;
-  padding-bottom: 13px;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 .students-roster-identity {
   display: flex;
@@ -42,10 +42,10 @@
   place-items: center;
   width: 31px;
   height: 31px;
-  border: 1px solid #334259;
-  border-radius: 7px;
-  background: #233044;
-  color: #b7c9e5;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
 }
 .students-roster-identity svg {
   width: 16px;
@@ -60,35 +60,35 @@
   gap: 20px;
 }
 .students-onboarding-card {
-  padding: 35px 30px;
-  border: 1px solid #2d3b4f;
-  border-radius: 12px;
-  background: linear-gradient(140deg, #192330, #111923);
+  padding: 36px 32px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
 }
 .students-onboarding-card .students-upload-icon {
   margin-left: 0;
 }
 .students-onboarding-card h2 {
-  font-size: 19px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .students-onboarding-card p {
-  margin: 10px 0 25px;
-  font-size: 13px;
-  color: #a9bbd5;
+  margin: 12px 0 24px;
+  font-size: var(--ui-type-body);
+  color: var(--ui-text-muted);
 }
 .students-onboarding-card small {
   display: block;
   margin-top: 12px;
-  color: #a9bbd5;
-  font-size: 11px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .students-confirm {
   margin-top: 20px;
-  padding: 35px 25px;
-  border: 1px solid #2b3a4f;
-  border-radius: 9px;
-  background: #121c28;
+  padding: 36px 24px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface-raised);
   text-align: center;
 }
 .students-confirm .students-alert {

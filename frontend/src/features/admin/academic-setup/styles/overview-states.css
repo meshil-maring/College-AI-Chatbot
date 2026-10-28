@@ -1,7 +1,7 @@
 .academic-search-status {
   margin: 0 0 12px;
-  color: #c3cbd6;
-  font-size: 13px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .academic-empty-state {
   display: flex;
@@ -10,7 +10,7 @@
   gap: 12px;
   padding: 44px 24px;
   border: 1px solid var(--admin-border);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-lg);
   background: var(--admin-panel);
   text-align: center;
 }
@@ -21,47 +21,47 @@
 }
 .academic-empty-state :is(h2, h3) {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .academic-empty-state > p {
   max-width: 520px;
   margin: 0;
-  color: #b5becc;
-  font-size: 13px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .academic-area-view {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 .academic-area-intro {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 .academic-area-intro h2 {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .academic-area-intro p {
   margin: 4px 0 0;
-  color: #b5becc;
-  font-size: 13px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .academic-area-children {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 .academic-area-children > button {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding: 20px;
   border: 1px solid var(--admin-border);
-  border-radius: 11px;
+  border-radius: var(--ui-radius-lg);
   background: var(--admin-panel);
   text-align: left;
 }
@@ -80,20 +80,20 @@
   display: block;
 }
 .academic-area-children small {
-  margin-top: 5px;
-  color: #b3bdcb;
-  font-size: 12px;
+  margin-top: 4px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .academic-area-guidance {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border: 1px solid #53492e;
-  border-radius: 9px;
-  background: #201d14;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
   color: #e6d6a3;
-  font-size: 12px;
+  font-size: var(--ui-type-small);
 }
 .academic-area-guidance p {
   margin: 0;
@@ -107,74 +107,74 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  color: #b9c2cf;
-  font-size: 12px;
+  gap: 12px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .academic-state-legend > small {
   flex-basis: 100%;
-  font-size: 11px;
+  font-size: var(--ui-type-body);
 }
 .academic-status {
-  padding: 3px 10px;
-  border: 1px solid #58616b;
-  border-radius: 20px;
+  padding: 4px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-pill);
 }
 .academic-status-active,
 .academic-status-published {
-  border-color: #488463;
-  color: #b0e2c8;
+  border-color: var(--ui-border);
+  color: var(--ui-text-muted);
 }
 .academic-status-planned,
 .academic-status-draft {
-  border-color: #8b753b;
-  color: #f0d58d;
+  border-color: var(--ui-danger);
+  color: var(--ui-accent);
 }
 .academic-status-cancelled {
-  border-color: #8e5454;
-  color: #efbaba;
+  border-color: var(--ui-border);
+  color: var(--ui-text-muted);
 }
 .academic-existing-records form,
 .academic-existing-records li {
-  background-color: #16191c;
-  border-color: #343a42;
+  background-color: var(--ui-surface);
+  border-color: var(--ui-border);
 }
 .academic-existing-records form :is(input:not([type='checkbox']), textarea, select) {
-  background-color: #101214;
-  border-color: #444b55;
+  background-color: var(--ui-surface);
+  border-color: var(--ui-border-control);
 }
 .academic-existing-records button[class*='bg-emerald'] {
   background: var(--admin-yellow);
-  color: #17130a;
+  color: var(--ui-on-accent);
 }
 .academic-existing-records button[class*='bg-emerald-800'] {
-  background: #3d3420;
-  color: #ffe18b;
+  background: var(--ui-surface-raised);
+  color: var(--ui-accent);
 }
 .academic-transition-dialog {
   width: min(480px, calc(100vw - 32px));
   margin: auto;
-  padding: 26px;
-  border: 1px solid #5b5050;
-  border-radius: 12px;
-  background: #17191c;
-  color: #f3f4f6;
+  padding: 28px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 .academic-transition-dialog::backdrop {
-  background: #000a;
+  background: var(--ui-overlay);
 }
 .academic-transition-dialog > svg {
-  color: #f5c542;
+  color: var(--ui-accent);
 }
 .academic-transition-dialog h2 {
   margin-top: 12px;
-  font-size: 19px;
+  font-size: var(--ui-type-section);
   font-weight: 650;
 }
 .academic-transition-dialog p {
-  margin-block: 14px 24px;
-  color: #c4ccd7;
-  font-size: 14px;
+  margin-block: 16px 24px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
   line-height: 1.6;
 }
 .academic-transition-dialog > div {
@@ -184,7 +184,7 @@
   gap: 12px;
 }
 .academic-transition-dialog .academic-confirm-transition {
-  border-color: #d89548;
-  background: #543015;
+  border-color: var(--ui-danger);
+  background: var(--ui-surface-raised);
   color: #ffe3b8;
 }

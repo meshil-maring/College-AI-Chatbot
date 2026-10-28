@@ -1,6 +1,6 @@
 @media (min-width: 1440px) {
   .sections-page.has-drawer {
-    padding-right: 358px;
+    padding-right: 416px;
   }
   .section-drawer::backdrop {
     background: transparent;
@@ -8,7 +8,7 @@
 }
 @container sections (max-width: 1050px) {
   .section-filters {
-    gap: 10px;
+    gap: 12px;
     grid-template-columns: minmax(190px, 2fr) minmax(115px, 1fr) minmax(140px, 1.1fr) minmax(100px, 0.9fr) minmax(
         115px,
         1fr
@@ -27,13 +27,13 @@
     height: 27px;
   }
   .section-identity {
-    gap: 10px;
+    gap: 12px;
   }
   .section-table :is(th, td) {
     padding-inline: 8px;
   }
   .section-row-actions {
-    gap: 5px;
+    gap: 4px;
   }
 }
 @container sections (max-width: 840px) {
@@ -76,10 +76,10 @@
   .section-table tbody tr {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
     padding: 16px;
-    border: 1px solid #1c2832;
-    border-radius: 7px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md);
   }
   .section-table td {
     display: block;
@@ -94,10 +94,10 @@
   }
   .section-table td::before {
     display: block;
-    margin-bottom: 5px;
-    color: #aebccd;
+    margin-bottom: 4px;
+    color: var(--ui-text-muted);
     content: attr(data-label);
-    font-size: 10px;
+    font-size: var(--ui-type-small);
   }
   .section-table td:first-child::before,
   .section-table td:last-child::before,
@@ -125,7 +125,7 @@
   .sections-page .academic-page-header {
     align-items: flex-start;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
   .sections-page .academic-page-header > button {
     width: 100%;
@@ -135,8 +135,8 @@
   }
   .section-metric {
     min-height: 86px;
-    gap: 9px;
-    padding: 10px;
+    gap: 8px;
+    padding: 12px;
   }
   .section-metric-icon,
   .section-metric-icon:is(.active, .inactive) {
@@ -152,13 +152,13 @@
     height: 17px;
   }
   .section-metric p {
-    font-size: 10px;
+    font-size: var(--ui-type-small);
   }
   .section-metric strong {
-    font-size: 23px;
+    font-size: var(--ui-type-section);
   }
   .section-metric small {
-    font-size: 10px;
+    font-size: var(--ui-type-small);
   }
   .section-table tbody {
     grid-template-columns: minmax(0, 1fr);

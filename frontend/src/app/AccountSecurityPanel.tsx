@@ -7,13 +7,13 @@ export function AccountSecurityPanel() {
   const { logoutAll } = useAuth()
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-40 max-w-[calc(100vw-32px)]">
       {open ? (
         <div id="account-security-panel" className="flex flex-col items-end gap-2">
           <button
             type="button"
             onClick={() => void logoutAll()}
-            className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700"
+            className="w-full rounded-lg border border-control bg-surface px-3 py-2 text-left text-sm text-content hover:bg-hover"
           >
             Sign out all sessions
           </button>
@@ -21,7 +21,7 @@ export function AccountSecurityPanel() {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="text-xs text-slate-400 hover:text-slate-200 underline"
+            className="text-xs text-muted hover:text-content underline"
           >
             Close
           </button>
@@ -32,7 +32,7 @@ export function AccountSecurityPanel() {
           onClick={() => setOpen(true)}
           aria-expanded={open}
           aria-controls="account-security-panel"
-          className="rounded-lg border border-emerald-600/60 bg-slate-800 px-3 py-2 text-xs font-semibold text-emerald-400 shadow-lg hover:bg-slate-700"
+          className="rounded-lg border border-accent bg-surface px-3 py-2 text-sm font-semibold text-accent hover:bg-hover"
         >
           Account security
         </button>

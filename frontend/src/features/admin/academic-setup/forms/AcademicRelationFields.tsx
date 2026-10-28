@@ -108,7 +108,7 @@ export default function AcademicRelationFields({
       {fields.map((field) => {
         const options = field.options.filter((row) => row.is_active || (editing && row.id === draft[field.key]))
         return (
-          <div key={field.key} className="text-sm text-slate-200">
+          <div key={field.key} className="text-sm text-content">
             <label>
               {field.label}
               {field.optional ? ' (optional)' : ''}
@@ -132,7 +132,7 @@ export default function AcademicRelationFields({
                 )}
               </select>
             </label>
-            <span id={`${hintId}-${field.key}`} className="mt-1 block text-xs text-slate-400">
+            <span id={`${hintId}-${field.key}`} className="mt-1 block text-xs text-muted">
               Cannot be changed after creation.
             </span>
           </div>

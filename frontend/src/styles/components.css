@@ -1,0 +1,89 @@
+@layer components {
+  .ui-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ui-space-2);
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid var(--ui-accent);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-accent);
+    color: var(--ui-on-accent);
+    font-size: var(--ui-type-body);
+    font-weight: 600;
+  }
+  .ui-primary:hover:not(:disabled) {
+    background: var(--ui-accent-hover);
+  }
+  .ui-primary:active:not(:disabled) {
+    background: var(--ui-accent-pressed);
+  }
+  .ui-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ui-space-4);
+    margin-bottom: var(--ui-space-6);
+  }
+  .ui-eyebrow {
+    margin-bottom: var(--ui-space-2);
+    color: var(--ui-accent);
+    font-size: var(--ui-type-small);
+    font-weight: 600;
+  }
+  .ui-description {
+    max-width: 70ch;
+    margin-top: var(--ui-space-2);
+    color: var(--ui-text-muted);
+    font-size: var(--ui-type-body);
+  }
+  .ui-panel {
+    padding: var(--ui-space-4);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg);
+    background: var(--ui-surface);
+  }
+  .ui-public-header {
+    min-height: 68px;
+    background: var(--ui-shell);
+  }
+  .ui-public-container {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+    padding-inline: var(--ui-space-6);
+  }
+  .ui-chat {
+    display: flex;
+    flex-direction: column;
+    /* Reserve space for the workspace header, gutters and account security action. */
+    height: calc(100dvh - 180px);
+    min-height: 480px;
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-lg);
+    background: var(--ui-bg);
+  }
+  .ui-chat-reading {
+    width: 100%;
+    max-width: 768px;
+    margin-inline: auto;
+  }
+}
+
+.bg-accent:active:not(:disabled),
+.academic-primary-button:active:not(:disabled) {
+  background: var(--ui-accent-pressed);
+}
+
+@media (max-width: 760px) {
+  .ui-public-container {
+    padding-inline: var(--ui-space-4);
+  }
+  .ui-chat {
+    height: calc(100dvh - 180px);
+    min-height: 360px;
+  }
+}

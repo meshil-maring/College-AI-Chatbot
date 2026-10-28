@@ -64,18 +64,21 @@ export default function ChangePasswordForm() {
   }
 
   return (
-    <section className="max-w-md rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-xl">
-      <h2 className="text-xl font-bold text-white tracking-tight">Change Password</h2>
-      <p className="mt-2 text-sm text-slate-300">
+    <section className="max-w-md rounded-xl border border-line bg-surface p-6 shadow-none">
+      <h2 className="font-bold text-content tracking-tight text-section">Change Password</h2>
+      <p className="mt-2 text-sm text-muted">
         Verify your current password to update it. Other active sessions will be signed out.
       </p>
       {formError !== null && (
-        <div role="alert" className="mt-4 rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+        <div role="alert" className="mt-4 rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger">
           {formError}
         </div>
       )}
       {success && (
-        <div role="status" className="mt-4 rounded-lg border border-emerald-900/50 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">
+        <div
+          role="status"
+          className="mt-4 rounded-lg border border-success bg-success-bg px-4 py-2 text-sm text-success"
+        >
           Password changed successfully. This session remains active.
         </div>
       )}
@@ -122,7 +125,7 @@ export default function ChangePasswordForm() {
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-accent px-4 py-2 font-semibold text-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? 'Updating…' : 'Change password'}
         </button>

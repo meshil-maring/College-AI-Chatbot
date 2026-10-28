@@ -2,6 +2,7 @@ import { Bell, BookOpen, Bot, UserCircle, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import ChatShell from '../../chat/ChatShell.tsx'
 import WorkspaceFrame from '../../workspace/WorkspaceFrame.tsx'
+import WorkspacePageHeader from '../../workspace/WorkspacePageHeader.tsx'
 import FacultyProfile from '../profile/FacultyProfile.tsx'
 import FacultyComingSoon from './FacultyComingSoon.tsx'
 import {
@@ -43,7 +44,10 @@ export default function FacultyShell() {
       {view ? (
         <>
           {view !== 'assistant' && (
-            <h1 className="mb-5 text-2xl font-bold text-white">{FACULTY_VIEW_HEADINGS[view]}</h1>
+            <WorkspacePageHeader
+              title={FACULTY_VIEW_HEADINGS[view]}
+              description="Your faculty workspace and institution information."
+            />
           )}
           {view === 'profile' && <FacultyProfile user={user} />}
           {FACULTY_COMING_SOON_VIEWS.includes(view) && <FacultyComingSoon view={view} />}

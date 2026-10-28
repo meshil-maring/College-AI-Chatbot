@@ -38,7 +38,7 @@ export default function StudentIdentityCard({ profile }: { profile: StudentResou
 
   return (
     <>
-      <p className="break-words text-sm text-slate-300">Welcome{identifier ? `, ${identifier}` : ''}</p>
+      <p className="break-words text-sm text-muted">Welcome{identifier ? `, ${identifier}` : ''}</p>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Definition label="Email" value={safeField(data.email)} />
         <Definition label="Register number" value={safeField(data.register_number)} />

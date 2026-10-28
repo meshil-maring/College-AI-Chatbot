@@ -12,9 +12,9 @@ export default function StudentApprovalQueue(options: ApprovalQueueOptions) {
     <section className="students-content students-scope" aria-label="Pending registrations">
       <StudentApprovalToolbar model={model} />
       <div aria-live="polite" className="students-queue-status">
-        {actionSuccess && <p className="text-emerald-300">{actionSuccess}</p>}
+        {actionSuccess && <p className="text-success">{actionSuccess}</p>}
         {actionError && (
-          <p role="status" className="text-amber-300">
+          <p role="status" className="text-warning">
             {actionError}
           </p>
         )}

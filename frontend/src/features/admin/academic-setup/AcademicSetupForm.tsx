@@ -32,15 +32,15 @@ export default function AcademicSetupForm({
         event.preventDefault()
         onSave()
       }}
-      className="space-y-4 rounded-xl border border-slate-600 bg-slate-800 p-4"
+      className="space-y-4 rounded-xl border border-control bg-surface p-4"
     >
-      <h3 className="font-semibold text-white">
+      <h3 className="font-semibold text-content text-card">
         {editing ? 'Edit' : 'New'} {singular}
       </h3>
       <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
         {named && (
           <>
-            <label className="text-sm text-slate-200">
+            <label className="text-sm text-content">
               Name
               <input
                 required
@@ -50,7 +50,7 @@ export default function AcademicSetupForm({
                 className={academicInputClass}
               />
             </label>
-            <label className="text-sm text-slate-200">
+            <label className="text-sm text-content">
               Code
               <input
                 required
@@ -64,7 +64,7 @@ export default function AcademicSetupForm({
           </>
         )}
         {['departments', 'programs', 'courses'].includes(entity) && (
-          <label className="text-sm text-slate-200 sm:col-span-2">
+          <label className="text-sm text-content sm:col-span-2">
             Description (optional)
             <textarea
               maxLength={2000}
@@ -82,7 +82,7 @@ export default function AcademicSetupForm({
           editing={editing}
         />
         {ACADEMIC_FIELDS[entity].map((field) => (
-          <label key={field.key} className="text-sm text-slate-200">
+          <label key={field.key} className="text-sm text-content">
             {field.label}
             <input
               type={field.type ?? 'text'}
@@ -97,7 +97,7 @@ export default function AcademicSetupForm({
         ))}
         {entity === 'program_courses' && (
           <>
-            <label className="text-sm text-slate-200">
+            <label className="text-sm text-content">
               Course type
               <select
                 required
@@ -113,7 +113,7 @@ export default function AcademicSetupForm({
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-200">
+            <label className="flex items-center gap-2 text-sm text-content">
               <input
                 type="checkbox"
                 checked={draft.is_required}
@@ -124,7 +124,7 @@ export default function AcademicSetupForm({
           </>
         )}
         {period && (
-          <label className="flex items-center gap-2 text-sm text-slate-200">
+          <label className="flex items-center gap-2 text-sm text-content">
             <input
               type="checkbox"
               checked={draft.is_current}
@@ -134,7 +134,7 @@ export default function AcademicSetupForm({
             Current {entity === 'semesters' ? 'semester' : 'academic year'}
           </label>
         )}
-        <label className="flex items-center gap-2 text-sm text-slate-200">
+        <label className="flex items-center gap-2 text-sm text-content">
           <input
             type="checkbox"
             checked={draft.is_active}
@@ -150,7 +150,7 @@ export default function AcademicSetupForm({
         </label>
       </fieldset>
       <div className="flex gap-2">
-        <button type="submit" disabled={busy} className={`${academicButtonClass} bg-emerald-700`}>
+        <button type="submit" disabled={busy} className={`${academicButtonClass} bg-accent text-ink`}>
           {busy ? 'Saving...' : 'Save'}
         </button>
         <button type="button" disabled={busy} onClick={onCancel} className={academicButtonClass}>

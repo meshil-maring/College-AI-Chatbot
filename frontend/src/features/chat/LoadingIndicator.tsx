@@ -8,15 +8,8 @@
 
 export default function LoadingIndicator() {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="flex items-center gap-2 text-sm text-slate-300"
-    >
-      <span
-        className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"
-        aria-hidden="true"
-      />
+    <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted">
+      <span className="h-2 w-2 rounded-full bg-accent animate-pulse" aria-hidden="true" />
       <span>Thinking…</span>
     </div>
   )

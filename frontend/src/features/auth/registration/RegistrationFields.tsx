@@ -44,7 +44,7 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
       noValidate
       aria-busy={submitting}
     >
-      <label className="flex flex-col gap-1 text-sm text-slate-300">
+      <label className="flex flex-col gap-1 text-sm text-muted">
         Full Name
         <input
           type="text"
@@ -58,7 +58,7 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
           onChange={(event) => setFullName(event.target.value)}
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm text-slate-300">
+      <label className="flex flex-col gap-1 text-sm text-muted">
         Email
         <input
           type="email"
@@ -74,7 +74,7 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
       </label>
       {registrationType === 'student' ? (
         <>
-          <label className="flex flex-col gap-1 text-sm text-slate-300">
+          <label className="flex flex-col gap-1 text-sm text-muted">
             Register Number
             <input
               type="text"
@@ -87,7 +87,7 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
               onChange={(event) => setRegisterNumber(event.target.value)}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-300">
+          <label className="flex flex-col gap-1 text-sm text-muted">
             University Roll Number
             <input
               type="text"
@@ -103,8 +103,8 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
         </>
       ) : (
         <>
-          <label className="flex flex-col gap-1 text-sm text-slate-300">
-            Designation <span className="text-xs text-slate-500">(optional)</span>
+          <label className="flex flex-col gap-1 text-sm text-muted">
+            Designation <span className="text-xs text-muted">(optional)</span>
             <input
               type="text"
               name="designation"
@@ -115,8 +115,8 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
               onChange={(event) => setDesignation(event.target.value)}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-300">
-            Department <span className="text-xs text-slate-500">(optional)</span>
+          <label className="flex flex-col gap-1 text-sm text-muted">
+            Department <span className="text-xs text-muted">(optional)</span>
             <input
               type="text"
               name="department"
@@ -129,7 +129,7 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
           </label>
         </>
       )}
-      <label className="flex flex-col gap-1 text-sm text-slate-300">
+      <label className="flex flex-col gap-1 text-sm text-muted">
         Institution Code
         <input
           type="text"
@@ -155,18 +155,18 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
       </label>
       <div id="institution-status" aria-live="polite">
         {institutionStatus === 'checking' && (
-          <p role="status" className="text-sm text-slate-400">
+          <p role="status" className="text-sm text-muted">
             Finding institution…
           </p>
         )}
         {institutionStatus === 'found' && resolvedInstitution !== null && (
-          <p role="status" className="text-sm text-emerald-400">
+          <p role="status" className="text-sm text-success">
             {resolvedInstitution.name}
           </p>
         )}
         {(institutionStatus === 'invalid' || institutionStatus === 'not_accepting' || institutionStatus === 'error') &&
           institutionMessage !== null && (
-            <p role="alert" className="text-sm text-red-400">
+            <p role="alert" className="text-sm text-danger">
               {institutionMessage}
             </p>
           )}
@@ -198,7 +198,7 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-lg bg-accent px-4 py-2 font-semibold text-ink hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? 'Creating account…' : 'Create Account'}
       </button>
@@ -206,7 +206,7 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
         type="button"
         disabled={submitting}
         onClick={onBackToLogin}
-        className="text-sm text-slate-400 hover:text-slate-200 underline"
+        className="text-sm text-muted hover:text-content underline"
       >
         Already have an account? Back to Login
       </button>

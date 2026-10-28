@@ -1,17 +1,17 @@
 .curriculum-drawer {
-  --admin-yellow: #ffca28;
+  --admin-yellow: var(--ui-accent);
   position: fixed;
   inset: 68px 0 0 auto;
-  width: 350px;
+  width: min(400px, 100vw);
   height: calc(100dvh - 68px);
   max-width: 100%;
   max-height: none;
   margin: 0;
   padding: 0;
   border: 0;
-  border-left: 1px solid #1c2832;
-  background: linear-gradient(110deg, #0d151c, #0b1218);
-  color: #f5f7fa;
+  border-left: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
   color-scheme: dark;
 }
 .curriculum-drawer[open] {
@@ -19,24 +19,24 @@
   flex-direction: column;
 }
 .curriculum-drawer::backdrop {
-  background: rgb(0 0 0 / 45%);
+  background: var(--ui-overlay);
 }
 .curriculum-drawer > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 17px 20px 19px 22px;
+  padding: 16px 20px 20px 24px;
 }
 .curriculum-drawer h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--ui-type-section);
   font-weight: 600;
 }
 .curriculum-drawer header p {
-  margin: 7px 0 0;
-  color: #b7c5d7;
-  font-size: 12px;
+  margin: 8px 0 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .curriculum-drawer header button {
   display: grid;
@@ -54,20 +54,20 @@
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 2px 22px 20px;
+  padding: 4px 24px 20px;
   scrollbar-width: thin;
 }
 .curriculum-drawer > footer {
   display: flex;
-  gap: 13px;
+  gap: 12px;
   flex-shrink: 0;
-  padding: 16px 22px max(20px, env(safe-area-inset-bottom));
-  border-top: 1px solid #1c2832;
-  background: #0b1319;
+  padding: 16px 24px max(20px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-surface);
 }
 .curriculum-drawer footer > button {
-  min-height: 41px;
-  font-size: 12px;
+  min-height: var(--ui-control-height);
+  font-size: var(--ui-type-body);
 }
 .curriculum-drawer footer > .academic-primary-button {
   flex: 1;
@@ -75,14 +75,14 @@
 .curriculum-drawer footer > .academic-secondary-button {
   min-width: 94px;
   background: transparent;
-  border-color: #2b3b49;
+  border-color: var(--ui-border-control);
 }
 .curriculum-form-error {
   margin: 12px 0 20px;
   padding: 12px;
-  border: 1px solid #82474d;
-  border-radius: 7px;
-  background: #211719;
-  color: #ffb2b2;
-  font-size: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+  font-size: var(--ui-type-small);
 }

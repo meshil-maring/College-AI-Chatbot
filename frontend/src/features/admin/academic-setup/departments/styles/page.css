@@ -1,12 +1,12 @@
 .departments-page {
-  --department-muted: #b0b8c5;
-  --department-border: #2b3239;
-  color: #f3f4f6;
+  --department-muted: var(--ui-text-muted);
+  --department-border: var(--ui-border);
+  color: var(--ui-text);
 }
 .departments-page .academic-page-header > button {
   flex-shrink: 0;
   min-height: 44px;
-  font-size: 13px;
+  font-size: var(--ui-type-body);
 }
 .department-summary {
   display: grid;
@@ -18,10 +18,10 @@
   align-items: center;
   gap: 16px;
   min-height: 104px;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--department-border);
-  border-radius: 9px;
-  background: #121619;
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
 }
 .department-metric > div {
   min-width: 0;
@@ -34,46 +34,46 @@
   height: 48px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #222a2d;
-  color: #f5c542;
+  background: var(--ui-surface-raised);
+  color: var(--ui-accent);
 }
 .department-metric-icon svg {
   width: 25px;
   height: 25px;
 }
 .department-metric-icon.active {
-  color: #73d995;
+  color: var(--ui-success);
 }
 .department-metric-icon.inactive {
   color: var(--department-muted);
 }
 .department-metric p {
-  margin: 0 0 3px;
+  margin: 0 0 4px;
   color: var(--department-muted);
-  font-size: 13px;
+  font-size: var(--ui-type-body);
 }
 .department-metric strong {
   display: block;
-  font-size: 28px;
+  font-size: var(--ui-type-metric);
   line-height: 1.25;
 }
 .department-metric small {
   display: block;
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--department-muted);
-  font-size: 11px;
+  font-size: var(--ui-type-small);
 }
 .department-access-note {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: 8px;
   margin: 0;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--department-border);
-  border-radius: 8px;
-  background: #151a1e;
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
   color: var(--department-muted);
-  font-size: 13px;
+  font-size: var(--ui-type-body);
 }
 .department-access-note > svg {
   width: 18px;
@@ -84,33 +84,33 @@
   display: grid;
   grid-template-columns: minmax(180px, 1fr) 150px 170px;
   align-items: end;
-  gap: 14px;
+  gap: 16px;
 }
 .department-filters > label > span:not(.sr-only) {
   display: block;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
   color: var(--department-muted);
-  font-size: 13px;
+  font-size: var(--ui-type-body);
 }
 .department-filters select,
 .department-search {
   width: 100%;
   min-height: 46px;
   border: 1px solid var(--department-border);
-  border-radius: 8px;
-  background: #101417;
-  color: #f3f4f6;
-  font-size: 13px;
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: var(--ui-type-control);
 }
 .department-filters select {
-  padding: 10px 12px;
+  padding: 12px 12px;
   color-scheme: dark;
 }
 .department-search {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 14px;
+  gap: 12px;
+  padding: 0 16px;
 }
 .department-search > svg {
   width: 21px;
@@ -125,7 +125,7 @@
   outline: none;
 }
 .department-search:focus-within {
-  outline: 2px solid #f5c542;
+  outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
 }
 .department-search input::-webkit-search-cancel-button {
@@ -135,19 +135,19 @@
   display: grid;
   place-items: center;
   min-width: 28px;
-  min-height: 40px;
+  min-height: var(--ui-control-height);
 }
 .department-search button svg {
   width: 17px;
 }
 .department-save-notice {
   margin: 0;
-  color: #73d995;
-  font-size: 14px;
+  color: var(--ui-success);
+  font-size: var(--ui-type-body);
 }
 .departments-page :is(button, select):focus-visible,
 .department-drawer :is(button, input, textarea):focus-visible {
-  outline: 2px solid #f5c542;
+  outline: 2px solid var(--ui-accent);
   outline-offset: 3px;
 }
 .departments-page button:disabled,
@@ -160,14 +160,14 @@
   width: 70%;
   min-width: 32px;
   height: 15px;
-  border-radius: 4px;
-  background: #2b3239;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
   animation: department-loading 1.5s ease-in-out infinite alternate;
 }
 .department-metric strong.department-skeleton {
   width: 54px;
   height: 28px;
-  margin-top: 7px;
+  margin-top: 8px;
 }
 @keyframes department-loading {
   to {

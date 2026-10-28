@@ -7,12 +7,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
-import {
-  createFaq,
-  deleteFaq,
-  listFaqs,
-  updateFaq,
-} from '../../../services/admin/adminApi.ts'
+import { createFaq, deleteFaq, listFaqs, updateFaq } from '../../../services/admin/adminApi.ts'
 import type { Faq, FaqCreate } from '../../../types/admin.ts'
 
 export default function FaqManager() {
@@ -30,53 +25,65 @@ export default function FaqManager() {
 
   useEffect(() => {
     if (faqsQuery.isFetching) setIsLoading(true)
-    if (faqsQuery.data) { setFaqs(faqsQuery.data); setIsLoading(false) }
+    if (faqsQuery.data) {
+      setFaqs(faqsQuery.data)
+      setIsLoading(false)
+    }
     if (faqsQuery.isError) {
       setError(faqsQuery.error instanceof Error ? faqsQuery.error.message : 'Failed to load FAQs.')
       setIsLoading(false)
     }
   }, [faqsQuery.data, faqsQuery.error, faqsQuery.isError, faqsQuery.isFetching])
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (accessToken === null) return
-    if (!window.confirm('Delete this FAQ?')) return
-    try {
-      await deleteFaq(accessToken, id)
-      setFaqs((prev) => prev.filter((f) => f.faq_id !== id))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete FAQ.')
-    }
-  }, [accessToken])
+  const handleDelete = useCallback(
+    async (id: string) => {
+      if (accessToken === null) return
+      if (!window.confirm('Delete this FAQ?')) return
+      try {
+        await deleteFaq(accessToken, id)
+        setFaqs((prev) => prev.filter((f) => f.faq_id !== id))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete FAQ.')
+      }
+    },
+    [accessToken],
+  )
 
-  const handleToggleActive = useCallback(async (faq: Faq) => {
-    if (accessToken === null) return
-    try {
-      const updated = await updateFaq(accessToken, faq.faq_id, { is_active: !faq.is_active })
-      setFaqs((prev) => prev.map((f) => (f.faq_id === updated.faq_id ? updated : f)))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update FAQ.')
-    }
-  }, [accessToken])
+  const handleToggleActive = useCallback(
+    async (faq: Faq) => {
+      if (accessToken === null) return
+      try {
+        const updated = await updateFaq(accessToken, faq.faq_id, { is_active: !faq.is_active })
+        setFaqs((prev) => prev.map((f) => (f.faq_id === updated.faq_id ? updated : f)))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update FAQ.')
+      }
+    },
+    [accessToken],
+  )
 
   if (isLoading) {
-    return <div className="text-slate-400 py-8">Loading FAQs…</div>
+    return <div className="text-muted py-8">Loading FAQs…</div>
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">FAQs</h2>
+        <h2 className="font-bold text-content text-section">FAQs</h2>
         <button
           type="button"
-          onClick={() => { setEditing(null); setIsFormOpen(true) }}
-          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          onClick={() => {
+            setEditing(null)
+            setIsFormOpen(true)
+          }}
+          className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Add FAQ
         </button>
       </div>
 
       {error !== null && (
-        <div role="alert" className="rounded-lg border border-red-900/50 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+        <div role="alert" className="rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger">
           {error}
         </div>
       )}
@@ -96,40 +103,41 @@ export default function FaqManager() {
       )}
 
       {faqs.length === 0 ? (
-        <p className="text-sm text-slate-400">No FAQs yet.</p>
+        <p className="text-sm text-muted">No FAQs yet.</p>
       ) : (
         <ul className="space-y-2">
           {faqs.map((faq) => (
-            <li key={faq.faq_id} className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white truncate">{faq.question}</span>
-                    {!faq.is_active && (
-                      <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-400">draft</span>
-                    )}
+            <li key={faq.faq_id} className="rounded-lg border border-line bg-surface px-4 py-3">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1 basis-full sm:basis-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-content break-words">{faq.question}</span>
+                    {!faq.is_active && <span className="rounded bg-raised px-2 py-0.5 text-xs text-muted">draft</span>}
                   </div>
-                  <p className="mt-1 text-xs text-slate-400 line-clamp-2">{faq.answer}</p>
+                  <p className="mt-1 text-xs text-muted line-clamp-2">{faq.answer}</p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => handleToggleActive(faq)}
-                    className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                    className="rounded border border-control bg-surface px-2 py-1 text-xs text-muted hover:bg-hover"
                   >
                     {faq.is_active ? 'Unpublish' : 'Publish'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setEditing(faq); setIsFormOpen(true) }}
-                    className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                    onClick={() => {
+                      setEditing(faq)
+                      setIsFormOpen(true)
+                    }}
+                    className="rounded border border-control bg-surface px-2 py-1 text-xs text-muted hover:bg-hover"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(faq.faq_id)}
-                    className="rounded border border-red-900/50 bg-red-500/10 px-2 py-1 text-xs text-red-300 hover:bg-red-500/20"
+                    className="rounded border border-danger bg-danger-bg px-2 py-1 text-xs text-danger hover:bg-danger-bg"
                   >
                     Delete
                   </button>
@@ -168,7 +176,11 @@ function FaqForm({
     setIsSaving(true)
     setError(null)
     try {
-      const payload: FaqCreate = { question: question.trim(), answer: answer.trim(), category: category.trim() || 'general' }
+      const payload: FaqCreate = {
+        question: question.trim(),
+        answer: answer.trim(),
+        category: category.trim() || 'general',
+      }
       const saved = initial
         ? await updateFaq(accessToken, initial.faq_id, payload)
         : await createFaq(accessToken, payload)
@@ -180,36 +192,38 @@ function FaqForm({
   }, [accessToken, question, answer, category, initial, onSaved])
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-white">{initial ? 'Edit FAQ' : 'New FAQ'}</h3>
+    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
+      <h3 className="font-semibold text-content text-card">{initial ? 'Edit FAQ' : 'New FAQ'}</h3>
       {error !== null && (
-        <div role="alert" className="rounded border border-red-900/50 bg-red-500/10 px-3 py-1.5 text-xs text-red-300">{error}</div>
+        <div role="alert" className="rounded border border-danger bg-danger-bg px-3 py-2 text-xs text-danger">
+          {error}
+        </div>
       )}
       <label className="block">
-        <span className="text-xs text-slate-400">Question</span>
+        <span className="text-xs text-muted">Question</span>
         <input
           type="text"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+          className="mt-1 w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </label>
       <label className="block">
-        <span className="text-xs text-slate-400">Answer</span>
+        <span className="text-xs text-muted">Answer</span>
         <textarea
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           rows={3}
-          className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+          className="mt-1 w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </label>
       <label className="block">
-        <span className="text-xs text-slate-400">Category</span>
+        <span className="text-xs text-muted">Category</span>
         <input
           type="text"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+          className="mt-1 w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </label>
       <div className="flex items-center gap-2 pt-1">
@@ -217,14 +231,14 @@ function FaqForm({
           type="button"
           onClick={handleSubmit}
           disabled={isSaving}
-          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-ink hover:bg-accent-hover disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent"
         >
           {isSaving ? 'Saving…' : 'Save'}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          className="rounded-lg border border-control bg-surface px-3 py-2 text-sm text-muted hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Cancel
         </button>

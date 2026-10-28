@@ -3,9 +3,9 @@
   flex-direction: column;
   align-items: center;
   padding: 52px 24px 40px;
-  border: 1px dashed #4d5d76;
-  border-radius: 11px;
-  background: radial-gradient(ellipse at 50% 0, #2e3e542c, transparent 65%), #111923;
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: radial-gradient(ellipse at 50% 0, #2e3e542c, transparent 65%), var(--ui-surface);
   text-align: center;
 }
 .students-dropzone.is-dragging {
@@ -18,8 +18,8 @@
   width: 60px;
   height: 60px;
   margin: 0 auto 20px;
-  border: 1px solid #7b642a;
-  border-radius: 16px;
+  border: 1px solid var(--ui-danger);
+  border-radius: var(--ui-radius-lg);
   background: #ffc52c0c;
   color: var(--admin-yellow);
 }
@@ -31,8 +31,8 @@
 .students-dropzone h2,
 .students-confirm h2 {
   margin-bottom: 8px;
-  color: #eef3fc;
-  font-size: 20px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-section);
   font-weight: 600;
   letter-spacing: -0.3px;
 }
@@ -40,13 +40,13 @@
 .students-confirm p {
   max-width: 570px;
   margin: 0 auto 20px;
-  color: #a8b9d4;
-  font-size: 13px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
 }
 .students-dropzone > small {
-  margin: 14px 0 18px;
-  color: #8e9fb8;
-  font-size: 11px;
+  margin: 16px 0 20px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .students-format,
 .students-alert {
@@ -54,35 +54,35 @@
   align-items: flex-start;
   gap: 12px;
   margin: 16px 0;
-  padding: 15px 18px;
-  border: 1px solid #2a384b;
-  border-radius: 8px;
-  background: #15202d;
-  color: #afc0d9;
-  font-size: 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
 }
 .students-format svg,
 .students-alert > svg {
   width: 18px;
   height: 18px;
-  margin-top: 1px;
+  margin-top: 0px;
   flex-shrink: 0;
-  color: #92afdc;
+  color: var(--ui-info);
 }
 .students-format strong {
-  color: #d9e4f5;
+  color: var(--ui-text);
   font-weight: 500;
 }
 .students-format p {
-  margin: 3px 0 0;
+  margin: 4px 0 0;
 }
 .students-alert.error {
-  border-color: #7f3644;
+  border-color: var(--ui-danger);
   background: #441d293d;
-  color: #ffabb4;
+  color: var(--ui-danger);
 }
 .students-alert.error > svg {
-  color: #ff8b9a;
+  color: var(--ui-danger);
 }
 .students-alert .students-button {
   margin-left: auto;

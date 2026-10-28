@@ -4,7 +4,7 @@ export function InstitutionAccountAssignment({ model }: { model: InstitutionDeta
   const { institution, busy, onAssign, showAssign, setShowAssign, adminEmail, setAdminEmail } = model
   return (
     <Section title="Assign Existing Account" comingSoon={false}>
-      <p className="text-sm leading-6 text-slate-400">
+      <p className="text-sm leading-6 text-muted">
         Phase 7.13 capability, preserved unchanged: grant the institution-scoped admin role to an account that ALREADY
         exists. This does not create an account and does not accept a password; the granted role is always the
         institution-scoped admin role. Prefer &quot;+ Invite Admin&quot; above for a new University Admin.
@@ -15,11 +15,11 @@ export function InstitutionAccountAssignment({ model }: { model: InstitutionDeta
           onClick={() => {
             setShowAssign((open) => !open)
           }}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-300"
+          className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Assign University Admin
         </button>
-        <span className="text-sm text-slate-400">{institution.admin_count} assigned</span>
+        <span className="text-sm text-muted">{institution.admin_count} assigned</span>
       </div>
       {showAssign ? (
         <form
@@ -50,7 +50,7 @@ export function InstitutionAccountAssignment({ model }: { model: InstitutionDeta
           <button
             type="submit"
             disabled={busy !== null || adminEmail.trim() === ''}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
           >
             {busy === 'assign' ? 'Assigning...' : 'Assign'}
           </button>

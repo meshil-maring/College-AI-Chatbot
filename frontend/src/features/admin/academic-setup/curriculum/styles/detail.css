@@ -1,15 +1,15 @@
 .curriculum-detail {
   min-width: 0;
-  border: 1px solid #1b2831;
-  border-radius: 7px;
-  background: #0a1117;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
 }
 .curriculum-detail > header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 15px;
-  border-bottom: 1px solid #1b2831;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--ui-border);
 }
 .curriculum-detail header > div {
   flex: 1;
@@ -21,20 +21,20 @@
   flex-wrap: wrap;
   gap: 8px;
   margin: 0;
-  font-size: 15px;
+  font-size: var(--ui-type-card);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 .curriculum-detail header p {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: var(--curriculum-muted);
-  font-size: 11px;
+  font-size: var(--ui-type-small);
   line-height: 1.6;
 }
 .curriculum-detail header .academic-secondary-button {
-  min-height: 34px;
-  padding: 6px 12px;
-  background: #101a22;
+  min-height: var(--ui-control-height);
+  padding: 8px 12px;
+  background: var(--ui-surface);
 }
 .curriculum-detail header svg {
   width: 15px;
@@ -42,41 +42,41 @@
 }
 .curriculum-detail .curriculum-tabs [role='tab'] {
   flex: 1;
-  padding: 12px 10px;
-  font-size: 11px;
+  padding: 12px 12px;
+  font-size: var(--ui-type-small);
 }
 .curriculum-semesters {
   display: grid;
-  gap: 9px;
+  gap: 8px;
   padding: 12px;
 }
 .curriculum-detail-note,
 .curriculum-term-name {
   margin: 0;
   color: var(--curriculum-muted);
-  font-size: 11px;
+  font-size: var(--ui-type-small);
   line-height: 1.65;
 }
 .curriculum-detail > p {
-  padding: 15px;
+  padding: 16px;
 }
 .curriculum-term-name {
-  padding: 6px 10px;
-  border-bottom: 1px solid #1c2832;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ui-border);
 }
 .curriculum-semester {
   min-width: 0;
-  border: 1px solid #1e2e38;
-  border-radius: 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
 }
 .curriculum-semester > summary {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-height: 36px;
-  padding: 9px;
-  border-radius: 6px;
-  background: linear-gradient(110deg, #121d25, #0d161d);
+  gap: 8px;
+  min-height: var(--ui-control-height);
+  padding: 8px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
   list-style: none;
   cursor: pointer;
 }
@@ -93,31 +93,31 @@
 }
 .curriculum-semester summary strong {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--ui-type-small);
   font-weight: 500;
 }
 .curriculum-semester summary > span {
   color: var(--curriculum-muted);
-  font-size: 10px;
+  font-size: var(--ui-type-small);
   text-align: right;
 }
 .curriculum-semester footer {
   display: flex;
   justify-content: flex-end;
-  padding: 9px;
+  padding: 8px;
 }
 .curriculum-outline-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 34px;
-  padding: 6px 12px;
-  border: 1px solid #ffca28;
-  border-radius: 6px;
-  background: #11180e;
-  color: #ffca28;
-  font-size: 12px;
+  min-height: var(--ui-control-height);
+  padding: 8px 12px;
+  border: 1px solid var(--ui-accent);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-accent);
+  font-size: var(--ui-type-body);
 }
 .curriculum-outline-button svg {
   width: 15px;
@@ -128,7 +128,7 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   min-height: 280px;
   padding: 24px;
   text-align: center;
@@ -136,7 +136,7 @@
 .curriculum-empty > svg {
   width: 34px;
   height: 34px;
-  color: #ffca28;
+  color: var(--ui-accent);
 }
 .curriculum-empty :is(h2, h3, p) {
   margin: 0;
@@ -144,7 +144,7 @@
 .curriculum-empty p {
   max-width: 460px;
   color: var(--curriculum-muted);
-  font-size: 13px;
+  font-size: var(--ui-type-body);
   line-height: 1.7;
 }
 .curriculum-overview {
@@ -155,13 +155,13 @@
 }
 .curriculum-overview dt {
   color: var(--curriculum-muted);
-  font-size: 12px;
+  font-size: var(--ui-type-small);
 }
 .curriculum-overview dd {
-  margin: 7px 0 0;
+  margin: 8px 0 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 14px;
+  font-size: var(--ui-type-body);
 }
 .curriculum-subject-list {
   padding: 12px;
@@ -175,5 +175,5 @@
 }
 .curriculum-subject-list h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--ui-type-body);
 }

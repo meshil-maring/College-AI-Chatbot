@@ -11,7 +11,7 @@ import { useInstitutionLookup } from './useInstitutionLookup.ts'
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export const INPUT_CLASS =
-  'rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400'
+  'rounded-lg border border-control bg-surface px-3 py-2 text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent'
 
 export interface RegistrationFormProps {
   /** Navigate back to the login screen (existing conditional navigation). */

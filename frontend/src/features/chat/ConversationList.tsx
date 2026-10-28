@@ -80,10 +80,10 @@ export default function ConversationList({
   if (isLoading) {
     return (
       <nav aria-label="Conversation history" className="flex flex-col gap-2 p-3">
-        <div className="h-4 w-24 animate-pulse rounded bg-slate-700" aria-hidden="true" />
-        <div className="h-8 w-full animate-pulse rounded-lg bg-slate-800" aria-hidden="true" />
-        <div className="h-8 w-full animate-pulse rounded-lg bg-slate-800" aria-hidden="true" />
-        <div className="h-8 w-full animate-pulse rounded-lg bg-slate-800" aria-hidden="true" />
+        <div className="h-4 w-24 animate-pulse rounded bg-raised" aria-hidden="true" />
+        <div className="h-8 w-full animate-pulse rounded-lg bg-surface" aria-hidden="true" />
+        <div className="h-8 w-full animate-pulse rounded-lg bg-surface" aria-hidden="true" />
+        <div className="h-8 w-full animate-pulse rounded-lg bg-surface" aria-hidden="true" />
         <span className="sr-only">Loading conversations…</span>
       </nav>
     )
@@ -92,16 +92,13 @@ export default function ConversationList({
   if (error !== null) {
     return (
       <nav aria-label="Conversation history" className="flex flex-col gap-2 p-3">
-        <div
-          role="alert"
-          className="rounded-lg border border-red-900/50 bg-red-500/10 px-3 py-2 text-xs text-red-300"
-        >
+        <div role="alert" className="rounded-lg border border-danger bg-danger-bg px-3 py-2 text-xs text-danger">
           {error}
         </div>
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          className="rounded-lg border border-control bg-surface px-3 py-2 text-xs font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Retry
         </button>
@@ -112,7 +109,7 @@ export default function ConversationList({
   if (conversations.length === 0) {
     return (
       <nav aria-label="Conversation history" className="flex flex-col gap-2 p-3">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted">
           No conversations yet.
           <br />
           Start a new chat.
@@ -131,18 +128,12 @@ export default function ConversationList({
             type="button"
             onClick={() => onSelect(conversation.conversation_id)}
             aria-current={isSelected ? 'true' : undefined}
-            className={`w-full rounded-lg px-3 py-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
-              isSelected
-                ? 'bg-emerald-900/40 border border-emerald-700'
-                : 'border border-transparent hover:bg-slate-800'
+            className={`w-full rounded-lg px-3 py-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-accent ${
+              isSelected ? 'bg-raised border border-accent' : 'border border-transparent hover:bg-hover'
             }`}
           >
-            <span className="block truncate text-sm font-medium text-slate-200">
-              {displayTitle(conversation)}
-            </span>
-            <span className="block text-[11px] text-slate-500">
-              {formatUpdatedAt(conversation.updated_at)}
-            </span>
+            <span className="block truncate text-sm font-medium text-content">{displayTitle(conversation)}</span>
+            <span className="block text-xs text-muted">{formatUpdatedAt(conversation.updated_at)}</span>
           </button>
         )
       })}

@@ -1,6 +1,9 @@
 /** Authenticated identity and institution information workspace. */
 
 import { useState } from 'react'
+import { Bell, BookOpen, Bot, UserCircle, type LucideIcon } from 'lucide-react'
+import WorkspaceFrame from '../../workspace/WorkspaceFrame.tsx'
+import WorkspacePageHeader from '../../workspace/WorkspacePageHeader.tsx'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import ChatShell from '../../chat/ChatShell.tsx'
 import { STUDENT_VIEW_HEADINGS, buildStudentNavigation, type StudentView } from './studentNavigation.ts'
@@ -10,6 +13,13 @@ import { ProfilePage } from '../profile/ProfilePage.tsx'
 import { getMyProfile } from '../../../services/students/studentApi.ts'
 import { StudentAccessContext, useStudentResource, type StudentAccessDenial } from '../shared/useStudentResource.ts'
 import { ErrorBlock, LoadingBlock } from '../shared/SectionState.tsx'
+
+const icons: Record<StudentView, LucideIcon> = {
+  profile: UserCircle,
+  notices: Bell,
+  resources: BookOpen,
+  assistant: Bot,
+}
 
 export default function StudentShell() {
   const { user, role, logout } = useAuth()
@@ -53,16 +63,16 @@ export default function StudentShell() {
             ? 'Your account is not approved for student access. Contact your institution administrator for help with your approval status.'
             : 'Your student account access could not be confirmed. Contact your institution administrator for help.'
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-900 px-4 text-slate-100">
+      <main className="flex min-h-screen items-center justify-center bg-canvas px-4 text-content">
         <section
           aria-label="Student account access"
-          className="w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl"
+          className="w-full max-w-xl rounded-xl border border-line bg-surface p-8 shadow-none"
         >
           {loading ? (
             <LoadingBlock label="Checking your student account…" />
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-white">{title}</h1>
+              <h1 className="font-bold text-content text-page">{title}</h1>
               {profile.status === 'error' && !inactive ? (
                 <div className="mt-4">
                   <ErrorBlock
@@ -71,7 +81,7 @@ export default function StudentShell() {
                   />
                 </div>
               ) : (
-                <p role="status" className="mt-4 text-sm text-slate-300">
+                <p role="status" className="mt-4 text-sm text-muted">
                   {guidance}
                 </p>
               )}
@@ -79,7 +89,7 @@ export default function StudentShell() {
                 <button
                   type="button"
                   onClick={profile.reload}
-                  className="mt-6 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="mt-6 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   Check status again
                 </button>
@@ -89,7 +99,7 @@ export default function StudentShell() {
           <button
             type="button"
             onClick={logout}
-            className="mt-6 ml-3 rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            className="mt-6 ml-3 rounded-lg border border-control px-3 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
           >
             Sign out
           </button>
@@ -100,71 +110,43 @@ export default function StudentShell() {
 
   return (
     <StudentAccessContext value={setAccessDenial}>
-      <div className="min-h-screen overflow-x-clip bg-slate-900 text-slate-100">
-        <header className="border-b border-slate-700 bg-slate-800/60">
-          <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-            <div className="mr-auto min-w-0">
-              <p className="break-words text-lg font-bold text-white">College AI Chatbot</p>
-              <p className="break-words text-xs text-slate-400">Signed in as {displayName}</p>
-            </div>
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            >
-              Sign out
-            </button>
-          </div>
-          <nav aria-label="Student navigation" className="mx-auto w-full max-w-6xl px-4 pb-3">
-            <ul className="flex flex-wrap gap-2">
-              {navigation.map((item) => {
-                const active = item.key === view
-                return (
-                  <li key={item.key}>
-                    <button
-                      type="button"
-                      onClick={() => setView(item.key)}
-                      aria-current={active ? 'page' : undefined}
-                      className={`rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
-                        active
-                          ? 'bg-emerald-600 text-white'
-                          : 'border border-slate-600 text-slate-200 hover:bg-slate-700'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
-        </header>
-
-        <main className="mx-auto w-full min-w-0 max-w-6xl px-4 py-6">
-          {navigation.some((item) => item.key === view) ? (
-            <>
-              {view !== 'assistant' ? (
-                <h1 className="mb-4 break-words text-2xl font-bold text-white">{STUDENT_VIEW_HEADINGS[view]}</h1>
-              ) : null}
-              {view === 'notices' ? <NoticesPage /> : null}
-              {view === 'resources' ? <ResourcesPage /> : null}
-              {view === 'profile' ? <ProfilePage profile={profile} /> : null}
-              {view === 'assistant' ? (
-                <section aria-label="AI Assistant">
-                  <ChatShell />
-                </section>
-              ) : null}
-            </>
-          ) : (
-            <section role="status" className="rounded-2xl border border-slate-700 bg-slate-800 p-8 text-center">
-              <h1 className="text-2xl font-bold text-white">No available views</h1>
-              <p className="mt-3 text-sm text-slate-300">
-                Your account has no permissions for the selected student view.
-              </p>
-            </section>
-          )}
-        </main>
-      </div>
+      <WorkspaceFrame<StudentView>
+        navigation={navigation}
+        currentView={view}
+        icons={icons}
+        onNavigate={setView}
+        panelLabel="Student Portal"
+        navigationLabel="Student navigation"
+        identityLabel={displayName}
+        identityRole="Student"
+        onLogout={logout}
+        onProfile={navigation.some((item) => item.key === 'profile') ? () => setView('profile') : undefined}
+        onNotices={navigation.some((item) => item.key === 'notices') ? () => setView('notices') : undefined}
+      >
+        {navigation.some((item) => item.key === view) ? (
+          <>
+            {view !== 'assistant' && (
+              <WorkspacePageHeader
+                title={STUDENT_VIEW_HEADINGS[view]}
+                description="Your student information and institution updates."
+              />
+            )}
+            {view === 'notices' && <NoticesPage />}
+            {view === 'resources' && <ResourcesPage />}
+            {view === 'profile' && <ProfilePage profile={profile} />}
+            {view === 'assistant' && (
+              <section aria-label="AI Assistant">
+                <ChatShell />
+              </section>
+            )}
+          </>
+        ) : (
+          <section role="status" className="ui-panel text-center">
+            <h1 className="text-page font-bold text-content">No available views</h1>
+            <p className="mt-3 text-sm text-muted">Your account has no permissions for the selected student view.</p>
+          </section>
+        )}
+      </WorkspaceFrame>
     </StudentAccessContext>
   )
 }
