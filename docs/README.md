@@ -7,7 +7,7 @@ tasks can load only the shared rules and relevant user section.
 
 | Directory | Contents |
 | --- | --- |
-| `architecture/` | Current implementation records. Start with the [Academic Setup architecture and workflow](architecture/academic-setup/README.md) for its model, application layers, permissions, workflows and design review. |
+| `architecture/` | Implementation records and explicitly labeled design drafts. See [Academic Setup](architecture/academic-setup/README.md) for its implemented architecture, and the [shared learning resources and AI chatbot draft](architecture/ai-chatbot/README.md) for proposed UI, permissions and workflows. |
 | `rbac/` | Review-only RBAC documentation: shared rules, role-specific access, permission catalog, workflows, and verification gaps. Start with its [reading guide](rbac/README.md). |
 | `locks/` | Phase lock records (`PHASE_*_LOCK.md`, `FINAL_DEMO_LOCK.md`): frozen scope and evidence per phase |
 | `status/` | Phase status/scope reports and review prompts (`PHASE_*_STATUS.md`, `PHASE_*_SCOPE_REPORT.md`, other `PHASE_*` phase reports, `FINAL_DEMO_STATUS.md`) |
