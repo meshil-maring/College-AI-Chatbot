@@ -70,7 +70,10 @@ def _active_institution_authorization():
     db.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = SimpleNamespace(
         data={"institution_id": TENANT_A, "status": "active", "is_active": True}
     )
-    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
+    with (
+        patch("app.services.auth.authorization.get_admin_client", return_value=db),
+        patch("app.services.auth.identity.get_admin_client", return_value=db),
+    ):
         yield
 
 

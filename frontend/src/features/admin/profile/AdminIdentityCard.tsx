@@ -7,6 +7,7 @@
  *
  *   - email            (safe, rendered)
  *   - role             (safe, rendered as "Admin")
+ *   - institution_code (public institution code, safe to render)
  *   - institution_id   (INTERNAL tenant key — NEVER rendered; presence is
  *                        shown as "Linked to your institution")
  *   - user_id          (INTERNAL — NEVER rendered)
@@ -21,6 +22,7 @@ import type { CurrentUser } from '../../../types/auth.ts'
 
 export default function AdminIdentityCard({ user }: { user: CurrentUser }) {
   const email = user.email?.trim() || null
+  const institutionCode = user.institution_id ? user.institution_code?.trim() : null
 
   return (
     <section
@@ -44,6 +46,10 @@ export default function AdminIdentityCard({ user }: { user: CurrentUser }) {
           <dd className="mt-1 text-sm text-content">
             {user.institution_id ? 'Linked to your institution' : 'No institution linked'}
           </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted">Institution code</dt>
+          <dd className="mt-1 break-words text-sm text-content">{institutionCode || 'Not available'}</dd>
         </div>
       </dl>
     </section>

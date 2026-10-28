@@ -100,6 +100,8 @@ export interface CurrentUser {
    * tenant key are not exposed.
    */
   institution_id: string | null
+  /** Public institution code supplied by the backend for administrator identities. */
+  institution_code?: string | null
   /** Effective active grants resolved from the user's assigned database roles. */
   effective_permissions?: readonly string[]
 }

@@ -42,6 +42,11 @@ def test_auth_me_projects_admin_scope_from_user_roles_without_student_profile() 
             "app.db.supabase.get_user_by_auth_id",
             new=AsyncMock(return_value=user),
         ),
+        patch("app.services.auth.identity.get_admin_client", return_value=MagicMock()),
+        patch(
+            "app.services.auth.identity.tenancy_repo.get_institution_by_id",
+            return_value={"institution_id": INST_A, "code": "ALPHA"},
+        ),
     ):
         response = client.get(
             "/api/v1/auth/me",

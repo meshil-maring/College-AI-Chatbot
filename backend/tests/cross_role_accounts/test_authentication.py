@@ -39,7 +39,7 @@ def test_auth_me_resolves_each_role_with_its_own_tenant():
         assert body["role"] == role
         assert body["institution_id"] == INSTITUTION_A
         # No token/secret material is ever part of the identity payload.
-        assert set(body) == {
+        expected_fields = {
             "authenticated",
             "user_id",
             "auth_user_id",
@@ -48,6 +48,9 @@ def test_auth_me_resolves_each_role_with_its_own_tenant():
             "institution_id",
             "effective_permissions",
         }
+        if role == "admin":
+            expected_fields.add("institution_code")
+        assert set(body) == expected_fields
 
 
 def test_auth_me_never_derives_the_role_from_client_parameters():

@@ -124,10 +124,14 @@ def _patch_admin_auth(user=ADMIN_USER):
             )
         )
         stack.enter_context(
+            patch("app.services.auth.identity.get_admin_client", return_value=MagicMock())
+        )
+        stack.enter_context(
             patch(
                 "app.services.auth.authorization.tenancy_repo.get_institution_by_id",
                 return_value={
                     "institution_id": INSTITUTION_A,
+                    "code": "ALPHA",
                     "status": "active",
                     "is_active": True,
                 },

@@ -14,6 +14,7 @@ const authState = vi.hoisted(() => ({
     email: 'admin@test.com',
     role: 'admin' as const,
     institution_id: 'inst-1',
+    institution_code: 'ALPHA',
     effective_permissions: ['*'] as string[],
   },
   role: 'admin' as string | null,

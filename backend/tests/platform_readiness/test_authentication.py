@@ -60,6 +60,7 @@ def test_auth_me_shape_is_stable_and_minimal():
         "email",
         "role",
         "institution_id",
+        "institution_code",
         "effective_permissions",
     }
     assert body["role"] == "admin"

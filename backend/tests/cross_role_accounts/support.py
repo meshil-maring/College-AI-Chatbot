@@ -87,7 +87,10 @@ def _active_institution_authorization():
             "is_active": True,
         }
     )
-    with patch("app.services.auth.authorization.get_admin_client", return_value=db):
+    with (
+        patch("app.services.auth.authorization.get_admin_client", return_value=db),
+        patch("app.services.auth.identity.get_admin_client", return_value=db),
+    ):
         yield
 
 

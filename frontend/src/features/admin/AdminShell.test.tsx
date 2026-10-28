@@ -12,6 +12,8 @@ describe('administrator account workspace', () => {
     render(<AdminShell />)
     expect(screen.getByRole('heading', { name: 'Profile', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('Signed in as admin@test.com')).toBeInTheDocument()
+    expect(screen.getByText('Institution code')).toBeInTheDocument()
+    expect(screen.getByText('ALPHA')).toBeInTheDocument()
     expect(adminApi.getAdminIdentity).not.toHaveBeenCalled()
     const nav = screen.getByRole('navigation', { name: 'Admin navigation' })
     expect(

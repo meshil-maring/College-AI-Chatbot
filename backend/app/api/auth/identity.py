@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends
 from app.config import settings
 from app.core.security import get_current_user, resolve_primary_role
+from app.services.auth.identity import get_identity_institution_code
 
 router = APIRouter()
 
@@ -17,6 +18,9 @@ async def auth_me(current_user: dict = Depends(get_current_user)):
     byte-for-byte; ``role`` (canonical, single) and ``institution_id`` (tenant
     context, None for platform-level accounts) are additive.
 
+    Administrator identities also include ``institution_code``, the public
+    code of that server-resolved institution, or None when unavailable.
+
     An account whose active roles contain no supported role resolves to
     ``role: None`` â€” the frontend treats that as "no privileged UI".
     """
@@ -29,6 +33,8 @@ async def auth_me(current_user: dict = Depends(get_current_user)):
         "institution_id": current_user.get("institution_id"),
         "effective_permissions": current_user.get("effective_permissions", []),
     }
+    if payload["role"] == "admin":
+        payload["institution_code"] = get_identity_institution_code(current_user)
     if (
         payload["role"] == "faculty"
         and current_user.get("permissions_resolved") is True

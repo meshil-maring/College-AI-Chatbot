@@ -16,6 +16,7 @@ handlers; request models live in `app/schemas/auth/auth.py`.
 | `student_auth.py` | Student login by email or institution-scoped academic identifier |
 | `registration.py` | Student account registration |
 | `users.py` | Student/faculty/staff registration |
+| `identity.py` | Identity bootstrap; admin institution codes come from the server-resolved tenant via `services/auth/identity.py` |
 | `dev_auth.py` | Development/test password tools, protected by their existing environment and role guards |
 
 ## Shared boundaries
