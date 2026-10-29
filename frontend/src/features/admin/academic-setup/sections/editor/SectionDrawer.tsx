@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { Pencil, Save, TriangleAlert, X } from 'lucide-react'
-import { useAcademicDialog } from '../../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../../workspace/useWorkspaceDialog.ts'
 import type { SectionEditor } from './useSectionEditor.ts'
 import SectionForm from './SectionForm.tsx'
 import SectionDetails from './SectionDetails.tsx'
 
 export default function SectionDrawer({ editor }: { editor: SectionEditor }) {
-  const ref = useAcademicDialog('.sections-page h1')
+  const ref = useWorkspaceDialog('.sections-page h1')
   const { panel, confirmation } = editor
   const viewing = panel?.mode === 'view'
   const title =

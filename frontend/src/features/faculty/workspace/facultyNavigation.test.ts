@@ -10,7 +10,7 @@ describe('faculty navigation after academic retirement', () => {
   it('keeps profile, chat and existing information placeholders', () => {
     expect(FACULTY_NAV_ITEMS.map((item) => item.key)).toEqual(['profile', 'notices', 'resources', 'assistant'])
     for (const item of FACULTY_NAV_ITEMS) expect(FACULTY_VIEW_HEADINGS[item.key]).toBeTruthy()
-    expect(FACULTY_COMING_SOON_VIEWS).toEqual(['notices', 'resources'])
+    expect(FACULTY_COMING_SOON_VIEWS).toEqual(['notices'])
   })
   it.each(['student', 'staff', 'admin', 'super_admin', 'unknown', null])('rejects role %s', (role) => {
     expect(buildFacultyNavigation(role)).toEqual([])
@@ -18,11 +18,17 @@ describe('faculty navigation after academic retirement', () => {
   it('ignores retired teaching grants and respects profile/chat grants', () => {
     expect(
       buildFacultyNavigation('faculty', ['attendance.read', 'faculty.assignments.manage']).map((item) => item.key),
-    ).toEqual(['notices', 'resources'])
-    expect(buildFacultyNavigation('faculty', ['ai.chat']).map((item) => item.key)).toEqual([
+    ).toEqual(['notices'])
+    expect(buildFacultyNavigation('faculty', ['ai.chat']).map((item) => item.key)).toEqual(['notices', 'assistant'])
+  })
+  it('opens resources for resolved reader or draft grants', () => {
+    expect(buildFacultyNavigation('faculty', ['documents.read']).map((item) => item.key)).toEqual([
       'notices',
       'resources',
-      'assistant',
+    ])
+    expect(buildFacultyNavigation('faculty', ['ai.knowledge.create']).map((item) => item.key)).toEqual([
+      'notices',
+      'resources',
     ])
   })
 })

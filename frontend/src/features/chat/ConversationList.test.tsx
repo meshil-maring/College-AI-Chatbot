@@ -133,9 +133,7 @@ describe('ConversationList', () => {
       />,
     )
     const buttons = screen.getAllByRole('button')
-    const selectedButton = buttons.find(
-      (btn) => btn.getAttribute('aria-current') === 'true',
-    )
+    const selectedButton = buttons.find((btn) => btn.getAttribute('aria-current') === 'true')
     expect(selectedButton).toBeDefined()
     expect(selectedButton).toHaveTextContent('First conversation')
   })

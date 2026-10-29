@@ -41,6 +41,7 @@ def test_messages_ordered_by_sequence_asc():
                 "message_sequence": 2,
                 "message_type": "assistant",
                 "content_text": "Second",
+                'knowledge_policy': {'institution_id': FAKE_USER_A['institution_id'], 'sources': {}, 'versions': {}},
                 "created_at": "2026-09-01T10:00:05+00:00",
             },
             {
@@ -55,6 +56,7 @@ def test_messages_ordered_by_sequence_asc():
     )
 
     jwt_patch, db_patch = _patch_auth()
+    mock_client.rpc.return_value.execute.return_value.data = True
     with jwt_patch, db_patch, _patch_admin(mock_client):
         response = client.get(
             f"/api/v1/conversations/{conversation_id}/messages",

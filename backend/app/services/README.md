@@ -13,7 +13,7 @@ continue to own database access and schemas continue to own request/response typ
 | `auth/` | Sign-in, sessions, account registration, authorization, RBAC and shared request-abuse controls |
 | `email/` | Email delivery, encrypted outbox payloads, outbox worker and Mailgun webhooks |
 | `invitations/` | Platform/admin invitations, invitation abuse controls and account acceptance/recovery |
-| `knowledge/` | Document ingestion, storage, extraction, chunking, embeddings, retrieval, vector search and public knowledge policy |
+| `knowledge/` | Document pipeline and audience-aware retrieval; `resources/` owns drafts, review, staged uploads, legacy adapters and answer/history policy |
 | `platform/` | Institutions, organizations, tenancy and staff/faculty onboarding |
 | `students/` | Account identity profiles, notices, notifications and resources |
 
@@ -54,3 +54,45 @@ Add new services to the appropriate feature package. The services root contains
 only this guide and its package marker. Historical phase reports and evidence
 snapshots may refer to the former flat module paths; use Git history to inspect
 those versions.
+
+`ai/chat_support/resource_scope.py` resolves immutable conversation context,
+rechecks resource eligibility, binds answer policy and validates restored
+provenance. Ordinary conversations retain their existing institution-wide scope.
+
+`knowledge/resources/operations.py` coordinates atomic SQL readers/writers and
+safe error mapping. `uploads.py` validates files and reuses the existing indexing
+pipeline without publishing. `legacy.py` stages old admin upload routes;
+`policy.py` verifies answer/history provenance, and `public_chat.py` rechecks the
+public corpus around the existing stateless processor. Schema absence fails closed.
+
+`knowledge/evidence_selection.py` expands metadata-heavy retrieval within the
+same authorized document version. It retains a complete authority/cover passage
+and returns substantive sections within the original context limit. Generation
+treats document instructions as data and preserves sample/draft qualifications.
+
+`ai/turns/workflow.py` claims stable signed-in requests before provider work and
+replays completed receipts. `operations.py` owns safe RPC error translation and
+atomic completion payloads. `chat_support/answers.py` retains legacy persistence
+for unkeyed callers; keyed turns persist all answer records in one SQL transaction.
+
+`ai/chat_support/history_sources.py` batches citation restoration for history API
+reads. A policy change redacts the affected answer and dependent tail; unavailable
+resource context also removes its questions. Internal generation history skips
+presentation enrichment. Missing or failed citation schema returns a safe 503.
+
+`ai/generation_format.py` validates the provider's separate Markdown answer and
+selected source positions. Quotes and provenance come from the authorized
+retrieved chunks. The provider request uses a strict JSON schema with source
+numbers constrained to those chunks and matching labels in the prompt. The
+configured model must support OpenRouter's [structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs).
+Unknown positions, missing evidence and malformed/truncated
+JSON fail safely; retrieved context is never automatically presented as cited.
+`generation_prompt.py` renders context shared by the provider and diagnostics.
+The stateless public projector retains its internal-marker compatibility path;
+the generation service supplies validated markers and projection strips them.
+Signed-in answers use explicit references directly. Source-card quotes use the
+same whitespace normalization for live and restored PDF evidence.
+`generation_qualification.py` preserves explicit sample/nonofficial authority
+declarations for the exact cited document version. It adds a deterministic
+caveat and cites the declaration itself, even when the model selects only a
+substantive section. Ordinary mentions of drafts do not trigger that behavior.

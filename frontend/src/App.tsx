@@ -34,10 +34,11 @@ function App() {
     return route.institutionCode === null ? (
       <PublicChatRouteError />
     ) : (
-      <PublicChatPage institutionCode={route.institutionCode} />
+      <PublicChatPage key={route.institutionCode} institutionCode={route.institutionCode} />
     )
   }
-  if (route.kind === 'institution-ai') return <PublicChatPage institutionCode={route.institutionCode} />
+  if (route.kind === 'institution-ai')
+    return <PublicChatPage key={route.institutionCode} institutionCode={route.institutionCode} />
   if (route.kind === 'institution-entry') return <InstitutionEntryPage />
   if (route.kind === 'institution') return <InstitutionGatewayPage institutionCode={route.institutionCode} />
   if (route.kind === 'not-found') return <NotFoundPage />

@@ -51,6 +51,10 @@ def test_get_messages_returns_owned_messages():
         ]
     )
 
+    mock_client.rpc.return_value.execute.return_value.data = True
+    for row in mock_client.table().select().eq().order().execute.return_value.data:
+        if row['message_type'] == 'assistant':
+            row['knowledge_policy'] = {'institution_id': FAKE_USER_A['institution_id'], 'sources': {}, 'versions': {}}
     jwt_patch, db_patch = _patch_auth()
     with jwt_patch, db_patch, _patch_admin(mock_client):
         response = client.get(
@@ -111,6 +115,7 @@ def test_message_summary_schema_fields():
         "message_type",
         "content_text",
         "created_at",
+        "sources",
     }
     assert set(body[0].keys()) == allowed_keys
 

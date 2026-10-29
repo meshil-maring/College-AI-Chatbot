@@ -3,18 +3,25 @@
 Proposed workflows for the [shared design](README.md). Existing pipeline stages
 and chat intent handling are reused; missing contracts are delivery work below.
 
+The [audience-based upload plan](AUDIENCE_UPLOAD.md) is the detailed contract:
+Public permits visitor answers; Students/Staff/Faculty-only audiences require a
+verified matching institution role. Faculty/staff submit drafts and proposed
+audiences; admins alone publish and change the live audience.
+
 ## Resource ingestion and availability
 
 ```mermaid
 flowchart TD
-    A[Add resource / Upload version] --> B[Validate active scope and exact action]
+    A[Add draft / Upload version / Propose audience] --> B[Validate active scope and exact action]
     B --> C[Validate metadata, file type, size and content]
     C --> D[Store source, document and immutable version provenance]
     D --> E[Extract text]
     E --> F[Create chunks]
     F --> G[Generate and persist embeddings]
     G --> H[Indexed]
-    H --> I{Published, effective and audience authorized?}
+    H --> R[Admin review of exact revision and audience]
+    R -->|Request changes| A
+    R -->|Publish approved revision| I{Effective and audience authorized?}
     I -->|Yes| J[Available to authorized readers and AI]
     I -->|No| K[Retain management visibility; AI unavailable]
     E -->|Failure| X[Persist safe failure state]
@@ -23,22 +30,22 @@ flowchart TD
     X --> Y[Authorized retry with duplicate-work protection]
 ```
 
-1. A user with the exact create/upload capability enters metadata or selects an
-   authorized source. The server derives institution and actor from identity.
+1. A user with the exact create/upload capability enters metadata, a proposed
+   audience and a file for a permitted draft. The server derives institution and
+   actor from identity. Upload, indexing and review remain separate states.
 2. Validate before storing. Reuse supported ingestion constraints and the
    existing cleanup behavior for failed registration/storage operations.
 3. Run the existing extraction, chunking and embedding services. A successful
    upload alone does not mean the resource can answer questions.
 4. Show separate indexing, publication and audience values. A failure identifies
    the failed stage without exposing raw provider/storage/database details.
-5. Publication validates the source/version and effective dates, checks the
-   existing management grant, and records an audit event. This is a proposed
-   state-validating workflow, not an assumption about today's generic PATCH.
-6. New versions preserve provenance and the current supersession behavior.
-   Define a replacement transition before implementation: no partly indexed
-   version can become retrievable. Retaining the old version while indexing a
-   replacement requires a separately tested atomic switch if current behavior
-   would otherwise remove it earlier.
+5. Admin publication validates the exact approved revision, audience, version
+   manifest and effective dates, checks institution-admin scope and exact grants,
+   and records an audit event. Generic PATCH/ingest must not bypass review.
+6. New versions stay in draft while the current published revision serves
+   answers. Stage them without early supersession, then atomically switch
+   manifest and audience after review/indexing. This intentionally replaces the
+   current early-supersession path for the shared review workflow.
 7. Unpublish/archive/delete removes content from future retrieval and permitted
    delivery. Recheck in-flight source eligibility before releasing an answer.
 
@@ -71,29 +78,30 @@ flowchart TD
     S --> U[Return answer and supported citation metadata]
 ```
 
-Treat this as the target flow. Existing code already classifies intents, rewrites
-queries, retrieves chunks, generates answers and persists messages; complete
-reader-policy enforcement and resource context remain implementation work.
+This flow now includes audience-policy enforcement and immutable resource
+context. Intent classification, rewriting, retrieval, generation and synchronous
+message/policy persistence reuse the existing pipeline. See [Ask AI](RESOURCE_CHAT.md).
 
 The selected institution comes from the authenticated frontend identity and is
-checked against server scope. The current fixed demo ID in `useChat` must be
-removed. No request can choose an unrelated institution or another user's chat.
+checked against server scope; no fixed demo institution remains in `useChat`.
+No request can choose an unrelated institution or another user's chat.
 
 For a resource question, enforce the selected resource scope across follow-ups
 and history. For institution questions, search only currently eligible sources
-in that institution. Retrieved text is evidence, never permission to execute a
+in that institution matching Public, all signed-in, or their selected-role
+audience. Filter before vector ranking/limits. Retrieved text is evidence,
+never permission to execute a
 document's instructions or modify account/academic data.
 
 An absent or irrelevant match yields an honest limitation. Provider/retrieval
-failure yields a retryable error, distinct from no evidence. Do not retry a
-possibly persisted user turn blindly: define a client-turn idempotency/recovery
-contract before introducing one-click resend after an uncertain timeout.
+failure yields a retryable error, distinct from no evidence. Signed-in chat uses
+the implemented [turn recovery contract](CHAT_RECOVERY.md) before explicit retry
+after an uncertain timeout.
 
-Keep source/version/chunk provenance tied to the answer. Current auxiliary
-response/citation persistence uses a background thread; dependable restoration
-requires a durable strategy or transaction/outbox design before guaranteeing
-complete citation history. Trace technical events without logging raw prompts
-or document contents by default.
+Keyed turns save answer/retrieval/citation records atomically. History restores
+source cards after owner, current-policy and exact retrieval checks; missing legacy
+citations remain empty. Unkeyed legacy requests retain background persistence.
+Trace technical events without logging raw prompts or document contents by default.
 
 ## Public chatbot boundary
 
@@ -103,16 +111,22 @@ authorized public knowledge. It remains stateless at the API boundary. Shared
 visual primitives do not make authenticated resources or conversation history
 available anonymously.
 
+Public requests have a full-response deadline and a Stop waiting control. Failed
+questions remain in college-scoped browser history, including after reload.
+Explicit retry reuses the displayed question, respects server Retry-After delays
+and never runs automatically. Stale callbacks cannot update another college or
+replace a newer reply. Public retries do not use authenticated turn receipts.
+
 ## Delivery sequence and acceptance
 
-| Stage                       | Concrete result                                                           | Required evidence                                                                                                                  |
-| --------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Read policy and contract | Shared metadata/detail facade; precise capabilities and eligibility rules | Same-tenant allowed reads; cross-tenant denial; restricted/draft filtering; pagination semantics.                                  |
-| 2. Shared library UI        | Admin/faculty/staff mount the same page and detail components             | Same layout and actions for equal capabilities; differing grants affect only allowed data/actions; responsive and keyboard review. |
-| 3. Shared management        | Supported source/upload/version actions use shared hooks and services     | Exact action permissions; retained drafts; stage failures; duplicate submits; preserved admin/FAQ contracts.                       |
-| 4. Chat integration         | Authenticated institution context; common retrieval eligibility           | No fixed institution; irrelevant evidence response; general/casual path; private-record and action boundaries.                     |
-| 5. Resource context         | Authorized Ask AI and persisted source-scoped conversations               | Scope tampering denied; follow-ups stay scoped; owned history restores safely; revoked data is redacted.                           |
-| 6. Operational hardening    | Reliable retry/status and answer/citation persistence as needed           | Crash/timeout recovery, version transitions, in-flight revocation and no duplicate turns.                                          |
+| Stage                         | Concrete result                                                                          | Required evidence                                                                                                                  |
+| ----------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Audience schema and policy | Revision manifests, role targets, admin-only publication, shared reader/retrieval policy | Every audience matrix cell; publication bypass prevention; student metadata filtering; conservative migration.                     |
+| 2. Shared library UI          | Admin/faculty/staff mount the same page and detail components                            | Same layout and actions for equal capabilities; differing grants affect only allowed data/actions; responsive and keyboard review. |
+| 3. Shared management          | Shared upload/version drafts, audience proposal and admin review                         | Own-draft access; admin-only publication; draft retention; indexing failures; stale approvals; atomic replacement.                 |
+| 4. Chat integration           | Authenticated institution context; common retrieval eligibility                          | No fixed institution; irrelevant evidence response; general/casual path; private-record and action boundaries.                     |
+| 5. Resource context           | Authorized Ask AI and persisted source-scoped conversations                              | Scope tampering denied; follow-ups stay scoped; owned history restores safely; revoked data is redacted.                           |
+| 6. Operational hardening      | Implemented signed-in status recovery, explicit retry and atomic answer/citation persistence; see [contract](CHAT_RECOVERY.md) | Lost-response replay, expired worker fencing, retry after reload, revocation and no duplicate saved turns. |
 
 Every stage preserves existing tenant isolation and compatible routes until its
 consumers migrate. Add no optimistic publication, invented progress, sample
@@ -123,9 +137,12 @@ test suites. Include server API policy tests and meaningful integration checks
 for creation, processing, publication, retrieval and citations. Test logout,
 replacement identity, grant changes, renewal and late callbacks across reads and
 writes. Student metadata-only resources and public chat remain regression cases.
+Keep new audience publication disabled until reader/retrieval/history enforcement
+and end-to-end checks are deployed together.
 
 At implementation time, run frontend structure/build/tests and backend structure
 plus affected regression tests. Review direct file counts and physical line
 counts separately; keep verification output in `logs/frontend/` or
-`logs/backend/`. This design-only change requires document/link and structure
-checks; it does not certify runtime or deployed behavior.
+`logs/backend/`. The shared UI and APIs now follow these flows; retain document,
+structure and regression checks. Deployment verification remains a separate
+environment-specific step.

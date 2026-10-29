@@ -6,7 +6,7 @@ from app.services.ai.context import assemble_context
 from app.services.ai.conversation_intent import ConversationIntent, build_direct_context
 
 
-def build_retrieval_request(request, query, top_k):
+def build_retrieval_request(request, query, top_k, actor_user_id=None):
     return RetrievalRequest(
         query=query,
         top_k=top_k,
@@ -16,6 +16,7 @@ def build_retrieval_request(request, query, top_k):
         document_version_id=request.document_version_id,
         processing_run_id=request.processing_run_id,
         model_name=request.model_name,
+        actor_user_id=actor_user_id,
     )
 
 

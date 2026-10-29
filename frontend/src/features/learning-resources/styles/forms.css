@@ -1,0 +1,125 @@
+.lr-form {
+  display: grid;
+  gap: var(--ui-space-5);
+}
+.lr-form fieldset {
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: grid;
+  gap: var(--ui-space-2);
+}
+.lr-form legend,
+.lr-section-title,
+.lr-files h3,
+.lr-upload-box h3,
+.lr-review-actions h3 {
+  font-size: var(--ui-type-card);
+  font-weight: 600;
+  margin-bottom: var(--ui-space-3);
+}
+.lr-form label,
+.lr-upload-box > label,
+.lr-review-actions > label {
+  font-weight: 500;
+}
+.lr-form input,
+.lr-form select,
+.lr-form textarea,
+.lr-upload-box select,
+.lr-upload-box input,
+.lr-review-actions textarea {
+  width: 100%;
+}
+.lr-form textarea,
+.lr-review-actions textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.lr-form label:not(:first-of-type) {
+  margin-top: var(--ui-space-2);
+}
+.lr-date-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+}
+.lr-date-fields label {
+  display: grid;
+  gap: var(--ui-space-2);
+  align-content: start;
+  margin-top: var(--ui-space-2);
+}
+.lr-form-footer {
+  display: grid;
+  gap: var(--ui-space-3);
+}
+.lr-form-footer button {
+  justify-self: start;
+}
+.lr-audience-options {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+.lr-audience-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-md);
+  cursor: pointer;
+  margin: 0 !important;
+}
+.lr-audience-options label.is-selected {
+  border-color: var(--ui-accent);
+  background: var(--ui-warning-bg);
+}
+.lr-audience-options svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.lr-audience-options strong,
+.lr-audience-options small {
+  display: block;
+}
+.lr-audience-options small {
+  font-size: var(--ui-type-small);
+  color: var(--ui-text-muted);
+  margin-top: var(--ui-space-1);
+}
+.lr-audience-options input,
+.lr-role-options input {
+  width: 20px;
+  min-height: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  padding: 0;
+  accent-color: var(--ui-accent);
+}
+.lr-role-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  padding-top: var(--ui-space-2);
+}
+.lr-role-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-height: 40px;
+  margin: 0 !important;
+}
+.lr-role-options p {
+  flex-basis: 100%;
+}
+
+@media (max-width: 760px) {
+  .lr-date-fields {
+    grid-template-columns: 1fr;
+  }
+  .lr-role-options label {
+    min-height: 44px;
+  }
+}

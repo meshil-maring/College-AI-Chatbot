@@ -14,6 +14,11 @@ their original paths and bytes; this convention does not rewrite applied files.
 faculty approval/rejection contracts without installing the B05 invitation draft.
 Generate it with `scripts/maintenance/migrations/build_membership_approval.py`.
 
+[knowledge_revisions/](knowledge_revisions/README.md) adds audience targets,
+reviewable resource revisions, exact version manifests and conservative legacy
+snapshots. Generate it with `scripts/maintenance/migrations/build_knowledge_revisions.py`.
+It exposes no publication writer; read the rollout prerequisites before deployment.
+
 Fragments must contain at most 250 physical lines, and each source folder at
 most 15 directly contained maintained files. Use meaningful responsibility
 subfolders as needed. The manifest lists dependency order explicitly.
@@ -49,3 +54,15 @@ covers replay, rollback, preservation, RPC behavior and privileges.
 program progression, admission cohorts, class sections and subject offerings
 without replacing the export-aligned tables or APIs. Its generator is
 `scripts/maintenance/migrations/build_academic_workspace.py`.
+
+[resource_chat/](resource_chat/README.md) adds immutable conversation resource
+context and a service-only eligibility reader after the knowledge revision
+migration. Generate it with `scripts/maintenance/migrations/build_resource_chat.py`.
+
+[chat_turns/](chat_turns/README.md) adds service-only turn claims, status recovery,
+worker fencing and atomic answer/retrieval/citation receipts. Generate it with
+`scripts/maintenance/migrations/build_chat_turns.py` after resource chat.
+
+[history_citations/](history_citations/README.md) restores persisted citation cards
+after owner, current-policy and retrieval-provenance checks. Generate it with
+`scripts/maintenance/migrations/build_history_citations.py` after chat turns.

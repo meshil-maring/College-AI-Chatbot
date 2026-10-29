@@ -11,6 +11,8 @@
 The shell loads account approval once and reuses the same identity result on the
 profile page. Pending, rejected and inactive accounts cannot mount student views.
 The shared ChatShell owns the assistant, and AuthProvider owns session lifecycle.
+The resources page also uses the shared Ask AI eligibility button and resource
+chat view. Its metadata API still exposes no file/storage fields or downloads.
 
 Attendance, results and subject-package pages have been removed. The former
 academic dashboard, its historical tests and `shared/AcademicContextCard.tsx`

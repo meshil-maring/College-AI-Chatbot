@@ -1,0 +1,5 @@
+{
+  "version": "20261029000000",
+  "name": "resource_scoped_conversations",
+  "files": ["context.sql", "conversations.sql"]
+}

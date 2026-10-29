@@ -65,7 +65,7 @@ def test_document_upload_endpoint_orchestrates_and_audits() -> None:
     db = _audit_db()
     with (
         patch(
-            "app.services.admin.admin_documents.upload_document",
+            "app.api.admin.documents.revision_uploads.upload_source",
             new=AsyncMock(return_value=upload_result),
         ),
         patch("app.api.admin.common.get_admin_client", return_value=db),
@@ -94,7 +94,7 @@ def test_document_version_endpoint_uses_versioning_and_audits() -> None:
     db = _audit_db()
     with (
         patch(
-            "app.services.admin.admin_documents.update_document",
+            "app.api.admin.documents.revision_uploads.upload_source",
             new=AsyncMock(return_value=version_result),
         ),
         patch("app.api.admin.common.get_admin_client", return_value=db),
@@ -115,6 +115,7 @@ def test_document_version_endpoint_uses_versioning_and_audits() -> None:
 def test_document_delete_endpoint_audits() -> None:
     db = _audit_db()
     with (
+        patch("app.api.admin.documents.revision_uploads.assert_delete"),
         patch(
             "app.services.admin.admin_documents.delete_document",
             return_value={"deleted": True, "document_id": DOC_ID},

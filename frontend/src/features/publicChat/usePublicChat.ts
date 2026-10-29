@@ -3,8 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { queryClient } from '../../lib/queryClient.ts'
 import { PublicChatError, publicChat, publicChatErrorMessage } from '../../services/chat/publicChat.ts'
 import type { PublicChatMessage, PublicChatResponse, PublicConversation } from '../../types/publicChat.ts'
+import { assistantMessage, appendMessage, unansweredUserId } from './state/messages.ts'
+import { localId } from './storage/validation.ts'
+import { useRetryDelay } from './recovery/useRetryDelay.ts'
 import {
-  boundPublicChatMessages,
   clearPublicConversation,
   createPublicConversation,
   normalizePublicInstitutionCode,
@@ -12,75 +14,36 @@ import {
   writePublicConversation,
 } from './publicChatStorage.ts'
 
-const INSUFFICIENT_CONTEXT_MESSAGE =
-  "I couldn't find reliable public college information to answer that question."
-const INTERRUPTED_REQUEST_MESSAGE =
-  'The previous request was interrupted. Retry to continue this conversation.'
-
-function unansweredUserId(conversation: PublicConversation): string | null {
-  const last = conversation.messages.at(-1)
-  return last?.role === 'user' ? last.id : null
-}
-
-function localId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-  return `public-${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
-
-function assistantMessage(response: PublicChatResponse): PublicChatMessage {
-  return {
-    id: localId(),
-    role: 'assistant',
-    content: response.status === 'success' ? response.answer! : INSUFFICIENT_CONTEXT_MESSAGE,
-    status: response.status,
-    sources: response.sources,
-    createdAt: Date.now(),
-  }
-}
-
-function appendMessage(
-  conversation: PublicConversation,
-  message: PublicChatMessage,
-): PublicConversation {
-  return {
-    ...conversation,
-    messages: boundPublicChatMessages([...conversation.messages, message]),
-    updatedAt: message.createdAt,
-  }
-}
+const INTERRUPTED_REQUEST_MESSAGE = 'The previous request was interrupted. Retry to continue this conversation.'
 
 export function usePublicChat(institutionCode: string) {
   const normalizedCode = normalizePublicInstitutionCode(institutionCode)
-  const [conversation, setConversation] = useState<PublicConversation>(() =>
-    readPublicConversation(normalizedCode),
-  )
+  const retryDelay = useRetryDelay(normalizedCode)
+  const [conversation, setConversation] = useState<PublicConversation>(() => readPublicConversation(normalizedCode))
   const initialUnansweredUserId = unansweredUserId(conversation)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(() =>
     initialUnansweredUserId === null ? null : INTERRUPTED_REQUEST_MESSAGE,
   )
   const [failedMessageId, setFailedMessageId] = useState<string | null>(initialUnansweredUserId)
-  const answerMutation = useMutation<
-    PublicChatResponse,
-    unknown,
-    { response: Promise<PublicChatResponse> }
-  >(
+  const answerMutation = useMutation<PublicChatResponse, unknown, { response: Promise<PublicChatResponse> }>(
     {
       mutationKey: ['public-chat', normalizedCode],
       mutationFn: ({ response }) => response,
+      retry: false,
     },
     queryClient,
   )
   const inFlight = useRef(false)
   const abortController = useRef<AbortController | null>(null)
+  const waitingQuestion = useRef<PublicChatMessage | null>(null)
   const activeInstitution = useRef(normalizedCode)
 
   useEffect(() => {
     activeInstitution.current = normalizedCode
     abortController.current?.abort()
     abortController.current = null
+    waitingQuestion.current = null
     inFlight.current = false
     setIsLoading(false)
     const nextConversation = readPublicConversation(normalizedCode)
@@ -96,65 +59,95 @@ export function usePublicChat(institutionCode: string) {
     }
   }, [conversation, normalizedCode])
 
-  useEffect(() => () => {
-    activeInstitution.current = ''
+  useEffect(
+    () => () => {
+      activeInstitution.current = ''
+      abortController.current?.abort()
+    },
+    [],
+  )
+
+  const requestAnswer = useCallback(
+    async (userMessage: PublicChatMessage): Promise<void> => {
+      if (inFlight.current || retryDelay.blocked()) return
+      const requestInstitution = normalizedCode
+      const controller = new AbortController()
+      abortController.current = controller
+      waitingQuestion.current = userMessage
+      const current = () =>
+        abortController.current === controller &&
+        !controller.signal.aborted &&
+        activeInstitution.current === requestInstitution
+      inFlight.current = true
+      setIsLoading(true)
+      setError(null)
+      setFailedMessageId(null)
+      try {
+        // Start the request before entering the mutation scheduler so the
+        // existing duplicate-submit UX remains synchronous. TanStack Query then
+        // owns the mutation lifecycle and error boundary for the promise.
+        const responsePromise = publicChat(
+          {
+            institution_code: requestInstitution,
+            message: userMessage.content,
+          },
+          { signal: controller.signal },
+        )
+        const response = await answerMutation.mutateAsync({ response: responsePromise })
+        if (current()) {
+          setConversation((current) => appendMessage(current, assistantMessage(response)))
+        }
+      } catch (reason) {
+        const kind = reason instanceof PublicChatError ? reason.kind : 'unknown'
+        if (kind !== 'aborted' && current()) {
+          setError(publicChatErrorMessage(kind))
+          setFailedMessageId(userMessage.id)
+          retryDelay.wait(reason instanceof PublicChatError ? reason.retryAfterSeconds : null)
+        }
+      } finally {
+        if (abortController.current === controller) {
+          abortController.current = null
+          waitingQuestion.current = null
+          inFlight.current = false
+          if (activeInstitution.current === requestInstitution) setIsLoading(false)
+        }
+      }
+    },
+    [answerMutation, normalizedCode, retryDelay],
+  )
+
+  const stopWaiting = (): void => {
+    const question = waitingQuestion.current
+    if (!question) return
     abortController.current?.abort()
-  }, [])
+    abortController.current = null
+    waitingQuestion.current = null
+    inFlight.current = false
+    setIsLoading(false)
+    setFailedMessageId(question.id)
+    setError('Stopped waiting for the reply. Your question is saved here; you can retry.')
+    retryDelay.clear()
+  }
 
-  const requestAnswer = useCallback(async (userMessage: PublicChatMessage): Promise<void> => {
-    if (inFlight.current) return
-    const requestInstitution = normalizedCode
-    const controller = new AbortController()
-    abortController.current = controller
-    inFlight.current = true
-    setIsLoading(true)
-    setError(null)
-    setFailedMessageId(null)
-    try {
-      // Start the request before entering the mutation scheduler so the
-      // existing duplicate-submit UX remains synchronous. TanStack Query then
-      // owns the mutation lifecycle and error boundary for the promise.
-      const responsePromise = publicChat({
-        institution_code: requestInstitution,
-        message: userMessage.content,
-      }, { signal: controller.signal })
-      const response = await answerMutation.mutateAsync({ response: responsePromise })
-      if (!controller.signal.aborted && activeInstitution.current === requestInstitution) {
-        setConversation((current) => appendMessage(current, assistantMessage(response)))
+  const sendMessage = useCallback(
+    async (raw: string): Promise<void> => {
+      const content = raw.trim().replace(/\s+/g, ' ')
+      if (inFlight.current || failedMessageId !== null || content.length === 0 || content.length > 4000) return
+      const userMessage: PublicChatMessage = {
+        id: localId(),
+        role: 'user',
+        content,
+        createdAt: Date.now(),
       }
-    } catch (reason) {
-      const kind = reason instanceof PublicChatError ? reason.kind : 'unknown'
-      if (kind !== 'aborted' && activeInstitution.current === requestInstitution) {
-        setError(publicChatErrorMessage(kind))
-        setFailedMessageId(userMessage.id)
-      }
-    } finally {
-      if (abortController.current === controller) {
-        abortController.current = null
-        inFlight.current = false
-        if (activeInstitution.current === requestInstitution) setIsLoading(false)
-      }
-    }
-  }, [answerMutation, normalizedCode])
-
-  const sendMessage = useCallback(async (raw: string): Promise<void> => {
-    const content = raw.trim().replace(/\s+/g, ' ')
-    if (inFlight.current || failedMessageId !== null || content.length === 0 || content.length > 4000) return
-    const userMessage: PublicChatMessage = {
-      id: localId(),
-      role: 'user',
-      content,
-      createdAt: Date.now(),
-    }
-    setConversation((current) => appendMessage(current, userMessage))
-    await requestAnswer(userMessage)
-  }, [failedMessageId, requestAnswer])
+      setConversation((current) => appendMessage(current, userMessage))
+      await requestAnswer(userMessage)
+    },
+    [failedMessageId, requestAnswer],
+  )
 
   const retry = useCallback(async (): Promise<void> => {
     if (failedMessageId === null || inFlight.current) return
-    const failed = conversation.messages.find(
-      (message) => message.id === failedMessageId && message.role === 'user',
-    )
+    const failed = conversation.messages.find((message) => message.id === failedMessageId && message.role === 'user')
     if (failed) await requestAnswer(failed)
   }, [conversation.messages, failedMessageId, requestAnswer])
 
@@ -164,7 +157,8 @@ export function usePublicChat(institutionCode: string) {
     setConversation(createPublicConversation(normalizedCode))
     setError(null)
     setFailedMessageId(null)
-  }, [normalizedCode])
+    retryDelay.clear()
+  }, [normalizedCode, retryDelay])
 
   return {
     conversation,
@@ -174,6 +168,8 @@ export function usePublicChat(institutionCode: string) {
     failedMessageId,
     sendMessage,
     retry,
+    stopWaiting,
+    retryAfterSeconds: retryDelay.remaining,
     startNewConversation: reset,
     clear: reset,
   }

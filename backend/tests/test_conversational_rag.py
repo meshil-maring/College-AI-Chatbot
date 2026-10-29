@@ -9,6 +9,7 @@ and that dev diagnostics are attached.
 from unittest.mock import MagicMock, patch
 
 import pytest
+from tests.ai.policy_fixtures import isolated_policy
 
 from app.config import settings
 from app.schemas.ai.generation import AIContext

@@ -1,15 +1,21 @@
 import { useState } from 'react'
-import { Bot, UserCircle, Users, type LucideIcon } from 'lucide-react'
+import { BookOpen, Bot, UserCircle, Users, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../auth/session/AuthProvider.tsx'
 import { hasPermission } from '../auth/access/permissions.ts'
 import ChatShell from '../chat/ChatShell.tsx'
+import LearningResourcesPage from '../learning-resources/LearningResourcesPage.tsx'
 import StaffApprovals from './StaffApprovals.tsx'
 import StaffProfile from './StaffProfile.tsx'
 import { buildStaffNavigation, STAFF_VIEW_HEADINGS, type StaffView } from './staffNavigation.ts'
 import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
 import WorkspacePageHeader from '../workspace/WorkspacePageHeader.tsx'
 
-const icons: Record<StaffView, LucideIcon> = { approvals: Users, assistant: Bot, profile: UserCircle }
+const icons: Record<StaffView, LucideIcon> = {
+  approvals: Users,
+  assistant: Bot,
+  profile: UserCircle,
+  resources: BookOpen,
+}
 export default function StaffShell() {
   const { user, role, accessToken, logout } = useAuth()
   const [selected, setSelected] = useState<StaffView>('profile')
@@ -31,7 +37,7 @@ export default function StaffShell() {
     >
       {view ? (
         <>
-          {view !== 'assistant' && (
+          {view !== 'assistant' && view !== 'resources' && (
             <WorkspacePageHeader
               title={STAFF_VIEW_HEADINGS[view]}
               description={
@@ -42,6 +48,7 @@ export default function StaffShell() {
             />
           )}
           {view === 'profile' && <StaffProfile user={user} />}
+          {view === 'resources' && <LearningResourcesPage />}
           {view === 'approvals' && accessToken && (
             <StaffApprovals
               accessToken={accessToken}

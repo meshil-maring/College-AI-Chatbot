@@ -134,6 +134,9 @@ export default function ConversationList({
           >
             <span className="block truncate text-sm font-medium text-content">{displayTitle(conversation)}</span>
             <span className="block text-xs text-muted">{formatUpdatedAt(conversation.updated_at)}</span>
+            {conversation.pending_turn_id && (
+              <span className="mt-1 block text-xs text-accent">Reply needs attention</span>
+            )}
           </button>
         )
       })}

@@ -67,7 +67,7 @@ def test_request_preserves_context_and_configuration():
         requests.append(request)
         return httpx.Response(
             200,
-            json={"model": MODEL, "choices": [{"message": {"content": "Apply online."}}]},
+            json={"model": MODEL, "choices": [{"message": {"content": json.dumps({"answer": "Apply online.", "sources": [1], "status": "success"})}}]},
         )
 
     instance, client = provider(handler)
@@ -91,39 +91,24 @@ def test_request_preserves_context_and_configuration():
     assert "00000000-0000-0000-0000-000000000001" in user_content
     assert result.answer == "Apply online."
     assert result.model_used == MODEL
-    assert result.source_references == []
+    assert [ref.chunk_id for ref in result.source_references] == [context().retrieved_knowledge[0].chunk_id]
 
 
-def test_provider_does_not_perform_source_reference_extraction():
-    """Provider returns empty source_references regardless of explicit chunk references in the answer.
-
-    Source-reference extraction is the responsibility of the chat orchestration layer,
-    not the generation provider.
-    """
+def test_provider_uses_separate_evidence_selection():
     chunk = context().retrieved_knowledge[0]
-    instance, client = provider(
-        lambda _request: httpx.Response(
-            200,
-            json={
-                "choices": [
-                    {
-                        "message": {
-                            "content": f"The requirement is documented in [Retrieved chunk {chunk.chunk_id}]."
-                        }
-                    }
-                ]
-            },
-        )
-    )
+    content = json.dumps({"answer": "A completed application is required.", "sources": [1], "status": "success"})
+    instance, client = provider(lambda _: httpx.Response(
+        200, json={"choices": [{"message": {"content": content}}]},
+    ))
     try:
         with configured():
             result = instance.generate(context())
     finally:
         client.close()
+    assert result.source_references[0].chunk_id == chunk.chunk_id
+    assert result.source_references[0].quote == chunk.text
+    assert str(chunk.chunk_id) not in result.answer
 
-    assert result.source_references == []
-    assert result.answer is not None
-    assert str(chunk.chunk_id) in result.answer
 
 
 def test_context_model_name_overrides_configured_default():
@@ -131,7 +116,7 @@ def test_context_model_name_overrides_configured_default():
     instance, client = provider(
         lambda request: (
             requests.append(request)
-            or httpx.Response(200, json={"choices": [{"message": {"content": "Answer"}}]})
+            or httpx.Response(200, json={"choices": [{"message": {"content": json.dumps({"answer": "Answer", "sources": [1], "status": "success"})}}]})
         )
     )
     requested_context = context().model_copy(update={"model_name": "custom/model"})

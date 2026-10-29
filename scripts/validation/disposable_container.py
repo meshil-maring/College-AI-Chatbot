@@ -12,7 +12,7 @@ DATA_DIRECTORY = "/var/lib/postgresql/data"
 MAX_TMPFS_BYTES = 536870912
 ALLOWED_PURPOSES = {
     "academic-setup", "faculty-attendance", "faculty-tests", "faculty-assignment",
-    "data-reset",
+    "data-reset", "knowledge-resources",
 }
 DOCKER_CONTEXT = "desktop-linux"
 LOCAL_ENDPOINT = "npipe:////./pipe/dockerDesktopLinuxEngine"

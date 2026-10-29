@@ -1,4 +1,5 @@
 import { hasPermission } from '../auth/access/permissions.ts'
+import { hasResourceNavigation } from '../learning-resources/data/resourceIdentity.ts'
 
 export type AdminView =
   | 'staff-faculty'
@@ -20,7 +21,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { key: 'staff-faculty', label: 'Staff & Faculty' },
   { key: 'approvals', label: 'Student Approvals' },
   { key: 'notices', label: 'Notices' },
-  { key: 'documents', label: 'Documents' },
+  { key: 'documents', label: 'Learning Resources' },
   { key: 'faqs', label: 'FAQs' },
   { key: 'assistant', label: 'AI Assistant' },
   { key: 'permissions', label: 'Staff Permissions' },
@@ -43,7 +44,9 @@ export function buildAdminNavigation(role: string | null, permissions?: readonly
   return permissions === undefined
     ? ADMIN_NAV_ITEMS
     : ADMIN_NAV_ITEMS.filter((item) =>
-        VIEW_PERMISSIONS[item.key].every((permission) => hasPermission(permissions, permission)),
+        item.key === 'documents'
+          ? hasResourceNavigation(role, permissions)
+          : VIEW_PERMISSIONS[item.key].every((permission) => hasPermission(permissions, permission)),
       )
 }
 export const ADMIN_VIEW_HEADINGS: Record<AdminView, string> = {
@@ -52,7 +55,7 @@ export const ADMIN_VIEW_HEADINGS: Record<AdminView, string> = {
   'staff-faculty': 'Staff & Faculty',
   approvals: 'Student Approvals',
   notices: 'Notices',
-  documents: 'Documents',
+  documents: 'Learning Resources',
   faqs: 'FAQs',
   assistant: 'AI Assistant',
   permissions: 'Staff Permissions',

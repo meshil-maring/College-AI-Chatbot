@@ -5,6 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from .fakes import _FakeClient, _FakeQueryBuilder
 
 from fastapi.testclient import TestClient
 
@@ -136,104 +137,6 @@ def _resource_row(
         "file_checksum": "deadbeef",
         "created_by_user_id": "91000000-0000-0000-0000-000000000001",
     }
-
-
-def _norm(value):
-    if isinstance(value, bool):
-        return str(value)
-    return None if value is None else str(value)
-
-
-def _or_matches(row, expression):
-    """Evaluate the single PostgREST ``or_`` expression this phase builds."""
-    for clause in expression.split(","):
-        clause = clause.strip()
-        if clause.endswith(".is.null"):
-            column = clause[: -len(".is.null")]
-            if row.get(column) is None:
-                return True
-        elif ".gte." in clause:
-            column, _, threshold = clause.partition(".gte.")
-            value = row.get(column)
-            if value is not None and str(value) >= threshold:
-                return True
-        else:  # pragma: no cover - defensive: unknown clause does not filter
-            return True
-    return False
-
-
-class _FakeQueryBuilder:
-    """Minimal PostgREST query builder that really filters/orders/limits rows.
-
-    Recording every operation lets the tests assert the exact server-side
-    filters (tenant scoping, publication filter, expiry filter) instead of
-    trusting the projection alone.
-    """
-
-    def __init__(self, table_name, rows, calls):
-        self._table = table_name
-        self._rows = list(rows)
-        self._calls = calls
-        self._orders: list[tuple[str, bool]] = []
-        self._limit: int | None = None
-
-    def select(self, columns):
-        self._calls.append((self._table, "select", columns))
-        return self
-
-    def eq(self, column, value):
-        self._calls.append((self._table, "eq", column, value))
-        self._rows = [r for r in self._rows if _norm(r.get(column)) == _norm(value)]
-        return self
-
-    def neq(self, column, value):
-        self._calls.append((self._table, "neq", column, value))
-        self._rows = [r for r in self._rows if _norm(r.get(column)) != _norm(value)]
-        return self
-
-    def or_(self, expression):
-        self._calls.append((self._table, "or_", expression))
-        self._rows = [r for r in self._rows if _or_matches(r, expression)]
-        return self
-
-    def order(self, column, desc=False):
-        self._calls.append((self._table, "order", column, desc))
-        self._orders.append((column, desc))
-        return self
-
-    def limit(self, count):
-        self._calls.append((self._table, "limit", count))
-        self._limit = count
-        return self
-
-    def execute(self):
-        self._calls.append((self._table, "execute"))
-        rows = list(self._rows)
-        # PostgREST treats the FIRST `order` as the primary sort key, so the
-        # orders are applied from least to most significant (Python's sort is
-        # stable, which preserves the higher-precedence keys).
-        for column, desc in reversed(self._orders):
-            rows.sort(
-                key=lambda r, c=column: (_norm(r.get(c)) is None, _norm(r.get(c))),
-                reverse=desc,
-            )
-        if self._limit is not None:
-            rows = rows[: self._limit]
-        return MagicMock(data=rows)
-
-
-class _FakeClient:
-    """Fake Supabase client holding one row set per table name."""
-
-    def __init__(self, tables=None):
-        self.tables = tables or {}
-        self.calls: list[tuple] = []
-
-    def table(self, name):
-        return _FakeQueryBuilder(name, self.tables.get(name, []), self.calls)
-
-    def operations(self, table, operation):
-        return [c for c in self.calls if c[0] == table and c[1] == operation]
 
 
 @pytest.fixture(autouse=True)

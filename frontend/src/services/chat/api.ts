@@ -14,11 +14,9 @@
  */
 
 import type { ChatRequest, ChatResponse } from '../../types/chat.ts'
-import type {
-  ConversationSummary,
-  MessageSummary,
-} from '../../types/conversation.ts'
+import type { ConversationSummary, MessageSummary } from '../../types/conversation.ts'
 import { notifySessionExpired } from '../shared/sessionEvents.ts'
+import { withDeadline } from './deadline.ts'
 
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 
@@ -84,34 +82,30 @@ function formatApiErrorMessage(status: number, details: unknown): string {
  * @throws ApiError   For non-2xx HTTP responses. HTTP failures are never
  *                    hidden behind a fabricated `ChatResponse`.
  */
-export async function chat(
-  request: ChatRequest,
-  accessToken: string,
-): Promise<ChatResponse> {
-  const response = await fetch(CHAT_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(request),
+export async function chat(request: ChatRequest, accessToken: string): Promise<ChatResponse> {
+  return withDeadline(90_000, async (signal) => {
+    const response = await fetch(CHAT_ENDPOINT, {
+      method: 'POST',
+      signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(request),
+    })
+
+    if (!response.ok) {
+      const details = await readErrorDetails(response)
+      // Phase 6.15.4 — global session-expiry handling: an authenticated
+      // request rejected with 401 means the token is no longer accepted.
+      // Phase 6.15.7 — the notification names the token used, so a late 401
+      // from a replaced session cannot clear a newer one.
+      if (response.status === 401) notifySessionExpired(accessToken)
+      throw new ApiError(response.status, formatApiErrorMessage(response.status, details), details)
+    }
+
+    return (await response.json()) as ChatResponse
   })
-
-  if (!response.ok) {
-    const details = await readErrorDetails(response)
-    // Phase 6.15.4 — global session-expiry handling: an authenticated
-    // request rejected with 401 means the token is no longer accepted.
-    // Phase 6.15.7 — the notification names the token used, so a late 401
-    // from a replaced session cannot clear a newer one.
-    if (response.status === 401) notifySessionExpired(accessToken)
-    throw new ApiError(
-      response.status,
-      formatApiErrorMessage(response.status, details),
-      details,
-    )
-  }
-
-  return (await response.json()) as ChatResponse
 }
 
 /**
@@ -125,11 +119,10 @@ export async function chat(
  * @returns The typed list of conversation summaries.
  * @throws ApiError For non-2xx HTTP responses.
  */
-export async function listConversations(
-  accessToken: string,
-): Promise<ConversationSummary[]> {
+export async function listConversations(accessToken: string, signal?: AbortSignal): Promise<ConversationSummary[]> {
   const response = await fetch(CONVERSATIONS_ENDPOINT, {
     method: 'GET',
+    ...(signal ? { signal } : {}),
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -138,11 +131,7 @@ export async function listConversations(
   if (!response.ok) {
     const details = await readErrorDetails(response)
     if (response.status === 401) notifySessionExpired(accessToken)
-    throw new ApiError(
-      response.status,
-      formatApiErrorMessage(response.status, details),
-      details,
-    )
+    throw new ApiError(response.status, formatApiErrorMessage(response.status, details), details)
   }
 
   return (await response.json()) as ConversationSummary[]
@@ -167,25 +156,20 @@ export async function listConversations(
 export async function getConversationMessages(
   conversationId: string,
   accessToken: string,
+  signal?: AbortSignal,
 ): Promise<MessageSummary[]> {
-  const response = await fetch(
-    `${CONVERSATIONS_ENDPOINT}/${conversationId}/messages`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${CONVERSATIONS_ENDPOINT}/${conversationId}/messages`, {
+    method: 'GET',
+    ...(signal ? { signal } : {}),
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  )
+  })
 
   if (!response.ok) {
     const details = await readErrorDetails(response)
     if (response.status === 401) notifySessionExpired(accessToken)
-    throw new ApiError(
-      response.status,
-      formatApiErrorMessage(response.status, details),
-      details,
-    )
+    throw new ApiError(response.status, formatApiErrorMessage(response.status, details), details)
   }
 
   return (await response.json()) as MessageSummary[]

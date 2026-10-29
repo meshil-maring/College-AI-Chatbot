@@ -14,9 +14,11 @@ from app.repositories.knowledge.vector_search import (
     search_similar_chunks,
 )
 from app.repositories.knowledge.public_knowledge import search_public_chunks
+from app.repositories.knowledge.resources import search_chunks as search_authorized_chunks
 from app.schemas.knowledge.retrieval import RetrievalRequest, RetrievalResponse, RetrievalResult
 from app.services.knowledge.embeddings import embed_query
 from app.services.knowledge.vector_search import search_chunks
+from app.services.knowledge.evidence_selection import candidate_limit, select_evidence
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +29,8 @@ def retrieve(
     """Execute the internal text-to-vector retrieval pipeline.
 
     When ``timings`` is a dict, per-stage durations (milliseconds) are recorded
-    into it for development latency diagnostics; retrieval behavior is
-    completely unchanged.
+    into it for development latency diagnostics. Timing collection does not
+    change evidence selection.
     """
     start = time.perf_counter() if timings is not None else None
     try:
@@ -48,20 +50,29 @@ def retrieve(
         timings["embedding_latency_ms"] = int((time.perf_counter() - start) * 1000)
 
     start = time.perf_counter() if timings is not None else None
-    try:
+
+    def search(top_k):
         if request.public_only:
-            rows = search_public_chunks(
+            return search_public_chunks(
                 get_admin_client(),
                 query_embedding,
-                top_k=request.top_k,
+                top_k=top_k,
                 institution_id=request.institution_id,
                 knowledge_source_id=request.knowledge_source_id,
                 model_name=request.model_name or settings.embedding_model,
             )
+        elif request.actor_user_id is not None:
+            return search_authorized_chunks(
+                get_admin_client(), query_embedding, actor=request.actor_user_id,
+                tenant=request.institution_id, top_k=top_k,
+                model_name=request.model_name or settings.embedding_model,
+                knowledge_source_id=request.knowledge_source_id, document_id=request.document_id,
+                document_version_id=request.document_version_id, processing_run_id=request.processing_run_id,
+            )
         else:
-            rows = search_chunks(
+            return search_chunks(
                 query_embedding,
-                top_k=request.top_k,
+                top_k=top_k,
                 institution_id=_as_string(request.institution_id),
                 knowledge_source_id=_as_string(request.knowledge_source_id),
                 document_id=_as_string(request.document_id),
@@ -69,6 +80,12 @@ def retrieve(
                 processing_run_id=_as_string(request.processing_run_id),
                 model_name=request.model_name or settings.embedding_model,
             )
+
+    try:
+        rows = search(request.top_k)
+        expanded_limit = candidate_limit(rows, request.top_k)
+        if expanded_limit > request.top_k:
+            rows = select_evidence(rows, search(expanded_limit), request.top_k)
     except AppError as exc:
         raise AppError(
             "Retrieval failed",

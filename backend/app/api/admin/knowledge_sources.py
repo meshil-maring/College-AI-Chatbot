@@ -78,6 +78,8 @@ def update_knowledge_source(
             code="KNOWLEDGE_SOURCE_NOT_FOUND",
         )
     common.assert_row_tenant(current_user, existing.get("institution_id"))
+    if existing.get('source_type') not in {'faq', 'notice'}:
+        raise AppError('Edit a draft and use the resource review workflow to change this source.', 409, 'RESOURCE_CHANGED')
     updated = knowledge_repo.update_knowledge_source(db, knowledge_source_id, payload)
     if updated is None:
         raise AppError(

@@ -10,7 +10,7 @@ def get_conversation(client: Client, conversation_id: UUID | str) -> dict | None
     """Retrieve a conversation by its ID."""
     response = (
         client.table("conversations")
-        .select("conversation_id, user_id, title, status, created_at, updated_at")
+        .select("conversation_id, user_id, title, status, created_at, updated_at, knowledge_source_id, resource_institution_id, chat_institution_id")
         .eq("conversation_id", str(conversation_id))
         .maybe_single()
         .execute()
@@ -30,6 +30,9 @@ def create_conversation(client: Client, data: ConversationCreate, conversation_i
         payload["conversation_id"] = str(conversation_id)
     if data.title is not None:
         payload["title"] = data.title
+    if data.knowledge_source_id is not None:
+        payload["knowledge_source_id"] = str(data.knowledge_source_id)
+        payload["resource_institution_id"] = str(data.resource_institution_id)
 
     response = (
         client.table("conversations")
@@ -51,7 +54,7 @@ def list_conversations_for_user(client: Client, user_id: UUID | str) -> list[dic
     """Retrieve all conversations belonging to a user, newest first."""
     response = (
         client.table("conversations")
-        .select("conversation_id, user_id, title, status, created_at, updated_at")
+        .select("conversation_id, user_id, title, status, created_at, updated_at, knowledge_source_id, resource_institution_id, chat_institution_id")
         .eq("user_id", str(user_id))
         .order("updated_at", desc=True)
         .execute()
@@ -59,3 +62,11 @@ def list_conversations_for_user(client: Client, user_id: UUID | str) -> list[dic
     if not response.data:
         return []
     return response.data
+
+
+def pending_turns_for_user(client: Client, user_id: UUID | str) -> dict:
+    rows = (
+        client.table('chat_turns').select('client_turn_id,conversation_id,institution_id')
+        .eq('actor_id', str(user_id)).in_('state', ['processing', 'failed']).execute().data
+    )
+    return {row['conversation_id']: row['client_turn_id'] for row in rows or []}

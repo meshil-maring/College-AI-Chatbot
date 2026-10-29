@@ -7,7 +7,7 @@ modify any locked schema.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class StructuredSource(BaseModel):
@@ -39,6 +39,16 @@ class StructuredSource(BaseModel):
         default=None,
         description="Section heading from chunk metadata, if available",
     )
+
+    @field_validator("quote")
+    @classmethod
+    def normalize_quote(cls, value: str) -> str:
+        # Match SourceReference's canonical presentation for both fresh and
+        # restored cards. Stored PDF chunks can contain extraction newlines.
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("quote must not be empty")
+        return normalized
 
 
 class ChatUsage(BaseModel):

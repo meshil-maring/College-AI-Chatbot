@@ -4,6 +4,7 @@ import type { StudentResourceList } from '../../../types/student.ts'
 import type { StudentResourceState } from '../shared/useStudentResource.ts'
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '../shared/SectionState.tsx'
 import { formatDate, formatLabel, formatText } from '../shared/studentFormat.ts'
+import type { ReactNode } from 'react'
 
 const EMPTY_MESSAGE = 'No learning resources are currently available.'
 const ERROR_MESSAGE = 'Unable to load learning resources.'
@@ -11,9 +12,11 @@ const ERROR_MESSAGE = 'Unable to load learning resources.'
 export default function ResourcesPanel({
   resources,
   compact = false,
+  renderAction,
 }: {
   resources: StudentResourceState<StudentResourceList>
   compact?: boolean
+  renderAction?: (sourceId: string) => ReactNode
 }) {
   if (resources.status === 'loading' || resources.status === 'idle') {
     return <LoadingBlock label="Loading learning resources…" />
@@ -43,6 +46,7 @@ export default function ResourcesPanel({
             {formatLabel(resource?.source_type)} · Effective from{' '}
             {formatDate(typeof resource?.effective_from === 'string' ? resource.effective_from : null)}
           </p>
+          {typeof resource?.resource_id === 'string' && renderAction?.(resource.resource_id)}
         </li>
       ))}
     </ul>

@@ -7,6 +7,7 @@ from fastapi import Depends, Form, UploadFile
 from app.core.errors import AppError
 from app.repositories.admin import admin_knowledge as knowledge_repo
 from app.services.admin import admin_documents
+from app.services.knowledge.resources import legacy as revision_uploads
 from app.api.admin import common
 from app.api.admin.dependencies import create_feature_router, _ADMIN
 
@@ -68,12 +69,7 @@ async def upload_document(
             code="KNOWLEDGE_SOURCE_NOT_FOUND",
         )
     common.assert_row_tenant(current_user, ks.get("institution_id"))
-    result = await admin_documents.upload_document(
-        file=file,
-        knowledge_source_id=str(knowledge_source_id),
-        user_id=current_user["user_id"],
-        auto_process=auto_process,
-    )
+    result = await revision_uploads.upload_source(current_user, knowledge_source_id, file, auto_process=auto_process)
     common.record_audit(
         current_user,
         "document.upload",
@@ -96,7 +92,7 @@ async def upload_document_version(
     auto_process: bool = Form(default=True),
     current_user: dict = Depends(_ADMIN),
 ) -> dict:
-    """Register a new document version; superseded content leaves retrieval."""
+    """Stage a replacement in a draft while the published version stays live."""
     db = common.get_admin_client()
     doc = knowledge_repo.get_document_with_versions(db, document_id)
     if doc is None:
@@ -109,13 +105,8 @@ async def upload_document_version(
             code="KNOWLEDGE_SOURCE_NOT_FOUND",
         )
     common.assert_row_tenant(current_user, ks.get("institution_id"))
-    result = await admin_documents.update_document(
-        file=file,
-        document_id=document_id,
-        user_id=current_user["user_id"],
-        version_label=version_label,
-        auto_process=auto_process,
-    )
+    result = await revision_uploads.upload_source(current_user, doc['knowledge_source_id'], file,
+        document_id=document_id, version_label=version_label, auto_process=auto_process)
     common.record_audit(
         current_user,
         "document.update",
@@ -123,7 +114,6 @@ async def upload_document_version(
         str(document_id),
         {
             "document_version_id": result["document_version_id"],
-            "version_number": result["version_number"],
             "auto_process": auto_process,
             "original_filename": file.filename,
         },
@@ -148,6 +138,7 @@ def delete_document(
             code="KNOWLEDGE_SOURCE_NOT_FOUND",
         )
     common.assert_row_tenant(current_user, ks.get("institution_id"))
+    revision_uploads.assert_delete(current_user, doc['knowledge_source_id'])
     result = admin_documents.delete_document(document_id)
     common.record_audit(
         current_user,

@@ -21,12 +21,16 @@
  * Mirrors backend `ConversationSummary` (backend/app/schemas/ai/conversation.py).
  * Conversations are ordered by `updated_at` DESC by the backend.
  */
+import type { ResourceChatContext, StructuredSource } from './chat.ts'
+
 export interface ConversationSummary {
   conversation_id: string
   title: string | null
   status: string
   created_at: string
   updated_at: string
+  resource_context?: ResourceChatContext | null
+  pending_turn_id?: string | null
 }
 
 /**
@@ -42,4 +46,5 @@ export interface MessageSummary {
   message_type: string
   content_text: string
   created_at: string
+  sources?: StructuredSource[]
 }

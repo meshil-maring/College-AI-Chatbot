@@ -17,24 +17,25 @@ Follow the [server-state architecture](SERVER_STATE.md) for consistent TanStack 
 ownership, feature query modules, identity boundaries, mutations and data states.
 It includes TypeScript recipes and an adoption checklist for new and migrated pages.
 
-| Location                                   | Responsibility                                                         |
-| ------------------------------------------ | ---------------------------------------------------------------------- |
-| `src/main.tsx`, `src/App.tsx`              | Bootstrap and public/authenticated route composition                   |
-| `src/app/`                                 | Path parsing, authentication gates and identity-scoped workspaces      |
-| `src/styles/`                              | Shared design tokens, Tailwind theme, base controls and UI primitives  |
-| `src/features/workspace/`                  | Common role workspace frame, page header and responsive shell styles   |
-| `src/features/auth/`                       | Session, sign-in, password, registration and server-grant helpers      |
-| `src/features/admin/`                      | Institution account administration, approvals and knowledge management |
-| `src/features/staff/`                      | Staff identity, student account approvals and chat                     |
-| `src/features/faculty/`                    | Faculty profile, existing information placeholders and chat            |
-| `src/features/student/`                    | Identity/approval gate, notices, resources and chat                    |
-| `src/features/students/`                   | Shared account-approval UI and retained inactive roster source         |
-| `src/features/superAdmin/`                 | Institution and administrator lifecycle                                |
-| `src/features/publicChat/`                 | Institution public chat and history storage                            |
-| `src/services/`                            | Domain API clients and session-expiry events                           |
-| `src/types/`                               | Backend request/response contracts                                     |
-| `src/hooks/`, `src/lib/`, `src/providers/` | Shared query, navigation and providers                                 |
-| `src/test/`, workflow `__tests__/`         | Test setup and fixtures                                                |
+| Location                                   | Responsibility                                                              |
+| ------------------------------------------ | --------------------------------------------------------------------------- |
+| `src/main.tsx`, `src/App.tsx`              | Bootstrap and public/authenticated route composition                        |
+| `src/app/`                                 | Path parsing, authentication gates and identity-scoped workspaces           |
+| `src/styles/`                              | Shared design tokens, Tailwind theme, base controls and UI primitives       |
+| `src/features/workspace/`                  | Common role workspace frame, page header and responsive shell styles        |
+| `src/features/learning-resources/`         | Shared admin/faculty/staff library, audience/upload drafts and admin review |
+| `src/features/auth/`                       | Session, sign-in, password, registration and server-grant helpers           |
+| `src/features/admin/`                      | Institution account administration, approvals and knowledge management      |
+| `src/features/staff/`                      | Staff identity, student account approvals and chat                          |
+| `src/features/faculty/`                    | Faculty profile, existing information placeholders and chat                 |
+| `src/features/student/`                    | Identity/approval gate, notices, resources and chat                         |
+| `src/features/students/`                   | Shared account-approval UI and retained inactive roster source              |
+| `src/features/superAdmin/`                 | Institution and administrator lifecycle                                     |
+| `src/features/publicChat/`                 | Institution public chat and history storage                                 |
+| `src/services/`                            | Domain API clients and session-expiry events                                |
+| `src/types/`                               | Backend request/response contracts                                          |
+| `src/hooks/`, `src/lib/`, `src/providers/` | Shared query, navigation and providers                                      |
+| `src/test/`, workflow `__tests__/`         | Test setup and fixtures                                                     |
 
 See the [admin](../src/features/admin/README.md),
 [faculty](../src/features/faculty/README.md),
@@ -44,6 +45,9 @@ See the [admin](../src/features/admin/README.md),
 use domain service/type facades; implementation modules import siblings directly.
 Preserve public import contracts, mock paths, identity keys, cancellation and
 server-authoritative permissions when extracting code. Keep CSS import order.
+
+The [public chat guide](../src/features/publicChat/README.md) owns browser-local
+history, guarded anonymous requests and its focused `state/` and `recovery/` modules.
 
 ## Retained inactive source
 
@@ -59,7 +63,8 @@ academic entities.
 The dedicated Programs page lives in `academic-setup/programs/`, with focused
 form controls, scoped styles and adjacent tests. It uses the existing program
 transport and immutable department relationship. Department and program drawers
-share their modal focus lifecycle in `academic-setup/dialogs/`.
+share modal focus/scroll behavior with Learning Resources through
+`features/workspace/useWorkspaceDialog.ts`.
 
 The Academic Calendar page lives in `academic-setup/calendar/`. It owns year and
 dated-semester views, filters, summaries, dates and timeline. Its `editor/` folder

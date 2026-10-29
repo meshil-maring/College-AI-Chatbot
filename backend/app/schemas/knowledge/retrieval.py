@@ -15,6 +15,7 @@ class RetrievalRequest(BaseModel):
     context: dict | None = None
     # Internal-only switch. Public HTTP clients never construct this schema.
     public_only: bool = False
+    actor_user_id: UUID | None = None  # Server-owned authenticated retrieval identity.
 
     @field_validator("query")
     @classmethod

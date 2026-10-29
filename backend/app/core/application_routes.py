@@ -8,6 +8,8 @@ from app.api.invitations.super_admin_registration import (
 )
 from app.api.email.mailgun_webhooks import router as mailgun_webhooks_router
 from app.api.knowledge.ingestion import router as ingestion_router
+from app.api.knowledge.resources import router as knowledge_resources_router
+from app.api.knowledge.resource_uploads import router as knowledge_uploads_router
 from app.api.auth.auth import router as auth_router
 from app.api.auth.registration import router as registration_router
 from app.api.ai.conversations import router as conversations_router
@@ -28,6 +30,9 @@ from app.api.academics.academic_structure import router as academic_structure_ro
 
 def register_feature_routes(app: FastAPI) -> None:
     app.include_router(ingestion_router, prefix="/api/v1")
+    # Literal upload/retry paths must precede the revision/{action} route.
+    app.include_router(knowledge_uploads_router, prefix="/api/v1")
+    app.include_router(knowledge_resources_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(student_auth_router, prefix="/api/v1")
     app.include_router(registration_router, prefix="/api/v1")

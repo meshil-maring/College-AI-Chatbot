@@ -1,6 +1,8 @@
 # Learning Resources and AI Assistant: UI and UX
 
-Proposed design. See the [baseline and scope](README.md) for current behavior.
+The shared library, draft/upload, review and resource-scoped Ask AI UI are
+implemented. File-delivery interactions below remain planned.
+See the [baseline and scope](README.md) and [implemented API](API.md) for current behavior.
 Apply the existing [design system](../../../frontend/docs/DESIGN_SYSTEM.md).
 
 ## Shared resource workspace
@@ -13,12 +15,13 @@ The page owns its title to avoid duplicate workspace headings.
 Learning Resources                       [Add resource]*
 Institution documents and reference material for your AI assistant.
 
+[Library] [My uploads]* [Review queue]*
 [Search resources................] [Type v] [Status v]* [Clear]
 
-Title                  Type         Publication     AI availability
-Student handbook       Handbook     Published       Available
+Title                  Audience          Publication     AI availability
+Student handbook       Public            Published       Available
   Institution guide                 [View details] [Ask AI]* [...]*
-Library guidelines     Document     Draft*          Still processing*
+Library guidelines     Students only     Draft*          Still processing*
   Reference material                [View details]          [...]*
 
 [Previous]                 Page / result information                 [Next]
@@ -28,6 +31,9 @@ Library guidelines     Document     Draft*          Still processing*
 Readers see only eligible records and safe status information. Managers can see
 drafts and processing failures when granted access. A role name alone never
 unlocks a control. No dummy rows or fabricated counts appear in production.
+Library applies reader audience rules. My uploads shows permitted own drafts;
+Review queue uses explicit admin management access. All views reuse the list,
+details and form. The same audience badge appears throughout the workflow.
 
 Keep the common label **Learning Resources** in admin, faculty and staff
 navigation. During migration, admin Documents can open this same component;
@@ -41,7 +47,7 @@ FAQ editor until shared adapters preserve its canonical publication behavior.
 - Search matches resource title/description. Type and status filters, sorting and
   pagination must operate over the authorized server result set. Until the API
   supports them, omit those controls or explicitly label a current-page search.
-- Use title, description, source type and authorized publication/readiness labels.
+- Use title, description, source type, audience and authorized publication/readiness labels.
   Show document counts or update times only when returned by the API.
 - Open details in the same accessible drawer in every role. Show source metadata,
   permitted document/version information and an explanation of AI availability.
@@ -50,11 +56,19 @@ FAQ editor until shared adapters preserve its canonical publication behavior.
 - Expose file open/download only after a separate authorized delivery contract
   exists. Citation metadata and storage identifiers are not download links.
 
-The add/edit form has persistent labels for title, description and existing
-source type. Audience/publication fields appear only for users who can set them.
+The add/edit form has persistent labels for title, description, existing upload
+source type and requested audience: Public, All signed-in institution members,
+or Selected roles. Roles include Students, Staff, Faculty/teachers and Admins;
+allow combinations. New drafts are private until an admin publishes them.
+Faculty/staff can propose an audience and submit for review; admin capabilities
+add review and live publication actions. Use the exact shared form and audience
+matrix in the [upload plan](AUDIENCE_UPLOAD.md).
+
 Upload accepts only server-supported file types and size limits. Retain a failed
 draft and give a specific retry action. File inputs explain when reselection is
-needed. Use the same form and validation messages for every permitted role.
+needed. Show reviewer feedback beside the draft and keep proposed audience
+separate from the currently published audience. A replacement never changes live
+answers before admin approval of its version and audience.
 
 ## Component ownership
 

@@ -36,6 +36,8 @@ class RequestSizeLimitMiddleware:
     @classmethod
     def _is_upload_path(cls, path: str) -> bool:
         return path in cls._UPLOAD_PATHS or (
+            path.startswith('/api/v1/knowledge/revisions/') and path.endswith('/documents')
+        ) or (
             path.startswith("/api/v1/admin/documents/")
             and path.endswith("/versions")
         )

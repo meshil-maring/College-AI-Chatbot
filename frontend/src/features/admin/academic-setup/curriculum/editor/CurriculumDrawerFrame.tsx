@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
-import { useAcademicDialog } from '../../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../../workspace/useWorkspaceDialog.ts'
 
 export default function CurriculumDrawerFrame({
   title,
@@ -19,7 +19,7 @@ export default function CurriculumDrawerFrame({
   children: ReactNode
   footer: ReactNode
 }) {
-  const ref = useAcademicDialog('.curriculum-page h1')
+  const ref = useWorkspaceDialog('.curriculum-page h1')
   useEffect(() => {
     if (alert) ref.current?.querySelector<HTMLElement>('footer button')?.focus()
   }, [alert, ref])

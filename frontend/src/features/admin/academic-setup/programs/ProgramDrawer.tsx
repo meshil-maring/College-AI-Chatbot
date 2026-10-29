@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react'
 import { Save, TriangleAlert, X } from 'lucide-react'
 import type { Department } from '../../../../types/academicSetup.ts'
 import type { ProgramEditor } from './useProgramEditor.ts'
-import { useAcademicDialog } from '../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../workspace/useWorkspaceDialog.ts'
 import ProgramForm from './forms/ProgramForm.tsx'
 import ProgramDetails from './ProgramDetails.tsx'
 
 export default function ProgramDrawer({ editor, departments }: { editor: ProgramEditor; departments?: Department[] }) {
-  const ref = useAcademicDialog('.programs-page h1')
+  const ref = useWorkspaceDialog('.programs-page h1')
   const safeAction = useRef<HTMLButtonElement>(null)
   const confirming = editor.confirmation !== null
   const view = editor.panel === 'view'

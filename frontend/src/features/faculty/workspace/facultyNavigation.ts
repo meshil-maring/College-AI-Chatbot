@@ -1,4 +1,5 @@
 import { hasPermission } from '../../auth/access/permissions.ts'
+import { hasResourceNavigation } from '../../learning-resources/data/resourceIdentity.ts'
 
 export type FacultyView = 'profile' | 'notices' | 'resources' | 'assistant'
 export interface FacultyNavItem {
@@ -11,7 +12,7 @@ export const FACULTY_NAV_ITEMS: readonly FacultyNavItem[] = [
   { key: 'resources', label: 'Learning Resources' },
   { key: 'assistant', label: 'AI Assistant' },
 ]
-export const FACULTY_COMING_SOON_VIEWS: readonly FacultyView[] = ['notices', 'resources']
+export const FACULTY_COMING_SOON_VIEWS: readonly FacultyView[] = ['notices']
 export function buildFacultyNavigation(
   role: string | null,
   permissions?: readonly string[],
@@ -21,7 +22,9 @@ export function buildFacultyNavigation(
   return FACULTY_NAV_ITEMS.filter(
     (item) =>
       FACULTY_COMING_SOON_VIEWS.includes(item.key) ||
-      hasPermission(permissions, item.key === 'assistant' ? 'ai.chat' : 'profile.own.read'),
+      (item.key === 'resources'
+        ? hasResourceNavigation(role, permissions)
+        : hasPermission(permissions, item.key === 'assistant' ? 'ai.chat' : 'profile.own.read')),
   )
 }
 export const FACULTY_VIEW_HEADINGS: Record<FacultyView, string> = {
@@ -47,7 +50,7 @@ export const FACULTY_WORKSPACE_SURFACES: readonly FacultyWorkspaceSurface[] = [
   {
     key: 'resources',
     title: 'Learning Resources',
-    status: 'not-available',
-    description: 'Learning resources are not available for faculty accounts yet.',
+    status: 'available',
+    description: 'Browse institution resources and submit your drafts for admin review.',
   },
 ]

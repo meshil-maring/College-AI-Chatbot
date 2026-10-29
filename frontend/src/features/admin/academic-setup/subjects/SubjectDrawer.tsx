@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Save, TriangleAlert, X } from 'lucide-react'
 import type { Department } from '../../../../types/academicSetup.ts'
 import type { SubjectEditor } from './useSubjectEditor.ts'
-import { useAcademicDialog } from '../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../workspace/useWorkspaceDialog.ts'
 import SubjectForm from './forms/SubjectForm.tsx'
 import SubjectDetails from './SubjectDetails.tsx'
 import type { SubjectsState } from './useSubjects.ts'
@@ -16,7 +16,7 @@ export default function SubjectDrawer({
   departments?: Department[]
   assignments: SubjectsState['assignments']
 }) {
-  const ref = useAcademicDialog('.subjects-page h1')
+  const ref = useWorkspaceDialog('.subjects-page h1')
   const safeAction = useRef<HTMLButtonElement>(null)
   const confirming = editor.confirmation !== null
   const view = editor.panel === 'view'

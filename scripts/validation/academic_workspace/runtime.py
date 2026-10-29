@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "scripts/validation"))
 
 from disposable_container import (
-    EXPECTED_IMAGE, docker_arguments, expected_name, validate_cleanup_target,
+    ALLOWED_PURPOSES, EXPECTED_IMAGE, docker_arguments, expected_name, validate_cleanup_target,
     validate_disposable_target, validate_local_engine,
 )
 
@@ -39,9 +39,11 @@ def execute(container, sql):
 
 
 @contextmanager
-def database():
+def database(purpose="academic-setup"):
+    if purpose not in ALLOWED_PURPOSES:
+        raise ValueError("Unrecognized disposable validation purpose")
     validate_local_engine()
-    token, purpose, container = uuid4().hex, "academic-setup", None
+    token, container = uuid4().hex, None
     try:
         container = checked(docker_arguments(
             "run", "--pull=never", "--rm", "-d", "--network", "none",

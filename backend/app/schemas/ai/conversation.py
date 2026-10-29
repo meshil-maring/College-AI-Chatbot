@@ -3,7 +3,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from app.schemas.ai.resource_context import ResourceChatContext
+from app.schemas.ai.chat_response import StructuredSource
 
 
 class ConversationCreate(BaseModel):
@@ -12,6 +14,8 @@ class ConversationCreate(BaseModel):
     user_id: UUID
     title: str | None = None
     status: str = "active"
+    knowledge_source_id: UUID | None = None
+    resource_institution_id: UUID | None = None
 
 
 class Conversation(BaseModel):
@@ -32,6 +36,7 @@ class MessageCreate(BaseModel):
     message_sequence: int
     message_type: str  # 'user' | 'assistant'
     content_text: str
+    knowledge_policy: dict | None = None
 
 
 class Message(BaseModel):
@@ -84,6 +89,8 @@ class ConversationSummary(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    resource_context: ResourceChatContext | None = None
+    pending_turn_id: UUID | None = None
 
 
 class MessageSummary(BaseModel):
@@ -95,3 +102,5 @@ class MessageSummary(BaseModel):
     message_type: str
     content_text: str
     created_at: datetime
+    knowledge_policy: dict | None = Field(default=None, exclude=True)
+    sources: list[StructuredSource] = Field(default_factory=list)

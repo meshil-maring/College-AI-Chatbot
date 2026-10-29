@@ -10,11 +10,11 @@ URL prefix, permissions or request/response models.
 | --- | --- |
 | `academics/` | `academic_setup.py`: existing eight-entity API; `academic_structure.py`: versioned curricula, program semesters, cohorts, class sections and offerings |
 | `admin/` | `admin.py` assembles feature routers; see the [Admin API guide](admin/README.md) |
-| `ai/` | `conversations.py` |
+| `ai/` | `conversations.py`, `chat_turns.py` (authenticated read-only recovery status) |
 | `auth/` | Core auth feature routers, student login, registration and development tools; see the [Auth API guide](auth/README.md) |
 | `email/` | `mailgun_webhooks.py` |
 | `invitations/` | `admin_invitations.py`, `super_admin_registration.py` |
-| `knowledge/` | `ingestion.py` |
+| `knowledge/` | `ingestion.py`; `resources.py` shared library/draft/review; `resource_uploads.py` staged uploads and indexing retries |
 | `platform/` | `institutions.py`, `organizations.py`; `platform.py` assembles institution, invitation and audit routes with shared `dependencies.py` |
 | `students/` | `students.py`, `student_notifications.py` |
 
@@ -43,3 +43,7 @@ Add new routers to the appropriate feature package and register them in
 business logic in services, and database access in repositories.
 Historical phase reports and evidence snapshots may refer to the previous
 flat module paths; Git history retains those versions.
+
+The [learning-resource contract](../../../docs/architecture/ai-chatbot/API.md)
+defines the shared `/knowledge` endpoints. These use institution-role dependencies
+and service-only SQL writers that recheck exact grants, ownership and review state.

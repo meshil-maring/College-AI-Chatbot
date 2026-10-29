@@ -14,18 +14,13 @@
  *   - modelUsed          (backend-selected model identifier)
  */
 
-import type {
-  ChatStatus,
-  ChatUsage,
-  SourceReference,
-  StructuredSource,
-} from '../../types/chat.ts'
+import type { ChatStatus, ChatUsage, SourceReference, StructuredSource } from '../../types/chat.ts'
 
 export interface ChatMessage {
   /** Frontend-only key used to render React list items. */
   readonly id: string
   readonly role: 'user' | 'assistant'
-  /** Plain text. For assistant messages this is the backend `answer`. */
+  /** User text or assistant Markdown, retained from the backend `answer`. */
   readonly content: string
   /** Backend response status; only present on assistant messages. */
   readonly status?: ChatStatus
@@ -37,4 +32,5 @@ export interface ChatMessage {
   readonly usage?: ChatUsage | null
   /** Backend model identifier when the provider reported it. */
   readonly modelUsed?: string | null
+  readonly serverMessageId?: string
 }

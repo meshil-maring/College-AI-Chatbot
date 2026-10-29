@@ -133,5 +133,5 @@ def test_conversation_summary_schema_has_no_user_id():
     assert response.status_code == 200
     body = response.json()
     assert len(body) == 1
-    allowed_keys = {"conversation_id", "title", "status", "created_at", "updated_at"}
+    allowed_keys = {"conversation_id", "title", "status", "created_at", "updated_at", "resource_context", "pending_turn_id"}
     assert set(body[0].keys()) == allowed_keys

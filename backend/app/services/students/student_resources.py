@@ -83,7 +83,7 @@ def get_own_resources(
         )
 
     rows = dashboard_repo.list_published_resources(
-        db, institution_id, limit=bounded_limit
+        db, institution_id, limit=bounded_limit, actor_user_id=current_user['user_id']
     )
     items = [_to_resource(row) for row in (rows or [])]
     return StudentResourceList(items=items, total=len(items))

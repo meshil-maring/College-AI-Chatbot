@@ -1,243 +1,227 @@
-/**
- * Phase 5.5 — Dedicated chat state boundary.
- *
- * Owns all temporary in-browser conversation state for the chat feature:
- *   - messages          (presentation-oriented ChatMessage list)
- *   - isLoading         (one in-flight request at a time)
- *   - error             (user-safe error message, never secrets/stack traces)
- *   - sessionId         (opaque backend-created identifier)
- *   - conversationId    (opaque backend-created identifier)
- *   - sendMessage()     (single authenticated POST through the Phase 5.3 client)
- *   - resetChat()       (clears local chat state only — nothing server-side)
- *
- * Architecture (all intelligence stays in the backend):
- *   AuthProvider (Phase 5.4)  ->  useChat  ->  api.ts (Phase 5.3)
- *       ->  POST /api/v1/generation/chat  ->  FastAPI
- *
- * Rules enforced here:
- *   - The user query is trimmed; blank input never produces a request.
- *   - No request is sent while one is pending (no duplicate sends).
- *   - The access token comes ONLY from the Phase 5.4 auth boundary.
- *   - session_id / conversation_id are never invented: the first request
- *     omits them; later requests reuse exactly the values the backend returned.
- *   - The institution_id is the established demo institution constant.
- *   - No frontend-network path other than services/chat/api.ts is used.
- */
+/** Shared chat state with identity guards and durable turn recovery. */
 
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
-import { queryClient } from '../lib/queryClient.ts'
-import { ApiError, chat } from '../services/chat/api.ts'
-import { DEMO_INSTITUTION_ID } from '../features/chat/institution.ts'
 import { useAuth } from '../features/auth/session/AuthProvider.tsx'
-import type {
-  ChatRequest,
-  ChatResponse,
-} from '../types/chat.ts'
-import type { ChatMessage } from '../features/chat/chatTypes.ts'
+import { ApiError, chat } from '../services/chat/api.ts'
+import { errorCode } from '../services/chat/recovery.ts'
+import { queryClient } from '../lib/queryClient.ts'
+import type { ChatRequest, ChatResponse, ResourceChatContext } from '../types/chat.ts'
 import type { MessageSummary } from '../types/conversation.ts'
-
-/** Defensive fallback when the backend reports success but no answer text. */
-const EMPTY_ANSWER_FALLBACK: string =
-  '(The server returned a successful response without answer text.)'
-
-/** User-safe errors. Never include tokens, stack traces, or backend internals. */
-const SESSION_EXPIRED_MESSAGE: string =
-  'Your session has expired or is no longer valid. Please sign out and sign in again.'
-const PERMISSION_MESSAGE: string =
-  'You do not have permission to continue this conversation. Please start a new chat.'
-const VALIDATION_MESSAGE: string =
-  'The server could not validate the request. Please check your question and try again.'
-const SERVER_MESSAGE: string =
-  'The chatbot server reported an error. Please try again in a moment.'
-const NETWORK_MESSAGE: string =
-  'Could not reach the chatbot server. Check that the backend is running, then try again.'
-const GENERIC_MESSAGE: string =
-  'Something went wrong while sending your message. Please try again.'
-
-/**
- * Frontend-only monotonic id source for React list keys.
- * Intentionally NOT crypto.randomUUID: session/conversation identifiers are
- * exclusively owned and created by the backend; this id is only a UI key.
- */
-let nextMessageId = 1
-
-function nextUiMessageId(): string {
-  const id = `chat-msg-${nextMessageId}`
-  nextMessageId += 1
-  return id
-}
-
-/** Build the presentation message for one backend ChatResponse. */
-function assistantMessageFrom(response: ChatResponse): ChatMessage {
-  const content =
-    response.status === 'success'
-      ? (response.answer ?? EMPTY_ANSWER_FALLBACK)
-      : ''
-  return {
-    id: nextUiMessageId(),
-    role: 'assistant',
-    content,
-    status: response.status,
-    sources: response.sources,
-    sourceReferences: response.source_references,
-    usage: response.usage,
-    modelUsed: response.model_used,
-  }
-}
-
-/** Map any failure to a user-safe message (never expose internals). */
-function chatErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.status) {
-      case 401:
-        return SESSION_EXPIRED_MESSAGE
-      case 403:
-        return PERMISSION_MESSAGE
-      case 422:
-        return VALIDATION_MESSAGE
-      default:
-        return error.status >= 500 ? SERVER_MESSAGE : GENERIC_MESSAGE
-    }
-  }
-  // A non-ApiError means fetch never produced an HTTP response
-  // (connection refused, DNS failure, aborted request, ...).
-  return NETWORK_MESSAGE
-}
+import type { ChatMessage } from '../features/chat/chatTypes.ts'
+import {
+  assistantMessage,
+  chatErrorMessage,
+  restoredMessages,
+  userMessage,
+} from '../features/chat/state/chatMessages.ts'
+import { useTurnRecovery, type RecoveryState } from '../features/chat/recovery/useTurnRecovery.ts'
 
 export interface ChatState {
-  /** Chronological in-browser conversation (user / assistant / ...). */
   readonly messages: ChatMessage[]
-  /** True while one chat request is pending. */
   readonly isLoading: boolean
-  /** User-safe error from the last failed send, or null. */
   readonly error: string | null
-  /** Opaque session id returned by the backend, or null before the first turn. */
   readonly sessionId: string | null
-  /** Opaque conversation id returned by the backend, or null before the first turn. */
   readonly conversationId: string | null
-  /** Send one trimmed question through the Phase 5.3 API client. */
+  readonly resourceContext: ResourceChatContext | null
+  readonly blocked: boolean
+  readonly recovery: RecoveryState | null
+  readonly checkReply: () => Promise<void>
+  readonly retryReply: () => Promise<void>
   readonly sendMessage: (raw: string) => Promise<void>
-  /** Clear local chat state (messages, ids, error). No backend/database effect. */
   readonly resetChat: () => void
-  /**
-   * Load a persisted conversation's messages into the chat state.
-   *
-   * Sets the conversation ID so the next message continues in the same
-   * backend conversation. Does NOT set the session ID: the persisted history
-   * API does not return it, and the backend will generate a new one on the
-   * next chat request (the backend uses conversation_id for lookup).
-   *
-   * Maps persisted messages into the existing ChatMessage representation
-   * so they render through the existing Phase 5.5 message components.
-   */
-  readonly loadConversation: (conversationId: string, messages: MessageSummary[]) => void
+  readonly loadConversation: (
+    id: string,
+    messages: MessageSummary[],
+    resource?: ResourceChatContext | null,
+    pendingTurn?: string | null,
+  ) => void
 }
 
-export function useChat(): ChatState {
-  // Phase 5.4 AuthProvider is the authoritative frontend auth boundary.
-  const { accessToken } = useAuth()
-
+export function useChat(initialResource: ResourceChatContext | null = null): ChatState {
+  const { accessToken, user, sessionGeneration } = useAuth()
+  const identity = JSON.stringify([
+    sessionGeneration,
+    user?.user_id,
+    user?.institution_id,
+    user?.role,
+    [...(user?.effective_permissions ?? [])].sort(),
+    initialResource?.knowledge_source_id,
+  ])
+  const current = useRef(identity)
+  current.current = identity
+  const mounted = useRef(true)
+  const epoch = useRef(0)
+  const pending = useRef(false)
+  const [owner, setOwner] = useState(identity)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [error, setError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
-
-  const sendMutation = useMutation<
-    ChatResponse,
-    unknown,
-    { request: ChatRequest; accessToken: string }
-  >(
+  const [resourceContext, setResourceContext] = useState(initialResource)
+  const [blocked, setBlocked] = useState(false)
+  const mutation = useMutation<ChatResponse, unknown, { request: ChatRequest; token: string }>(
     {
-      mutationKey: ['chat', accessToken],
-      mutationFn: ({ request, accessToken: token }) => chat(request, token),
+      mutationKey: ['chat', identity],
+      mutationFn: ({ request, token }) => chat(request, token),
+      retry: false,
     },
     queryClient,
   )
-  const isLoading = sendMutation.isPending
 
-  const sendMessage = useCallback(
-    async (raw: string): Promise<void> => {
-      // Normalize + reject blank input before anything touches the network.
-      const userQuery = raw.trim()
-      if (userQuery.length === 0 || isLoading) {
-        return
-      }
-      if (accessToken === null) {
-        setError('You are not signed in. Please sign in to continue.')
-        return
-      }
-
-      setError(null)
-      setMessages((previous) => [
-        ...previous,
-        { id: nextUiMessageId(), role: 'user', content: userQuery },
-      ])
-      // First request: omit session/conversation ids (the backend creates them).
-      // Later requests: forward exactly what the backend returned.
-      const request: ChatRequest = {
-        user_query: userQuery,
-        institution_id: DEMO_INSTITUTION_ID,
-        session_id: sessionId,
-        conversation_id: conversationId,
-      }
-
-      try {
-        const response = await sendMutation.mutateAsync({ request, accessToken })
-        // The backend owns id creation; store and replay its values verbatim.
-        setSessionId(response.session_id)
-        setConversationId(response.conversation_id)
-        setMessages((previous) => [
-          ...previous,
-          assistantMessageFrom(response),
-        ])
-      } catch (caught) {
-        setError(chatErrorMessage(caught))
-      } finally {
-        sendMutation.reset()
-      }
-    },
-    [accessToken, conversationId, isLoading, sendMutation, sessionId],
-  )
-
-  const resetChat = useCallback((): void => {
-    // Local-only reset: the backend session/conversation rows are untouched and
-    // no endpoint is called. The next message starts a fresh backend context by
-    // omitting both identifiers.
+  function accept(response: ChatResponse, request: ChatRequest, recovered = false) {
+    if (request.resource_id && response.resource_context?.knowledge_source_id !== request.resource_id) {
+      throw new ApiError(409, 'Resource scope was not confirmed')
+    }
+    setSessionId(response.session_id)
+    setConversationId(response.conversation_id)
+    setResourceContext(response.resource_context ?? null)
+    setMessages((previous) =>
+      recovered && response.message_id && previous.some((message) => message.serverMessageId === response.message_id)
+        ? previous
+        : [...previous, assistantMessage(response)],
+    )
+    setBlocked(false)
+    setError(null)
+  }
+  function deny(failure: unknown) {
+    setError(chatErrorMessage(failure))
+    setBlocked(true)
+    setMessages([])
+    setResourceContext((previous) => (previous ? { ...previous, title: null, available: false } : null))
+  }
+  const recovery = useTurnRecovery(identity, accessToken, (response, request) => accept(response, request, true), deny)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+      epoch.current += 1
+    }
+  }, [])
+  const resetChat = useCallback(() => {
+    epoch.current += 1
+    pending.current = false
+    setOwner(identity)
     setMessages([])
     setSessionId(null)
     setConversationId(null)
+    setResourceContext((previous) =>
+      previous?.available === false && previous.knowledge_source_id === initialResource?.knowledge_source_id
+        ? previous
+        : initialResource,
+    )
     setError(null)
-    sendMutation.reset()
-  }, [])
+    setBlocked(false)
+    recovery.clear()
+    mutation.reset()
+  }, [identity, initialResource, mutation.reset])
+  useEffect(() => {
+    if (owner !== identity) resetChat()
+  }, [owner, identity, resetChat])
 
-  const loadConversation = useCallback(
-    (conversationId: string, messages: MessageSummary[]): void => {
-      // Map persisted messages into the existing ChatMessage representation.
-      // Only user and assistant messages are expected from the backend.
-      const mapped: ChatMessage[] = messages.map((msg) => ({
-        id: nextUiMessageId(),
-        role: msg.message_type === 'assistant' ? 'assistant' : 'user',
-        content: msg.content_text,
-      }))
-      setMessages(mapped)
-      // Set conversation ID so the next message continues in this conversation.
-      // Session ID is intentionally NOT set: the history API doesn't return it,
-      // and the backend uses conversation_id for lookup (chat.py line 224).
-      setConversationId(conversationId)
-      setSessionId(null)
+  const perform = useCallback(
+    async (request: ChatRequest, addQuestion: boolean) => {
+      if (pending.current || blocked || resourceContext?.available === false) return
+      if (!accessToken || !user?.institution_id) {
+        setError('Sign in to an institution to continue chatting.')
+        return
+      }
+      pending.current = true
+      const operation = ++epoch.current
+      const valid = () => mounted.current && current.current === identity && epoch.current === operation
       setError(null)
-      sendMutation.reset()
+      recovery.clear()
+      setSessionId(request.session_id ?? null)
+      if (addQuestion) setMessages((previous) => [...previous, userMessage(request.user_query)])
+      try {
+        const response = await mutation.mutateAsync({ request, token: accessToken })
+        if (!valid()) return
+        accept(response, request)
+      } catch (failure) {
+        if (!valid()) return
+        const code = errorCode(failure)
+        if (
+          !(failure instanceof ApiError) ||
+          failure.status === 0 ||
+          failure.status >= 500 ||
+          code === 'CHAT_TURN_PENDING' ||
+          code === 'CHAT_TURN_REPLACED'
+        ) {
+          recovery.remember(request)
+        } else if (code === 'CHAT_TURN_BUSY') {
+          setBlocked(true)
+          setError('A previous reply is unfinished. Open this conversation from history to recover it.')
+          if (addQuestion) setMessages((previous) => previous.slice(0, -1))
+        } else if (resourceContext || [403, 404, 409].includes(failure.status)) {
+          deny(failure)
+        } else {
+          setError(chatErrorMessage(failure))
+        }
+      } finally {
+        if (valid()) {
+          pending.current = false
+          mutation.reset()
+        }
+      }
     },
-    [sendMutation],
+    [accessToken, user?.institution_id, identity, resourceContext, blocked, mutation, recovery],
   )
 
+  const sendMessage = useCallback(
+    async (raw: string) => {
+      const query = raw.trim()
+      if (!query || recovery.state || pending.current || blocked) return
+      const request: ChatRequest = {
+        user_query: query,
+        institution_id: user?.institution_id ?? '',
+        session_id: sessionId ?? conversationId ?? crypto.randomUUID(),
+        conversation_id: conversationId,
+        turn_id: crypto.randomUUID(),
+        ...(resourceContext ? { resource_id: resourceContext.knowledge_source_id } : {}),
+      }
+      await perform(request, true)
+    },
+    [perform, recovery.state, blocked, user?.institution_id, sessionId, conversationId, resourceContext],
+  )
+
+  const retryReply = async () => {
+    if (recovery.state?.retryable && recovery.state.request) await perform(recovery.state.request, false)
+  }
+  const loadConversation = useCallback(
+    (
+      id: string,
+      saved: MessageSummary[],
+      resource: ResourceChatContext | null = null,
+      pendingTurn: string | null = null,
+    ) => {
+      epoch.current += 1
+      pending.current = false
+      recovery.clear()
+      setOwner(identity)
+      setMessages(restoredMessages(saved))
+      setConversationId(id)
+      setSessionId(null)
+      setResourceContext(resource)
+      setBlocked(resource?.available === false)
+      setError(null)
+      mutation.reset()
+      if (pendingTurn && resource?.available !== false) recovery.restore(pendingTurn)
+    },
+    [identity, mutation.reset, recovery.restore],
+  )
+
+  const visible = owner === identity
   return {
-    messages,
-    isLoading,
-    error,
-    sessionId,
-    conversationId,
+    messages: visible ? messages : [],
+    isLoading: visible && mutation.isPending,
+    error: visible ? error : null,
+    sessionId: visible ? sessionId : null,
+    conversationId: visible ? conversationId : null,
+    resourceContext: visible ? resourceContext : initialResource,
+    blocked: visible && blocked,
+    recovery: visible ? recovery.state : null,
+    checkReply: recovery.check,
+    retryReply,
     sendMessage,
     resetChat,
     loadConversation,

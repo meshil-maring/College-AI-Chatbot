@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { EmptyState, Message } from './PublicChatMessages.tsx'
 import { usePublicChat } from './usePublicChat.ts'
+import PublicRequestFeedback from './recovery/PublicRequestFeedback.tsx'
 export default function PublicChatPage({ institutionCode }: { institutionCode: string }) {
-  const { messages, isLoading, error, failedMessageId, sendMessage, retry, startNewConversation, clear } =
-    usePublicChat(institutionCode)
+  const {
+    messages,
+    isLoading,
+    error,
+    failedMessageId,
+    sendMessage,
+    retry,
+    stopWaiting,
+    retryAfterSeconds,
+    startNewConversation,
+    clear,
+  } = usePublicChat(institutionCode)
   const [draft, setDraft] = useState('')
   const [confirmingClear, setConfirmingClear] = useState(false)
   const bottomRef = useRef<HTMLDivElement | null>(null)
@@ -126,29 +137,14 @@ export default function PublicChatPage({ institutionCode }: { institutionCode: s
               ))}
             </ol>
           )}
-          {isLoading ? (
-            <div
-              className="mt-5 mr-auto flex w-fit items-center gap-2 rounded-xl rounded-tl-md border border-line bg-surface px-4 py-3 text-sm text-muted"
-              role="status"
-            >
-              <span className="h-2 w-2 animate-pulse rounded-full bg-raised" aria-hidden="true" />
-              Thinking…
-            </div>
-          ) : null}
-          {error ? (
-            <div className="mt-5 rounded-xl border border-danger bg-danger-bg p-3 text-sm text-danger" role="alert">
-              <p>{error}</p>
-              {failedMessageId ? (
-                <button
-                  type="button"
-                  onClick={() => void retry()}
-                  className="mt-2 rounded-lg border border-danger px-3 py-2 text-xs font-semibold hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-accent"
-                >
-                  Retry
-                </button>
-              ) : null}
-            </div>
-          ) : null}
+          <PublicRequestFeedback
+            loading={isLoading}
+            error={error}
+            canRetry={failedMessageId !== null}
+            retryAfterSeconds={retryAfterSeconds}
+            onRetry={() => void retry()}
+            onStop={stopWaiting}
+          />
           <div ref={bottomRef} aria-hidden="true" />
         </section>
 

@@ -9,7 +9,7 @@ import StudentManager from './students/StudentManager.tsx'
 import StaffFacultyManager from './staff-faculty/StaffFacultyManager.tsx'
 import StaffPermissionManager from './permissions/StaffPermissionManager.tsx'
 import NoticeManager from './notices/NoticeManager.tsx'
-import DocumentManager from './documents/DocumentManager.tsx'
+import LearningResourcesPage from '../learning-resources/LearningResourcesPage.tsx'
 import FaqManager from './faqs/FaqManager.tsx'
 import ChatShell from '../chat/ChatShell.tsx'
 import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adminNavigation.ts'
@@ -65,7 +65,7 @@ export default function AdminShell() {
     >
       {view ? (
         <>
-          {view !== 'assistant' && view !== 'academic-setup' && (
+          {view !== 'assistant' && view !== 'academic-setup' && view !== 'documents' && (
             <WorkspacePageHeader title={ADMIN_VIEW_HEADINGS[view]} description={descriptions[view]} />
           )}
           {view === 'profile' && <AdminProfile user={user} />}
@@ -80,7 +80,7 @@ export default function AdminShell() {
           {view === 'staff-faculty' && accessToken && <StaffFacultyManager accessToken={accessToken} />}
           {view === 'approvals' && <StudentManager />}
           {view === 'notices' && <NoticeManager />}
-          {view === 'documents' && <DocumentManager />}
+          {view === 'documents' && <LearningResourcesPage />}
           {view === 'faqs' && <FaqManager />}
           {view === 'permissions' && accessToken && <StaffPermissionManager accessToken={accessToken} />}
           {view === 'assistant' && (

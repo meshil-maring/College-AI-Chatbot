@@ -3,7 +3,7 @@
  *
  * Renders one ChatMessage. User messages are right-aligned; assistant
  * messages are left-aligned and may carry:
- *   - the answer text (plain text; no markdown renderer installed), or
+ *   - the formatted answer through the shared Markdown component, or
  *   - the dedicated insufficient-context notice when status demands it, and
  *   - backend-provided sources, usage, and model metadata.
  *
@@ -15,13 +15,14 @@ import type { ChatMessage } from './chatTypes.ts'
 import InsufficientContextNotice from './InsufficientContextNotice.tsx'
 import SourceCard from './SourceCard.tsx'
 import UsageBadge from './UsageBadge.tsx'
+import AnswerContent from './content/AnswerContent.tsx'
 
 export default function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
 
   const bubbleClass = isUser
-    ? 'ml-auto rounded-xl rounded-tr-sm border border-line bg-raised px-4 py-4 text-reading text-content max-w-[85%]'
-    : 'mr-auto rounded-xl rounded-tl-sm border border-line bg-surface px-4 py-4 text-reading text-content max-w-[85%]'
+    ? 'ml-auto min-w-0 rounded-xl rounded-tr-sm border border-line bg-raised px-4 py-4 text-reading text-content max-w-[85%]'
+    : 'mr-auto min-w-0 rounded-xl rounded-tl-sm border border-line bg-surface px-4 py-4 text-reading text-content max-w-[85%]'
 
   const label = isUser ? 'You' : 'College AI'
 
@@ -30,11 +31,11 @@ export default function MessageBubble({ message }: { message: ChatMessage }) {
       <span className="text-xs text-muted">{label}</span>
       <div className={bubbleClass}>
         {isUser ? (
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
         ) : message.status === 'insufficient_context' ? (
           <InsufficientContextNotice />
         ) : (
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          <AnswerContent content={message.content} />
         )}
 
         {!isUser && message.sources && message.sources.length > 0 ? (

@@ -27,6 +27,15 @@ export interface ChatRequest {
   session_id?: string | null
   conversation_id?: string | null
   institution_id: string
+  resource_id?: string | null
+  turn_id?: string | null
+}
+
+/** Server-authorized context; unavailable contexts retain no resource title. */
+export interface ResourceChatContext {
+  knowledge_source_id: string
+  title: string | null
+  available: boolean
 }
 
 /**
@@ -84,4 +93,5 @@ export interface ChatResponse {
   message_id: string | null
   sources: StructuredSource[]
   usage: ChatUsage | null
+  resource_context?: ResourceChatContext | null
 }

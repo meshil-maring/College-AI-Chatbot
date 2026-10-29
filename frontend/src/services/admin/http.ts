@@ -60,6 +60,7 @@ export async function requestJson<T>(
   endpoint: string,
   accessToken: string,
   body?: unknown,
+  signal?: AbortSignal,
 ): Promise<T> {
   let response: Response
   try {
@@ -71,8 +72,10 @@ export async function requestJson<T>(
       method,
       headers,
       body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+      ...(signal ? { signal } : {}),
     })
-  } catch {
+  } catch (error) {
+    if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
     throw new AdminApiError(
       0,
       'Could not reach the backend. Please make sure the server is running.',

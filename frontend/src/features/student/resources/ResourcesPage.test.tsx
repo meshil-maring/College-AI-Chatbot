@@ -4,15 +4,27 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { getMyNotices, getMyResources, StudentApiError } from '../../../services/students/studentApi.ts'
 import type { StudentResourceList } from '../../../types/student.ts'
+import * as knowledge from '../../../services/knowledge/resources.ts'
+
+const studentGrants = vi.hoisted(() => ({ permissions: [] as string[] }))
 
 vi.mock('../../auth/session/AuthProvider.tsx', () => ({
   useAuth: () => ({
-    user: { email: 'student@college.edu' },
+    user: { email: 'student@college.edu', effective_permissions: studentGrants.permissions },
     role: 'student',
     accessToken: 'test-token',
     logout: vi.fn(),
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+vi.mock('../../../services/knowledge/resources.ts', async (original) => ({
+  ...(await original<typeof import('../../../services/knowledge/resources.ts')>()),
+  getResourceChatContext: vi.fn(),
+}))
+vi.mock('../../chat/ChatShell.tsx', () => ({
+  default: ({ initialResource }: { initialResource?: { title: string } }) => (
+    <p>Resource chat: {initialResource?.title}</p>
+  ),
 }))
 vi.mock('../../../services/students/studentApi.ts', () => ({
   StudentApiError: class extends Error {
@@ -59,9 +71,28 @@ const RESOURCES_FIXTURE: StudentResourceList = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  studentGrants.permissions = []
 })
 
 describe('phase 6.16.3 learning resources page', () => {
+  it('opens the shared resource chat only after separate eligibility confirmation', async () => {
+    studentGrants.permissions = ['ai.chat']
+    vi.mocked(getMyResources).mockResolvedValue(RESOURCES_FIXTURE)
+    vi.mocked(knowledge.getResourceChatContext).mockResolvedValue({
+      knowledge_source_id: 'id-hand',
+      title: 'Course handbook',
+      available: true,
+    })
+    const user = userEvent.setup()
+    render(<ResourcesPage />)
+    const actions = await screen.findAllByRole('button', { name: 'Ask AI' })
+    await user.click(actions[0])
+    expect(await screen.findByText('Resource chat: Course handbook')).toBeInTheDocument()
+    expect(knowledge.getResourceChatContext).toHaveBeenCalledWith('test-token', 'id-hand', expect.any(AbortSignal))
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to Learning Resources' }))
+    expect(await screen.findByText('Course handbook')).toBeInTheDocument()
+  })
   it('renders an unknown source type gracefully instead of crashing', async () => {
     vi.mocked(getMyResources).mockResolvedValue({
       items: [

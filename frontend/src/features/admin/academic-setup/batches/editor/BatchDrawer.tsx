@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { Pencil, Save, TriangleAlert, X } from 'lucide-react'
-import { useAcademicDialog } from '../../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../../workspace/useWorkspaceDialog.ts'
 import type { BatchEditor } from './useBatchEditor.ts'
 import BatchForm from './BatchForm.tsx'
 import BatchDetails from './BatchDetails.tsx'
 
 export default function BatchDrawer({ editor }: { editor: BatchEditor }) {
-  const ref = useAcademicDialog('.batches-page h1')
+  const ref = useWorkspaceDialog('.batches-page h1')
   const { panel, confirmation } = editor
   const viewing = panel?.mode === 'view'
   const title =

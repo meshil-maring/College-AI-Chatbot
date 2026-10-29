@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
+from tests.ai.policy_fixtures import isolated_policy
 
 from app.schemas.ai.chat import ChatRequest
 from app.schemas.ai.session import SessionContext

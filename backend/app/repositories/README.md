@@ -10,10 +10,10 @@ remain in their owning modules.
 | --- | --- |
 | `academics/` | `academic_setup.py`: existing tenant-scoped joins/writer; `academic_structure.py`: tenant-filtered workspace records, audit activity and the additive writer |
 | `admin/` | `admin_academics.py` (student account identity and approvals), `admin_audit.py`, `admin_knowledge.py`, `admin_memberships.py` |
-| `ai/` | `ai_response.py`, `conversation.py`, `message.py`, `message_citation.py` |
+| `ai/` | `ai_response.py`, `conversation.py`, `message.py`, `message_citation.py`, `chat_turns.py` (service-only durable turn RPCs) |
 | `email/` | `email_outbox.py` |
 | `invitations/` | `platform_admin_invitations.py` |
-| `knowledge/` | `embeddings.py`, `ingestion.py`, `public_knowledge.py`, `retrieval_operation.py`, `vector_search.py` |
+| `knowledge/` | `embeddings.py`, `ingestion.py`, `public_knowledge.py`, `retrieval_operation.py`, `vector_search.py`; `resources.py` calls scoped revision/library and audience-search RPCs |
 | `platform/` | `platform_institutions.py`, `tenancy.py` |
 | `students/` | `student_content.py` (tenant-scoped notices and resources), `student_notifications.py` |
 | `shared/` | `query_pages.py` (shared row reads and pagination) |
@@ -33,6 +33,13 @@ policy in the existing service/core layers.
 Callers pass database clients to repository operations. Preserve tenant scope,
 query projections and pagination behavior when extending these operations.
 Tests and mock targets use the same canonical module paths as application code.
+Conversation reads include the stored resource/source institution; inserts only
+write those columns when creating a resource-scoped conversation. Database
+triggers forbid subsequent scope or owner reassignment.
+
+`ai/message_citation.py` reads history cards through the owner-scoped
+`read_conversation_citations` RPC. It never reconstructs cards from browser input
+or from retrieved context without persisted citations.
 
 The retained `admin_academics.py` import path supports login, account
 registration and approvals. Its projections contain identity fields only;

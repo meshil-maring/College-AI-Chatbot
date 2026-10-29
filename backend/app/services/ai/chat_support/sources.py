@@ -97,7 +97,8 @@ def _build_structured_sources(
                 chunk_id=reference.chunk_id,
                 quote=reference.quote,
                 relevance_score=reference.similarity_score,
-                section=(chunk.metadata.get("section") if chunk is not None else None),
+                section=((chunk.metadata.get("section") or chunk.metadata.get("section_title"))
+                    if chunk is not None else None),
             )
         )
     return structured

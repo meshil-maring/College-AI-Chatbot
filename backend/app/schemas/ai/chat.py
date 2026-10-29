@@ -3,11 +3,12 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.schemas.ai.chat_response import ChatUsage, StructuredSource
 from app.schemas.ai.generation import AIResponse, RetrievedChunk
 from app.config import settings
+from app.schemas.ai.resource_context import ResourceChatContext
 
 
 class ChatRequest(BaseModel):
@@ -17,6 +18,8 @@ class ChatRequest(BaseModel):
     session_id: UUID | None = None
     conversation_id: UUID | None = None
     institution_id: UUID
+    resource_id: UUID | None = None
+    turn_id: UUID | None = None
     knowledge_source_id: UUID | None = None
     document_id: UUID | None = None
     document_version_id: UUID | None = None
@@ -28,9 +31,8 @@ class ChatRequest(BaseModel):
 class AuthenticatedChatRequest(BaseModel):
     """Narrow HTTP contract for authenticated chat.
 
-    Retrieval candidates, filters, provider/model choice, and output budgets
-    are deliberately absent. They are internal controls and are reconstructed
-    by the server after authentication and tenant resolution.
+    A resource ID selects a server-authorized immutable conversation context.
+    Retrieval candidates, internal filters and provider controls remain absent.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -39,6 +41,14 @@ class AuthenticatedChatRequest(BaseModel):
     session_id: UUID | None = None
     conversation_id: UUID | None = None
     institution_id: UUID
+    resource_id: UUID | None = None
+    turn_id: UUID | None = None
+
+    @model_validator(mode='after')
+    def require_stable_turn_conversation(self):
+        if self.turn_id is not None and self.session_id is None and self.conversation_id is None:
+            raise ValueError('A recoverable turn requires a stable session or conversation identifier.')
+        return self
 
     @field_validator("user_query")
     @classmethod
@@ -57,6 +67,7 @@ class ChatResponse(AIResponse):
     message_id: UUID | None
     sources: list[StructuredSource] = Field(default_factory=list)
     usage: ChatUsage | None = None
+    resource_context: ResourceChatContext | None = None
 
 
 class PublicChatRequest(BaseModel):

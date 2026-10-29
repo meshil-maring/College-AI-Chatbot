@@ -16,7 +16,9 @@ from app.api.ai.public_contract import PUBLIC_CHAT_RESPONSES
 from app.schemas.ai.chat import AuthenticatedChatRequest, ChatRequest, ChatResponse, PublicChatRequest, PublicChatResponse
 from app.schemas.ai.session import SessionContextRequest
 from app.services.ai.chat import process_chat_request
-from app.services.ai.public_chat import process_public_request
+from app.services.ai.turns.workflow import run as run_chat_turn
+from app.api.ai.chat_turns import router as chat_turn_router
+from app.services.knowledge.resources.public_chat import process_public_request
 from app.services.ai.generation_provider import OpenRouterGenerationProvider
 from app.services.auth.session import resolve_session_context
 from app.services.auth.public_abuse_controls import acquire_concurrency, enforce_rate_limit
@@ -24,6 +26,7 @@ from app.services.auth.public_abuse_controls import acquire_concurrency, enforce
 logger = logging.getLogger(__name__)
 app = create_application(settings)
 register_feature_routes(app)
+app.include_router(chat_turn_router, prefix='/api/v1')
 register_operational_routes(app, settings, lambda: get_admin_client())
 
 generation_router = APIRouter(prefix="/generation", tags=["generation"])
@@ -59,16 +62,19 @@ def chat(
         session_id=request.session_id,
         conversation_id=request.conversation_id,
         institution_id=tenant_id,
+        resource_id=request.resource_id,
+        turn_id=request.turn_id,
     )
     session_context = resolve_session_context(
         SessionContextRequest(session_id=request.session_id)
     )
-    response = process_chat_request(
+    response = run_chat_turn(
         internal_request,
         session_context,
         OpenRouterGenerationProvider(),
         user_id=current_user["user_id"],
         current_user=current_user,
+        process=process_chat_request,
     )
     # Provider/model identifiers and internal diagnostics are not a normal
     # chat capability; this route has no separately authorized debug projection.

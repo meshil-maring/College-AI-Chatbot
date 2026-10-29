@@ -1,0 +1,12 @@
+{
+  "version": "20261029010000",
+  "name": "chat_turn_recovery",
+  "files": [
+    "tables.sql",
+    "access.sql",
+    "read.sql",
+    "claim.sql",
+    "complete.sql",
+    "security.sql"
+  ]
+}

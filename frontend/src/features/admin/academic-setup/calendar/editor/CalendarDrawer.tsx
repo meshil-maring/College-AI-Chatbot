@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { Save, X } from 'lucide-react'
-import { useAcademicDialog } from '../../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../../workspace/useWorkspaceDialog.ts'
 import type { CalendarState } from '../useCalendar.ts'
 import type { CalendarEditor } from '../useCalendarEditor.ts'
 import CalendarForm from './CalendarForm.tsx'
 
 export default function CalendarDrawer({ editor, state }: { editor: CalendarEditor; state: CalendarState }) {
-  const ref = useAcademicDialog('.calendar-page h1')
+  const ref = useWorkspaceDialog('.calendar-page h1')
   const safeAction = useRef<HTMLButtonElement>(null)
   const confirming = editor.confirmation !== null
   const view = editor.panel?.mode === 'view'

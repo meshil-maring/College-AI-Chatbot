@@ -1,6 +1,11 @@
+import logging
+
 from app.core.errors import AppError
 from app.schemas.ai.generation import AIContext, AIResponse
 from app.services.ai.generation_provider import GenerationProvider, GenerationResult
+from app.services.ai.generation_qualification import qualified_answer
+
+logger = logging.getLogger(__name__)
 
 
 class AIGenerationService:
@@ -24,6 +29,7 @@ class AIGenerationService:
         try:
             result = self._provider.generate(context)
         except AppError as exc:
+            logger.warning("event=generation_dependency_failed code=%s public=%s", exc.code, context.public)
             if context.public:
                 if exc.code == "AI_PROVIDER_TIMEOUT":
                     raise AppError(
@@ -82,9 +88,19 @@ class AIGenerationService:
             )
 
         try:
+            answer, references = qualified_answer(result.answer, result.source_references, context)
+            if context.public and answer and references:
+                # The existing public projector extracts these internal markers,
+                # then removes them before returning any text to the visitor.
+                # Build them from validated selections, never model-written IDs.
+                markers = " ".join(
+                    f"[Retrieved chunk {reference.chunk_id}]"
+                    for reference in references
+                )
+                answer = f"{answer}\n\n{markers}"
             return AIResponse(
-                answer=result.answer,
-                source_references=result.source_references,
+                answer=answer,
+                source_references=references,
                 status=result.status,
                 model_used=result.model_used or context.model_name,
                 metadata=result.metadata,

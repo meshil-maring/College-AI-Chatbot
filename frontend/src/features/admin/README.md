@@ -1,7 +1,7 @@
 # Administration workspace
 
 `AdminShell.tsx` composes account profile, staff/faculty account management,
-student account approvals, notices, documents, FAQs, chat and staff permissions.
+student account approvals, notices, shared Learning Resources, FAQs, chat and staff permissions.
 `adminNavigation.ts` filters operational views using server-resolved grants.
 Academic Setup also exposes its static design preview to administrators without
 academic grants; catalogue requests and record actions remain gated. Backend
@@ -20,13 +20,12 @@ showing the error; late responses from a replaced session are discarded.
 | `academic-setup/departments/` | Department list, filters, summaries, add/view/edit drawers and related permission/error states    |
 | `academic-setup/programs/`    | Program list, department/degree/status filters, summaries and add/view/edit drawers               |
 | `academic-setup/calendar/`    | Academic years, dated semesters, summary cards, filters, dates/timeline and add/view/edit drawers |
-| `academic-setup/dialogs/`     | Shared academic modal keyboard, scroll and focus lifecycle                                        |
 | `academic-setup/subjects/`    | Subject catalogue, curriculum assignment filters, credits/hours and add/view/edit drawers         |
 | `academic-setup/curriculum/`  | Persisted curriculum versions, publication and history, plus retained existing mappings           |
 | `academic-setup/batches/`     | Stored admission cohorts, published curriculum assignment, filters and add/view/edit drawers      |
 | `academic-setup/sections/`    | Stored cohort-owned sections, program progression, dated terms and add/view/edit drawers          |
 | `academic-setup/structure/`   | Shared structure catalogue, mutation guards, forms and drawers for progression and offerings      |
-| `documents/`                  | Documents and knowledge sources                                                                   |
+| `documents/`                  | Retained former document manager; active navigation mounts shared `learning-resources/`           |
 | `faqs/`, `notices/`           | Published institution information                                                                 |
 | `permissions/`                | Nonacademic staff permission management                                                           |
 | `profile/`                    | Administrator identity                                                                            |
@@ -36,6 +35,9 @@ showing the error; late responses from a replaced session are discarded.
 Academic Setup opens on the black-and-yellow overview described in
 [the design guide](../../../docs/ACADEMIC_SETUP_DESIGN.md). Its eleven approved
 entities use the existing foundation API plus the additive academic-structure API.
+Academic and resource drawers share modal focus/scroll behavior through
+`../workspace/useWorkspaceDialog.ts`. Learning Resources is owned by the
+[shared feature](../learning-resources/README.md), including admin review.
 Counts and recent activity come from readable institution records. Existing
 catalogues remain accessible without remapping their section or curriculum
 relationships. Batches and Sections persist through audited database writes;

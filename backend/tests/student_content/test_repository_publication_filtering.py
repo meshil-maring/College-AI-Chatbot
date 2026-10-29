@@ -4,6 +4,7 @@ from .support import (
     RESOURCE_A,
     RESOURCE_B,
     TENANT_A,
+    STUDENT_USER_ID,
     _FakeClient,
     _clear_dependency_overrides,
     _notice_row,
@@ -112,7 +113,7 @@ class TestRepositoryPublicationFiltering:
                 ]
             }
         )
-        rows = dashboard_repo.list_published_resources(db, TENANT_A)
+        rows = dashboard_repo.list_published_resources(db, TENANT_A, actor_user_id=STUDENT_USER_ID)
         assert [r["knowledge_source_id"] for r in rows] == [RESOURCE_A]
         assert ("knowledge_sources", "eq", "lifecycle_status", "published") in db.calls
 
@@ -127,7 +128,7 @@ class TestRepositoryPublicationFiltering:
                 ]
             }
         )
-        rows = dashboard_repo.list_published_resources(db, TENANT_A)
+        rows = dashboard_repo.list_published_resources(db, TENANT_A, actor_user_id=STUDENT_USER_ID)
         assert [r["knowledge_source_id"] for r in rows] == [RESOURCE_A]
         assert ("knowledge_sources", "neq", "source_type", "notice") in db.calls
         assert ("knowledge_sources", "neq", "source_type", "faq") in db.calls

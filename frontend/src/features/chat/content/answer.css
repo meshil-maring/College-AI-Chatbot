@@ -1,0 +1,121 @@
+.chat-answer {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.chat-answer p {
+  margin: 0 0 0.85rem;
+  white-space: pre-line;
+}
+
+.chat-answer :is(h3, h4, h5, h6) {
+  margin: 1.2rem 0 0.5rem;
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.chat-answer strong {
+  font-weight: 600;
+}
+
+.chat-answer :is(ul, ol) {
+  margin: 0.65rem 0 1rem;
+  padding-inline-start: 1.5rem;
+}
+
+.chat-answer ul {
+  list-style: disc;
+}
+
+.chat-answer ol {
+  list-style: decimal;
+}
+
+.chat-answer li + li {
+  margin-top: 0.5rem;
+}
+
+.chat-answer li > :is(ul, ol) {
+  margin-block: 0.4rem;
+}
+
+.chat-answer li > p {
+  margin-bottom: 0.4rem;
+}
+
+.chat-answer blockquote {
+  margin: 0.85rem 0;
+  border-inline-start: 3px solid var(--ui-border-control);
+  padding-inline-start: 1rem;
+  color: var(--ui-text-muted);
+}
+
+.chat-answer a {
+  color: var(--ui-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.chat-answer code {
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+  padding: 0.1em 0.3em;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.875em;
+}
+
+.chat-answer pre {
+  max-width: 100%;
+  margin: 0.85rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  padding: 0.85rem;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.chat-answer pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.chat-answer-table {
+  max-width: 100%;
+  margin: 0.85rem 0;
+  overflow-x: auto;
+}
+
+.chat-answer table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875em;
+}
+
+.chat-answer :is(th, td) {
+  border: 1px solid var(--ui-border-control);
+  padding: 0.5rem 0.7rem;
+  text-align: start;
+  vertical-align: top;
+}
+
+.chat-answer th {
+  background: var(--ui-surface-raised);
+  font-weight: 600;
+}
+
+.chat-answer hr {
+  margin-block: 1rem;
+  border-color: var(--ui-border);
+}
+
+.chat-answer > :first-child {
+  margin-top: 0;
+}
+
+.chat-answer > :last-child {
+  margin-bottom: 0;
+}

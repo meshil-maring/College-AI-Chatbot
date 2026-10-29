@@ -4,7 +4,7 @@ import type { AcademicCatalogue } from '../../../../types/academicSetup.ts'
 import type { DepartmentEditor } from './useDepartmentEditor.ts'
 import DepartmentForm from './DepartmentForm.tsx'
 import DepartmentDetails from './DepartmentDetails.tsx'
-import { useAcademicDialog } from '../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../workspace/useWorkspaceDialog.ts'
 
 export default function DepartmentDrawer({
   editor,
@@ -13,7 +13,7 @@ export default function DepartmentDrawer({
   editor: DepartmentEditor
   catalogue?: AcademicCatalogue
 }) {
-  const ref = useAcademicDialog('.departments-page h1')
+  const ref = useWorkspaceDialog('.departments-page h1')
   const safeAction = useRef<HTMLButtonElement>(null)
   const confirming = editor.confirmation !== null
   const view = editor.panel === 'view'

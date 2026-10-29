@@ -14,11 +14,19 @@ import {
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import App from './App.tsx'
+import Application from './App.tsx'
+import { QueryProvider } from './providers/QueryProvider.tsx'
 import { ADMIN_NAV_ITEMS } from './features/admin/adminNavigation.ts'
 import { FACULTY_NAV_ITEMS } from './features/faculty/workspace/facultyNavigation.ts'
 import { STAFF_NAV_ITEMS } from './features/staff/staffNavigation.ts'
 import { STUDENT_NAV_ITEMS } from './features/student/workspace/studentNavigation.ts'
+function App() {
+  return (
+    <QueryProvider>
+      <Application />
+    </QueryProvider>
+  )
+}
 describe('role -> shell matrix', () => {
   it('renders AdminShell for the admin role only', () => {
     render(<App />)
@@ -107,12 +115,12 @@ describe('role -> navigation isolation', () => {
     }
   })
 
-  it('keeps the staff approval exception and nothing more for staff', async () => {
+  it('keeps staff approvals without administrator-only management views', async () => {
     setIdentity(STAFF_A, 'staff')
     render(<App />)
     const labels = await navigationLabels('staff')
     expect(labels).toContain('Student Approvals')
-    for (const adminOnly of ['Test Results', 'Documents', 'FAQs']) {
+    for (const adminOnly of ['Academic Setup', 'Staff Permissions', 'FAQs']) {
       expect(labels).not.toContain(adminOnly)
     }
   })
@@ -184,9 +192,9 @@ describe('stale view-state protection', () => {
     const user = userEvent.setup()
     const { rerender } = render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Documents' }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Documents' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Documents' })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: 'Learning Resources' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Learning Resources' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Learning Resources' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByText('Signed in as admin.a@college.edu')).toBeInTheDocument()
 
     // Same role, DIFFERENT account/tenant — the status never leaves
@@ -196,7 +204,7 @@ describe('stale view-state protection', () => {
     rerender(<App />)
 
     expect(screen.getByRole('button', { name: 'Profile' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.queryByRole('heading', { level: 1, name: 'Documents' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Learning Resources' })).not.toBeInTheDocument()
     expect(screen.queryByText('Signed in as admin.a@college.edu')).not.toBeInTheDocument()
     expect(screen.getByText('Signed in as admin.b@college.edu')).toBeInTheDocument()
   })

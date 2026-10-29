@@ -120,9 +120,8 @@ export const FORBIDDEN_LABELS: Readonly<Record<string, readonly string[]>> = {
     // and administrative endpoints retain their separate role boundaries.
   ],
   staff: ['Admin Panel', 'Test Results', 'Documents', 'FAQs', 'User Management'],
-  // The admin shell manages attendance/results/notices, but never renders a
-  // student-only surface such as "Learning Resources".
-  admin: ['Learning Resources'],
+  // Learning Resources is now shared; resource action isolation has feature tests.
+  admin: [],
 }
 
 export function setIdentity(user: CurrentUser | null, role: string | null, status: string = 'authenticated'): void {

@@ -45,3 +45,28 @@ The [real browser journey](validation/academic_workspace/browser/README.md)
 checks password login, academic creation, save recovery and session renewal against
 the configured development database. Its run-owned administrator is disabled
 afterward; the fictional academic records and audit history remain inspectable.
+
+The [knowledge revision validator](validation/knowledge_revisions/README.md)
+replays migrations in isolated PostgreSQL and checks audience/revision integrity,
+conservative backfill, database privileges and concurrent review-token invalidation.
+It also exercises the deployed writer/reader functions with fictional uploads,
+the audience matrix, atomic auditing, indexing retry and chat-policy revocation.
+
+The [Learning Resources browser runner](validation/learning_resource_ui/README.md)
+checks all three role shells on loopback, including audience/upload/review,
+confirmation, focus and mobile reflow. Its default mode intercepts fictional HTTP
+contracts. Its isolated mode connects the actual FastAPI resource endpoints to
+the real migration and workflow functions in owned, temporary PostgreSQL, with
+fictional identity/storage/model boundaries. It also verifies Ask AI, follow-ups
+and restored resource history through actual chat/retrieval/message storage.
+Neither mode contacts a project database.
+
+The [chat answer browser runner](validation/chat_answers/README.md) checks shared
+Markdown rendering of restored and fresh answers, history reload and desktop/
+320px reflow using captured API output and browser-local fictional history.
+
+The [configured-service chat acceptance runner](validation/chat_live/README.md)
+uses actual password authentication, object storage, embeddings and generation.
+It owns its test identities and resource, verifies role audiences and history,
+then disables the identities and unpublishes the fixture. Its browser journeys
+exercise every role and public chat against the same real API.

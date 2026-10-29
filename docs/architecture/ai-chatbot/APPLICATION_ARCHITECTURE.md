@@ -38,28 +38,31 @@ Treat these as independent dimensions:
   UI labels are derived from actual processing and embedding fields; the current
   processing-run `ready` value alone does not establish complete AI readiness.
 - **Publication:** existing source/version lifecycle and effective dates.
-- **Audience:** existing `public`, `authenticated` and `restricted` visibility.
+- **Audience:** `public`, `authenticated` and `restricted` visibility plus
+  explicit selected-role targets in the proposed revision model.
 - **Action capability:** server-authorized read, create, edit, version and
   publication actions within an active institution grant.
 
 The target reader/RAG predicate is: correct institution, authorized audience,
 published and effective source/version, valid processing provenance and completed
-embeddings. Management reads may expose authorized drafts without making them
-retrievable. Metadata-only sources can be listed with AI unavailable.
+embeddings. Versions must belong to the approved published revision's manifest.
+Management reads may expose authorized drafts without making them retrievable.
+Metadata-only sources can be listed with AI unavailable.
 
 Centralize the authenticated eligibility policy under `services/knowledge/` and
 apply its criteria to repository retrieval before ranking/limiting results,
 resource detail, citations and file delivery. Reuse date/provenance helpers
 where appropriate; preserve the stricter anonymous public-knowledge policy.
-Do not describe the existing general authenticated vector search as already
-enforcing this complete predicate.
+Authenticated chat now uses the audience-aware SQL search and rechecks stored
+provenance before delivery/history. Lower-level legacy vector helpers remain
+internal; they do not grant HTTP reader access. See the [implemented API](API.md).
 
-For the first shared reader projection, allow eligible public/authenticated
-sources in the caller's institution with the required read grant. Restricted
-sources remain denied unless an existing explicit access rule can authorize
-them; confirm that rule before supporting restricted reader access. Source
-creation must retain the current restricted default unless an authorized actor
-explicitly chooses another supported audience.
+The [audience upload plan](AUDIENCE_UPLOAD.md) defines Public, signed-in members
+and selected roles, including Students only, Staff only and Faculty only.
+Selected roles match verified active institution grants with OR semantics.
+No role targets means no restricted reader access. New uploads are private drafts;
+uploaders propose an audience and admins approve/publish the exact revision.
+Creation/indexing never publishes or replaces the live audience/version.
 
 An admin's ability to manage a draft does not authorize the ordinary assistant
 to answer from it. A future editor preview would need a separate explicit,
@@ -82,9 +85,12 @@ even when faculty/staff have similarly named permissions.
 | FAQ editorial operations             | Preserve existing knowledge permissions and admin scope until explicitly migrated.                                                  |
 
 The shared `documents.read` projection exposes only reader-safe metadata.
-Management fields and draft/restricted management listings additionally require
-`ai.knowledge.read` and the existing management scope. The new reader API must
-not inherit the broader payload of an admin endpoint.
+Institution-wide draft review requires `ai.knowledge.read` and existing admin
+management scope. Faculty/staff own-draft access uses an explicit creator/ownership
+policy with exact create/edit grants; it is not a general management-read grant.
+The new reader API must not inherit the broader payload of an admin endpoint.
+Publication and live audience changes require active institution-admin scope and
+`ai.knowledge.update`; faculty/staff only propose them in reviewable revisions.
 
 Return operation-specific capabilities from the server, for example `canUpload`,
 `canAddVersion`, `canEditMetadata`, `canPublish`, `canRetryIndexing`, `canDelete`
@@ -94,19 +100,27 @@ Do not use a generic edit flag to imply publication or upload permission.
 
 ## Proposed API surface
 
-These routes do not exist as a shared facade today. Keep `/api/v1/admin/*`,
+The [implemented revision facade](API.md) now supplies library, drafts, uploads,
+review and publication. The table below retains broader future resource-context
+and file-delivery proposals; it is not an endpoint inventory. Keep `/api/v1/admin/*`,
 `/api/v1/documents/*`, `/api/v1/students/me/resources` and current chat/history
 contracts compatible while introducing focused endpoints under the knowledge
 feature. Document every new method/path in the appropriate permission policy.
+Audience/review enforcement deliberately constrains previous mutation behavior:
+all legacy write paths must use the same approved-revision publication policy.
 
-| Proposed route under `/api/v1`                     | Responsibility                                                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `GET /knowledge/resources`                         | Safe scoped list, supported search/type/status filters, bounded pagination and operation capabilities. |
-| `GET /knowledge/resources/{source_id}`             | Authorized source metadata and permitted document/version summaries.                                   |
-| `POST /knowledge/resources`                        | Source creation with server-owned tenant/actor and constrained editable fields.                        |
-| `POST /knowledge/resources/{source_id}/documents`  | Shared upload facade reusing existing ingestion/orchestration.                                         |
-| `POST /knowledge/documents/{document_id}/versions` | Scoped new-version operation preserving the current version rules.                                     |
-| `PATCH /knowledge/resources/{source_id}`           | Authorized metadata/publication changes with state validation.                                         |
+| Proposed route under `/api/v1`                     | Responsibility                                                                                                               |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `GET /knowledge/resources`                         | Safe scoped list, supported search/type/status filters, bounded pagination and operation capabilities.                       |
+| `GET /knowledge/resources/{source_id}`             | Authorized source metadata and permitted document/version summaries.                                                         |
+| `POST /knowledge/resources`                        | Source creation with server-owned tenant/actor and constrained editable fields.                                              |
+| `POST /knowledge/resources/{source_id}/documents`  | Shared upload facade reusing existing ingestion/orchestration.                                                               |
+| `POST /knowledge/documents/{document_id}/versions` | Stage a scoped draft version; retain the live version until atomic admin publication.                                        |
+| `PATCH /knowledge/resources/{source_id}`           | Authorized draft metadata/requested-audience changes with state validation; publication uses an explicit revision operation. |
+
+PATCH edits drafts, not live publication/audience. Add explicit revision submit,
+request-changes, publish and unpublish operations as detailed in the audience
+plan; the publisher must approve the exact metadata, audience and file manifest.
 
 Add status/retry/file-delivery endpoints only when their underlying service and
 policy support them. Ordinary responses omit storage paths, extracted content,
@@ -114,10 +128,10 @@ raw processor errors and credentials. List responses declare pagination/total
 semantics; a returned page length is never presented as a global total.
 Readiness and capability fields must come from persisted state, not client timers.
 
-Extend `AuthenticatedChatRequest` only in the resource-context phase. Today it
-forbids extra fields and does not accept retrieval filters. A proposed optional
-resource context must be validated server-side, resolved through its institution
-and persisted on the owned conversation. Reject context mismatches. Never expose
+`AuthenticatedChatRequest` now accepts optional `resource_id` while forbidding
+unknown fields and internal retrieval filters. Resource context is authorized
+server-side and persisted on the owned conversation. Context mismatches are
+rejected before saving a turn. Never expose
 internal chunks, prompt controls or provider/model selection as browser input.
 Keep the existing required institution field compatible while using `/auth/me`
 identity in the client; the server continues to check it against active scope.
@@ -135,9 +149,13 @@ identity in the client; the server continues to check it against active scope.
 
 Move reusable orchestration out of admin ownership into knowledge services as
 needed, updating all callers and tests together. Keep admin wrappers for their
-existing contracts; do not make knowledge services depend on admin routes.
+existing URL/response contracts while enforcing review; do not make knowledge
+services depend on admin routes. Replace early version supersession with draft
+staging and an atomic approved-version switch for the new upload workflow.
 Inspect destination file counts before implementing; split by workflow within
-the 15-file/250-line limits. This draft creates no runtime modules or schema.
+the 15-file/250-line limits. The [database model](DATABASE_MODEL.md) now implements
+the schema foundation. Shared writers/readers, runtime policy and
+[resource-scoped conversations](RESOURCE_CHAT.md) are implemented.
 
 ## Server state, identity and reliability
 
@@ -162,7 +180,7 @@ explicit idempotency contract. Start by reusing the current synchronous pipeline
 if durable jobs are introduced, add persisted stage/retry state and a worker
 before offering background completion or detailed live progress in the UI.
 
-History restoration must verify ownership and current source eligibility. Decide
-how to redact previously persisted answers/citations after access revocation
-before enabling resource-scoped history; simply hiding the source card is
-insufficient. Keep telemetry content-free and separate from user-visible errors.
+History restoration verifies ownership and current source eligibility. Unavailable
+resource context redacts titles and the full message history; invalid answer
+provenance redacts that answer and its dependent tail. Follow-ups cannot continue
+after revocation. Keep telemetry content-free and separate from user-visible errors.

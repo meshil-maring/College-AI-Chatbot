@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import type { PublicChatMessage, PublicChatSource } from '../../types/publicChat.ts'
+import AnswerContent from '../chat/content/AnswerContent.tsx'
 export function SourceList({ sources }: { sources: PublicChatSource[] }) {
   if (sources.length === 0) return null
   return (
@@ -25,7 +26,7 @@ export function SourceList({ sources }: { sources: PublicChatSource[] }) {
 export const Message = memo(function Message({ message }: { message: PublicChatMessage }) {
   const user = message.role === 'user'
   return (
-    <li className={user ? 'ml-auto max-w-[88%] sm:max-w-[78%]' : 'mr-auto max-w-[94%] sm:max-w-[84%]'}>
+    <li className={user ? 'ml-auto min-w-0 max-w-[88%] sm:max-w-[78%]' : 'mr-auto min-w-0 max-w-[94%] sm:max-w-[84%]'}>
       <p className={`mb-1 text-xs ${user ? 'text-right text-accent' : 'text-muted'}`}>{user ? 'You' : 'College AI'}</p>
       <article
         className={
@@ -34,7 +35,11 @@ export const Message = memo(function Message({ message }: { message: PublicChatM
             : 'rounded-xl rounded-tl-md border border-line bg-surface px-4 py-4 text-content'
         }
       >
-        <p className="whitespace-pre-wrap break-words text-reading">{message.content}</p>
+        {user ? (
+          <p className="whitespace-pre-wrap break-words text-reading">{message.content}</p>
+        ) : (
+          <AnswerContent content={message.content} />
+        )}
         {!user && message.sources ? <SourceList sources={message.sources} /> : null}
       </article>
     </li>

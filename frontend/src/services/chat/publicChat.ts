@@ -1,8 +1,5 @@
-import type {
-  PublicChatRequest,
-  PublicChatResponse,
-  PublicChatSource,
-} from '../../types/publicChat.ts'
+import type { PublicChatRequest, PublicChatResponse, PublicChatSource } from '../../types/publicChat.ts'
+import { ChatDeadlineError, withDeadline } from './deadline.ts'
 
 const API_BASE_URL: string = (import.meta.env?.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 const PUBLIC_CHAT_ENDPOINT = `${API_BASE_URL}/v1/chat/public`
@@ -23,12 +20,14 @@ export type PublicChatErrorKind =
 export class PublicChatError extends Error {
   readonly kind: PublicChatErrorKind
   readonly status: number | null
+  readonly retryAfterSeconds: number | null
 
-  constructor(kind: PublicChatErrorKind, status: number | null = null) {
+  constructor(kind: PublicChatErrorKind, status: number | null = null, retryAfterSeconds: number | null = null) {
     super(publicChatErrorMessage(kind))
     this.name = 'PublicChatError'
     this.kind = kind
     this.status = status
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
@@ -97,58 +96,61 @@ function classifyHttpError(status: number): PublicChatErrorKind {
   return 'unknown'
 }
 
+function retryDelay(header: string | null): number | null {
+  if (!header?.trim()) return null
+  const value = header.trim()
+  if (!/^\d+$/.test(value) && !/^[a-z]{3}, /i.test(value)) return null
+  const seconds = /^\d+$/.test(value) ? Number(value) : (Date.parse(value) - Date.now()) / 1000
+  return Number.isFinite(seconds) ? Math.min(3600, Math.max(0, Math.ceil(seconds))) : null
+}
+
 /** Sends only the narrow anonymous request. No auth or internal controls exist here. */
 export async function publicChat(
   request: PublicChatRequest,
   options: number | { timeoutMs?: number; signal?: AbortSignal } = PUBLIC_CHAT_TIMEOUT_MS,
 ): Promise<PublicChatResponse> {
-  const timeoutMs = typeof options === 'number'
-    ? options
-    : (options.timeoutMs ?? PUBLIC_CHAT_TIMEOUT_MS)
+  const timeoutMs = typeof options === 'number' ? options : (options.timeoutMs ?? PUBLIC_CHAT_TIMEOUT_MS)
   const externalSignal = typeof options === 'number' ? undefined : options.signal
-  const controller = typeof AbortController === 'function' ? new AbortController() : null
-  let timedOut = false
-  const abortFromCaller = (): void => controller?.abort()
-  if (externalSignal?.aborted) abortFromCaller()
-  else externalSignal?.addEventListener('abort', abortFromCaller, { once: true })
-  const timeoutId = controller === null ? null : setTimeout(() => {
-    timedOut = true
-    controller.abort()
-  }, timeoutMs)
-  let response: Response
-
   try {
-    response = await fetch(PUBLIC_CHAT_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        institution_code: request.institution_code,
-        message: request.message,
-      }),
-      signal: controller?.signal,
-    })
+    return await withDeadline(
+      timeoutMs,
+      async (signal) => {
+        if (signal.aborted) throw new PublicChatError('aborted')
+        const response = await fetch(PUBLIC_CHAT_ENDPOINT, {
+          method: 'POST',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ institution_code: request.institution_code, message: request.message }),
+          signal,
+        })
+        if (!response.ok) {
+          throw new PublicChatError(
+            classifyHttpError(response.status),
+            response.status,
+            [429, 503].includes(response.status) ? retryDelay(response.headers.get('Retry-After')) : null,
+          )
+        }
+        let body: unknown
+        try {
+          body = await response.json()
+        } catch (failure) {
+          if (signal.aborted) throw failure
+          throw new PublicChatError('malformed_response', response.status)
+        }
+        if (signal.aborted) throw new PublicChatError('aborted')
+        if (!isPublicChatResponse(body)) throw new PublicChatError('malformed_response', response.status)
+        // Project only public fields before any response enters browser state.
+        return projectPublicResponse(body)
+      },
+      externalSignal,
+    )
   } catch (error) {
+    if (error instanceof ChatDeadlineError) throw new PublicChatError('timeout')
+    if (externalSignal?.aborted) throw new PublicChatError('aborted')
+    if (error instanceof PublicChatError) throw error
     if (typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError') {
-      throw new PublicChatError(timedOut ? 'timeout' : 'aborted')
+      throw new PublicChatError('aborted')
     }
     throw new PublicChatError('network')
-  } finally {
-    if (timeoutId !== null) clearTimeout(timeoutId)
-    externalSignal?.removeEventListener('abort', abortFromCaller)
   }
-
-  if (!response.ok) throw new PublicChatError(classifyHttpError(response.status), response.status)
-
-  let body: unknown
-  try {
-    body = await response.json()
-  } catch {
-    throw new PublicChatError('malformed_response', response.status)
-  }
-  if (!isPublicChatResponse(body)) {
-    throw new PublicChatError('malformed_response', response.status)
-  }
-  // Project the allow-listed contract so unexpected backend fields can never
-  // enter component state even if a future response accidentally adds them.
-  return projectPublicResponse(body)
 }

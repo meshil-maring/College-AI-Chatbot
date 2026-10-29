@@ -33,3 +33,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["app*"]
 namespaces = true
+
+[tool.pytest.ini_options]
+# Live-stack validation scripts under scripts/ require explicit execution.
+testpaths = ["tests"]

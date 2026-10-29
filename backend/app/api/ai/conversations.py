@@ -32,4 +32,4 @@ def get_messages(
     current_user: dict = Depends(get_current_user),
 ) -> list[MessageSummary]:
     """Retrieve messages for one of the authenticated user's conversations."""
-    return get_conversation_messages(conversation_id, UUID(current_user["user_id"]))
+    return get_conversation_messages(conversation_id, UUID(current_user["user_id"]), include_sources=True)

@@ -1,27 +1,23 @@
-/** Phase 5.7 — TanStack Query boundary for conversation history. */
+/** Identity-scoped, cancellable conversation history without credentials in keys. */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ApiError, getConversationMessages, listConversations } from '../services/chat/api.ts'
+import { ApiError } from '../services/chat/api.ts'
+import { conversationListOptions, conversationMessagesOptions } from '../features/chat/state/conversationQueries.ts'
 import { queryClient } from '../lib/queryClient.ts'
 import type { ConversationSummary, MessageSummary } from '../types/conversation.ts'
 
-const SESSION_EXPIRED_MESSAGE = 'Your session has expired or is no longer valid. Please sign out and sign in again.'
-const PERMISSION_MESSAGE = 'You do not have permission to view these conversations. Please sign out and sign in again.'
-const VALIDATION_MESSAGE = 'The server could not process the request. Please try again.'
-const SERVER_MESSAGE = 'The server reported an error while loading your conversations. Please try again in a moment.'
-const NETWORK_MESSAGE = 'Could not reach the server. Check that the backend is running, then try again.'
-
-function historyErrorMessage(caught: unknown): string {
-  if (caught instanceof ApiError) {
-    if (caught.status === 401) return SESSION_EXPIRED_MESSAGE
-    if (caught.status === 403) return PERMISSION_MESSAGE
-    if (caught.status === 422) return VALIDATION_MESSAGE
-    if (caught.status === 404) return 'The selected conversation could not be found. It may have been removed.'
-    if (caught.status >= 500) return SERVER_MESSAGE
-    return caught.message
+function historyErrorMessage(failure: unknown): string {
+  if (failure instanceof ApiError) {
+    if (failure.status === 401)
+      return 'Your session has expired or is no longer valid. Please sign out and sign in again.'
+    if (failure.status === 403)
+      return 'You do not have permission to view these conversations. Please sign out and sign in again.'
+    if (failure.status === 404) return 'The selected conversation could not be found. It may have been removed.'
+    if (failure.status === 422) return 'The server could not process the request. Please try again.'
+    return 'The server reported an error while loading your conversations. Please try again in a moment.'
   }
-  return NETWORK_MESSAGE
+  return 'Could not reach the server. Check that the backend is running, then try again.'
 }
 
 export interface ConversationHistoryState {
@@ -37,80 +33,111 @@ export interface ConversationHistoryState {
   readonly clearAll: () => void
 }
 
-export function useConversationHistory(): ConversationHistoryState {
-  const [accessToken, setAccessToken] = useState<string | null>(null)
+export function useConversationHistory(scope?: string): ConversationHistoryState {
+  const instance = useId()
+  const identity = scope ?? instance
+  const live = useRef(identity)
+  live.current = identity
+  const mounted = useRef(true)
+  const token = useRef('')
+  const selection = useRef(0)
+  const listing = useRef(0)
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [messagesError, setMessagesError] = useState<string | null>(null)
-
-  const conversationsQuery = useQuery<ConversationSummary[], unknown>(
+  const [denied, setDenied] = useState(false)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+      selection.current += 1
+      listing.current += 1
+      for (const prefix of ['conversations', 'conversation-messages']) {
+        void queryClient.cancelQueries({ queryKey: [prefix, identity] })
+        queryClient.removeQueries({ queryKey: [prefix, identity] })
+      }
+    }
+  }, [identity])
+  const conversationsQuery = useQuery(
     {
-      queryKey: ['conversations', accessToken],
-      queryFn: () => listConversations(accessToken as string),
+      ...conversationListOptions(identity, token.current),
       enabled: false,
       retry: false,
     },
     queryClient,
   )
-  const messagesQuery = useQuery<MessageSummary[], unknown>(
+  const messagesQuery = useQuery(
     {
-      queryKey: ['conversation-messages', accessToken, selectedConversationId],
-      queryFn: () => getConversationMessages(selectedConversationId as string, accessToken as string),
+      ...conversationMessagesOptions(identity, selectedConversationId ?? '', token.current),
       enabled: false,
       retry: false,
     },
     queryClient,
   )
-
-  const loadConversations = useCallback(async (token: string): Promise<void> => {
-    setAccessToken(token)
-    setHistoryError(null)
-    try {
-      await queryClient.fetchQuery({
-        queryKey: ['conversations', token],
-        queryFn: () => listConversations(token),
-        staleTime: 0,
-      })
-    } catch (caught) {
-      setHistoryError(historyErrorMessage(caught))
-    }
-  }, [])
-
-  const selectConversation = useCallback(async (conversationId: string, token: string) => {
-    setAccessToken(token)
-    setSelectedConversationId(conversationId)
-    setMessagesError(null)
-    try {
-      return await queryClient.fetchQuery({
-        queryKey: ['conversation-messages', token, conversationId],
-        queryFn: () => getConversationMessages(conversationId, token),
-        staleTime: 0,
-      })
-    } catch (caught) {
-      setMessagesError(historyErrorMessage(caught))
-      if (caught instanceof ApiError && caught.status === 404) setSelectedConversationId(null)
-      throw caught
-    }
-  }, [])
-
+  const loadConversations = useCallback(
+    async (credential: string) => {
+      token.current = credential
+      const request = ++listing.current
+      const valid = () =>
+        mounted.current && live.current === identity && token.current === credential && listing.current === request
+      setHistoryError(null)
+      try {
+        await queryClient.fetchQuery(conversationListOptions(identity, credential))
+        if (valid()) {
+          setDenied(false)
+          setHistoryError(null)
+        }
+      } catch (failure) {
+        if (!valid()) return
+        setHistoryError(historyErrorMessage(failure))
+        if (failure instanceof ApiError && [401, 403].includes(failure.status)) {
+          setDenied(true)
+          queryClient.removeQueries({ queryKey: ['conversations', identity] })
+        }
+      }
+    },
+    [identity],
+  )
+  const selectConversation = useCallback(
+    async (id: string, credential: string) => {
+      token.current = credential
+      const request = ++selection.current
+      setSelectedConversationId(id)
+      setMessagesError(null)
+      try {
+        const messages = await queryClient.fetchQuery(conversationMessagesOptions(identity, id, credential))
+        if (!mounted.current || live.current !== identity || request !== selection.current) {
+          throw new DOMException('Retired conversation selection', 'AbortError')
+        }
+        return messages
+      } catch (failure) {
+        if (mounted.current && live.current === identity && request === selection.current) {
+          setMessagesError(historyErrorMessage(failure))
+          if (failure instanceof ApiError && failure.status === 404) setSelectedConversationId(null)
+        }
+        throw failure
+      }
+    },
+    [identity],
+  )
   const clearSelection = useCallback(() => {
+    selection.current += 1
     setSelectedConversationId(null)
     setMessagesError(null)
   }, [])
-
   const clearAll = useCallback(() => {
-    setSelectedConversationId(null)
+    listing.current += 1
+    clearSelection()
     setHistoryError(null)
-    setMessagesError(null)
-    if (accessToken !== null) {
-      queryClient.removeQueries({ queryKey: ['conversations', accessToken] })
-      queryClient.removeQueries({ queryKey: ['conversation-messages', accessToken] })
+    setDenied(false)
+    for (const prefix of ['conversations', 'conversation-messages']) {
+      void queryClient.cancelQueries({ queryKey: [prefix, identity] })
+      queryClient.removeQueries({ queryKey: [prefix, identity] })
     }
-    setAccessToken(null)
-  }, [accessToken])
-
+    token.current = ''
+  }, [identity, clearSelection])
   return {
-    conversations: conversationsQuery.data ?? [],
+    conversations: denied ? [] : (conversationsQuery.data ?? []),
     selectedConversationId,
     historyLoading: conversationsQuery.isFetching,
     historyError,

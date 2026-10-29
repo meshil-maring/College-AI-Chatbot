@@ -7,21 +7,22 @@ current features.
 
 ## Screen coverage
 
-| Area                                  | Applied style                                                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------------- |
-| Administration                        | Shared dark sidebar, yellow selection, header and page title/description            |
-| Profile                               | Consistent identity panels, field labels and supporting text                        |
-| Academic Setup                        | Canonical tokens across overview, all entity pages, forms, drawers and tables       |
-| Staff & Faculty                       | Membership requests, filters, roster and actions                                    |
-| Student Approvals                     | Shared approval queue presentation and controls                                     |
-| Notices, Documents, FAQs              | Standard panels, forms, actions and error states                                    |
-| Staff Permissions                     | Consistent selectors, checkbox accents, grant actions and messages                  |
-| Staff and Faculty portals             | Shared workspace frame, profile and information states                              |
-| Student portal                        | Shared sidebar/header, approval gate, profile, notices and resources                |
-| Platform Administration               | Shared responsive frame, institution management, invitations and audit              |
-| Public entry and institution gateways | Neutral panels, yellow actions, consistent type and gutters                         |
-| Authentication and invitations        | Sign-in, registration, recovery, reset and account security controls                |
-| AI assistants                         | Workspace-sized chat, neutral speaker bubbles, reading type and yellow send actions |
+| Area                                  | Applied style                                                                            |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Administration                        | Shared dark sidebar, yellow selection, header and page title/description                 |
+| Profile                               | Consistent identity panels, field labels and supporting text                             |
+| Academic Setup                        | Canonical tokens across overview, all entity pages, forms, drawers and tables            |
+| Staff & Faculty                       | Membership requests, filters, roster and actions                                         |
+| Student Approvals                     | Shared approval queue presentation and controls                                          |
+| Notices, Documents, FAQs              | Standard panels, forms, actions and error states                                         |
+| Shared Learning Resources             | One admin/faculty/staff library, audience form, staged files, review and modal lifecycle |
+| Staff Permissions                     | Consistent selectors, checkbox accents, grant actions and messages                       |
+| Staff and Faculty portals             | Shared workspace frame, profile and information states                                   |
+| Student portal                        | Shared sidebar/header, approval gate, profile, notices and resources                     |
+| Platform Administration               | Shared responsive frame, institution management, invitations and audit                   |
+| Public entry and institution gateways | Neutral panels, yellow actions, consistent type and gutters                              |
+| Authentication and invitations        | Sign-in, registration, recovery, reset and account security controls                     |
+| AI assistants                         | Workspace-sized chat, neutral speaker bubbles, reading type and yellow send actions      |
 
 ## Implementation ownership
 
@@ -31,7 +32,7 @@ current features.
 - `src/styles/components.css`: shared actions, panels, page header and chat layout.
 - `features/workspace/`: the frame and styles consumed by all authenticated roles.
 - Feature styles retain local layout and responsive record/card rules. Academic
-  dialogs still use their existing lifecycle and identity-safe state.
+  dialogs share `workspace/useWorkspaceDialog.ts` with resource drawers and retain identity-safe state.
 - Notice form rendering/state lives in `admin/notices/NoticeForm.tsx` to keep the
   manager focused and both files within the source-size limit.
 

@@ -238,7 +238,7 @@ variant here with its purpose and consumers before introducing different values.
 Current references: [shared workspace](../src/features/workspace/WorkspaceFrame.tsx),
 [Academic Setup navigation](../src/features/admin/academic-setup/styles/overview-theme.css),
 [page layout](../src/features/admin/academic-setup/styles/overview-layout.css) and
-[dialog lifecycle](../src/features/admin/academic-setup/dialogs/useAcademicDialog.ts).
+[dialog lifecycle](../src/features/workspace/useWorkspaceDialog.ts).
 These establish the starting point; the target values in this guide take precedence
 over inconsistent existing visual values during a scoped design update.
 

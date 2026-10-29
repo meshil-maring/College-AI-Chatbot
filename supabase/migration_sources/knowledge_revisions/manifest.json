@@ -1,0 +1,25 @@
+{
+  "version": "20261028010000",
+  "name": "knowledge_audience_revisions",
+  "files": [
+    "tables.sql",
+    "backfill.sql",
+    "revision_guards.sql",
+    "member_guards.sql",
+    "integrity.sql",
+    "source_guards.sql",
+    "security.sql",
+    "workflow/authorization.sql",
+    "workflow/views.sql",
+    "workflow/drafts.sql",
+    "workflow/uploads.sql",
+    "workflow/review.sql",
+    "workflow/index_guards.sql",
+    "readers/eligibility.sql",
+    "readers/catalogue.sql",
+    "readers/search.sql",
+    "readers/history.sql",
+    "readers/public.sql",
+    "workflow/security.sql"
+  ]
+}

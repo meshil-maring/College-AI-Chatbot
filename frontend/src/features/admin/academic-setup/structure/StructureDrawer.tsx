@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
-import { useAcademicDialog } from '../dialogs/useAcademicDialog.ts'
+import { useWorkspaceDialog } from '../../../workspace/useWorkspaceDialog.ts'
 import type { StructureEntity } from '../../../../types/academicStructure.ts'
 import type { StructureEditor } from './useStructureEditor.ts'
 import { structureSingular } from './structureFields.ts'
 import StructureFields from './StructureFields.tsx'
 
 export default function StructureDrawer({ editor, entity }: { editor: StructureEditor; entity: StructureEntity }) {
-  const ref = useAcademicDialog('.structure-records-page h1')
+  const ref = useWorkspaceDialog('.structure-records-page h1')
   const viewing = editor.panel?.mode === 'view'
   const title =
     editor.confirmation === 'discard'

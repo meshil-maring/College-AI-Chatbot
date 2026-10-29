@@ -26,7 +26,7 @@ describe('administrator account workspace', () => {
       'Staff & Faculty',
       'Student Approvals',
       'Notices',
-      'Documents',
+      'Learning Resources',
       'FAQs',
       'AI Assistant',
       'Staff Permissions',

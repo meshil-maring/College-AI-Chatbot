@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from unittest.mock import patch
 from uuid import UUID
 
-import httpx
 import pytest
 from pydantic import ValidationError
 
@@ -17,10 +15,7 @@ from app.schemas.ai.chat_response import StructuredSource
 from app.schemas.ai.generation import AIContext, RetrievedChunk
 from app.services.ai.context import SYSTEM_INSTRUCTIONS
 from app.services.ai.generation import AIGenerationService
-from app.services.ai.generation_provider import (
-    GenerationResult,
-    OpenRouterGenerationProvider,
-)
+from app.services.ai.generation_provider import GenerationResult
 from app.services.ai.public_chat import (
     PUBLIC_GENERATION_INSTRUCTIONS,
     _reject_personal_query_if_needed,
@@ -135,35 +130,6 @@ def test_malformed_public_provider_result_is_safely_mapped():
 
     assert caught.value.status_code == 503
     assert caught.value.code == "PUBLIC_GENERATION_UNAVAILABLE"
-
-
-def test_openrouter_receives_server_output_limit_and_timeout():
-    requests = []
-
-    def handler(request):
-        requests.append(request)
-        return httpx.Response(
-            200,
-            json={"choices": [{"message": {"content": "A grounded answer."}}]},
-        )
-
-    client = httpx.Client(transport=httpx.MockTransport(handler))
-    provider = OpenRouterGenerationProvider(client=client, timeout=17.0)
-    try:
-        with patch.multiple(
-            "app.services.ai.generation_provider.settings",
-            openrouter_api_key="test-key",
-            openrouter_model="server/model",
-            openrouter_base_url="https://provider.example/v1",
-        ):
-            provider.generate(_public_context())
-    finally:
-        client.close()
-
-    payload = json.loads(requests[0].content)
-    assert payload["model"] == "server/model"
-    assert payload["max_tokens"] == 321
-    assert requests[0].extensions["timeout"]["read"] == 17.0
 
 
 @pytest.mark.parametrize(

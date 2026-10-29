@@ -90,11 +90,9 @@ async def ingest(
         )
     ks = get_knowledge_source(get_admin_client(), knowledge_source_id)
     _assert_source_tenant(current_user, ks)
-    return await ingest_document(
-        file=file,
-        knowledge_source_id=knowledge_source_id,
-        user_id=current_user["user_id"],
-    )
+    # Legacy ingestion remains an unpublished version. Audience-aware retrieval
+    # requires published versions in the reviewed live manifest.
+    return await ingest_document(file=file, knowledge_source_id=knowledge_source_id, user_id=current_user['user_id'])
 
 
 @router.post("/{processing_run_id}/extract", response_model=ExtractionResponse)

@@ -11,7 +11,15 @@
 
 import { useState, type KeyboardEvent } from 'react'
 
-export default function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disabled: boolean }) {
+export default function ChatInput({
+  onSend,
+  disabled,
+  autoFocus = false,
+}: {
+  onSend: (text: string) => void
+  disabled: boolean
+  autoFocus?: boolean
+}) {
   const [value, setValue] = useState('')
 
   const canSubmit = !disabled && value.trim().length > 0
@@ -37,6 +45,7 @@ export default function ChatInput({ onSend, disabled }: { onSend: (text: string)
         Ask a question
       </label>
       <textarea
+        autoFocus={autoFocus}
         id="chat-message-input"
         name="chat-message-input"
         rows={2}

@@ -38,6 +38,12 @@ authenticated actor to the service; it does not issue a second approval audit.
 Features call the existing services and repositories. Academic management,
 rosters, attendance, examinations and faculty teaching APIs are retired.
 
+Document upload/version URLs delegate to the shared revision workflow and leave
+the current published manifest intact. File-source PATCH and revision-managed
+deletion require the new reviewed workflow; canonical FAQ/notice editors retain
+their existing explicitly public synchronization. See the
+[resource API contract](../../../../docs/architecture/ai-chatbot/API.md).
+
 ## Adding an endpoint
 
 1. Add the handler to its feature module, using `_ADMIN` or `_APPROVAL` as appropriate.

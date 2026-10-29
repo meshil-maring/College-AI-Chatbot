@@ -1,8 +1,10 @@
 from .support import (
     TENANT_A,
+    STUDENT_USER_ID,
     _FakeClient,
     _clear_dependency_overrides,
     dashboard_repo,
+    _resource_row,
 )
 
 
@@ -15,9 +17,8 @@ class TestRepositoryProjections:
             assert forbidden not in projection
 
     def test_resource_projection_excludes_storage_and_identity_columns(self):
-        database = _FakeClient({"knowledge_sources": []})
-        dashboard_repo.list_published_resources(database, TENANT_A)
-        projection = database.operations("knowledge_sources", "select")[0][2]
+        database = _FakeClient({'knowledge_sources': [_resource_row()]})
+        projection = dashboard_repo.list_published_resources(database, TENANT_A, actor_user_id=STUDENT_USER_ID)[0]
         for forbidden in (
             "storage_bucket",
             "storage_object_key",
@@ -29,9 +30,8 @@ class TestRepositoryProjections:
             assert forbidden not in projection
 
     def test_resource_projection_selects_only_benign_labels(self):
-        database = _FakeClient({"knowledge_sources": []})
-        dashboard_repo.list_published_resources(database, TENANT_A)
-        projection = database.operations("knowledge_sources", "select")[0][2]
+        database = _FakeClient({'knowledge_sources': [_resource_row()]})
+        projection = dashboard_repo.list_published_resources(database, TENANT_A, actor_user_id=STUDENT_USER_ID)[0]
         for expected in (
             "knowledge_source_id",
             "source_type",

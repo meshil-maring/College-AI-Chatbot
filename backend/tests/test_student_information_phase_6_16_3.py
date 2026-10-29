@@ -72,6 +72,7 @@ def _chained_db(rows: list[dict]) -> MagicMock:
     builder.order.return_value = builder
     builder.limit.return_value = builder
     builder.execute.return_value = MagicMock(data=rows)
+    db.rpc.return_value.execute.return_value = MagicMock(data={'items': rows, 'total': len(rows)})
     return db
 
 

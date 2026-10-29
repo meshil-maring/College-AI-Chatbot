@@ -4,6 +4,7 @@ from .support import (
     RESOURCE_A,
     RESOURCE_B,
     TENANT_A,
+    STUDENT_USER_ID,
     TENANT_B,
     _FakeClient,
     _clear_dependency_overrides,
@@ -58,9 +59,13 @@ class TestRepositoryTenantScoping:
                 ]
             }
         )
-        rows = dashboard_repo.list_published_resources(db, TENANT_A)
+        rows = dashboard_repo.list_published_resources(db, TENANT_A, actor_user_id=STUDENT_USER_ID)
         assert [r["knowledge_source_id"] for r in rows] == [RESOURCE_A]
         assert ("knowledge_sources", "eq", "institution_id", TENANT_A) in db.calls
+        assert db.calls[0] == ('rpc', 'read_knowledge_resources', {
+            'actor': STUDENT_USER_ID, 'tenant': TENANT_A, 'page_limit': 6,
+            'excluded_types': ['notice', 'faq'],
+        })
 
     def test_institution_id_is_a_mandatory_argument(self):
         with pytest.raises(TypeError):

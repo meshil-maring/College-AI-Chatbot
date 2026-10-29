@@ -31,6 +31,8 @@ def create_message(client: Client, data: MessageCreate) -> dict:
         "message_type": data.message_type,
         "content_text": data.content_text,
     }
+    if data.knowledge_policy is not None:
+        payload['knowledge_policy'] = data.knowledge_policy
 
     response = (
         client.table("messages")
@@ -44,7 +46,7 @@ def get_message(client: Client, message_id: UUID | str) -> dict | None:
     """Retrieve a message by its ID."""
     response = (
         client.table("messages")
-        .select("message_id, conversation_id, message_sequence, message_type, content_text, created_at")
+        .select("message_id, conversation_id, message_sequence, message_type, content_text, created_at, knowledge_policy")
         .eq("message_id", str(message_id))
         .maybe_single()
         .execute()
@@ -58,7 +60,7 @@ def list_messages_for_conversation(client: Client, conversation_id: UUID | str) 
     """Retrieve all messages for a conversation in chronological order."""
     response = (
         client.table("messages")
-        .select("message_id, conversation_id, message_sequence, message_type, content_text, created_at")
+        .select("message_id, conversation_id, message_sequence, message_type, content_text, created_at, knowledge_policy")
         .eq("conversation_id", str(conversation_id))
         .order("message_sequence")
         .execute()

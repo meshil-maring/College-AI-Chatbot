@@ -31,3 +31,11 @@ def create_message_citations(client: Client, citations: list[MessageCitationCrea
         .execute()
     )
     return response.data
+
+
+def read_history_sources(client: Client, actor, conversation_id, message_ids) -> dict:
+    """Read only citations tied to the owner's currently authorized answer policy."""
+    return client.rpc('read_conversation_citations', {
+        'actor': str(actor), 'selected_conversation': str(conversation_id),
+        'selected_messages': [str(message_id) for message_id in message_ids],
+    }).execute().data

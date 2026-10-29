@@ -104,6 +104,7 @@ def list_published_resources(
     client: Client,
     institution_id: UUID | str,
     limit: int = 6,
+    actor_user_id: UUID | str | None = None,
 ) -> list[dict]:
     """List the institution's published learning resources.
 
@@ -119,13 +120,12 @@ def list_published_resources(
     Returns:
         Raw ``knowledge_sources`` rows (already restricted to safe columns).
     """
-    query = (
-        client.table("knowledge_sources")
-        .select(RESOURCE_COLUMNS)
-        .eq("institution_id", str(institution_id))
-        .eq("lifecycle_status", PUBLISHED_RESOURCE_LIFECYCLE_STATUS)
-    )
-    for source_type in EXCLUDED_RESOURCE_SOURCE_TYPES:
-        query = query.neq("source_type", source_type)
-    response = query.order("created_at", desc=True).limit(limit).execute()
-    return response.data or []
+    if actor_user_id is None:
+        raise ValueError('Server-resolved resource reader identity required')
+    response = client.rpc('read_knowledge_resources', {
+        'actor': str(actor_user_id), 'tenant': str(institution_id), 'page_limit': limit,
+        'excluded_types': list(EXCLUDED_RESOURCE_SOURCE_TYPES),
+    }).execute()
+    fields = [field.strip() for field in RESOURCE_COLUMNS.split(',')]
+    return [{field: 'published' if field == 'lifecycle_status' else row.get(field) for field in fields}
+            for row in (response.data or {}).get('items', [])]
