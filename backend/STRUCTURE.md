@@ -82,8 +82,8 @@ Departments own degree programs and teaching courses. Academic years contain dat
 semesters. Program-course links define curricula; course offerings connect a
 linked course, program, year and semester. Sections belong to one offering.
 Descendant tenants derive from parent relationships, with server-owned institution
-context added to API records. Attendance, results, enrollment, teaching workflows
-and academic packages remain outside this implementation. Earlier setup tables
+context added to API records. Attendance, results, teaching workflows and the
+retired academic packages remain outside this implementation. Earlier setup tables
 are preserved privately by the [forward migration](../supabase/migration_sources/academic_export/README.md).
 
 The additive [workspace migration](../supabase/migration_sources/academic_workspace/README.md)
@@ -93,7 +93,16 @@ in the four academic layers. It preserves all export-aligned tables and APIs.
 Cohorts retain their published curriculum; sections reference a cohort, program
 semester and dated term. Subject offerings must match that assignment. All
 writes use exact institution-admin grants, the existing tenant advisory lock and
-atomic auditing. Enrollment counts and teaching workflows remain separate work.
+atomic auditing. Existing setup summary enrollment counts and teaching workflows
+remain separate integrations.
+
+The additive [semester-registration migration](../supabase/migration_sources/semester_registration/README.md)
+adds curriculum choice groups, administrator section assignments and a student's
+whole-option course enrollment. `semester_registration.py` in the four academic
+layers owns this workflow. Separate own-registration grants protect student reads
+and writes; SQL rechecks identity, ownership, tenant, required subjects, offerings
+and capacity atomically. Recorded subject snapshots preserve names and credits.
+Retained academic-package code remains disconnected.
 
 ## Naming and module boundaries
 

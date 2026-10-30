@@ -128,6 +128,8 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     ),
     "student": frozenset(
         {
+            "registration.own.read",
+            "registration.own.manage",
             "profile.own.read",
             "profile.own.update",
             "notifications.own.read",

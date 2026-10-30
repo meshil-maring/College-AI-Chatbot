@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { CalendarDays, ChevronRight, Plus } from 'lucide-react'
 import { calendarTabs, type CalendarTab } from './calendarModel.ts'
 import { useCalendar, type CalendarContext } from './useCalendar.ts'
@@ -11,23 +11,28 @@ import CalendarSchedule from './CalendarSchedule.tsx'
 import CalendarPagination from './CalendarPagination.tsx'
 import CalendarDrawer from './editor/CalendarDrawer.tsx'
 import './styles/calendar.css'
+import { useVisibleTab } from '../navigation/useVisibleTab.ts'
 
 interface Props extends CalendarContext {
   initialTab: CalendarTab
+  activeTab?: CalendarTab
+  onTabChange?: (tab: CalendarTab) => void
   createInitially: boolean
   onCreateHandled: () => void
   onOverview: () => void
 }
 export default function AcademicCalendarPage({
   initialTab,
+  activeTab,
+  onTabChange,
   createInitially,
   onCreateHandled,
   onOverview,
   ...context
 }: Props) {
-  const state = useCalendar(context, initialTab)
+  const state = useCalendar(context, initialTab, { activeTab, onTabChange })
   const editor = useCalendarEditor(context, state)
-  const tabs = useRef<HTMLDivElement>(null)
+  const tabs = useVisibleTab(state.tab)
   useEffect(() => {
     if (!createInitially || state.loading) return
     if (state.canManageYears && !state.busy) editor.open('academic_years', 'add')
@@ -111,8 +116,8 @@ export default function AcademicCalendarPage({
                     : -1
           if (next < 0) return
           event.preventDefault()
-          state.setTab(calendarTabs[next].id)
           tabs.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
+          state.setTab(calendarTabs[next].id)
         }}
       >
         {calendarTabs.map((tab) => (

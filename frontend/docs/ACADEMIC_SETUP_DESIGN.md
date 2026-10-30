@@ -35,11 +35,19 @@ They are not silently converted into curriculum versions or class sections.
 
 ## Building the academic structure
 
+The setup guide follows Foundations → Curriculum → Batches → Classes & subjects
+→ Student enrollment. Its next-step actions open the existing authorized screens;
+they do not publish curricula or create records automatically. Subject Options,
+Version History and Student Enrollment are direct navigation destinations.
+Curriculum tabs, the sidebar, search results and browser history stay synchronized.
+
 1. Create a department, degree program, academic year and dated teaching terms.
 2. Create reusable subjects and the program's progression semesters.
 3. Create a draft curriculum version for the program and academic year.
 4. Map subjects to that version's program semesters, retaining type and required
    status. Program semesters must belong to the same program and fit the version.
+   In Subject Options, group optional mappings into complete alternatives; keep
+   subjects shared by every student marked Required.
 5. Publish the curriculum after adding at least one active mapping. Publication
    records its timestamp and freezes metadata and subject mappings.
 6. Create a batch with a published curriculum for its program. Program,
@@ -48,6 +56,21 @@ They are not silently converted into curriculum versions or class sections.
    These relationships and its code remain immutable after creation.
 8. Create academic offerings by selecting subjects from the section's assigned
    curriculum and progression semester.
+9. In Sections, use Manage Student Enrollment to assign approved active students
+    to a section. Students then complete Semester Registration by choosing exactly
+    one option per group. Every required and selected subject must be offered.
+
+Publication preserves option groups with the curriculum. The separate
+[registration guide](../../supabase/migration_sources/semester_registration/README.md)
+documents permissions, atomic enrollment, capacity, snapshots and lifecycle limits.
+
+In Subject Options, use Manage semester subjects to add or edit mappings for the
+selected curriculum and program semester. The group draft is preserved when
+returning. New mappings in this workflow default to optional; leave common
+subjects marked Required. Every option must have a name and at least one selected
+optional subject. Save explains missing entries instead of silently disabling
+the action. An empty curriculum needs subject mappings before an option can be
+saved; creating a curriculum version does not copy mappings from other versions.
 
 A cohort retains its curriculum even after that version is archived. Published
 versions cannot revert to draft, and archived versions cannot be republished.

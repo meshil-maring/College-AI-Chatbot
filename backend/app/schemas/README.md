@@ -2,6 +2,10 @@
 
 Follow the shared [backend structure rules](../../STRUCTURE.md).
 
+`academics/semester_registration.py` defines strict complete-option drafts,
+administrator assignments and student selections. Student completion accepts
+only option IDs; client-supplied identity and individual subject lists are rejected.
+
 Pydantic request, response and domain models are grouped by feature, matching
 the API and service layout. Model definitions, validators, field names, defaults
 and serialization rules stay in their existing modules.

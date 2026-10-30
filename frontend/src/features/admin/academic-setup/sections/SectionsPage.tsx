@@ -1,4 +1,6 @@
 import { ChevronRight, Plus } from 'lucide-react'
+import { useState } from 'react'
+import StudentEnrollmentPage from '../registration/StudentEnrollmentPage.tsx'
 import type { StructureContext } from '../structure/useAcademicStructure.ts'
 import StructureState from '../structure/StructureState.tsx'
 import { useSections } from './useSections.ts'
@@ -9,9 +11,15 @@ import SectionTable from './SectionTable.tsx'
 import SectionDrawer from './editor/SectionDrawer.tsx'
 import './styles/sections.css'
 
-export default function SectionsPage({ onOverview, ...context }: StructureContext & { onOverview: () => void }) {
+export default function SectionsPage({
+  onOverview,
+  onEnrollment,
+  ...context
+}: StructureContext & { onOverview: () => void; onEnrollment?: () => void }) {
   const state = useSections(context)
   const editor = useSectionEditor(state)
+  const [enrollment, setEnrollment] = useState(false)
+  if (enrollment) return <StudentEnrollmentPage context={context} onBack={() => setEnrollment(false)} />
   return (
     <section
       className={`academic-workspace sections-page${editor.panel ? ' has-drawer' : ''}`}
@@ -42,6 +50,13 @@ export default function SectionsPage({ onOverview, ...context }: StructureContex
         </button>
       </header>
       <SectionSummary records={state.records} available={state.available} />
+      <button
+        type="button"
+        className="academic-secondary-button"
+        onClick={() => (onEnrollment ? onEnrollment() : setEnrollment(true))}
+      >
+        Manage Student Enrollment
+      </button>
       <StructureState state={state.source} />
       {!state.loading && state.canManage && !state.canCreate && (
         <p className="section-integration-note">

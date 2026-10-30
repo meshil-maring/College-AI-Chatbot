@@ -3,6 +3,10 @@
 `AdminShell.tsx` composes account profile, staff/faculty account management,
 student account approvals, notices, shared Learning Resources, FAQs, chat and staff permissions.
 `adminNavigation.ts` filters operational views using server-resolved grants.
+`navigation/useAdminWorkspaceNavigation.ts` keeps views, academic destinations
+and search in validated URL parameters for refresh and Back/Forward navigation.
+Academic Setup's `navigation/` owns the guided setup path and contextual next
+actions; its sidebar exposes options and enrollment directly.
 Academic Setup also exposes its static design preview to administrators without
 academic grants; catalogue requests and record actions remain gated. Backend
 endpoints remain authoritative for authorization and tenant isolation.
@@ -25,6 +29,8 @@ showing the error; late responses from a replaced session are discarded.
 | `academic-setup/batches/`     | Stored admission cohorts, published curriculum assignment, filters and add/view/edit drawers      |
 | `academic-setup/sections/`    | Stored cohort-owned sections, program progression, dated terms and add/view/edit drawers          |
 | `academic-setup/structure/`   | Shared structure catalogue, mutation guards, forms and drawers for progression and offerings      |
+| `academic-setup/registration/` | Administrator semester assignments and registration query state                                  |
+| `academic-setup/curriculum/choices/` | Complete subject option groups within draft curricula                                       |
 | `documents/`                  | Retained former document manager; active navigation mounts shared `learning-resources/`           |
 | `faqs/`, `notices/`           | Published institution information                                                                 |
 | `permissions/`                | Nonacademic staff permission management                                                           |

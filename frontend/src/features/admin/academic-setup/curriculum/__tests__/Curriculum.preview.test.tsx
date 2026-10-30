@@ -5,10 +5,16 @@ import * as api from '../../../../../services/admin/academicStructure.ts'
 import AcademicWorkspace from '../../overview/AcademicWorkspace.tsx'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useState } from 'react'
+import type { AcademicPage } from '../../overview/academicOverviewModel.ts'
 
 beforeEach(populateStructure)
 function renderVersions() {
-  return render(<AcademicWorkspace page="curriculum" search="" onNavigate={vi.fn()} onClearSearch={vi.fn()} />)
+  function Workspace() {
+    const [page, setPage] = useState<AcademicPage>('curriculum')
+    return <AcademicWorkspace page={page} search="" onNavigate={setPage} onClearSearch={vi.fn()} />
+  }
+  return render(<Workspace />)
 }
 describe('Persisted curriculum versions', () => {
   it('creates a real draft instead of a disconnected preview', async () => {

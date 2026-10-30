@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { Bell, BookOpen, Bot, FileText, ShieldCheck, UserCircle, Users, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../auth/session/AuthProvider.tsx'
 import AdminFrame from './AdminFrame.tsx'
 import AdminProfile from './profile/AdminProfile.tsx'
 import AcademicWorkspace from './academic-setup/overview/AcademicWorkspace.tsx'
-import type { AcademicPage } from './academic-setup/overview/academicOverviewModel.ts'
 import StudentManager from './students/StudentManager.tsx'
 import StaffFacultyManager from './staff-faculty/StaffFacultyManager.tsx'
 import StaffPermissionManager from './permissions/StaffPermissionManager.tsx'
@@ -14,6 +12,7 @@ import FaqManager from './faqs/FaqManager.tsx'
 import ChatShell from '../chat/ChatShell.tsx'
 import { ADMIN_VIEW_HEADINGS, buildAdminNavigation, type AdminView } from './adminNavigation.ts'
 import WorkspacePageHeader from '../workspace/WorkspacePageHeader.tsx'
+import { useAdminWorkspaceNavigation } from './navigation/useAdminWorkspaceNavigation.ts'
 
 const descriptions: Partial<Record<AdminView, string>> = {
   profile: 'Your administrator identity and institution details.',
@@ -38,9 +37,17 @@ const icons: Record<AdminView, LucideIcon> = {
 }
 export default function AdminShell() {
   const { user, role, accessToken, logout } = useAuth()
-  const [selected, setSelected] = useState<AdminView>('profile')
-  const [academicPage, setAcademicPage] = useState<AcademicPage>('overview')
-  const [academicSearch, setAcademicSearch] = useState('')
+  const {
+    selected,
+    academicPage,
+    academicSearch,
+    navigateView,
+    navigateAcademic,
+    searchAcademic,
+    clearAcademicSearch,
+  } = useAdminWorkspaceNavigation(
+    user ? JSON.stringify([user.auth_user_id ?? user.user_id, user.institution_id]) : undefined,
+  )
   const navigation = buildAdminNavigation(role, user?.effective_permissions)
   const view = navigation.some((item) => item.key === selected) ? selected : navigation[0]?.key
   if (!user || role !== 'admin') return <main role="status">Administrator access is unavailable.</main>
@@ -49,19 +56,13 @@ export default function AdminShell() {
       navigation={navigation}
       currentView={view ?? 'profile'}
       icons={icons}
-      onNavigate={setSelected}
+      onNavigate={navigateView}
       identityLabel={user.email?.trim() || 'Administrator'}
       onLogout={logout}
       academicPage={academicPage}
-      onAcademicNavigate={(page) => {
-        setAcademicPage(page)
-        setAcademicSearch('')
-      }}
+      onAcademicNavigate={navigateAcademic}
       academicSearch={academicSearch}
-      onAcademicSearch={(value) => {
-        setAcademicSearch(value)
-        setAcademicPage('overview')
-      }}
+      onAcademicSearch={searchAcademic}
     >
       {view ? (
         <>
@@ -73,8 +74,8 @@ export default function AdminShell() {
             <AcademicWorkspace
               page={academicPage}
               search={academicSearch}
-              onNavigate={setAcademicPage}
-              onClearSearch={() => setAcademicSearch('')}
+              onNavigate={navigateAcademic}
+              onClearSearch={clearAcademicSearch}
             />
           )}
           {view === 'staff-faculty' && accessToken && <StaffFacultyManager accessToken={accessToken} />}

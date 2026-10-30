@@ -1,3 +1,5 @@
+import { useVisibleTab } from '../navigation/useVisibleTab.ts'
+
 export default function CurriculumTabs<T extends string>({
   items,
   value,
@@ -11,8 +13,9 @@ export default function CurriculumTabs<T extends string>({
   prefix: string
   label: string
 }) {
+  const ref = useVisibleTab(value)
   return (
-    <div className="curriculum-tabs" role="tablist" aria-label={label}>
+    <div ref={ref} className="curriculum-tabs" role="tablist" aria-label={label}>
       {items.map((item, index) => (
         <button
           type="button"
@@ -31,8 +34,8 @@ export default function CurriculumTabs<T extends string>({
             else if (event.key === 'End') next = items.length - 1
             else return
             event.preventDefault()
-            onChange(items[next].id)
             document.getElementById(`${prefix}-${items[next].id}`)?.focus()
+            onChange(items[next].id)
           }}
         >
           {item.label}

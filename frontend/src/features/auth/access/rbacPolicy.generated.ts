@@ -3,6 +3,8 @@
 import type { AuthRole } from '../../../types/auth.ts'
 
 export const PERMISSION_CODES = [
+  "registration.own.read",
+  "registration.own.manage",
   "courses.read",
   "courses.manage",
   "semesters.read",
@@ -179,6 +181,8 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     "ai.knowledge.create",
   ],
   student: [
+    "registration.own.read",
+    "registration.own.manage",
     "profile.own.read",
     "profile.own.update",
     "notifications.own.read",

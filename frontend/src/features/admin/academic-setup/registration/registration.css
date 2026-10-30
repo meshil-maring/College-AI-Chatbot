@@ -1,0 +1,104 @@
+.semester-registration {
+  display: grid;
+  gap: 20px;
+  color: var(--ui-text);
+}
+.semester-registration h1 {
+  font-size: 28px;
+  font-weight: 700;
+}
+.semester-registration h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.semester-registration h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.semester-registration p {
+  color: var(--ui-text-muted);
+}
+.registration-panel {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  min-width: 0;
+}
+.registration-panel > fieldset {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.registration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+.registration-grid label {
+  display: grid;
+  gap: 8px;
+}
+.registration-grid select,
+.registration-grid input:not([type='checkbox']) {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+}
+.registration-option {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 8px;
+  min-width: 0;
+}
+.registration-option legend {
+  padding: 0 4px;
+}
+.registration-grid .registration-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+}
+.registration-check input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--ui-accent);
+}
+.registration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.registration-preparation {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+.registration-panel ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+.registration-panel :is(input, select, button):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+@media (pointer: coarse), (max-width: 640px) {
+  .registration-panel :is(input, select, button),
+  .registration-grid .registration-check {
+    min-height: 44px;
+  }
+  .registration-check input {
+    min-height: 20px;
+  }
+}

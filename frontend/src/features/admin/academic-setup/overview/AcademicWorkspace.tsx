@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Info } from 'lucide-react'
 import { useAuth } from '../../../auth/session/AuthProvider.tsx'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
@@ -15,6 +15,9 @@ import AcademicCalendarPage from '../calendar/AcademicCalendarPage.tsx'
 import { type AcademicPage } from './academicOverviewModel.ts'
 import { hasAcademicCatalogueReadAccess } from './useAcademicOverview.ts'
 import '../styles/overview.css'
+import AcademicJourney from '../navigation/AcademicJourney.tsx'
+import StudentEnrollmentPage from '../registration/StudentEnrollmentPage.tsx'
+import { calendarDestinations, calendarTabFor } from '../navigation/academicCalendarNavigation.ts'
 
 interface Props {
   page: AcademicPage
@@ -48,6 +51,35 @@ export default function AcademicWorkspace(props: Props) {
 function AcademicWorkspaceSession(
   props: Props & { accessToken: string; identity: string; institutionId: string; canReadCatalogues: boolean },
 ) {
+  const ref = useRef<HTMLDivElement>(null)
+  const focusTab = useRef(false)
+  function navigate(page: AcademicPage) {
+    focusTab.current = page !== props.page && document.activeElement?.getAttribute('role') === 'tab'
+    props.onNavigate(page)
+  }
+  useEffect(() => {
+    const heading = focusTab.current
+      ? ref.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+      : ref.current?.querySelector('h1')
+    focusTab.current = false
+    if (!heading || document.querySelector('dialog[open]')) return
+    if (!document.activeElement?.matches('input[type="search"]')) {
+      if (heading.tagName === 'H1') heading.tabIndex = -1
+      heading.focus({ preventScroll: true })
+    }
+    ref.current?.scrollIntoView?.({ block: 'start' })
+  }, [props.page])
+  return (
+    <div ref={ref} className="academic-workspace-flow">
+      <AcademicJourney page={props.page} onNavigate={navigate} />
+      <AcademicWorkspaceContent {...props} onNavigate={navigate} />
+    </div>
+  )
+}
+
+function AcademicWorkspaceContent(
+  props: Props & { accessToken: string; identity: string; institutionId: string; canReadCatalogues: boolean },
+) {
   const [request, setRequest] = useState<{ entity?: AcademicEntity; create: boolean }>({ create: false })
   function openRecords(entity?: AcademicEntity, create = false) {
     setRequest({ entity, create })
@@ -70,16 +102,47 @@ function AcademicWorkspaceSession(
   if (props.page === 'cohorts')
     return <BatchesPage {...structureContext} onOverview={() => props.onNavigate('overview')} />
   if (props.page === 'sections')
-    return <SectionsPage {...structureContext} onOverview={() => props.onNavigate('overview')} />
-  if (props.page === 'curriculum' || props.page === 'curriculum-versions' || props.page === 'curriculum-subjects')
+    return (
+      <SectionsPage
+        {...structureContext}
+        onOverview={() => props.onNavigate('overview')}
+        onEnrollment={() => props.onNavigate('enrollments')}
+      />
+    )
+  if (props.page === 'enrollments')
+    return <StudentEnrollmentPage context={structureContext} onBack={() => props.onNavigate('sections')} />
+  if (props.page === 'curriculum' || props.page.startsWith('curriculum-'))
     return (
       <CurriculumPage
-        key={props.page}
         accessToken={props.accessToken}
         identity={props.identity}
         institutionId={props.institutionId}
         canReadCatalogues={props.canReadCatalogues}
         initialTab={props.page === 'curriculum-subjects' ? 'mapping' : 'list'}
+        activeTab={
+          props.page === 'curriculum-subjects'
+            ? 'subjects'
+            : props.page === 'curriculum-options'
+              ? 'options'
+              : props.page === 'curriculum-history'
+                ? 'history'
+                : props.page === 'curriculum-existing'
+                  ? 'existing'
+                  : 'versions'
+        }
+        onTabChange={(tab) =>
+          props.onNavigate(
+            tab === 'subjects'
+              ? 'curriculum-subjects'
+              : tab === 'options'
+                ? 'curriculum-options'
+                : tab === 'history'
+                  ? 'curriculum-history'
+                  : tab === 'existing'
+                    ? 'curriculum-existing'
+                    : 'curriculum-versions',
+          )
+        }
         onOverview={() => props.onNavigate('overview')}
       />
     )
@@ -92,15 +155,16 @@ function AcademicWorkspaceSession(
         onOverview={() => props.onNavigate('overview')}
       />
     )
-  if (props.page === 'calendar' || props.page === 'years' || props.page === 'terms')
+  if (calendarTabFor(props.page))
     return (
       <AcademicCalendarPage
-        key={props.page}
         accessToken={props.accessToken}
         identity={props.identity}
         institutionId={props.institutionId}
         canReadCatalogues={props.canReadCatalogues}
-        initialTab={props.page === 'terms' ? 'semesters' : 'years'}
+        initialTab="years"
+        activeTab={calendarTabFor(props.page)}
+        onTabChange={(tab) => props.onNavigate(calendarDestinations[tab])}
         createInitially={request.entity === 'academic_years' && request.create}
         onCreateHandled={() => setRequest({ create: false })}
         onOverview={() => props.onNavigate('overview')}

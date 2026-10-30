@@ -1,7 +1,7 @@
 /** Authenticated identity and institution information workspace. */
 
 import { useState } from 'react'
-import { Bell, BookOpen, Bot, UserCircle, type LucideIcon } from 'lucide-react'
+import { Bell, BookOpen, Bot, ClipboardList, UserCircle, type LucideIcon } from 'lucide-react'
 import WorkspaceFrame from '../../workspace/WorkspaceFrame.tsx'
 import WorkspacePageHeader from '../../workspace/WorkspacePageHeader.tsx'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
@@ -10,12 +10,14 @@ import { STUDENT_VIEW_HEADINGS, buildStudentNavigation, type StudentView } from 
 import { NoticesPage } from '../notices/NoticesPage.tsx'
 import { ResourcesPage } from '../resources/ResourcesPage.tsx'
 import { ProfilePage } from '../profile/ProfilePage.tsx'
+import SemesterRegistrationPage from '../registration/SemesterRegistrationPage.tsx'
 import { getMyProfile } from '../../../services/students/studentApi.ts'
 import { StudentAccessContext, useStudentResource, type StudentAccessDenial } from '../shared/useStudentResource.ts'
 import { ErrorBlock, LoadingBlock } from '../shared/SectionState.tsx'
 
 const icons: Record<StudentView, LucideIcon> = {
   profile: UserCircle,
+  registration: ClipboardList,
   notices: Bell,
   resources: BookOpen,
   assistant: Bot,
@@ -134,6 +136,7 @@ export default function StudentShell() {
             {view === 'notices' && <NoticesPage />}
             {view === 'resources' && <ResourcesPage />}
             {view === 'profile' && <ProfilePage profile={profile} />}
+            {view === 'registration' && <SemesterRegistrationPage />}
             {view === 'assistant' && (
               <section aria-label="AI Assistant">
                 <ChatShell />

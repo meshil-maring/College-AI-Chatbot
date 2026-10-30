@@ -24,6 +24,11 @@ institution-admin scope and entity permissions independently. Faculty teaching
 routers remain retired. `auth/identity.py` owns account identity bootstrap;
 `ai/public_contract.py` owns the public chat response documentation.
 
+`academics/semester_registration.py` exposes administrator option groups and
+section assignment under `/admin/academic-registration`, plus owner-scoped reads
+and completion under `/students/me/semester-registrations`. It uses independent
+student registration grants and never restores retired package routes.
+
 Platform leaf routers carry `/platform` on their own route templates, just as
 admin leaves carry `/admin`. The central permission dependencies inspect these
 templates and deny any operation without an explicit method/path policy.

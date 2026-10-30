@@ -1,5 +1,14 @@
 # Development browser reliability journey
 
+For the local navigation and responsive-layout check, first build the frontend,
+then run `node scripts/validation/academic_workspace/browser/navigation.mjs` from
+the repository root. This separate journey uses intercepted fixture responses,
+an ephemeral local static server and installed Chrome. It checks direct academic
+destinations, the setup guide, calendar tabs, browser history, refresh and mobile
+navigation at 1440, 1024, 390 and 320 CSS pixels. It rejects unexpected API calls
+and writes screenshots/results under `logs/frontend/academic-navigation/`.
+No live account or backend is used for this check.
+
 This journey uses real password authentication, server-issued tokens and the
 normal academic APIs. It creates an email-confirmed test administrator only in
 the selected active development institution. No invitation or email is sent.

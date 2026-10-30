@@ -18,6 +18,8 @@ from app.core.permission_defaults import (
 )
 
 PERMISSIONS: tuple[str, ...] = (
+    "registration.own.read",
+    "registration.own.manage",
     "courses.read",
     "courses.manage",
     "semesters.read",

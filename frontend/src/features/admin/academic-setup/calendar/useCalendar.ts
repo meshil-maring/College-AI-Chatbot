@@ -16,7 +16,11 @@ export interface CalendarContext {
   canReadCatalogues: boolean
 }
 
-export function useCalendar(context: CalendarContext, initialTab: CalendarTab) {
+export function useCalendar(
+  context: CalendarContext,
+  initialTab: CalendarTab,
+  navigation: { activeTab?: CalendarTab; onTabChange?: (tab: CalendarTab) => void } = {},
+) {
   const { query, catalogue, loading, error } = useAcademicOverview(
     context.accessToken,
     context.identity,
@@ -27,7 +31,8 @@ export function useCalendar(context: CalendarContext, initialTab: CalendarTab) {
   const available = denied ? undefined : catalogue
   const years = available?.records.academic_years?.filter((item) => item.institution_id === context.institutionId)
   const semesters = available?.records.semesters?.filter((item) => item.institution_id === context.institutionId)
-  const [tab, changeTab] = useState(initialTab)
+  const [localTab, changeTab] = useState(initialTab)
+  const tab = navigation.activeTab ?? localTab
   const [search, changeSearch] = useState('')
   const [status, changeStatus] = useState<CalendarStatus>('all')
   const [sort, changeSort] = useState<CalendarSort>('newest')
@@ -66,7 +71,10 @@ export function useCalendar(context: CalendarContext, initialTab: CalendarTab) {
     filteredSemesters,
     yearRows: filteredYears.slice(offset, offset + CALENDAR_PAGE_SIZE),
     semesterRows: filteredSemesters.slice(offset, offset + CALENDAR_PAGE_SIZE),
-    setTab: resetting(changeTab),
+    setTab: resetting((value: CalendarTab) => {
+      changeTab(value)
+      navigation.onTabChange?.(value)
+    }),
     setSearch: resetting(changeSearch),
     setStatus: resetting(changeStatus),
     setSort: resetting(changeSort),

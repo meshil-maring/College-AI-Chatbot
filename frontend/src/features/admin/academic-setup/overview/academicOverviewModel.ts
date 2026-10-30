@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
 import type { StructureEntity } from '../../../../types/academicStructure.ts'
+import { academicDestinations } from '../navigation/academicDestinations.ts'
 
 export type AcademicPage =
   | 'overview'
@@ -22,11 +23,17 @@ export type AcademicPage =
   | 'calendar'
   | 'years'
   | 'terms'
+  | 'calendar-dates'
+  | 'calendar-timeline'
   | 'program-semesters'
   | 'subjects'
   | 'curriculum'
   | 'curriculum-versions'
   | 'curriculum-subjects'
+  | 'curriculum-options'
+  | 'curriculum-history'
+  | 'curriculum-existing'
+  | 'enrollments'
   | 'cohorts'
   | 'sections'
   | 'offerings'
@@ -71,7 +78,7 @@ export const academicAreas: readonly AcademicArea[] = [
     description: 'Configure academic years and dated teaching terms.',
     action: 'Manage Calendar',
     note: 'Your institution’s teaching calendar.',
-    children: ['years', 'terms'],
+    children: ['years', 'terms', 'calendar-dates', 'calendar-timeline'],
   },
   {
     page: 'subjects',
@@ -98,7 +105,13 @@ export const academicAreas: readonly AcademicArea[] = [
     description: 'Define curriculum versions and their individual subject mappings.',
     action: 'Manage Curriculum',
     note: 'Published structures, preserved over time.',
-    children: ['curriculum-versions', 'curriculum-subjects'],
+    children: [
+      'curriculum-versions',
+      'curriculum-subjects',
+      'curriculum-options',
+      'curriculum-history',
+      'curriculum-existing',
+    ],
   },
   {
     page: 'cohorts',
@@ -172,7 +185,7 @@ const childAreas: readonly AcademicArea[] = [
   },
 ]
 
-export const allAcademicAreas = [...academicAreas, ...childAreas]
+export const allAcademicAreas = [...academicAreas, ...childAreas, ...academicDestinations]
 export const getAcademicArea = (page: AcademicPage) => allAcademicAreas.find((area) => area.page === page)
 export const summaryPages: readonly AcademicPage[] = ['departments', 'programs', 'subjects', 'years']
 export const managementRows = [academicAreas.slice(0, 4), academicAreas.slice(4, 7), academicAreas.slice(7)]

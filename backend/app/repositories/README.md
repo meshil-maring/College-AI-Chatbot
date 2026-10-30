@@ -2,6 +2,10 @@
 
 Follow the shared [backend structure rules](../../STRUCTURE.md).
 
+`academics/semester_registration.py` reads tenant-filtered assignment data and
+calls audited option-group, section-assignment and student-registration RPCs.
+Student identity is always resolved from the authenticated actor by the database.
+
 Database access modules are grouped by feature, following the API, service and
 schema layout. Existing queries, tenant filters, RPC calls and return values
 remain in their owning modules.

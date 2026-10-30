@@ -4,11 +4,14 @@ import { useAcademicStructure } from '../../structure/useAcademicStructure.ts'
 import StructureRecordsPage from '../../structure/StructureRecordsPage.tsx'
 import CurriculumTabs from '../CurriculumTabs.tsx'
 import { ExistingCurriculumMappings } from '../ExistingCurriculumMappings.tsx'
+import SubjectOptionsPage from '../choices/SubjectOptionsPage.tsx'
 
-type Tab = 'versions' | 'subjects' | 'history' | 'existing'
+export type VersionedCurriculumTab = 'versions' | 'subjects' | 'options' | 'history' | 'existing'
+type Tab = VersionedCurriculumTab
 const tabs: { id: Tab; label: string }[] = [
   { id: 'versions', label: 'Curriculum List' },
   { id: 'subjects', label: 'Subject Mapping' },
+  { id: 'options', label: 'Subject Options' },
   { id: 'history', label: 'Version History' },
   { id: 'existing', label: 'Existing Program Mappings' },
 ]
@@ -16,18 +19,31 @@ export default function VersionedCurriculumPage({
   context,
   onOverview,
   initialMapping = false,
+  activeTab,
+  onTabChange,
 }: {
   context: StructureContext
   onOverview: () => void
   initialMapping?: boolean
+  activeTab?: Tab
+  onTabChange?: (tab: Tab) => void
 }) {
   const state = useAcademicStructure(context)
-  const [tab, setTab] = useState<Tab>(initialMapping ? 'subjects' : 'versions')
+  const [localTab, setLocalTab] = useState<Tab>(initialMapping ? 'subjects' : 'versions')
+  const tab = activeTab ?? localTab
+  const setTab = onTabChange ?? setLocalTab
   const [versionId, setVersionId] = useState('')
   const versions = state.structure?.records.curriculum_versions ?? []
   const navigation = (
     <CurriculumTabs items={tabs} value={tab} onChange={setTab} prefix="versioned-curriculum" label="Curriculum views" />
   )
+  if (tab === 'options')
+    return (
+      <>
+        {navigation}
+        <SubjectOptionsPage context={context} onContinue={() => setTab('versions')} />
+      </>
+    )
   if (tab === 'existing')
     return (
       <>

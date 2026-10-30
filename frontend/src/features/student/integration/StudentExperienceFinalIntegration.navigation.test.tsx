@@ -21,5 +21,5 @@ it('moves active state using keyboard navigation without duplicate or academic e
     within(navigation)
       .getAllByRole('button')
       .map((item) => item.textContent),
-  ).toEqual(['Profile', 'Notices', 'Learning Resources', 'AI Assistant'])
+  ).toEqual(['Profile', 'Semester Registration', 'Notices', 'Learning Resources', 'AI Assistant'])
 })

@@ -1,0 +1,5 @@
+{
+  "version": "20261030000000",
+  "name": "semester_registration",
+  "files": ["tables.sql", "permissions.sql", "option_groups.sql", "guards.sql", "assignments.sql", "registration.sql", "student_reads.sql", "security.sql"]
+}

@@ -55,6 +55,12 @@ The active Academic Setup overview lives in `academic-setup/overview/`, with
 feature styles in `academic-setup/styles/`. It represents the eleven approved
 entities without changing the existing service contract. See the
 [design guide](ACADEMIC_SETUP_DESIGN.md) for the entity mapping and integration boundaries.
+`academic-setup/navigation/` owns the setup journey, next-step guidance, direct
+option/enrollment destinations and responsive navigation styles. Administrator
+view/query parsing and browser history live in `features/admin/navigation/`.
+Curriculum and calendar tabs share the workspace destination; navigation focuses
+page headings while preserving keyboard focus when moving between tabs. Their
+shared visibility hook keeps the active tab in view without scrolling the page.
 The dedicated Departments page, drawer, state hooks and adjacent tests live in
 `academic-setup/departments/`, with its own scoped `styles/` folder. It reuses
 the existing department/program contracts and transport without remapping other
@@ -85,6 +91,14 @@ Existing program-course mappings remain a separate tab, with dated-term groups
 in `detail/` and mapping drawers in `editor/`. Shared course-type labels live in
 `academic-setup/forms/academicCourseTypes.ts` and also serve Subjects.
 
+Curriculum's `choices/` owns complete subject option groups. Academic Setup's
+`registration/` owns administrator section assignment, registration queries and
+scoped styles. These use the separate additive semester-registration API.
+The option form explains missing entries on Save and opens a semester-filtered
+mapping workflow without discarding the group draft. Existing mapping drawers
+manage required subjects and optional subjects; newly added option mappings
+default to optional. Semester choices follow numeric progression order.
+
 The Batches screen lives in `academic-setup/batches/`, with focused `editor/`,
 `styles/` and `__tests__/` folders. Its `cohorts` destination reads and writes
 stored admission cohorts through an adapter, retaining each batch's published
@@ -108,7 +122,8 @@ degree programs, academic years, dated semesters, courses, program-course links,
 course offerings and sections. Transport lives in `services/admin/academics.ts`
 and contracts in `types/academicSetup.ts`. Form controls and relationship choices
 live in `academic-setup/forms/`. Sections belong to one course offering.
-Attendance, results, enrollment and teaching workflows remain out of scope.
+Attendance, results and teaching workflows remain out of scope. Student semester
+enrollment uses the separate additive registration workflow described above.
 The owner asked to keep a specific set of old roster/import/navigation/dashboard
 files as source. They remain at their original paths, disconnected from all
 active shells. Some import retired dependencies and are not runnable workflows.

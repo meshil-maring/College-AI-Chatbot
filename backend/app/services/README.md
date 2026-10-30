@@ -2,6 +2,11 @@
 
 Follow the shared [backend structure rules](../../STRUCTURE.md).
 
+`academics/semester_registration.py` owns curriculum option groups, administrator
+section assignment and student whole-option registration. It preserves exact
+institution grants, account approval and ownership; SQL commands atomically
+enroll required and selected subjects and check offerings and capacity.
+
 Services are grouped by feature. API routers call these modules; repositories
 continue to own database access and schemas continue to own request/response types.
 
