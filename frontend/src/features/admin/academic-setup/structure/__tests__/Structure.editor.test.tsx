@@ -1,5 +1,6 @@
 import { api, renderStructure, structureCatalogue } from './Structure.support.tsx'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 describe('Curriculum creation and academic offerings', () => {
@@ -24,13 +25,18 @@ describe('Curriculum creation and academic offerings', () => {
   it('limits offerings to a section’s assigned curriculum and program semester', async () => {
     structureCatalogue.records.academic_offerings = []
     renderStructure('offerings')
-    const trigger = screen.getByRole('button', { name: 'Add Academic Offering' })
+    const trigger = screen.getByRole('button', { name: 'Make Subject Available' })
+    expect(trigger).toBeDisabled()
+    await screen.findByRole('option', { name: 'Section A (CSE26A)' })
+    const sectionFilter = screen.getByRole('combobox', { name: 'Choose an academic section' })
+    await userEvent.selectOptions(sectionFilter, 'section-1')
+    expect(sectionFilter).toHaveValue('section-1')
     await waitFor(() => expect(trigger).toBeEnabled())
     fireEvent.click(trigger)
-    const drawer = within(screen.getByRole('dialog', { name: 'Add Academic Offering' }))
-    fireEvent.change(drawer.getByRole('combobox', { name: 'Section' }), { target: { value: 'section-1' } })
-    fireEvent.change(drawer.getByRole('combobox', { name: 'Curriculum Subject' }), { target: { value: 'mapping-1' } })
-    fireEvent.click(drawer.getByRole('button', { name: 'Create Academic Offering' }))
+    const drawer = within(screen.getByRole('dialog', { name: 'Add Section Subject' }))
+    expect(drawer.getByRole('combobox', { name: 'Section' })).toHaveValue('section-1')
+    fireEvent.change(drawer.getByRole('combobox', { name: 'Subject', exact: true }), { target: { value: 'mapping-1' } })
+    fireEvent.click(drawer.getByRole('button', { name: 'Create Section Subject' }))
     await waitFor(() =>
       expect(api.createStructureRecord).toHaveBeenCalledWith(
         'token-1',

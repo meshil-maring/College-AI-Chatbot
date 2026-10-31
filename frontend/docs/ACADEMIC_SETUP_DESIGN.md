@@ -29,8 +29,10 @@ and POST/PATCH record operations. Public URLs include the existing `/api/v1`
 prefix. Actor and institution come from verified server authorization.
 
 The existing eight-entity API and offering-owned `sections` retain their
-contracts and data. Existing program-course mappings remain available through
-Curriculum's Existing Program Mappings tab and the existing catalogue workflow.
+contracts and data. Legacy program-course mappings remain available through
+Curriculum's Legacy program mappings tab and the existing catalogue workflow.
+They do not populate versioned curricula; use versioned curricula for new batch
+study plans and retain legacy mappings only for workflows that still require them.
 They are not silently converted into curriculum versions or class sections.
 
 ## Building the academic structure
@@ -47,7 +49,14 @@ every student; Student choice subjects and their complete option groups are
 managed inside the same semester card. There is no separate Subject Options tab.
 Publication reviews saved subjects and groups and waits for open choice drafts
 to be saved or cancelled. Existing server validation still applies.
-Empty semesters are shown for review, without adding a new completion requirement.
+Before publishing, administrators see active-subject coverage and warnings for
+empty or unconfigured semesters. These are review prompts, not new publication
+requirements. Published versions of the same program can be compared in Version
+History to review added, removed and changed subject mappings. A published or
+archived plan can also be cloned into an independent draft, including its subject
+mappings and saved choice groups; a failed clone keeps any partial draft for
+manual review instead of creating duplicates on retry. Bulk semester setup shows
+progress and can be retried safely after a partial failure.
 After publishing, the plan is read-only and links to batch assignment. The existing
 catalogue subscriptions, identity guards, permissions and single-record writes are
 reused; this interface change needs no additional database migration.

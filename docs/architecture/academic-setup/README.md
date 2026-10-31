@@ -101,6 +101,12 @@ These are distinct structures. The application does not automatically synchroniz
 their mappings or convert their section records. A new versioned workflow does
 not require creating a legacy `program_courses` link first.
 
+Use the versioned workspace for new study plans and batch assignments. The legacy
+mapping editor remains available for older workflows, but its unversioned
+program-course links do not populate versioned curricula. Retire or migrate that
+path only after identifying its active consumers and preserving any required
+compatibility.
+
 ## Scope and present limits
 
 The active setup supports catalogue maintenance, curriculum publication/history,

@@ -10,6 +10,7 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [progress, setProgress] = useState({ completed: 0, total: 0 })
   const mounted = useRef(true)
   const locked = useRef(false)
   const live = useRef({ state, version, hasDrafts })
@@ -63,6 +64,10 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
         (item) => item.institution_id === state.context.institutionId && item.program_id === version.program_id,
       )
       const codes = new Set(semesters.map((item) => item.code.trim().toLowerCase()))
+      const missingNumbers = Array.from({ length: version.total_semesters }, (_, index) => index + 1).filter(
+        (number) => !semesters.some((item) => item.semester_number === number),
+      )
+      setProgress({ completed: 0, total: missingNumbers.length })
       for (let number = 1; number <= version.total_semesters; number += 1) {
         if (!current()) return
         if (!allowed()) throw new Error('Your access or study plan changed. Refresh before continuing.')
@@ -87,6 +92,7 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
           throw new Error('The saved semester could not be verified for this program.')
         semesters.push(result)
         codes.add(result.code.trim().toLowerCase())
+        setProgress((value) => ({ ...value, completed: value.completed + 1 }))
       }
       if (current()) setNotice('Semesters are ready. Existing semester records have been reused.')
     } catch (cause) {
@@ -111,5 +117,5 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
       if (mounted.current) setSaving(false)
     }
   }
-  return { missing, canPrepare, saving, error, notice, prepare }
+  return { missing, canPrepare, saving, error, notice, progress, prepare }
 }

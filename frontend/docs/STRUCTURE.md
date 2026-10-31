@@ -101,8 +101,10 @@ selected curriculum and semester. Publication reviews saved subjects and choices
 and waits for open choice drafts to be saved or cancelled. Missing semesters link to their setup page;
 published and archived plans stay read-only. It reuses the existing structure
 catalogue and write hooks without changing storage or API contracts.
-Existing program-course mappings remain a separate tab, with dated-term groups
-in `detail/` and mapping drawers in `editor/`. Shared course-type labels live in
+Legacy program-course mappings remain a separate compatibility tab, with
+dated-term groups in `detail/` and mapping drawers in `editor/`. Use versioned
+curricula for new batch study plans; the legacy editor remains available for
+workflows that still depend on those unversioned links. Shared course-type labels live in
 `academic-setup/forms/academicCourseTypes.ts` and also serve Subjects.
 
 Curriculum's `choices/` owns complete subject option groups embedded in each

@@ -21,7 +21,7 @@ export const academicJourney = [
       'curriculum-history',
       'curriculum-existing',
     ],
-    description: 'Build each program’s semester-by-semester subject plan, then publish it.',
+    description: 'Build the curriculum, then review the subjects available to each section.',
   },
   {
     id: 'batches',
@@ -32,10 +32,11 @@ export const academicJourney = [
   },
   {
     id: 'delivery',
-    title: 'Classes & subjects',
+    title: 'Classes',
     page: 'sections',
     pages: ['sections', 'offerings'],
-    description: 'Create the class groups you need for a batch, then offer their subjects.',
+    description:
+      'Add class sections when students need separate class groups, then choose which subjects are available to each section.',
   },
   {
     id: 'enrollment',
@@ -114,12 +115,12 @@ const guidance: Partial<Record<AcademicPage, Guidance>> = {
   },
   sections: {
     description:
-      'Each section connects a batch, one program semester and one dated teaching term. Next, offer the subjects that class group can take.',
+      'Each section connects a batch, one program semester and one dated teaching term. Next, choose which curriculum subjects that class group can take.',
     next: 'offerings',
-    action: 'Offer section subjects',
+    action: 'Choose subjects by section',
   },
   offerings: {
-    description: 'Offer every required subject and every subject in the options you want students to choose.',
+    description: 'Make each required subject and each student-choice subject available to the section.',
     next: 'enrollments',
     action: 'Assign students to sections',
   },
@@ -161,7 +162,7 @@ const distinctionByPage: Partial<Record<AcademicPage, AcademicDistinction>> = {
   sections: {
     title: 'A section is a class group',
     description:
-      'It links one batch, one program semester and one dated teaching term. Create a section for each group that needs its own enrollment and subject offerings.',
+      'It links one batch, one program semester and one dated teaching term. Create a section for each group that needs its own enrollment and subject list.',
   },
 }
 

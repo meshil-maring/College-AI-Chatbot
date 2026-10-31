@@ -91,7 +91,7 @@ versioned mappings, where the same subject can appear in different progression
 stages or curriculum versions.
 
 Existing records remain available through Existing Academic Catalogues and
-Curriculum → Existing Program Mappings. They are not inputs to the versioned
+Curriculum → Legacy program mappings. They are not inputs to the versioned
 offering path, which uses `curriculum_subject_id` instead.
 
 ## Identity, uniqueness and history

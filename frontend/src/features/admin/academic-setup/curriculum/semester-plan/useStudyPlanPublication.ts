@@ -18,6 +18,10 @@ export function useStudyPlanPublication(
     (total, item) => total + item.subjects.filter((subject) => subject.is_active).length,
     0,
   )
+  const emptySemesters = semesters.filter(
+    (item) => item.semester && !item.subjects.some((subject) => subject.is_active),
+  )
+  const unconfiguredSemesters = semesters.filter((item) => !item.semester)
   const canPublish =
     state.canManage('curriculum_versions') &&
     studyPlanCanChange(state, version) &&
@@ -36,6 +40,9 @@ export function useStudyPlanPublication(
     notice,
     semesters,
     count,
+    emptySemesters: emptySemesters.length,
+    unconfiguredSemesters: unconfiguredSemesters.length,
+    semesterCount: semesters.length,
     canPublish,
     saving: write.saving,
     error: write.error,

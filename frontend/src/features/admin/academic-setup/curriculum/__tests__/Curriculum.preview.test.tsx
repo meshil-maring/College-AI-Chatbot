@@ -64,7 +64,7 @@ describe('Persisted curriculum versions', () => {
     structureCatalogue.records.curriculum_versions![0].status = 'draft'
     structureCatalogue.records.curriculum_subjects = []
     renderVersions()
-    await screen.findByRole('button', { name: 'View CSE Curriculum' })
+    await screen.findAllByRole('button', { name: 'View CSE Curriculum' })
     fireEvent.click(screen.getByRole('tab', { name: 'Subjects by semester' }))
     fireEvent.change(screen.getByRole('combobox', { name: 'Choose a curriculum' }), { target: { value: 'version-1' } })
     const trigger = screen.getByRole('button', { name: 'Add subject to Semester 1' })
@@ -95,7 +95,40 @@ describe('Persisted curriculum versions', () => {
     expect(screen.getByRole('region', { name: 'Published curriculum history' })).toHaveTextContent(
       'CSE Curriculum · v1.0 · Published',
     )
-    fireEvent.click(screen.getByRole('tab', { name: 'Existing Program Mappings' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Legacy program mappings' }))
+    expect(await screen.findByRole('heading', { name: 'Legacy program mappings' })).toBeInTheDocument()
+    expect(
+      screen.getByText(/They do not populate versioned curricula or determine the subjects assigned to new batches/),
+    ).toBeInTheDocument()
     expect(await screen.findByRole('region', { name: 'Curriculum summary' })).toBeInTheDocument()
+  })
+
+  it('compares published subject mappings between versions of the same program', async () => {
+    const first = structureCatalogue.records.curriculum_versions![0]
+    structureCatalogue.records.curriculum_versions!.push({
+      ...first,
+      curriculum_version_id: 'version-2',
+      name: 'CSE Curriculum',
+      version: '2.0',
+    })
+    structureCatalogue.records.curriculum_subjects!.push({
+      ...structureCatalogue.records.curriculum_subjects![0],
+      curriculum_subject_id: 'mapping-2',
+      curriculum_version_id: 'version-2',
+      course_type: 'elective',
+      credits: 4,
+    })
+    renderVersions()
+    await screen.findAllByRole('button', { name: 'View CSE Curriculum' })
+    fireEvent.click(screen.getByRole('tab', { name: 'Version History' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Earlier version' }), {
+      target: { value: first.curriculum_version_id },
+    })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Later version' }), { target: { value: 'version-2' } })
+    expect(screen.getByRole('region', { name: 'Compare curriculum versions' })).toHaveTextContent(
+      'Changed subject type',
+    )
+    expect(screen.getByRole('region', { name: 'Compare curriculum versions' })).toHaveTextContent('credits')
+    expect(screen.getByRole('region', { name: 'Compare curriculum versions' })).toHaveTextContent('Data Mining')
   })
 })

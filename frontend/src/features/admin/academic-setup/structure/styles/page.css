@@ -24,6 +24,30 @@
 .structure-summary strong {
   font-size: var(--ui-type-metric);
 }
+.structure-section-filter {
+  display: block;
+  max-width: 32rem;
+}
+.structure-section-filter span,
+.structure-section-filter small {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
+}
+.structure-section-filter select {
+  width: 100%;
+  min-height: var(--ui-control-height);
+  padding: 8px 12px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  color-scheme: dark;
+}
+.structure-section-filter small {
+  margin-block: 8px 0;
+}
 .structure-filters {
   display: flex;
   flex-wrap: wrap;

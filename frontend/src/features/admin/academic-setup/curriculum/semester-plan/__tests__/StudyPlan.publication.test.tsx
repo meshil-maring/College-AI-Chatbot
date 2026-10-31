@@ -9,6 +9,7 @@ it('reviews actual semester subjects and publishes only after explicit confirmat
   const review = within(screen.getByRole('alertdialog', { name: 'Review study plan' }))
   expect(review.getByText('Data Mining · Compulsory')).toBeInTheDocument()
   expect(review.getByText('No subjects included. Check whether this is intended.')).toBeInTheDocument()
+  expect(review.getByText(/1 set-up semester is empty and 0 are not set up/)).toBeInTheDocument()
   expect(api.updateStructureRecord).not.toHaveBeenCalled()
   fireEvent.click(review.getByRole('button', { name: 'Publish study plan' }))
   await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())

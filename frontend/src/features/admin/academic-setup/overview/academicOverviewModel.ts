@@ -114,17 +114,7 @@ export const academicAreas: readonly AcademicArea[] = [
     icon: Network,
     description: 'Organize a cohort within one program semester and one academic term.',
     action: 'Manage Academic Sections',
-    note: 'One section can contain multiple subject offerings.',
-    statuses: ['Planned', 'Active', 'Closed', 'Cancelled'],
-  },
-  {
-    page: 'offerings',
-    structureEntity: 'academic_offerings',
-    title: 'Academic Offerings',
-    icon: LibraryBig,
-    description: 'Manage individual subject offerings within academic sections.',
-    action: 'Manage Academic Offerings',
-    note: 'Subject delivery, distinct from section grouping.',
+    note: 'One section can have multiple subjects available to its students.',
     statuses: ['Planned', 'Active', 'Closed', 'Cancelled'],
   },
 ]
@@ -168,6 +158,15 @@ const childAreas: readonly AcademicArea[] = [
     action: 'Choose semester subjects',
     note: 'Select a curriculum, then add subjects to its semesters.',
   },
+  {
+    page: 'offerings',
+    structureEntity: 'academic_offerings',
+    title: 'Subjects by section',
+    icon: LibraryBig,
+    description: 'Choose which subjects from a section’s curriculum are available to its students.',
+    action: 'Manage section subjects',
+    note: 'Select a section to review and manage its available subjects.',
+  },
 ]
 
 export const allAcademicAreas = [...academicAreas, ...childAreas, ...academicDestinations]
@@ -181,7 +180,7 @@ export const sampleActivities = [
   'Curriculum version published',
   'Admission cohort created',
   'Academic section activated',
-  'Subject offering created',
+  'Subject made available',
 ]
 export const quickActions: readonly { page: AcademicPage; label: string }[] = [
   { page: 'departments', label: 'Add Department' },
@@ -191,5 +190,5 @@ export const quickActions: readonly { page: AcademicPage; label: string }[] = [
   { page: 'curriculum-versions', label: 'Manage Curriculum Versions' },
   { page: 'cohorts', label: 'Manage Batches' },
   { page: 'sections', label: 'Manage Sections' },
-  { page: 'offerings', label: 'Manage Offerings' },
+  { page: 'offerings', label: 'Manage subjects by section' },
 ]

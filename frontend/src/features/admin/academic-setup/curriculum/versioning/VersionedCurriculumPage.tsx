@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { CurriculumVersion } from '../../../../../types/academicStructure.ts'
 import type { StructureContext } from '../../structure/useAcademicStructure.ts'
 import { useAcademicStructure } from '../../structure/useAcademicStructure.ts'
 import StructureRecordsPage from '../../structure/StructureRecordsPage.tsx'
@@ -6,6 +7,7 @@ import CurriculumTabs from '../CurriculumTabs.tsx'
 import { ExistingCurriculumMappings } from '../ExistingCurriculumMappings.tsx'
 import SemesterPlanPage from '../semester-plan/SemesterPlanPage.tsx'
 import StudyPlanSteps from '../semester-plan/StudyPlanSteps.tsx'
+import CurriculumVersionCompare from './CurriculumVersionCompare.tsx'
 import '../semester-plan/study-plan.css'
 
 // Previously saved option destinations now use the combined semester view.
@@ -15,7 +17,7 @@ const tabs: { id: Tab; label: string }[] = [
   { id: 'versions', label: 'Curriculum List' },
   { id: 'subjects', label: 'Subjects by semester' },
   { id: 'history', label: 'Version History' },
-  { id: 'existing', label: 'Existing Program Mappings' },
+  { id: 'existing', label: 'Legacy program mappings' },
 ]
 export default function VersionedCurriculumPage({
   context,
@@ -79,20 +81,30 @@ export default function VersionedCurriculumPage({
         </>
       )}
       {tab === 'history' && (
-        <section aria-label="Published curriculum history">
-          <p>Published and archived versions retain their original subject mappings and batch assignments.</p>
-          <ul>
-            {versions
-              .filter((version) => version.published_at)
-              .map((version) => (
-                <li key={version.curriculum_version_id}>
-                  {version.name} · v{version.version} · Published{' '}
-                  {new Date(version.published_at!).toLocaleDateString('en-IN')} · {version.status}
-                </li>
-              ))}
-          </ul>
-          {!versions.some((version) => version.published_at) && <p>No published versions yet.</p>}
-        </section>
+        <>
+          <section aria-label="Published curriculum history">
+            <p>Published and archived versions retain their original subject mappings and batch assignments.</p>
+            <ul>
+              {versions
+                .filter(
+                  (version): version is CurriculumVersion & { published_at: string } => version.published_at !== null,
+                )
+                .map((version) => (
+                  <li key={version.curriculum_version_id}>
+                    {version.name} · v{version.version} · Published{' '}
+                    {new Date(version.published_at).toLocaleDateString('en-IN')} · {version.status}
+                  </li>
+                ))}
+            </ul>
+            {!versions.some((version) => version.published_at) && <p>No published versions yet.</p>}
+          </section>
+          <CurriculumVersionCompare
+            versions={versions}
+            subjects={state.structure?.records.curriculum_subjects ?? []}
+            semesters={state.structure?.records.program_semesters ?? []}
+            courses={state.catalogue?.records.courses ?? []}
+          />
+        </>
       )}
     </StructureRecordsPage>
   )

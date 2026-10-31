@@ -12,6 +12,7 @@ import { useStudyPlanChoices } from './useStudyPlanChoices.ts'
 import ChoiceCatalogueState from '../choices/ChoiceCatalogueState.tsx'
 import SemesterSetup from '../semesters/SemesterSetup.tsx'
 import { usePrepareSemesters } from '../semesters/usePrepareSemesters.ts'
+import CloneStudyPlan from './clone/CloneStudyPlan.tsx'
 
 export default function SemesterPlanPage({
   state: source,
@@ -122,6 +123,9 @@ export default function SemesterPlanPage({
             )}
             {version.status === 'draft' && !state.structure?.manageable.includes('curriculum_subjects') && (
               <p>Read-only access to semester subjects. Your account cannot change this study plan.</p>
+            )}
+            {version.status !== 'draft' && (
+              <CloneStudyPlan state={state} source={version} choices={choices} onCloned={onVersionChange} />
             )}
             {state.refreshing && <p role="status">Updating study plan…</p>}
           </div>

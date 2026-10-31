@@ -33,9 +33,9 @@ export function structureCreationIssue(
   if (
     entity === 'academic_offerings' &&
     (!fields.find((field) => field.key === 'academic_section_id')?.options?.length ||
-      !state.structure?.records.curriculum_subjects?.some((item) => item.is_active))
+      !fields.find((field) => field.key === 'curriculum_subject_id')?.options?.length)
   )
-    return 'Create an active section and matching curriculum subject before adding offerings.'
+    return 'Choose a section with active subjects in its assigned curriculum and semester before making a subject available.'
   return undefined
 }
 export function structureCanEdit(entity: StructureEntity, row: StructureRow, state: AcademicStructureState) {

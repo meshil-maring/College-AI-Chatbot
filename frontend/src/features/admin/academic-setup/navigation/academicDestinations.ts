@@ -20,11 +20,11 @@ export const academicDestinations: readonly AcademicArea[] = [
   },
   {
     page: 'curriculum-existing',
-    title: 'Existing Program Mappings',
+    title: 'Legacy program mappings',
     icon: Database,
-    description: 'Review the separately retained program and dated-term subject mappings.',
-    action: 'Open Existing Program Mappings',
-    note: 'These mappings are separate from versioned curricula.',
+    description: 'Review program–subject links retained for existing workflows.',
+    action: 'Open legacy program mappings',
+    note: 'Use versioned curricula for new batch study plans.',
   },
   {
     page: 'curriculum-history',

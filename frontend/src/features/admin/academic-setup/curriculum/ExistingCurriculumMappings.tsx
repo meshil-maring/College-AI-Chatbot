@@ -12,9 +12,9 @@ import MappingDrawer from './editor/MappingDrawer.tsx'
 import './styles/curriculum.css'
 
 const tabs: { id: CurriculumTab; label: string }[] = [
-  { id: 'list', label: 'Curriculum List' },
-  { id: 'structure', label: 'Curriculum Structure' },
-  { id: 'mapping', label: 'Subject Mapping' },
+  { id: 'list', label: 'Program mappings' },
+  { id: 'structure', label: 'Program structure' },
+  { id: 'mapping', label: 'Subject mappings' },
 ]
 export function ExistingCurriculumMappings({
   initialTab = 'list',
@@ -39,16 +39,17 @@ export function ExistingCurriculumMappings({
       </nav>
       <header className="academic-page-header">
         <div>
-          <h1 tabIndex={-1}>Curriculum</h1>
-          <p>Define curriculum structure and map subjects to semesters for each program.</p>
+          <h1 tabIndex={-1}>Legacy program mappings</h1>
+          <p>Compatibility records from the original program–subject model.</p>
         </div>
       </header>
       <CurriculumSummary state={state} />
       <p className="curriculum-integration-note">
         <Info aria-hidden="true" />
         <span>
-          Existing program–subject mappings are retained separately from versioned curricula. Status filters use program
-          status.
+          These unversioned links remain available for existing workflows. They do not populate versioned curricula or
+          determine the subjects assigned to new batches. Use Curriculum List and Subjects by semester for new study
+          plans; only add or edit a legacy mapping when an existing workflow still needs one.
         </span>
       </p>
       {!context.canReadCatalogues && (

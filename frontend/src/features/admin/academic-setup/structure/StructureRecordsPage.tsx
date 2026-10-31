@@ -5,6 +5,7 @@ import { useAcademicStructure, type StructureContext } from './useAcademicStruct
 import { useStructureEditor } from './useStructureEditor.ts'
 import StructureState from './StructureState.tsx'
 import StructureDrawer from './StructureDrawer.tsx'
+import SectionSubjectFilter from './SectionSubjectFilter.tsx'
 import { structureSingular, structureTitles, type StructureDraft } from './structureFields.ts'
 import { structureId, type StructureRow } from './structureForm.ts'
 import { structureContextLabel, structureLabel } from './structureLabels.ts'
@@ -19,6 +20,7 @@ export default function StructureRecordsPage({
   children,
   defaults = {},
   filter,
+  filterBySection = false,
 }: {
   context: StructureContext
   entity: StructureEntity
@@ -27,15 +29,23 @@ export default function StructureRecordsPage({
   children?: ReactNode
   defaults?: StructureDraft
   filter?: (row: StructureRow) => boolean
+  filterBySection?: boolean
 }) {
   const state = useAcademicStructure(context)
-  const creationIssue = structureCreationIssue(entity, state, defaults)
-  const editor = useStructureEditor(state, entity, defaults)
+  const [sectionId, setSectionId] = useState('')
+  const editorDefaults = filterBySection && sectionId ? { ...defaults, academic_section_id: sectionId } : defaults
+  const creationIssue = structureCreationIssue(entity, state, editorDefaults)
+  const editor = useStructureEditor(state, entity, editorDefaults)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [requestedPage, setPage] = useState(1)
   const available = state.structure?.records[entity]
-  const records = (available ?? []).filter((row) => !filter || filter(row))
+  const records = (available ?? []).filter(
+    (row) =>
+      (!filter || filter(row)) &&
+      (!filterBySection ||
+        (Boolean(sectionId) && 'academic_section_id' in row && row.academic_section_id === sectionId)),
+  )
   const filtered = records
     .filter((row) =>
       `${structureLabel(entity, row, state)} ${structureContextLabel(row, state)} ${'code' in row ? row.code : ''}`
@@ -65,30 +75,41 @@ export default function StructureRecordsPage({
             {entity === 'program_semesters'
               ? 'Define program progression separately from dated teaching terms.'
               : entity === 'academic_offerings'
-                ? 'Deliver curriculum subjects within their assigned class sections.'
+                ? 'Choose which curriculum subjects are available to each section. Add one record per subject.'
                 : 'Manage versioned curricula and preserve the structures assigned to student batches.'}
           </p>
         </div>
         <button
           type="button"
           className="academic-primary-button"
-          disabled={!state.canManage(entity) || editor.saving || Boolean(creationIssue)}
+          disabled={
+            !state.canManage(entity) || editor.saving || Boolean(creationIssue) || (filterBySection && !sectionId)
+          }
           onClick={() => editor.open('add')}
         >
           <Plus aria-hidden="true" />
-          Add {structureSingular[entity]}
+          {filterBySection ? 'Make Subject Available' : `Add ${structureSingular[entity]}`}
         </button>
       </header>
+      {filterBySection && (
+        <SectionSubjectFilter
+          sections={(state.structure?.records.academic_sections ?? []).filter(
+            (section) => section.institution_id === context.institutionId && section.is_active,
+          )}
+          value={sectionId}
+          onChange={setSectionId}
+        />
+      )}
       <div className="structure-summary" aria-label="Academic record summary">
         <article>
-          <span>Total {structureTitles[entity]}</span>
-          <strong>{available ? records.length : '—'}</strong>
+          <span>{filterBySection ? 'Available subjects' : `Total ${structureTitles[entity]}`}</span>
+          <strong>{available && (!filterBySection || sectionId) ? records.length : '—'}</strong>
         </article>
         {states.map((value) => (
           <article key={value}>
             <span>{value}</span>
             <strong>
-              {available
+              {available && (!filterBySection || sectionId)
                 ? records.filter((row) =>
                     'status' in row ? row.status === value : row.is_active === (value === 'active'),
                   ).length
@@ -192,9 +213,11 @@ export default function StructureRecordsPage({
                 <td colSpan={6}>
                   {state.loading
                     ? 'Loading…'
-                    : available
-                      ? 'No records found. Add a record or adjust the filters.'
-                      : 'Records are unavailable.'}
+                    : filterBySection && !sectionId
+                      ? 'Choose a section to see its available subjects.'
+                      : available
+                        ? 'No records found. Add a record or adjust the filters.'
+                        : 'Records are unavailable.'}
                 </td>
               </tr>
             )}

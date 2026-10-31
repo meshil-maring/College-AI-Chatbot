@@ -158,6 +158,7 @@ function AcademicWorkspaceContent(
         context={structureContext}
         entity="academic_offerings"
         onOverview={() => props.onNavigate('overview')}
+        filterBySection
       />
     )
   if (calendarTabFor(props.page))

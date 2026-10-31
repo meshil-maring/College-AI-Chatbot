@@ -6,8 +6,10 @@ import type { StudyPlanChoicesState } from './useStudyPlanChoices.ts'
 
 function subjectName(subject: { course_id: string; subject_name?: string }, state: AcademicStructureState) {
   if (subject.subject_name) return subject.subject_name
-  return state.catalogue?.records.courses?.find((course) => course.course_id === subject.course_id)?.name ??
+  return (
+    state.catalogue?.records.courses?.find((course) => course.course_id === subject.course_id)?.name ??
     'Subject unavailable'
+  )
 }
 
 export default function StudyPlanPublication({
@@ -22,13 +24,43 @@ export default function StudyPlanPublication({
   choices: StudyPlanChoicesState
 }) {
   const publication = useStudyPlanPublication(state, version, choices)
-  const { reviewing, notice, semesters, count, canPublish, saving } = publication
+  const {
+    reviewing,
+    notice,
+    semesters,
+    count,
+    canPublish,
+    saving,
+    emptySemesters,
+    unconfiguredSemesters,
+    semesterCount,
+  } = publication
   return (
     <div className="study-plan-publication">
       {notice && <p role="status">{notice}</p>}
       {version.status === 'draft' ? (
         <>
           {!count && <p>Add at least one subject before publishing.</p>}
+          {count > 0 && (
+            <p role="status">
+              {count} active {count === 1 ? 'subject' : 'subjects'} across {semesterCount - unconfiguredSemesters}{' '}
+              set-up
+              {semesterCount - unconfiguredSemesters === 1 ? ' semester' : ' semesters'}.
+            </p>
+          )}
+          {emptySemesters > 0 && (
+            <p>
+              Completeness check: {emptySemesters} set-up {emptySemesters === 1 ? 'semester has' : 'semesters have'} no
+              active subjects. Review whether those semesters should be empty.
+            </p>
+          )}
+          {unconfiguredSemesters > 0 && (
+            <p>
+              Completeness check: {unconfiguredSemesters}{' '}
+              {unconfiguredSemesters === 1 ? 'semester is' : 'semesters are'} not set up yet. Publishing does not
+              require every semester to have subjects.
+            </p>
+          )}
           {choices.busy && <p>Student choices must finish loading or saving before publishing.</p>}
           {choices.hasDrafts && <p>Save or cancel the open choice group before publishing.</p>}
           <button
@@ -69,6 +101,13 @@ export default function StudyPlanPublication({
           }
         >
           <p>Check the subjects in each semester before publishing.</p>
+          {(emptySemesters > 0 || unconfiguredSemesters > 0) && (
+            <p>
+              Review note: {emptySemesters} set-up {emptySemesters === 1 ? 'semester is empty' : 'semesters are empty'}{' '}
+              and {unconfiguredSemesters} {unconfiguredSemesters === 1 ? 'is' : 'are'} not set up. These are warnings,
+              not publication blockers.
+            </p>
+          )}
           <ul className="study-plan-review">
             {semesters.map((item) => (
               <li key={item.number}>
@@ -79,8 +118,7 @@ export default function StudyPlanPublication({
                       .filter((subject) => subject.is_active)
                       .map((subject) => (
                         <li key={subject.curriculum_subject_id}>
-                          {subjectName(subject, state)}{' '}
-                          · {subject.is_required ? 'Compulsory' : 'Student choice'}
+                          {subjectName(subject, state)} · {subject.is_required ? 'Compulsory' : 'Student choice'}
                         </li>
                       ))}
                   </ul>

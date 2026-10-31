@@ -93,9 +93,11 @@ subjects or require a target credit total. The administrator must review that
 completeness before publishing. Published mapping mistakes require a new version;
 there is no automatic clone, diff or batch-transfer operation.
 
-Curriculum contains four views: Curriculum List, Subject Mapping, Version History
-and Existing Program Mappings. Version History lists published dates and states;
-it does not currently compute a comparison between versions.
+Curriculum's primary workflow uses Curriculum List and Subjects by semester to
+author versioned study plans, with Version History showing published dates and
+states (it does not currently compare versions). Legacy program mappings remain
+available in a clearly separate compatibility view for existing workflows; they
+do not populate versioned curricula or determine new batch assignments.
 
 ## Batch assignment and curriculum changes
 

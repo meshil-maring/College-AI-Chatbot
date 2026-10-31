@@ -28,7 +28,7 @@ export default function CurriculumDetail({ state, ...actions }: { state: Curricu
             </span>
           </h2>
           <p>
-            Existing program mappings<span aria-hidden="true"> | </span>
+            Legacy program mappings<span aria-hidden="true"> | </span>
             {program.code}
             <span aria-hidden="true"> | </span>Unversioned
           </p>

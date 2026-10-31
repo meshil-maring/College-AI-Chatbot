@@ -20,7 +20,7 @@ export const structureTitles: Record<StructureEntity, string> = {
   curriculum_subjects: 'Curriculum Subjects',
   admission_cohorts: 'Batches',
   academic_sections: 'Sections',
-  academic_offerings: 'Academic Offerings',
+  academic_offerings: 'Subjects by section',
 }
 export const structureSingular: Record<StructureEntity, string> = {
   program_semesters: 'Program Semester',
@@ -28,7 +28,7 @@ export const structureSingular: Record<StructureEntity, string> = {
   curriculum_subjects: 'Subject Mapping',
   admission_cohorts: 'Batch',
   academic_sections: 'Section',
-  academic_offerings: 'Academic Offering',
+  academic_offerings: 'Section Subject',
 }
 export function structureFields(
   entity: StructureEntity,
@@ -166,7 +166,7 @@ export function structureFields(
           ?.filter((item) => item.is_active)
           .map((item) => ({ value: item.academic_section_id, label: `${item.name} (${item.code})` })),
       }),
-      field('curriculum_subject_id', 'Curriculum Subject', {
+      field('curriculum_subject_id', 'Subject', {
         type: 'select',
         immutable: true,
         options: records?.curriculum_subjects

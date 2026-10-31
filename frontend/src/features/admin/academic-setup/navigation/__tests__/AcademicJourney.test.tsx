@@ -72,8 +72,15 @@ it('guides a published curriculum through batches, sections, offerings and stude
   fireEvent.click(screen.getByRole('button', { name: 'Set up sections (optional)', exact: true }))
   await screen.findByRole('heading', { name: 'Sections', level: 1 })
   expect(screen.getByRole('complementary', { name: 'Key distinction' })).toHaveTextContent('A section is a class group')
-  fireEvent.click(screen.getByRole('button', { name: 'Offer section subjects', exact: true }))
-  await screen.findByRole('heading', { name: 'Academic Offerings', level: 1 })
+  fireEvent.click(screen.getByRole('button', { name: 'Choose subjects by section', exact: true }))
+  await screen.findByRole('heading', { name: 'Subjects by section', level: 1 })
+  expect(screen.getByRole('combobox', { name: 'Choose an academic section' })).toBeInTheDocument()
+  const sidebar = within(screen.getByRole('navigation', { name: 'Academic Setup navigation' }))
+  expect(screen.queryByRole('tab', { name: 'Subjects by semester' })).not.toBeInTheDocument()
+  fireEvent.click(sidebar.getByRole('button', { name: 'Subjects by semester', exact: true }))
+  expect(await screen.findByRole('heading', { name: 'Subjects by semester', level: 1 })).toBeInTheDocument()
+  fireEvent.click(sidebar.getByRole('button', { name: 'Subjects by section', exact: true }))
+  expect(await screen.findByRole('heading', { name: 'Subjects by section', level: 1 })).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Assign students to sections', exact: true }))
   await screen.findByRole('heading', { name: 'Student Enrollment', level: 1 })
   expect(screen.getByRole('region', { name: 'Academic setup guide' })).toHaveTextContent(
@@ -81,6 +88,16 @@ it('guides a published curriculum through batches, sections, offerings and stude
   )
   expect(api.assignStudentSemester).not.toHaveBeenCalled()
   expect(structureApi.createStructureRecord).not.toHaveBeenCalled()
+})
+
+it('shows Subjects by section only once under Classes & enrollment', async () => {
+  render(<Workspace initial="offerings" />)
+  await screen.findByRole('heading', { name: 'Subjects by section', level: 1 })
+  const sidebar = within(screen.getByRole('navigation', { name: 'Academic Setup navigation' }))
+  const links = sidebar.getAllByRole('button', { name: 'Subjects by section', exact: true })
+  expect(links).toHaveLength(1)
+  expect(links[0]).toHaveAttribute('aria-current', 'page')
+  expect(links[0].closest('.academic-navigation-section')).toHaveTextContent('Classes & enrollment')
 })
 
 it('explains dated teaching terms separately from curriculum progression', async () => {
@@ -99,7 +116,7 @@ it('shows descriptions for each setup step on the overview', () => {
   const guide = screen.getByRole('region', { name: 'Academic setup guide' })
   expect(within(guide).getByText(/Create programs, set dated teaching periods/)).toBeInTheDocument()
   expect(within(guide).getByText(/Create an intake batch and assign its published curriculum/)).toBeInTheDocument()
-  expect(within(guide).getByText(/Create the class groups you need/)).toBeInTheDocument()
+  expect(within(guide).getByText(/Add class sections when students need separate class groups/)).toBeInTheDocument()
 })
 
 it('keeps curriculum tabs and sidebar selection synchronized', async () => {
@@ -113,8 +130,8 @@ it('keeps curriculum tabs and sidebar selection synchronized', async () => {
   fireEvent.click(screen.getByRole('tab', { name: 'Version History' }))
   expect(sidebar.getByRole('button', { name: 'Version History', exact: true })).toHaveAttribute('aria-current', 'page')
   expect(screen.getByRole('region', { name: 'Published curriculum history' })).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('tab', { name: 'Existing Program Mappings' }))
-  expect(sidebar.getByRole('button', { name: 'Existing Program Mappings', exact: true })).toHaveAttribute(
+  fireEvent.click(screen.getByRole('tab', { name: 'Legacy program mappings' }))
+  expect(sidebar.getByRole('button', { name: 'Legacy program mappings', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
   )

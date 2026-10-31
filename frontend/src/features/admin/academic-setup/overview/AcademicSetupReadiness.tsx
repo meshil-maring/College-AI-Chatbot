@@ -115,8 +115,8 @@ export default function AcademicSetupReadiness({
         ))}
       </ol>
       <p className="academic-readiness-note">
-        Class sections aren’t needed to prepare a curriculum. Add them when this program needs separate class enrollment
-        or subject offerings.
+        Class sections aren’t needed to prepare a curriculum. Add them when this program needs separate class groups for
+        student enrollment.
       </p>
     </section>
   )

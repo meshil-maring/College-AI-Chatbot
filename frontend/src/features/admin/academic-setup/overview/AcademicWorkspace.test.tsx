@@ -48,21 +48,24 @@ describe('Academic Setup overview', () => {
       'Subjects',
       'Curriculum Versions',
       'Subjects by semester',
+      'Subjects by section',
       'Batches',
       'Academic Sections',
-      'Academic Offerings',
     ]) {
       expect(within(nav).getByRole('button', { name, exact: true })).toBeInTheDocument()
     }
     expect(within(nav).queryByRole('button', { name: 'Program Semesters', exact: true })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Academic Setup', level: 1 })).toBeInTheDocument()
-    expect(screen.getByText(/One section can contain multiple subject offerings/)).toBeInTheDocument()
     expect(screen.getByText(/one program semester and one academic term/)).toBeInTheDocument()
     fireEvent.click(within(nav).getByRole('button', { name: 'Academic Sections', exact: true }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sections')
     expect(screen.getByRole('region', { name: 'Section records' })).toBeInTheDocument()
-    fireEvent.click(within(nav).getByRole('button', { name: 'Academic Offerings', exact: true }))
-    expect(await screen.findByRole('heading', { name: 'Academic Offerings', level: 1 })).toBeInTheDocument()
+    fireEvent.click(within(nav).getByRole('button', { name: 'Subjects by section', exact: true }))
+    expect(await screen.findByRole('heading', { name: 'Subjects by section', level: 1 })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Subjects by semester' })).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Choose an academic section' })).toBeInTheDocument()
+    fireEvent.click(within(nav).getByRole('button', { name: 'Subjects by semester', exact: true }))
+    expect(await screen.findByRole('heading', { name: 'Subjects by semester', level: 1 })).toBeInTheDocument()
     expect(api.createAcademicRecord).not.toHaveBeenCalled()
   })
 
@@ -121,7 +124,7 @@ describe('Academic Setup overview', () => {
     expect(within(results).getByRole('heading', { name: 'No academic areas found' })).toBeInTheDocument()
     fireEvent.click(within(results).getByRole('button', { name: 'Clear search' }))
     expect(search).toHaveValue('')
-    expect(within(results).getAllByRole('article')).toHaveLength(8)
+    expect(within(results).getAllByRole('article')).toHaveLength(7)
   })
 
   it('opens an authorized quick action in the existing form without creating anything', async () => {
@@ -214,7 +217,7 @@ describe('Academic Setup overview', () => {
       render(<Workspace />)
       expect(screen.getByRole('status')).toHaveTextContent('does not have academic catalogue access')
       expect(screen.getByRole('region', { name: 'Academic summary' })).toHaveAttribute('aria-busy', 'false')
-      expect(screen.getAllByRole('article')).toHaveLength(8)
+      expect(screen.getAllByRole('article')).toHaveLength(7)
       expect(screen.getByRole('button', { name: 'Add Department', exact: true })).toBeDisabled()
       expect(api.getAcademicSetup).not.toHaveBeenCalled()
     },

@@ -41,7 +41,12 @@ export default function SemesterSetup({
       ) : (
         <p>All semesters are set up. Use Semester settings on a card to change its name, code or active status.</p>
       )}
-      {setup.saving && <p role="status">Creating missing semesters. You can add subjects when setup finishes.</p>}
+      {setup.saving && (
+        <p role="status">
+          Creating semester {Math.min(setup.progress.completed + 1, setup.progress.total)} of {setup.progress.total}.
+          You can add subjects when setup finishes.
+        </p>
+      )}
       {setup.error && (
         <p role="alert" className="academic-request-error">
           {setup.error}
