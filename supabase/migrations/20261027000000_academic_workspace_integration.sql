@@ -2,7 +2,7 @@
 -- Edit maintained academic_workspace sources; retain all earlier migrations.
 BEGIN;
 
--- SOURCE tables.sql sha256=72b53a8a2481bb5da8efc078ae4e4967a0b54daeb19f4ce0f89409d165a97e0e
+-- SOURCE tables.sql sha256=fa013d623fe8dae5ee19fcefcf40b3c637e1afbe027e8ee5b822570b23f1d599
 -- Additive: preserve the eight export tables and their existing APIs and rows.
 CREATE TABLE public.program_semesters (
     program_semester_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -35,6 +35,12 @@ CREATE TABLE public.curriculum_subjects (
     curriculum_version_id uuid NOT NULL,
     program_semester_id uuid NOT NULL,
     course_id uuid NOT NULL REFERENCES public.courses(course_id),
+    subject_code text NOT NULL DEFAULT '',
+    subject_name text NOT NULL DEFAULT '',
+    credits integer,
+    lecture_hours integer,
+    tutorial_hours integer,
+    practical_hours integer,
     course_type text NOT NULL DEFAULT 'core' CHECK (course_type IN ('core','elective','open_elective','skill','project')),
     is_required boolean NOT NULL DEFAULT true, is_active boolean NOT NULL DEFAULT true,
     created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
@@ -212,7 +218,7 @@ BEGIN
 END;
 $$;
 
--- SOURCE lifecycle.sql sha256=45f6a5beb107c38565a666baf1f6cf0d0e0140e5c901c53bc1342bd2429ddb17
+-- SOURCE lifecycle.sql sha256=8a3e515586e6890c3ca474f24b7ae11b0bcc104204d193a5d9c34cd754154837
 CREATE FUNCTION public.validate_academic_structure_lifecycle() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE item jsonb:=to_jsonb(NEW); parent_status text; mapping record;
@@ -256,6 +262,19 @@ BEGIN
                     PERFORM public.academic_structure_parent('curriculum_subjects',mapping.curriculum_subject_id,NEW.institution_id);
                 END LOOP;
                 item:=item||jsonb_build_object('published_at',now());
+                -- Freeze subject metadata so a published curriculum keeps its historical meaning
+                -- even if the live course record is edited later.
+                UPDATE public.curriculum_subjects
+                SET subject_code = c.code,
+                    subject_name = btrim(c.name),
+                    credits = c.credits,
+                    lecture_hours = c.lecture_hours,
+                    tutorial_hours = c.tutorial_hours,
+                    practical_hours = c.practical_hours
+                FROM public.courses c
+                WHERE curriculum_subjects.curriculum_version_id = NEW.curriculum_version_id
+                  AND curriculum_subjects.course_id = c.course_id
+                  AND curriculum_subjects.institution_id = NEW.institution_id;
             END IF;
         END IF;
     END IF;

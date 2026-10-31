@@ -56,3 +56,4 @@ export function useRegistrationAdmin(context: StructureContext) {
     busy: query.isFetching || query.isError || mutation.isPending || !data,
   }
 }
+export type RegistrationAdminState = ReturnType<typeof useRegistrationAdmin>

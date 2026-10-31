@@ -10,19 +10,19 @@ inserted or substituted when the database is empty or unavailable.
 
 ## Storage and API ownership
 
-| Screen              | Storage               | Backend API                 |
-| ------------------- | --------------------- | --------------------------- |
-| Departments         | `departments`         | `/admin/academic-setup`     |
-| Programs            | `programs`            | `/admin/academic-setup`     |
-| Academic Years      | `academic_years`      | `/admin/academic-setup`     |
-| Academic Terms      | dated `semesters`     | `/admin/academic-setup`     |
-| Subjects            | reusable `courses`    | `/admin/academic-setup`     |
-| Program Semesters   | `program_semesters`   | `/admin/academic-structure` |
-| Curriculum Versions | `curriculum_versions` | `/admin/academic-structure` |
-| Curriculum Subjects | `curriculum_subjects` | `/admin/academic-structure` |
-| Batches             | `admission_cohorts`   | `/admin/academic-structure` |
-| Academic Sections   | `academic_sections`   | `/admin/academic-structure` |
-| Academic Offerings  | `academic_offerings`  | `/admin/academic-structure` |
+| Screen               | Storage               | Backend API                 |
+| -------------------- | --------------------- | --------------------------- |
+| Departments          | `departments`         | `/admin/academic-setup`     |
+| Programs             | `programs`            | `/admin/academic-setup`     |
+| Academic Years       | `academic_years`      | `/admin/academic-setup`     |
+| Academic Terms       | dated `semesters`     | `/admin/academic-setup`     |
+| Subjects             | reusable `courses`    | `/admin/academic-setup`     |
+| Program Semesters    | `program_semesters`   | `/admin/academic-structure` |
+| Curriculum Versions  | `curriculum_versions` | `/admin/academic-structure` |
+| Subjects by semester | `curriculum_subjects` | `/admin/academic-structure` |
+| Batches              | `admission_cohorts`   | `/admin/academic-structure` |
+| Academic Sections    | `academic_sections`   | `/admin/academic-structure` |
+| Academic Offerings   | `academic_offerings`  | `/admin/academic-structure` |
 
 Each API exposes a readable catalogue plus server-advertised manageable entities,
 and POST/PATCH record operations. Public URLs include the existing `/api/v1`
@@ -37,37 +37,68 @@ They are not silently converted into curriculum versions or class sections.
 
 The setup guide follows Foundations → Curriculum → Batches → Classes & subjects
 → Student enrollment. Its next-step actions open the existing authorized screens;
-they do not publish curricula or create records automatically. Subject Options,
+they do not publish curricula or create records automatically. Semester subjects,
 Version History and Student Enrollment are direct navigation destinations.
 Curriculum tabs, the sidebar, search results and browser history stay synchronized.
+The Subjects by semester view presents a curriculum as a study plan. Select one
+curriculum and add subjects within its numbered semester cards; the subject form
+retains that curriculum and semester automatically. Compulsory subjects apply to
+every student; Student choice subjects and their complete option groups are
+managed inside the same semester card. There is no separate Subject Options tab.
+Publication reviews saved subjects and groups and waits for open choice drafts
+to be saved or cancelled. Existing server validation still applies.
+Empty semesters are shown for review, without adding a new completion requirement.
+After publishing, the plan is read-only and links to batch assignment. The existing
+catalogue subscriptions, identity guards, permissions and single-record writes are
+reused; this interface change needs no additional database migration.
+The guide shows a short description for each step and explains the key distinctions
+in context: calendar terms are dated teaching periods, program semesters are
+numbered curriculum stages, batches group an intake with its curriculum, and
+sections represent class groups within a batch. Sections remain optional and
+are created manually from the post-batch shortcut when needed.
+The Academic Setup overview derives a recommended next action and four readiness
+states from tenant-scoped saved records for the selected active program. Programs
+can be switched to inspect their own department subjects, curricula, batches,
+sections and offerings; shared academic years remain institution-wide. Missing
+prerequisites are shown before later steps, and unavailable data is never
+presented as an empty setup. Class delivery is labeled optional until sections
+are needed.
+
+Semester cards use a raised header with a 20px title, 16px section headings,
+14px medium-weight subject names and 12px regular metadata, all expressed through
+the shared rem-based type tokens. Subject lists and student choices sit in inset
+panels with consistent spacing. Empty-state copy remains normal body text, and
+choice-group names and option labels follow the same heading hierarchy.
 
 1. Create a department, degree program, academic year and dated teaching terms.
 2. Create reusable subjects and the program's progression semesters.
 3. Create a draft curriculum version for the program and academic year.
 4. Map subjects to that version's program semesters, retaining type and required
    status. Program semesters must belong to the same program and fit the version.
-   In Subject Options, group optional mappings into complete alternatives; keep
+   In the same semester card, group optional mappings into complete alternatives; keep
    subjects shared by every student marked Required.
 5. Publish the curriculum after adding at least one active mapping. Publication
    records its timestamp and freezes metadata and subject mappings.
 6. Create a batch with a published curriculum for its program. Program,
-   curriculum, intake academic year and year boundaries remain immutable.
+   curriculum, intake academic year and year boundaries remain immutable. After
+   saving, use Set up sections to continue to class grouping; this shortcut does
+   not create a section automatically.
 7. Create a section for the batch, a program semester and a dated teaching term.
    These relationships and its code remain immutable after creation.
 8. Create academic offerings by selecting subjects from the section's assigned
    curriculum and progression semester.
 9. In Sections, use Manage Student Enrollment to assign approved active students
-    to a section. Students then complete Semester Registration by choosing exactly
-    one option per group. Every required and selected subject must be offered.
+   to a section. Students then complete Semester Registration by choosing exactly
+   one option per group. Every required and selected subject must be offered.
 
 Publication preserves option groups with the curriculum. The separate
 [registration guide](../../supabase/migration_sources/semester_registration/README.md)
 documents permissions, atomic enrollment, capacity, snapshots and lifecycle limits.
 
-In Subject Options, use Manage semester subjects to add or edit mappings for the
-selected curriculum and program semester. The group draft is preserved when
-returning. New mappings in this workflow default to optional; leave common
-subjects marked Required. Every option must have a name and at least one selected
+Use Add subject or Edit within a semester while preparing its choice groups.
+The group name and option selections are preserved while subject drawers are open.
+New subjects default to compulsory; uncheck Every student must take this subject
+for subjects available to choices. Every option must have a name and at least one selected
 optional subject. Save explains missing entries instead of silently disabling
 the action. An empty curriculum needs subject mappings before an option can be
 saved; creating a curriculum version does not copy mappings from other versions.

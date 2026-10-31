@@ -4,6 +4,7 @@ import type {
   StructureEntity,
   StructureRecordMap,
   StructureUpdateMap,
+  AcademicSection,
 } from '../../types/academicStructure.ts'
 import { ADMIN_BASE, requestJson } from './http.ts'
 
@@ -26,4 +27,8 @@ export function updateStructureRecord<E extends StructureEntity>(
   payload: StructureUpdateMap[E],
 ): Promise<StructureRecordMap[E]> {
   return requestJson('PATCH', `${BASE}/${entity}/${encodeURIComponent(id)}`, accessToken, payload)
+}
+
+export function deleteAcademicSection(accessToken: string, id: string): Promise<AcademicSection> {
+  return requestJson('DELETE', `${BASE}/academic_sections/${encodeURIComponent(id)}`, accessToken)
 }

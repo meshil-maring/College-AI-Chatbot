@@ -56,7 +56,7 @@ feature styles in `academic-setup/styles/`. It represents the eleven approved
 entities without changing the existing service contract. See the
 [design guide](ACADEMIC_SETUP_DESIGN.md) for the entity mapping and integration boundaries.
 `academic-setup/navigation/` owns the setup journey, next-step guidance, direct
-option/enrollment destinations and responsive navigation styles. Administrator
+semester-subject/enrollment destinations and responsive navigation styles. Administrator
 view/query parsing and browser history live in `features/admin/navigation/`.
 Curriculum and calendar tabs share the workspace destination; navigation focuses
 page headings while preserving keyboard focus when moving between tabs. Their
@@ -65,6 +65,14 @@ The dedicated Departments page, drawer, state hooks and adjacent tests live in
 `academic-setup/departments/`, with its own scoped `styles/` folder. It reuses
 the existing department/program contracts and transport without remapping other
 academic entities.
+
+Academic Setup's shared `deletion/` owns department, program, academic-year,
+dated-semester and class-section delete confirmation, eligibility and guarded
+mutations. Calendar's `useCalendarDeletion.ts` coordinates its two record types.
+Read-only users cannot open deletion; current periods and known links block
+confirmation. The database checks all FK consumers, including inactive records
+and student assignments, and audits deletion atomically. Deploy the additive
+deletion migrations before using these DELETE actions.
 
 The dedicated Programs page lives in `academic-setup/programs/`, with focused
 form controls, scoped styles and adjacent tests. It uses the existing program
@@ -87,17 +95,25 @@ nullable credits/hours without adding curriculum relationships.
 
 The Curriculum screen lives in `academic-setup/curriculum/`. Its `versioning/`
 workflow manages stored drafts, publication, mapping structure and history.
+Its `semester-plan/` view groups compulsory subjects, optional subjects and choice
+groups by numeric program semester. Subject drawers and choice forms retain the
+selected curriculum and semester. Publication reviews saved subjects and choices,
+and waits for open choice drafts to be saved or cancelled. Missing semesters link to their setup page;
+published and archived plans stay read-only. It reuses the existing structure
+catalogue and write hooks without changing storage or API contracts.
 Existing program-course mappings remain a separate tab, with dated-term groups
 in `detail/` and mapping drawers in `editor/`. Shared course-type labels live in
 `academic-setup/forms/academicCourseTypes.ts` and also serve Subjects.
 
-Curriculum's `choices/` owns complete subject option groups. Academic Setup's
+Curriculum's `choices/` owns complete subject option groups embedded in each
+semester card. There is no separate Subject Options tab or sidebar item; old
+`curriculum-options` links resolve to `curriculum-subjects`. Academic Setup's
 `registration/` owns administrator section assignment, registration queries and
 scoped styles. These use the separate additive semester-registration API.
-The option form explains missing entries on Save and opens a semester-filtered
-mapping workflow without discarding the group draft. Existing mapping drawers
-manage required subjects and optional subjects; newly added option mappings
-default to optional. Semester choices follow numeric progression order.
+The option form explains missing entries on Save and keeps its draft while subjects
+are added or edited in the same semester. Compulsory subjects are excluded from
+option selections. Choice reads/writes reuse the identity-scoped registration
+query factory and mutation guards. Published and archived groups remain read-only.
 
 The Batches screen lives in `academic-setup/batches/`, with focused `editor/`,
 `styles/` and `__tests__/` folders. Its `cohorts` destination reads and writes

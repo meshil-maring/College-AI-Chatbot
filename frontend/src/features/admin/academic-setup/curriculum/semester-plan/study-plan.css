@@ -1,0 +1,213 @@
+.study-plan-guide,
+.study-plan-heading,
+.study-plan-semester {
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  overflow-wrap: anywhere;
+}
+.study-plan-guide p,
+.study-plan-heading p,
+.study-plan-semester p {
+  margin: var(--ui-space-2) 0;
+  color: var(--ui-text-muted);
+}
+.study-plan-guide ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-4) var(--ui-space-8);
+  margin: var(--ui-space-3) 0 0;
+  padding-left: var(--ui-space-5);
+  list-style: decimal;
+  color: var(--ui-text-muted);
+}
+.study-plan-guide [aria-current='step'] {
+  color: var(--ui-accent);
+  font-weight: 600;
+}
+.study-plan-picker {
+  display: grid;
+  gap: var(--ui-space-2);
+  max-width: 48rem;
+}
+.study-plan-picker select {
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+.study-plan-semesters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--ui-space-4);
+}
+.study-plan-semester {
+  --study-plan-inset: var(--ui-space-5);
+  padding: 0 0 var(--ui-space-5);
+  font-size: var(--ui-type-body);
+  line-height: 1.6;
+}
+.study-plan-semester > header,
+.study-plan-subject-list > li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+.study-plan-semester > header {
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--ui-space-5) var(--study-plan-inset);
+  border-bottom: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+  background: var(--ui-surface-raised);
+}
+.study-plan-semester-title {
+  min-width: 0;
+}
+.study-plan-semester-title h3 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: var(--ui-type-section);
+  font-weight: 700;
+  line-height: 1.3;
+}
+.study-plan-semester-title .study-plan-semester-count {
+  margin: var(--ui-space-1) 0 0;
+  font-size: var(--ui-type-small);
+  font-weight: 400;
+}
+.study-plan-semester > p,
+.study-plan-semester > button {
+  margin: var(--ui-space-4) var(--study-plan-inset) 0;
+}
+.study-plan-heading h2 {
+  margin: 0;
+  font-size: var(--ui-type-section);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.study-plan-subjects {
+  margin: var(--ui-space-4) var(--study-plan-inset) 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+}
+.study-plan-section-heading {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-bottom: 1px solid var(--ui-border);
+}
+.study-plan-section-heading h4 {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: var(--ui-type-card);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.study-plan-subject-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.study-plan-subject-list > li {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border-top: 1px solid var(--ui-border);
+}
+.study-plan-subject-list > li:first-child {
+  border-top: 0;
+}
+.study-plan-subject-list > li > div {
+  flex: 1;
+  min-width: 0;
+}
+.study-plan-subject-name {
+  display: block;
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.study-plan-subject-list .study-plan-subject-meta {
+  margin: var(--ui-space-1) 0 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.study-plan-subjects .study-plan-empty {
+  margin: 0;
+  padding: var(--ui-space-3) var(--ui-space-4);
+  font-size: var(--ui-type-body);
+  font-weight: 400;
+}
+.study-plan-semester button {
+  flex-shrink: 0;
+}
+.study-plan-subject-form fieldset {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+.study-plan-subject-form input[type='checkbox'] {
+  width: 1.25rem;
+  min-height: 1.25rem;
+}
+.study-plan-review {
+  display: grid;
+  gap: var(--ui-space-4);
+  padding-left: var(--ui-space-5);
+  overflow-wrap: anywhere;
+}
+.study-plan-review ul {
+  padding-left: var(--ui-space-4);
+}
+.study-plan-publication {
+  display: grid;
+  justify-items: start;
+  gap: var(--ui-space-3);
+}
+.study-plan-publication > [role='status'] {
+  color: var(--ui-success);
+}
+.study-plan-page .curriculum-drawer header,
+.study-plan-page .curriculum-drawer footer {
+  flex-wrap: wrap;
+}
+.study-plan-page .curriculum-drawer header > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.study-plan-page .curriculum-drawer header button {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+}
+.study-plan-page .curriculum-drawer-body {
+  min-height: 0;
+}
+.study-plan-page .curriculum-drawer::backdrop {
+  background: var(--ui-overlay);
+}
+@container curriculum (max-width: 840px) {
+  .study-plan-semesters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container curriculum (max-width: 520px) {
+  .study-plan-semester {
+    --study-plan-inset: var(--ui-space-3);
+  }
+}
+@media (max-width: 760px) {
+  .study-plan-page button {
+    min-height: 2.75rem;
+  }
+  .study-plan-semester > header,
+  .study-plan-subject-list > li {
+    flex-wrap: wrap;
+  }
+  .study-plan-semester > header > div,
+  .study-plan-subject-list > li > div {
+    min-width: 0;
+    flex: 1 1 10rem;
+  }
+}

@@ -1,4 +1,4 @@
-import { Eye, MoreHorizontal, Pencil, Power } from 'lucide-react'
+import { Eye, MoreHorizontal, Pencil, Power, Trash2 } from 'lucide-react'
 import type { DegreeProgram, Department } from '../../../../types/academicSetup.ts'
 
 export function ProgramBadge({ active }: { active: boolean }) {
@@ -14,10 +14,21 @@ interface Props {
   index: number
   department?: Department
   editable: boolean
+  canDelete: boolean
+  onDelete: (record: DegreeProgram) => void
   onOpen: (mode: 'view' | 'edit', record: DegreeProgram) => void
   onStatus: (record: DegreeProgram) => void
 }
-export default function ProgramRow({ record, index, department, editable, onOpen, onStatus }: Props) {
+export default function ProgramRow({
+  record,
+  index,
+  department,
+  editable,
+  canDelete,
+  onDelete,
+  onOpen,
+  onStatus,
+}: Props) {
   return (
     <tr>
       <td data-label="Program Name">
@@ -65,6 +76,17 @@ export default function ProgramRow({ record, index, department, editable, onOpen
           >
             <Pencil aria-hidden="true" />
           </button>
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(record)}
+              aria-label={`Delete ${record.name}`}
+              title="Delete unused program"
+              disabled={!editable}
+            >
+              <Trash2 aria-hidden="true" />
+            </button>
+          )}
           <details
             className="program-more"
             onKeyDown={(event) => {

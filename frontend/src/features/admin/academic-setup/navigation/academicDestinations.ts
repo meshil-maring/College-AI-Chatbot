@@ -1,4 +1,4 @@
-import { ClipboardList, Database, ListChecks, History, CalendarDays, CalendarRange } from 'lucide-react'
+import { ClipboardList, Database, History, CalendarDays, CalendarRange } from 'lucide-react'
 import type { AcademicArea } from '../overview/academicOverviewModel.ts'
 
 export const academicDestinations: readonly AcademicArea[] = [
@@ -25,14 +25,6 @@ export const academicDestinations: readonly AcademicArea[] = [
     description: 'Review the separately retained program and dated-term subject mappings.',
     action: 'Open Existing Program Mappings',
     note: 'These mappings are separate from versioned curricula.',
-  },
-  {
-    page: 'curriculum-options',
-    title: 'Subject Options',
-    icon: ListChecks,
-    description: 'Create complete subject alternatives students can choose within a curriculum semester.',
-    action: 'Manage Subject Options',
-    note: 'Prepare options in a draft curriculum before publishing.',
   },
   {
     page: 'curriculum-history',

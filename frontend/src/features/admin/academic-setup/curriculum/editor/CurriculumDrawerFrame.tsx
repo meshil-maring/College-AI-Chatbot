@@ -8,6 +8,7 @@ export default function CurriculumDrawerFrame({
   onClose,
   busy = false,
   alert = false,
+  initialFocusSelector,
   children,
   footer,
 }: {
@@ -16,13 +17,15 @@ export default function CurriculumDrawerFrame({
   onClose: () => void
   busy?: boolean
   alert?: boolean
+  initialFocusSelector?: string
   children: ReactNode
   footer: ReactNode
 }) {
   const ref = useWorkspaceDialog('.curriculum-page h1')
   useEffect(() => {
     if (alert) ref.current?.querySelector<HTMLElement>('footer button')?.focus()
-  }, [alert, ref])
+    else if (initialFocusSelector) ref.current?.querySelector<HTMLElement>(initialFocusSelector)?.focus()
+  }, [alert, initialFocusSelector, ref])
   return (
     <dialog
       ref={ref}

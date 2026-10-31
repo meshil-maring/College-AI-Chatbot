@@ -78,3 +78,24 @@ def manage_record(client, actor_id, institution_id, entity, record_id, payload):
         "p_actor_user_id": actor_id, "p_institution_id": institution_id,
         "p_entity": entity.value, "p_record_id": record_id, "p_payload": payload,
     }).execute().data
+
+
+def delete_department(client, actor_id, institution_id, department_id):
+    return client.rpc("delete_unused_academic_department", {
+        "p_actor_user_id": actor_id, "p_institution_id": institution_id,
+        "p_department_id": department_id,
+    }).execute().data
+
+
+def delete_program(client, actor_id, institution_id, program_id):
+    return client.rpc("delete_unused_academic_program", {
+        "p_actor_user_id": actor_id, "p_institution_id": institution_id,
+        "p_program_id": program_id,
+    }).execute().data
+
+
+def delete_period(client, actor_id, institution_id, entity, record_id):
+    return client.rpc("delete_unused_academic_calendar_record", {
+        "p_actor_user_id": actor_id, "p_institution_id": institution_id,
+        "p_entity": entity.value, "p_record_id": record_id,
+    }).execute().data

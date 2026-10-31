@@ -8,7 +8,7 @@ from app.schemas.academics.academic_structure import (
     CREATE_MODELS, UPDATE_MODELS, StructureEntity, StructureResponse,
 )
 from app.services.academics.authorization import allowed, require, scope, validated_scope_permissions
-from app.services.academics.database_errors import translate_database_error
+from app.services.academics.database_errors import translate_database_error, translate_deletion_error
 
 
 def get_structure(user):
@@ -56,3 +56,26 @@ def manage_record(user, entity: StructureEntity, payload, record_id=None):
         raise
     except Exception as exc:
         raise translate_database_error(exc) from exc
+
+
+def delete_section(user, record_id: str) -> dict:
+    entity = StructureEntity.academic_sections
+    institution_id, permissions = scope(user)
+    require(permissions, entity, "manage")
+    try:
+        client = get_admin_client()
+        permissions = validated_scope_permissions(client, user, institution_id)
+        require(permissions, entity, "manage")
+        if repository.get_record(client, institution_id, entity, record_id) is None:
+            raise AppError("Academic record not found", 404, "ACADEMIC_NOT_FOUND")
+        row = repository.delete_section(client, str(user["user_id"]), institution_id, record_id)
+        if (
+            not isinstance(row, dict) or str(row.get("academic_section_id")) != record_id
+            or str(row.get("institution_id")) != institution_id
+        ):
+            raise AppError("Invalid section deletion response", 500, "ACADEMIC_OPERATION_FAILED")
+        return row
+    except AppError:
+        raise
+    except Exception as exc:
+        raise translate_deletion_error(exc, "section") from exc

@@ -195,6 +195,10 @@ interaction and restore focus to the opener. Escape and close follow the same
 unsaved-change confirmation. Mobile drawers occupy `100dvh`; pinned controls allow
 for safe-area insets. Modal content remains modal even with a transparent backdrop.
 
+Academic Setup's shared `deletion/AcademicDeleteDialog.tsx` confirms irreversible
+department, program, calendar and class-section deletion using the danger tokens. It focuses Cancel, traps
+keyboard focus and keeps its body scrollable with pinned actions when text grows.
+
 Chat uses reading-size text, 16px bubble padding and 16px between messages.
 Distinguish user/assistant messages with written speaker labels and alignment;
 use raised neutral and surface fills respectively. Keep sources beside the answer,

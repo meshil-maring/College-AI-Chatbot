@@ -51,3 +51,43 @@ def test_all_writes_use_exported_rpc_with_server_actor_and_tenant(entity):
         "p_actor_user_id": "actor", "p_institution_id": TENANT, "p_entity": entity.value,
         "p_record_id": DEPARTMENT, "p_payload": payload,
     })
+
+
+def test_department_delete_uses_only_scoped_atomic_rpc():
+    client = MagicMock()
+    repository.delete_department(client, "actor", TENANT, DEPARTMENT)
+    client.rpc.assert_called_once_with("delete_unused_academic_department", {
+        "p_actor_user_id": "actor", "p_institution_id": TENANT, "p_department_id": DEPARTMENT,
+    })
+    client.table.assert_not_called()
+
+
+def test_program_delete_uses_only_scoped_atomic_rpc():
+    client = MagicMock()
+    repository.delete_program(client, "actor", TENANT, "program-id")
+    client.rpc.assert_called_once_with("delete_unused_academic_program", {
+        "p_actor_user_id": "actor", "p_institution_id": TENANT, "p_program_id": "program-id",
+    })
+    client.table.assert_not_called()
+
+
+@pytest.mark.parametrize("entity", [Entity.academic_years, Entity.semesters])
+def test_period_delete_calls_narrow_rpc_with_server_context(entity):
+    client = MagicMock()
+    repository.delete_period(client, "actor", TENANT, entity, "record-id")
+    client.rpc.assert_called_once_with("delete_unused_academic_calendar_record", {
+        "p_actor_user_id": "actor", "p_institution_id": TENANT,
+        "p_entity": entity.value, "p_record_id": "record-id",
+    })
+    client.table.assert_not_called()
+
+
+def test_class_section_delete_calls_the_same_narrow_rpc():
+    from app.repositories.academics import academic_structure
+    client = MagicMock()
+    academic_structure.delete_section(client, "actor", TENANT, "section-id")
+    client.rpc.assert_called_once_with("delete_unused_academic_calendar_record", {
+        "p_actor_user_id": "actor", "p_institution_id": TENANT,
+        "p_entity": "academic_sections", "p_record_id": "section-id",
+    })
+    client.table.assert_not_called()

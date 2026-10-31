@@ -9,7 +9,7 @@ import {
 } from '../batchModel.ts'
 import type { BatchesState } from '../useBatches.ts'
 
-export function useBatchEditor(state: BatchesState) {
+export function useBatchEditor(state: BatchesState, onCreated?: () => void) {
   const [panel, setPanel] = useState<{ mode: 'add' | 'view' | 'edit'; record?: BatchRecord }>()
   const [draft, setDraft] = useState(emptyBatch)
   const [confirmation, setConfirmation] = useState<'discard' | 'status'>()
@@ -52,6 +52,7 @@ export function useBatchEditor(state: BatchesState) {
       Boolean(panel?.record),
     )
     if (!saved) return
+    if (!panel?.record) onCreated?.()
     setPanel(undefined)
     setConfirmation(undefined)
   }

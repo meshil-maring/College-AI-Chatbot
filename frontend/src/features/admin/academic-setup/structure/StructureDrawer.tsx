@@ -6,7 +6,17 @@ import type { StructureEditor } from './useStructureEditor.ts'
 import { structureSingular } from './structureFields.ts'
 import StructureFields from './StructureFields.tsx'
 
-export default function StructureDrawer({ editor, entity }: { editor: StructureEditor; entity: StructureEntity }) {
+export default function StructureDrawer({
+  editor,
+  entity,
+  description,
+  statusDescription,
+}: {
+  editor: StructureEditor
+  entity: StructureEntity
+  description?: string
+  statusDescription?: string
+}) {
   const ref = useWorkspaceDialog('.structure-records-page h1')
   const viewing = editor.panel?.mode === 'view'
   const title =
@@ -52,6 +62,7 @@ export default function StructureDrawer({ editor, entity }: { editor: StructureE
         </button>
       </header>
       <div className="structure-drawer-body">
+        {description && <p>{description}</p>}
         {editor.error && (
           <p role="alert" tabIndex={-1} className="academic-request-error">
             {editor.error}
@@ -62,7 +73,8 @@ export default function StructureDrawer({ editor, entity }: { editor: StructureE
           <p>
             {editor.confirmation === 'discard'
               ? 'Your unsaved entries will be discarded.'
-              : 'This changes the saved status. Publishing freezes this curriculum and its mappings; assigned batches retain it.'}
+              : (statusDescription ??
+                'This changes the saved status. Publishing freezes this curriculum and its mappings; assigned batches retain it.')}
           </p>
         ) : viewing ? (
           <dl className="structure-details">

@@ -5,7 +5,6 @@ import {
   CalendarRange,
   FileStack,
   GraduationCap,
-  Layers3,
   LibraryBig,
   ListTree,
   Network,
@@ -90,28 +89,13 @@ export const academicAreas: readonly AcademicArea[] = [
     entity: 'courses',
   },
   {
-    page: 'program-semesters',
-    structureEntity: 'program_semesters',
-    title: 'Program Semesters',
-    icon: Layers3,
-    description: 'Define progression stages within each program, separate from dated academic terms.',
-    action: 'Manage Program Semesters',
-    note: 'Program progression: Semester 1, 2, …',
-  },
-  {
     page: 'curriculum',
     title: 'Curriculum',
     icon: FileStack,
-    description: 'Define curriculum versions and their individual subject mappings.',
+    description: 'Set up program semesters and choose their subjects together in one study plan.',
     action: 'Manage Curriculum',
     note: 'Published structures, preserved over time.',
-    children: [
-      'curriculum-versions',
-      'curriculum-subjects',
-      'curriculum-options',
-      'curriculum-history',
-      'curriculum-existing',
-    ],
+    children: ['curriculum-versions', 'curriculum-subjects', 'curriculum-history', 'curriculum-existing'],
   },
   {
     page: 'cohorts',
@@ -177,18 +161,19 @@ const childAreas: readonly AcademicArea[] = [
   {
     page: 'curriculum-subjects',
     structureEntity: 'curriculum_subjects',
-    title: 'Curriculum Subjects',
+    title: 'Subjects by semester',
     icon: ListTree,
-    description: 'Manage subject mappings within a curriculum version.',
-    action: 'Manage Curriculum Subjects',
-    note: 'Subject mappings are distinct from the curriculum version itself.',
+    description:
+      'Set up program semesters, then choose compulsory subjects and subject options in each semester of a curriculum.',
+    action: 'Choose semester subjects',
+    note: 'Select a curriculum, then add subjects to its semesters.',
   },
 ]
 
 export const allAcademicAreas = [...academicAreas, ...childAreas, ...academicDestinations]
 export const getAcademicArea = (page: AcademicPage) => allAcademicAreas.find((area) => area.page === page)
 export const summaryPages: readonly AcademicPage[] = ['departments', 'programs', 'subjects', 'years']
-export const managementRows = [academicAreas.slice(0, 4), academicAreas.slice(4, 7), academicAreas.slice(7)]
+export const managementRows = [academicAreas.slice(0, 4), academicAreas.slice(4, 6), academicAreas.slice(6)]
 export const sampleActivities = [
   'Department updated',
   'Program created',

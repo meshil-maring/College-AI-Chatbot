@@ -6,7 +6,9 @@ import { allAcademicAreas, type AcademicPage } from '../academic-setup/overview/
 export function resolveAdminLocation(search: string) {
   const params = new URLSearchParams(search)
   const requestedView = params.get('view')
-  const requestedPage = params.get('academic')
+  const requested = params.get('academic')
+  const requestedPage =
+    requested === 'curriculum-options' || requested === 'program-semesters' ? 'curriculum-subjects' : requested
   const page: AcademicPage =
     requestedPage === 'overview' || requestedPage === 'records'
       ? requestedPage
@@ -26,7 +28,11 @@ export function useAdminWorkspaceNavigation(identity?: string) {
     const params = new URLSearchParams(window.location.search)
     if (view === 'profile') params.delete('view')
     else params.set('view', view)
-    if (view === 'academic-setup') params.set('academic', page)
+    if (view === 'academic-setup')
+      params.set(
+        'academic',
+        page === 'curriculum-options' || page === 'program-semesters' ? 'curriculum-subjects' : page,
+      )
     else params.delete('academic')
     if (search.trim()) params.set('academic-search', search)
     else params.delete('academic-search')

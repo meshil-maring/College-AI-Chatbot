@@ -9,5 +9,10 @@
     "write.sql",
     "parent_guards.sql",
     "security.sql"
-  ]
+  ],
+  "follow_up": {
+    "version": "20261031000000",
+    "name": "academic_curriculum_subject_snapshots",
+    "files": ["subject_snapshots.sql"]
+  }
 }

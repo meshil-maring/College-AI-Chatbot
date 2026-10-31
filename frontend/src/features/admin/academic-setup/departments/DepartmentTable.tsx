@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Eye, Pencil } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Eye, Pencil, Trash2 } from 'lucide-react'
 import type { Department } from '../../../../types/academicSetup.ts'
 import type { useDepartments } from './useDepartments.ts'
 import { DEPARTMENT_PAGE_SIZE, departmentPrograms } from './departmentModel.ts'
@@ -17,8 +17,10 @@ interface Props {
   state: ReturnType<typeof useDepartments>
   onCreate: () => void
   onOpen: (mode: 'view' | 'edit', record: Department) => void
+  onDelete: (record: Department) => void
+  saving: boolean
 }
-export default function DepartmentTable({ state, onCreate, onOpen }: Props) {
+export default function DepartmentTable({ state, onCreate, onOpen, onDelete, saving }: Props) {
   const { loading, rows, filtered, page, pages } = state
   function sortable(field: 'name' | 'code', label: string) {
     const selected = state.sort.startsWith(field)
@@ -118,10 +120,21 @@ export default function DepartmentTable({ state, onCreate, onOpen }: Props) {
                         onClick={() => onOpen('edit', record)}
                         aria-label={`Edit ${record.name}`}
                         title={state.manageable ? 'Edit department' : 'Read-only access'}
-                        disabled={!state.manageable || state.busy}
+                        disabled={!state.manageable || state.busy || saving}
                       >
                         <Pencil aria-hidden="true" />
                       </button>
+                      {state.manageable && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(record)}
+                          aria-label={`Delete ${record.name}`}
+                          title="Delete unused department"
+                          disabled={state.busy || saving}
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -7,15 +7,13 @@ interface Props {
   editor: ReturnType<typeof useChoiceEditor>
   structure: AcademicStructureState
   disabled: boolean
+  saving: boolean
   onSubmit: () => Promise<void>
-  onManageSubjects: () => void
+  onCancel: () => void
 }
-export default function ChoiceGroupForm({ editor, structure, disabled, onSubmit, onManageSubjects }: Props) {
+export default function ChoiceGroupForm({ editor, structure, disabled, saving, onSubmit, onCancel }: Props) {
   const { draft, setDraft, editingId, updateOption } = editor
   const records = structure.structure?.records
-  const version = records?.curriculum_versions?.find(
-    (item) => item.curriculum_version_id === draft.curriculum_version_id,
-  )
   const semesterMappings =
     records?.curriculum_subjects?.filter(
       (item) =>
@@ -39,66 +37,17 @@ export default function ChoiceGroupForm({ editor, structure, disabled, onSubmit,
     if (!issues.length) void onSubmit()
   }
   return (
-    <form className="registration-panel" onSubmit={submit} aria-label="Subject option group" noValidate>
-      <h2>{editingId ? 'Edit option group' : 'Create option group'}</h2>
-      <p>Students must choose one complete option. Required subjects are included automatically.</p>
+    <form
+      className="registration-panel"
+      onSubmit={submit}
+      aria-label="Subject choice group"
+      noValidate
+      aria-busy={saving}
+    >
+      <h5>{editingId ? 'Edit choice group' : 'Create choice group'}</h5>
+      <p>Students choose one complete option from this group. Compulsory subjects are included automatically.</p>
       <fieldset disabled={disabled}>
         <div className="registration-grid">
-          <label>
-            Curriculum Version
-            <select
-              required
-              disabled={Boolean(editingId)}
-              value={draft.curriculum_version_id}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  curriculum_version_id: event.target.value,
-                  program_semester_id: '',
-                  options: draft.options.map((option) => ({ ...option, curriculum_subject_ids: [] })),
-                })
-              }
-            >
-              <option value="">Select a draft curriculum</option>
-              {records?.curriculum_versions
-                ?.filter((item) => item.status === 'draft' && item.is_active)
-                .map((item) => (
-                  <option key={item.curriculum_version_id} value={item.curriculum_version_id}>
-                    {item.name} · {item.version}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Program Semester
-            <select
-              required
-              disabled={Boolean(editingId)}
-              value={draft.program_semester_id}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  program_semester_id: event.target.value,
-                  options: draft.options.map((option) => ({ ...option, curriculum_subject_ids: [] })),
-                })
-              }
-            >
-              <option value="">Select a semester</option>
-              {records?.program_semesters
-                ?.filter(
-                  (item) =>
-                    item.is_active &&
-                    item.program_id === version?.program_id &&
-                    item.semester_number <= version.total_semesters,
-                )
-                .sort((left, right) => left.semester_number - right.semester_number)
-                .map((item) => (
-                  <option key={item.program_semester_id} value={item.program_semester_id}>
-                    {item.name}
-                  </option>
-                ))}
-            </select>
-          </label>
           <label>
             Group Name
             <input
@@ -114,24 +63,21 @@ export default function ChoiceGroupForm({ editor, structure, disabled, onSubmit,
           <div className="registration-preparation">
             {!semesterMappings.length ? (
               <p role="status">
-                No subjects are mapped to this curriculum semester yet. Add semester subjects before selecting subjects
-                for each option.
+                Add subjects to this semester first. Leave Every student must take this subject unchecked for subjects
+                students can choose.
               </p>
             ) : !mappings.length ? (
               <p role="status">
-                All mapped subjects are marked Required and will be included automatically. Edit the option-specific
-                subject mappings and clear Required Subject to make them selectable here.
+                All subjects in this semester are compulsory. Edit a subject above and uncheck Every student must take
+                this subject to make it available for choices.
               </p>
             ) : (
               <p>Choose every subject that belongs to each option below.</p>
             )}
             {required.length > 0 && (
-              <p>Common required subjects: {required.map((item) => subjectName(item.course_id)).join(', ')}.</p>
+              <p>Compulsory subjects: {required.map((item) => subjectName(item.course_id)).join(', ')}.</p>
             )}
-            <button type="button" className="academic-secondary-button" onClick={onManageSubjects}>
-              Manage semester subjects
-            </button>
-            <p>Your group name and option selections are kept while you manage subjects.</p>
+            <p>You can add or edit subjects above while keeping this group draft open.</p>
           </div>
         )}
         <div className="registration-grid">
@@ -200,15 +146,13 @@ export default function ChoiceGroupForm({ editor, structure, disabled, onSubmit,
             Add option
           </button>
           <button type="submit" className="academic-primary-button">
-            Save option group
+            {saving ? 'Saving…' : 'Save choice group'}
           </button>
-          {editingId && (
-            <button type="button" className="academic-secondary-button" onClick={editor.reset}>
-              Cancel editing
-            </button>
-          )}
         </div>
       </fieldset>
+      <button type="button" className="academic-secondary-button" disabled={saving} onClick={onCancel}>
+        Cancel
+      </button>
     </form>
   )
 }

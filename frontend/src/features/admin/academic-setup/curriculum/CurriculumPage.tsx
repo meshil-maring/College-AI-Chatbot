@@ -8,12 +8,14 @@ export default function CurriculumPage({
   onOverview,
   activeTab,
   onTabChange,
+  onBatches,
   ...context
 }: CurriculumContext & {
   initialTab?: CurriculumTab
   onOverview: () => void
   activeTab?: VersionedCurriculumTab
   onTabChange?: (tab: VersionedCurriculumTab) => void
+  onBatches?: () => void
 }) {
   return (
     <VersionedCurriculumPage
@@ -22,6 +24,7 @@ export default function CurriculumPage({
       initialMapping={initialTab === 'mapping'}
       activeTab={activeTab}
       onTabChange={onTabChange}
+      onBatches={onBatches}
     />
   )
 }

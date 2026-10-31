@@ -27,3 +27,9 @@ presented as enrolled students. No sample records are inserted.
 Generate: `python scripts/maintenance/migrations/build_academic_workspace.py`.
 Check parity with `--check`. Review the generated migration against the target's
 migration history before applying it; generation does not execute SQL.
+
+The same generator produces the forward-only `academic_curriculum_subject_snapshots`
+migration. Apply it after the integration migration when updating an existing
+database: it adds and backfills the curriculum snapshot columns, then updates the
+publication trigger. The original integration migration may already be recorded
+as applied, so editing that historical migration alone will not update a live DB.

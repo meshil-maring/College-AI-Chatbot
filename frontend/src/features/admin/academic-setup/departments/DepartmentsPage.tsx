@@ -6,6 +6,8 @@ import DepartmentSummary from './DepartmentSummary.tsx'
 import DepartmentFilters from './DepartmentFilters.tsx'
 import DepartmentTable from './DepartmentTable.tsx'
 import DepartmentDrawer from './DepartmentDrawer.tsx'
+import AcademicDeleteDialog from '../deletion/AcademicDeleteDialog.tsx'
+import { useAcademicDeletion } from '../deletion/useAcademicDeletion.ts'
 import './styles/departments.css'
 
 interface Props extends DepartmentsContext {
@@ -19,6 +21,13 @@ export default function DepartmentsPage({ createInitially, onCreateHandled, onOv
     ...context,
     catalogue: state.catalogue,
     busy: state.busy,
+    refresh: state.query.refetch,
+  })
+  const deletion = useAcademicDeletion({
+    entity: 'departments',
+    ...context,
+    catalogue: state.catalogue,
+    busy: state.busy || editor.saving,
     refresh: state.query.refetch,
   })
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function DepartmentsPage({ createInitially, onCreateHandled, onOv
         <button
           type="button"
           className="academic-primary-button"
-          disabled={!state.manageable || state.busy || editor.saving}
+          disabled={!state.manageable || state.busy || editor.saving || deletion.saving}
           onClick={() => editor.open('add')}
           title={state.manageable ? undefined : 'Department creation is unavailable for this account.'}
         >
@@ -90,9 +99,21 @@ export default function DepartmentsPage({ createInitially, onCreateHandled, onOv
           {editor.notice}
         </p>
       )}
+      {deletion.notice && (
+        <p className="department-save-notice" role="status">
+          {deletion.notice}
+        </p>
+      )}
       <DepartmentFilters state={state} />
-      <DepartmentTable state={state} onCreate={() => editor.open('add')} onOpen={editor.open} />
+      <DepartmentTable
+        state={state}
+        onCreate={() => editor.open('add')}
+        onOpen={editor.open}
+        onDelete={deletion.open}
+        saving={editor.saving || deletion.saving}
+      />
       {editor.panel && state.records && <DepartmentDrawer editor={editor} catalogue={state.catalogue} />}
+      {deletion.record && state.records && <AcademicDeleteDialog deletion={deletion} />}
     </section>
   )
 }

@@ -45,7 +45,15 @@ approval and atomic role provisioning. It contains no academic setup workflow.
 and tenant/organization lifecycle. `parent_validation.py` checks active ancestry,
 semester dates and matching curriculum links. `database_errors.py` maps database
 errors to safe responses. Repositories derive tenant scope through parent joins;
-all writes use the atomic, audited `manage_academic_master_record` RPC.
+Creation and edits use the atomic, audited `manage_academic_master_record` RPC.
+Unused department/program deletion uses `delete_unused_academic_department` and
+`delete_unused_academic_program`, sharing exact scoped grants, lifecycle checks
+and response validation. Any foreign-key consumer, active or inactive, blocks
+deletion; conflicts expose safe labels without database text.
+Academic-year/semester deletion and `academic_structure.delete_section` use the
+allowlisted `delete_unused_academic_calendar_record` RPC. Shared deletion error
+translation preserves safe conflict labels. Current years/semesters are protected
+both before the RPC and atomically in SQL; student links block section deletion.
 Attendance, results, academic packages, enrollment and teaching workflows remain
 retired. Chat continues to refuse private academic record requests.
 

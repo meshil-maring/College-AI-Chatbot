@@ -36,3 +36,8 @@ def create_structure_record(entity: StructureEntity, body: dict = Body(...), use
 @router.patch("/{entity}/{record_id}")
 def update_structure_record(entity: StructureEntity, record_id: UUID, body: dict = Body(...), user: dict = Depends(_ADMIN)):
     return _write(user, entity, body, str(record_id))
+
+
+@router.delete("/academic_sections/{record_id}", summary="Delete an unused class section")
+def delete_section(record_id: UUID, user: dict = Depends(_ADMIN)):
+    return service.delete_section(user, str(record_id))

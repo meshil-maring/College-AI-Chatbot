@@ -81,6 +81,17 @@ Academic Setup follows the owner-selected [schema export](../academic_state_chec
 Departments own degree programs and teaching courses. Academic years contain dated
 semesters. Program-course links define curricula; course offerings connect a
 linked course, program, year and semester. Sections belong to one offering.
+The additive [department deletion migration](../supabase/migration_sources/department_deletion/README.md)
+allows permanent deletion only without foreign-key consumers, including inactive
+records. Exact institution-admin grants, ownership, serialized checks and atomic
+auditing protect the narrow DELETE endpoint; account records are preserved.
+The [program deletion migration](../supabase/migration_sources/program_deletion/README.md)
+adds the same guarded operation for unused degree programs, deriving institution
+ownership through their department and preserving all linked academic history.
+The [calendar/section deletion migration](../supabase/migration_sources/calendar_section_deletion/README.md)
+adds unused academic-year, dated-semester and cohort-owned class-section deletion.
+Current periods and every FK dependency prevent removal, including student
+assignments/registrations. Existing offering-owned legacy sections stay separate.
 Descendant tenants derive from parent relationships, with server-owned institution
 context added to API records. Attendance, results, teaching workflows and the
 retired academic packages remain outside this implementation. Earlier setup tables

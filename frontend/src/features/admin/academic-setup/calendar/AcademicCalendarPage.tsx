@@ -12,6 +12,8 @@ import CalendarPagination from './CalendarPagination.tsx'
 import CalendarDrawer from './editor/CalendarDrawer.tsx'
 import './styles/calendar.css'
 import { useVisibleTab } from '../navigation/useVisibleTab.ts'
+import { useCalendarDeletion } from './useCalendarDeletion.ts'
+import AcademicDeleteDialog from '../deletion/AcademicDeleteDialog.tsx'
 
 interface Props extends CalendarContext {
   initialTab: CalendarTab
@@ -32,6 +34,7 @@ export default function AcademicCalendarPage({
 }: Props) {
   const state = useCalendar(context, initialTab, { activeTab, onTabChange })
   const editor = useCalendarEditor(context, state)
+  const deletion = useCalendarDeletion(context, state, editor.saving)
   const tabs = useVisibleTab(state.tab)
   useEffect(() => {
     if (!createInitially || state.loading) return
@@ -56,12 +59,15 @@ export default function AcademicCalendarPage({
       <header className="academic-page-header">
         <div>
           <h1 tabIndex={-1}>Academic Calendar</h1>
-          <p>Manage academic years, semesters and important academic dates.</p>
+          <p>
+            Manage academic years, dated teaching terms and important dates. Calendar terms are separate from the
+            numbered semesters in a program curriculum.
+          </p>
         </div>
         <button
           type="button"
           className="academic-primary-button"
-          disabled={!state.canManageYears || state.busy || editor.saving}
+          disabled={!state.canManageYears || state.busy || editor.saving || deletion.saving}
           onClick={() => editor.open('academic_years', 'add')}
         >
           <Plus aria-hidden="true" /> Add Academic Year
@@ -167,11 +173,11 @@ export default function AcademicCalendarPage({
             )}
           </div>
         ) : state.tab === 'years' ? (
-          <CalendarYears state={state} editor={editor} />
+          <CalendarYears state={state} editor={editor} deletion={deletion} />
         ) : state.tab === 'semesters' ? (
-          <CalendarSemesters records={state.semesterRows} state={state} editor={editor} showYear />
+          <CalendarSemesters records={state.semesterRows} state={state} editor={editor} deletion={deletion} showYear />
         ) : (
-          <CalendarSchedule state={state} editor={editor} />
+          <CalendarSchedule state={state} editor={editor} deletion={deletion} />
         )}
       </div>
       {state.tab === 'semesters' && records && (
@@ -179,7 +185,11 @@ export default function AcademicCalendarPage({
           type="button"
           className="calendar-outline-button calendar-add-semester"
           disabled={
-            !state.canManageSemesters || state.busy || !state.years?.some((year) => year.is_active) || editor.saving
+            !state.canManageSemesters ||
+            state.busy ||
+            !state.years?.some((year) => year.is_active) ||
+            editor.saving ||
+            deletion.saving
           }
           onClick={() => editor.open('semesters', 'add')}
         >
@@ -192,6 +202,12 @@ export default function AcademicCalendarPage({
       {editor.panel && (editor.panel.entity === 'academic_years' ? state.years : state.semesters) && (
         <CalendarDrawer editor={editor} state={state} />
       )}
+      {deletion.notice && (
+        <p className="calendar-save-notice" role="status">
+          {deletion.notice}
+        </p>
+      )}
+      {deletion.active && <AcademicDeleteDialog deletion={deletion.active} />}
     </section>
   )
 }

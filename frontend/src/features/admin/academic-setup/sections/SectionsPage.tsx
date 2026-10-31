@@ -9,6 +9,8 @@ import SectionSummary from './SectionSummary.tsx'
 import SectionFilters from './SectionFilters.tsx'
 import SectionTable from './SectionTable.tsx'
 import SectionDrawer from './editor/SectionDrawer.tsx'
+import { useAcademicDeletion } from '../deletion/useAcademicDeletion.ts'
+import AcademicDeleteDialog from '../deletion/AcademicDeleteDialog.tsx'
 import './styles/sections.css'
 
 export default function SectionsPage({
@@ -18,6 +20,14 @@ export default function SectionsPage({
 }: StructureContext & { onOverview: () => void; onEnrollment?: () => void }) {
   const state = useSections(context)
   const editor = useSectionEditor(state)
+  const deletion = useAcademicDeletion({
+    ...context,
+    entity: 'academic_sections',
+    catalogue: state.catalogue,
+    structure: state.structure,
+    busy: state.busy || state.write.saving,
+    refresh: state.refresh,
+  })
   const [enrollment, setEnrollment] = useState(false)
   if (enrollment) return <StudentEnrollmentPage context={context} onBack={() => setEnrollment(false)} />
   return (
@@ -37,12 +47,15 @@ export default function SectionsPage({
       <header className="academic-page-header">
         <div>
           <h1 tabIndex={-1}>Sections</h1>
-          <p>Manage sections for each batch and organize students into groups.</p>
+          <p>
+            A section is a class group within a batch for one program semester and dated teaching term. Create one for
+            each group that needs its own enrollment and subject offerings.
+          </p>
         </div>
         <button
           type="button"
           className="academic-primary-button"
-          disabled={!state.canCreate || editor.saving}
+          disabled={!state.canCreate || editor.saving || deletion.saving}
           onClick={() => editor.open('add')}
         >
           <Plus aria-hidden="true" />
@@ -69,8 +82,24 @@ export default function SectionsPage({
         </p>
       )}
       <SectionFilters state={state} />
-      <SectionTable state={state} onOpen={editor.open} />
+      {deletion.notice && (
+        <p className="section-save-notice" role="status">
+          {deletion.notice}
+        </p>
+      )}
+      <SectionTable
+        state={state}
+        onOpen={editor.open}
+        deletionSaving={deletion.saving}
+        onDelete={(record) => {
+          const stored = state.structure?.records.academic_sections?.find(
+            (item) => item.academic_section_id === record.id,
+          )
+          if (stored) deletion.open(stored)
+        }}
+      />
       {editor.panel && <SectionDrawer editor={editor} />}
+      {deletion.record && <AcademicDeleteDialog deletion={deletion} />}
     </section>
   )
 }

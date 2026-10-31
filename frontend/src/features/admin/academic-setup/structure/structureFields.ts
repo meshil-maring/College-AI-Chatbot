@@ -91,6 +91,7 @@ export function structureFields(
         min: 1,
         max: 32,
         immutable: true,
+        help: 'Choose the study plan length. Set up missing semesters in Subjects by semester; existing semesters are reused.',
       }),
       field('description', 'Description', { type: 'textarea', required: false }),
       active,

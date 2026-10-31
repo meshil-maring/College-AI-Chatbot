@@ -36,6 +36,12 @@ policy in the existing service/core layers.
 
 Callers pass database clients to repository operations. Preserve tenant scope,
 query projections and pagination behavior when extending these operations.
+`academics/academic_setup.py` deletes unused departments/programs exclusively
+through their atomic `delete_unused_academic_department` and
+`delete_unused_academic_program` RPCs with server-derived actor/tenant.
+Calendar and class-section deletes call `delete_unused_academic_calendar_record`
+with a server-selected entity. Section storage stays in `academic_structure.py`;
+dated years/semesters stay in `academic_setup.py`. No table DELETE is issued here.
 Tests and mock targets use the same canonical module paths as application code.
 Conversation reads include the stored resource/source institution; inserts only
 write those columns when creating a resource-scoped conversation. Database

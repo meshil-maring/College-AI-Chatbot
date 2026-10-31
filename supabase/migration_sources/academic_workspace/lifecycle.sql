@@ -41,6 +41,19 @@ BEGIN
                     PERFORM public.academic_structure_parent('curriculum_subjects',mapping.curriculum_subject_id,NEW.institution_id);
                 END LOOP;
                 item:=item||jsonb_build_object('published_at',now());
+                -- Freeze subject metadata so a published curriculum keeps its historical meaning
+                -- even if the live course record is edited later.
+                UPDATE public.curriculum_subjects
+                SET subject_code = c.code,
+                    subject_name = btrim(c.name),
+                    credits = c.credits,
+                    lecture_hours = c.lecture_hours,
+                    tutorial_hours = c.tutorial_hours,
+                    practical_hours = c.practical_hours
+                FROM public.courses c
+                WHERE curriculum_subjects.curriculum_version_id = NEW.curriculum_version_id
+                  AND curriculum_subjects.course_id = c.course_id
+                  AND curriculum_subjects.institution_id = NEW.institution_id;
             END IF;
         END IF;
     END IF;

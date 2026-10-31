@@ -23,6 +23,8 @@ describe('Batch database editor', () => {
       }),
     )
     expect(screen.getByRole('button', { name: 'View CSE Summer' }).closest('tr')).toHaveTextContent('Unavailable')
+    fireEvent.click(screen.getByRole('button', { name: 'Set up sections' }))
+    expect(await screen.findByRole('heading', { name: 'Sections', level: 1 })).toBeInTheDocument()
   })
   it('retains drafts after API errors and prevents duplicate submissions', async () => {
     let reject!: (error: Error) => void

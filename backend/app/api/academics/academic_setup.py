@@ -39,3 +39,25 @@ def create_academic_record(entity: AcademicEntity, body: dict = Body(...), user:
               description="Parent references and section codes are immutable. Records are deactivated to retain history. Actor and institution cannot be supplied by the caller.")
 def update_academic_record(entity: AcademicEntity, record_id: UUID, body: dict = Body(...), user: dict = Depends(_ADMIN)):
     return _write(user, entity, body, str(record_id))
+
+
+@router.delete("/departments/{record_id}", summary="Delete an unused department",
+               description="Only an institution administrator with department-management permission may delete. Any linked record, including inactive records, prevents deletion.")
+def delete_department(record_id: UUID, user: dict = Depends(_ADMIN)):
+    return service.delete_department(user, str(record_id))
+
+
+@router.delete("/programs/{record_id}", summary="Delete an unused program",
+               description="Requires the institution-admin department-management grant used for programs. Any linked record, including inactive records, prevents deletion.")
+def delete_program(record_id: UUID, user: dict = Depends(_ADMIN)):
+    return service.delete_program(user, str(record_id))
+
+
+@router.delete("/academic_years/{record_id}", summary="Delete an unused, non-current academic year")
+def delete_academic_year(record_id: UUID, user: dict = Depends(_ADMIN)):
+    return service.delete_period(user, AcademicEntity.academic_years, str(record_id))
+
+
+@router.delete("/semesters/{record_id}", summary="Delete an unused, non-current semester")
+def delete_semester(record_id: UUID, user: dict = Depends(_ADMIN)):
+    return service.delete_period(user, AcademicEntity.semesters, str(record_id))

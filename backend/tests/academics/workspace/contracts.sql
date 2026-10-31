@@ -21,6 +21,12 @@ BEGIN
     mapping_two:=public.manage_academic_structure_record(actor,tenant,'curriculum_subjects',NULL,jsonb_build_object('curriculum_version_id',curriculum->>'curriculum_version_id','program_semester_id',stage_two->>'program_semester_id','course_id',course->>'course_id'));
     curriculum:=public.manage_academic_structure_record(actor,tenant,'curriculum_versions',(curriculum->>'curriculum_version_id')::uuid,'{"status":"published"}');
     IF curriculum->>'published_at' IS NULL THEN RAISE EXCEPTION 'Missing publication timestamp'; END IF;
+    IF NOT EXISTS(SELECT 1 FROM public.curriculum_subjects
+        WHERE curriculum_version_id=(curriculum->>'curriculum_version_id')::uuid
+          AND subject_code=course->>'code'
+          AND subject_name IS NOT NULL AND subject_name<>'' ) THEN
+        RAISE EXCEPTION 'Published subject metadata not snapshotted';
+    END IF;
     cohort:=public.manage_academic_structure_record(actor,tenant,'admission_cohorts',NULL,jsonb_build_object('program_id',program->>'program_id','academic_year_id',year->>'academic_year_id','curriculum_version_id',curriculum->>'curriculum_version_id','name','QA Batch','code','QA-B','start_year',2090,'end_year',2094));
     section:=public.manage_academic_structure_record(actor,tenant,'academic_sections',NULL,jsonb_build_object('admission_cohort_id',cohort->>'admission_cohort_id','program_semester_id',stage->>'program_semester_id','semester_id',term->>'semester_id','name','Section A','code','QA-A','capacity',60));
     offering:=public.manage_academic_structure_record(actor,tenant,'academic_offerings',NULL,jsonb_build_object('academic_section_id',section->>'academic_section_id','curriculum_subject_id',mapping->>'curriculum_subject_id'));
@@ -48,6 +54,14 @@ BEGIN
         PERFORM public.manage_academic_master_record(actor,tenant,'courses',(course->>'course_id')::uuid,'{"is_active":false}');
         RAISE EXCEPTION 'Active curriculum allowed subject deactivation';
     EXCEPTION WHEN check_violation THEN NULL; END;
+    -- Editing the live course must not change the published snapshot
+    PERFORM public.manage_academic_master_record(actor,tenant,'courses',(course->>'course_id')::uuid,
+        jsonb_build_object('name','Renamed Subject','code',course->>'code','credits',5));
+    IF EXISTS(SELECT 1 FROM public.curriculum_subjects
+        WHERE curriculum_version_id=(curriculum->>'curriculum_version_id')::uuid
+          AND subject_name='Renamed Subject') THEN
+        RAISE EXCEPTION 'Published snapshot changed when live course was edited';
+    END IF;
     IF has_table_privilege('authenticated','public.admission_cohorts','SELECT') OR
        has_table_privilege('service_role','public.admission_cohorts','INSERT') OR
        has_function_privilege('authenticated','public.manage_academic_structure_record(uuid,uuid,text,uuid,jsonb)','EXECUTE') THEN

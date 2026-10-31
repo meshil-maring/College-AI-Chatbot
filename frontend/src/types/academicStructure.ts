@@ -29,6 +29,14 @@ export interface CurriculumSubject extends StructureRecord {
   course_id: string
   course_type: CourseType
   is_required: boolean
+  // Snapshot of subject metadata at publication time. Populated only for
+  // published versions so the historical record is immutable.
+  subject_code?: string
+  subject_name?: string
+  credits?: number
+  lecture_hours?: number
+  tutorial_hours?: number
+  practical_hours?: number
 }
 export interface AdmissionCohort extends StructureRecord {
   admission_cohort_id: string

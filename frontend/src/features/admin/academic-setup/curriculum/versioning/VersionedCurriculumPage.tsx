@@ -4,14 +4,16 @@ import { useAcademicStructure } from '../../structure/useAcademicStructure.ts'
 import StructureRecordsPage from '../../structure/StructureRecordsPage.tsx'
 import CurriculumTabs from '../CurriculumTabs.tsx'
 import { ExistingCurriculumMappings } from '../ExistingCurriculumMappings.tsx'
-import SubjectOptionsPage from '../choices/SubjectOptionsPage.tsx'
+import SemesterPlanPage from '../semester-plan/SemesterPlanPage.tsx'
+import StudyPlanSteps from '../semester-plan/StudyPlanSteps.tsx'
+import '../semester-plan/study-plan.css'
 
+// Previously saved option destinations now use the combined semester view.
 export type VersionedCurriculumTab = 'versions' | 'subjects' | 'options' | 'history' | 'existing'
 type Tab = VersionedCurriculumTab
 const tabs: { id: Tab; label: string }[] = [
   { id: 'versions', label: 'Curriculum List' },
-  { id: 'subjects', label: 'Subject Mapping' },
-  { id: 'options', label: 'Subject Options' },
+  { id: 'subjects', label: 'Subjects by semester' },
   { id: 'history', label: 'Version History' },
   { id: 'existing', label: 'Existing Program Mappings' },
 ]
@@ -21,28 +23,36 @@ export default function VersionedCurriculumPage({
   initialMapping = false,
   activeTab,
   onTabChange,
+  onBatches,
 }: {
   context: StructureContext
   onOverview: () => void
   initialMapping?: boolean
   activeTab?: Tab
   onTabChange?: (tab: Tab) => void
+  onBatches?: () => void
 }) {
   const state = useAcademicStructure(context)
   const [localTab, setLocalTab] = useState<Tab>(initialMapping ? 'subjects' : 'versions')
-  const tab = activeTab ?? localTab
+  const requestedTab = activeTab ?? localTab
+  const tab = requestedTab === 'options' ? 'subjects' : requestedTab
   const setTab = onTabChange ?? setLocalTab
   const [versionId, setVersionId] = useState('')
   const versions = state.structure?.records.curriculum_versions ?? []
   const navigation = (
     <CurriculumTabs items={tabs} value={tab} onChange={setTab} prefix="versioned-curriculum" label="Curriculum views" />
   )
-  if (tab === 'options')
+  if (tab === 'subjects')
     return (
-      <>
-        {navigation}
-        <SubjectOptionsPage context={context} onContinue={() => setTab('versions')} />
-      </>
+      <SemesterPlanPage
+        state={state}
+        versionId={versionId}
+        onVersionChange={setVersionId}
+        onOverview={onOverview}
+        onCreateCurriculum={() => setTab('versions')}
+        onBatches={onBatches}
+        navigation={navigation}
+      />
     )
   if (tab === 'existing')
     return (
@@ -55,29 +65,18 @@ export default function VersionedCurriculumPage({
     <StructureRecordsPage
       key={tab}
       context={context}
-      entity={tab === 'subjects' ? 'curriculum_subjects' : 'curriculum_versions'}
+      entity="curriculum_versions"
       title="Curriculum"
       onOverview={onOverview}
-      defaults={versionId ? { curriculum_version_id: versionId } : {}}
-      filter={
-        tab === 'subjects' && versionId
-          ? (row) => 'curriculum_version_id' in row && row.curriculum_version_id === versionId
-          : undefined
-      }
     >
       {navigation}
-      {tab === 'subjects' && (
-        <label className="structure-field">
-          Curriculum Version
-          <select value={versionId} onChange={(event) => setVersionId(event.target.value)}>
-            <option value="">All curriculum versions</option>
-            {versions.map((version) => (
-              <option key={version.curriculum_version_id} value={version.curriculum_version_id}>
-                {version.name} · v{version.version} ({version.status})
-              </option>
-            ))}
-          </select>
-        </label>
+      {tab === 'versions' && (
+        <>
+          <StudyPlanSteps />
+          <button type="button" className="academic-secondary-button" onClick={() => setTab('subjects')}>
+            Choose subjects by semester
+          </button>
+        </>
       )}
       {tab === 'history' && (
         <section aria-label="Published curriculum history">

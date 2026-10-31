@@ -1,0 +1,126 @@
+.academic-delete-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(448px, calc(100vw - 32px));
+  height: fit-content;
+  max-width: 100%;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  color-scheme: dark;
+  box-shadow: var(--ui-shadow-overlay);
+}
+.academic-delete-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.academic-delete-dialog::backdrop {
+  background: var(--ui-overlay);
+}
+.academic-delete-dialog > header,
+.academic-delete-dialog > footer {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+  padding: 24px;
+}
+.academic-delete-dialog > header {
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ui-border);
+}
+.academic-delete-dialog h2,
+.academic-delete-dialog h3 {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ui-type-section);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.academic-delete-dialog :is(h2, h3, p) {
+  overflow-wrap: anywhere;
+}
+.academic-delete-dialog header button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--ui-text-muted);
+}
+.academic-delete-dialog header button svg {
+  width: 21px;
+  height: 21px;
+}
+.academic-delete-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+  scrollbar-width: thin;
+}
+.academic-delete-warning {
+  width: 36px;
+  height: 36px;
+  margin: 12px 0 20px;
+  color: var(--ui-danger);
+}
+.academic-delete-dialog p {
+  margin: 16px 0 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
+  line-height: 1.8;
+}
+.academic-delete-dialog .academic-delete-error {
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+}
+.academic-delete-dialog > footer {
+  flex-wrap: wrap;
+  border-top: 1px solid var(--ui-border);
+}
+.academic-delete-dialog footer button {
+  min-height: 44px;
+  font-size: var(--ui-type-body);
+}
+.academic-delete-dialog footer .academic-secondary-button {
+  min-width: 100px;
+}
+.academic-delete-button {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--ui-danger);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+  font-weight: 600;
+}
+.academic-delete-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.academic-delete-button:active:not(:disabled) {
+  outline: 1px solid var(--ui-danger);
+  outline-offset: -4px;
+}
+.academic-delete-dialog button:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+.academic-delete-dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+@media (max-width: 760px) {
+  .academic-delete-dialog > header,
+  .academic-delete-dialog > footer,
+  .academic-delete-body {
+    padding: 20px;
+  }
+}

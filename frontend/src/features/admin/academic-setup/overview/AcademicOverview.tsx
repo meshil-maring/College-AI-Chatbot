@@ -3,6 +3,7 @@ import { ArrowRight, ChevronRight, Clock3, Link2, Search } from 'lucide-react'
 import type { AcademicCatalogue, AcademicEntity } from '../../../../types/academicSetup.ts'
 import type { StructureCatalogue } from '../../../../types/academicStructure.ts'
 import AcademicManagementCard from './AcademicManagementCard.tsx'
+import AcademicSetupReadiness from './AcademicSetupReadiness.tsx'
 import AcademicQuickLinks from './AcademicQuickLinks.tsx'
 import {
   allAcademicAreas,
@@ -81,6 +82,9 @@ export default function AcademicOverview({
           )
         })}
       </section>
+      {!normalized && (
+        <AcademicSetupReadiness catalogue={catalogue} structure={structure} loading={loading} onNavigate={onNavigate} />
+      )}
       <section id="academic-overview-results" aria-label="Academic management areas">
         {normalized ? (
           <>

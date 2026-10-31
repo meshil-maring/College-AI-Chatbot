@@ -3,16 +3,19 @@ import CalendarActions, { CalendarBadge } from './CalendarActions.tsx'
 import { formatCalendarDate, semesterType } from './calendarModel.ts'
 import type { CalendarState } from './useCalendar.ts'
 import type { CalendarEditor } from './useCalendarEditor.ts'
+import type { CalendarDeletion } from './useCalendarDeletion.ts'
 
 export default function CalendarSemesters({
   records,
   state,
   editor,
+  deletion,
   showYear = false,
 }: {
   records: Semester[]
   state: CalendarState
   editor: CalendarEditor
+  deletion: CalendarDeletion
   showYear?: boolean
 }) {
   return (
@@ -49,7 +52,12 @@ export default function CalendarSemesters({
                 <CalendarBadge period={semester} />
               </td>
               <td>
-                <CalendarActions record={semester} editor={editor} canEdit={state.canManageSemesters && !state.busy} />
+                <CalendarActions
+                  record={semester}
+                  editor={editor}
+                  deletion={deletion}
+                  canEdit={state.canManageSemesters && !state.busy}
+                />
               </td>
             </tr>
           ))}

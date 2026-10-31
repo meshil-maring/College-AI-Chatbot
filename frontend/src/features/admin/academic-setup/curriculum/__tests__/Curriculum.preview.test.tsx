@@ -65,17 +65,16 @@ describe('Persisted curriculum versions', () => {
     structureCatalogue.records.curriculum_subjects = []
     renderVersions()
     await screen.findByRole('button', { name: 'View CSE Curriculum' })
-    fireEvent.click(screen.getByRole('tab', { name: 'Subject Mapping' }))
-    const trigger = screen.getByRole('button', { name: 'Add Subject Mapping' })
+    fireEvent.click(screen.getByRole('tab', { name: 'Subjects by semester' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Choose a curriculum' }), { target: { value: 'version-1' } })
+    const trigger = screen.getByRole('button', { name: 'Add subject to Semester 1' })
     await waitFor(() => expect(trigger).toBeEnabled())
     fireEvent.click(trigger)
-    const drawer = within(screen.getByRole('dialog', { name: 'Add Subject Mapping' }))
-    fireEvent.change(drawer.getByRole('combobox', { name: 'Curriculum Version' }), { target: { value: 'version-1' } })
-    fireEvent.change(drawer.getByRole('combobox', { name: 'Program Semester' }), { target: { value: 'stage-1' } })
+    const drawer = within(screen.getByRole('dialog', { name: 'Add subject in Semester 1' }))
     fireEvent.change(drawer.getByRole('combobox', { name: 'Subject', exact: true }), {
       target: { value: catalogue.records.courses![0].course_id },
     })
-    fireEvent.click(drawer.getByRole('button', { name: 'Create Subject Mapping' }))
+    fireEvent.click(drawer.getByRole('button', { name: 'Add subject', exact: true }))
     await waitFor(() =>
       expect(api.createStructureRecord).toHaveBeenCalledWith(
         'token-1',

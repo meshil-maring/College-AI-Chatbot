@@ -4,6 +4,10 @@ import type {
   AcademicEntity,
   AcademicRecordMap,
   AcademicUpdateMap,
+  Department,
+  DegreeProgram,
+  AcademicYear,
+  Semester,
 } from '../../types/academicSetup.ts'
 import { ADMIN_BASE, requestJson } from './http.ts'
 
@@ -28,4 +32,20 @@ export function updateAcademicRecord<E extends AcademicEntity>(
   payload: AcademicUpdateMap[E],
 ): Promise<AcademicRecordMap[E]> {
   return requestJson('PATCH', `${BASE}/${entity}/${encodeURIComponent(id)}`, accessToken, payload)
+}
+
+export function deleteDepartment(accessToken: string, id: string): Promise<Department> {
+  return requestJson('DELETE', `${BASE}/departments/${encodeURIComponent(id)}`, accessToken)
+}
+
+export function deleteProgram(accessToken: string, id: string): Promise<DegreeProgram> {
+  return requestJson('DELETE', `${BASE}/programs/${encodeURIComponent(id)}`, accessToken)
+}
+
+export function deleteAcademicYear(accessToken: string, id: string): Promise<AcademicYear> {
+  return requestJson('DELETE', `${BASE}/academic_years/${encodeURIComponent(id)}`, accessToken)
+}
+
+export function deleteSemester(accessToken: string, id: string): Promise<Semester> {
+  return requestJson('DELETE', `${BASE}/semesters/${encodeURIComponent(id)}`, accessToken)
 }

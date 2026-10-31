@@ -1,4 +1,5 @@
 import { ChevronRight, Plus } from 'lucide-react'
+import { useState } from 'react'
 import type { StructureContext } from '../structure/useAcademicStructure.ts'
 import StructureState from '../structure/StructureState.tsx'
 import { useBatches } from './useBatches.ts'
@@ -9,9 +10,14 @@ import BatchTable from './BatchTable.tsx'
 import BatchDrawer from './editor/BatchDrawer.tsx'
 import './styles/batches.css'
 
-export default function BatchesPage({ onOverview, ...context }: StructureContext & { onOverview: () => void }) {
+export default function BatchesPage({
+  onOverview,
+  onCreateSections,
+  ...context
+}: StructureContext & { onOverview: () => void; onCreateSections: () => void }) {
   const state = useBatches(context)
-  const editor = useBatchEditor(state)
+  const [createdBatch, setCreatedBatch] = useState(false)
+  const editor = useBatchEditor(state, () => setCreatedBatch(true))
   return (
     <section
       className={`academic-workspace batches-page${editor.panel ? ' has-drawer' : ''}`}
@@ -29,7 +35,7 @@ export default function BatchesPage({ onOverview, ...context }: StructureContext
       <header className="academic-page-header">
         <div>
           <h1 tabIndex={-1}>Batches</h1>
-          <p>Manage student batches for each program and academic year.</p>
+          <p>Group students by intake and keep the curriculum assigned to that cohort.</p>
         </div>
         <button
           type="button"
@@ -52,6 +58,17 @@ export default function BatchesPage({ onOverview, ...context }: StructureContext
         <p className="batch-save-notice" role="status">
           {state.notice}
         </p>
+      )}
+      {createdBatch && (
+        <div className="batch-integration-note">
+          <p>
+            If this batch needs class groups for teaching or enrollment, set them up by program semester and teaching
+            term. No sections are created automatically.
+          </p>
+          <button type="button" className="academic-secondary-button" onClick={onCreateSections}>
+            Set up sections
+          </button>
+        </div>
       )}
       <BatchFilters state={state} />
       <BatchTable state={state} onOpen={editor.open} />

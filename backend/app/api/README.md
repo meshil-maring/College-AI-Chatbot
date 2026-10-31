@@ -24,6 +24,18 @@ institution-admin scope and entity permissions independently. Faculty teaching
 routers remain retired. `auth/identity.py` owns account identity bootstrap;
 `ai/public_contract.py` owns the public chat response documentation.
 
+`DELETE /admin/academic-setup/departments/{record_id}` deletes only unused
+departments. It requires the exact institution-admin department-management grant;
+active or inactive dependencies return `409 DEPARTMENT_IN_USE`.
+`DELETE /admin/academic-setup/programs/{record_id}` uses the same grant and
+returns `409 PROGRAM_IN_USE` for linked records.
+DELETE on `/admin/academic-setup/academic_years/{record_id}` and
+`/admin/academic-setup/semesters/{record_id}` requires their respective manage
+grants. `/admin/academic-structure/academic_sections/{record_id}` requires
+`courses.manage`. All require exact institution-admin scope. Current periods
+return `409 ACADEMIC_CURRENT_PERIOD`; links return entity-specific `*_IN_USE`
+conflicts. Offering-owned legacy sections retain their existing contract.
+
 `academics/semester_registration.py` exposes administrator option groups and
 section assignment under `/admin/academic-registration`, plus owner-scoped reads
 and completion under `/students/me/semester-registrations`. It uses independent

@@ -28,6 +28,30 @@ HTTP authentication regression suites must also run independently.
 
 Keep execution logs in `logs/backend/` and frontend logs in `logs/frontend/`.
 
+`backend/.venv/Scripts/python.exe scripts/validation/academic_workspace/verify_academic_deletion.py`
+replays migrations and the same fictional seed in an isolated owned database,
+then runs department, program, calendar and class-section SQL contracts in
+`backend/tests/academics/deletion/`. It checks deletion of unused active/inactive
+records, linked-record conflicts, exact grants, tenant isolation, current periods,
+student assignments/registrations, audit rollback and future cascade/set-null consumers.
+The probe rolls back its records and schema changes before container cleanup.
+
+Without Docker, `verify_academic_deletion.mjs` runs the same SQL contracts in
+PGlite's in-memory PostgreSQL with minimal identity fixtures and the actual
+Academic Setup and semester-registration schema, guards, grants and writers.
+Pass the installed PGlite
+package directory as its first argument. A temporary runtime may be installed
+under ignored logs without changing application dependencies:
+
+```powershell
+npm.cmd install --prefix logs/backend/department-deletion-postgres --no-save --package-lock=false --ignore-scripts @electric-sql/pglite@0.5.13
+node scripts/validation/academic_workspace/verify_academic_deletion.mjs logs/backend/department-deletion-postgres/node_modules/@electric-sql/pglite
+```
+
+This fallback never reads `.env` or connects to a database URL. It verifies the
+relevant schema and SQL behavior, not full historical migration replay or
+concurrent sessions. The Docker runner remains the full replay check.
+
 For data that remains visible in the application, use the separate
 [retained offerings loader](offerings/README.md). It targets an explicitly chosen
 institution in the configured development database and requires `--apply` to

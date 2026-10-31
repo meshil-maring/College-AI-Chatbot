@@ -11,7 +11,7 @@ const groups: { id: string; title: string; pages: readonly AcademicPage[] }[] = 
   {
     id: 'foundation',
     title: 'Foundations',
-    pages: ['departments', 'programs', 'calendar', 'program-semesters', 'subjects'],
+    pages: ['departments', 'programs', 'calendar', 'subjects'],
   },
   { id: 'curriculum', title: 'Curriculum & options', pages: ['curriculum'] },
   { id: 'delivery', title: 'Classes & enrollment', pages: ['cohorts', 'sections', 'offerings', 'enrollments'] },
@@ -27,7 +27,9 @@ export default function AcademicSidebar({ page, onNavigate }: Props) {
   function item(destination: AcademicPage, nested = false) {
     const area = getAcademicArea(destination)
     const Icon = area?.icon ?? GraduationCap
-    const active = page === destination
+    const active =
+      page === destination ||
+      ((page === 'curriculum-options' || page === 'program-semesters') && destination === 'curriculum-subjects')
     return (
       <button
         key={destination}

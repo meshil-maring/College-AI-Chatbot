@@ -1,3 +1,5 @@
+@import './overview-readiness.css';
+
 .academic-bottom-grid {
   display: grid;
   grid-template-columns: 0.85fr 1.35fr;

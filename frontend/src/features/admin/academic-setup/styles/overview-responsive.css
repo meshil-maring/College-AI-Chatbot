@@ -32,6 +32,9 @@
   .academic-bottom-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+  .academic-readiness-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .academic-page-header {
     align-items: flex-start;
   }
@@ -80,6 +83,13 @@
   .academic-management-row,
   .academic-search-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .academic-readiness-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .academic-readiness-heading button {
+    width: 100%;
   }
   .academic-management-card {
     padding: 16px;

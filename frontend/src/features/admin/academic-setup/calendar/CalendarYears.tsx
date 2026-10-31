@@ -4,8 +4,17 @@ import CalendarSemesters from './CalendarSemesters.tsx'
 import { formatCalendarDate } from './calendarModel.ts'
 import type { CalendarState } from './useCalendar.ts'
 import type { CalendarEditor } from './useCalendarEditor.ts'
+import type { CalendarDeletion } from './useCalendarDeletion.ts'
 
-export default function CalendarYears({ state, editor }: { state: CalendarState; editor: CalendarEditor }) {
+export default function CalendarYears({
+  state,
+  editor,
+  deletion,
+}: {
+  state: CalendarState
+  editor: CalendarEditor
+  deletion: CalendarDeletion
+}) {
   return (
     <div className="calendar-years">
       <div className="calendar-year-heading" aria-hidden="true">
@@ -48,12 +57,17 @@ export default function CalendarYears({ state, editor }: { state: CalendarState;
               <span data-label="Status">
                 <CalendarBadge period={year} />
               </span>
-              <CalendarActions record={year} editor={editor} canEdit={state.canManageYears && !state.busy} />
+              <CalendarActions
+                record={year}
+                editor={editor}
+                deletion={deletion}
+                canEdit={state.canManageYears && !state.busy}
+              />
             </div>
             {expanded && (
               <div className="calendar-year-contents" id={`calendar-year-${year.academic_year_id}`}>
                 {semesters ? (
-                  <CalendarSemesters records={semesters} state={state} editor={editor} />
+                  <CalendarSemesters records={semesters} state={state} editor={editor} deletion={deletion} />
                 ) : (
                   <p className="calendar-inline-empty">Semester records are unavailable for your account.</p>
                 )}

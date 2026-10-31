@@ -6,7 +6,11 @@ describe('administrator browser navigation', () => {
   it('restores known academic destinations and ignores unknown views', () => {
     expect(resolveAdminLocation('?view=academic-setup&academic=curriculum-options')).toMatchObject({
       view: 'academic-setup',
-      page: 'curriculum-options',
+      page: 'curriculum-subjects',
+    })
+    expect(resolveAdminLocation('?view=academic-setup&academic=program-semesters')).toMatchObject({
+      view: 'academic-setup',
+      page: 'curriculum-subjects',
     })
     expect(resolveAdminLocation('?view=academic-setup&academic=enrollments')).toMatchObject({ page: 'enrollments' })
     expect(resolveAdminLocation('?view=unknown&academic=unknown')).toEqual({
@@ -16,16 +20,23 @@ describe('administrator browser navigation', () => {
     })
   })
 
+  it('writes the combined curriculum destination for legacy semester links', () => {
+    const hook = renderHook(useAdminWorkspaceNavigation)
+    act(() => hook.result.current.navigateAcademic('program-semesters'))
+    expect(hook.result.current.academicPage).toBe('curriculum-subjects')
+    expect(window.location.search).toContain('academic=curriculum-subjects')
+  })
+
   it('keeps direct navigation after remount and supports browser Back and Forward', async () => {
     window.history.replaceState(null, '', '/login/admin?institution=ALPHA')
     const hook = renderHook(useAdminWorkspaceNavigation)
     act(() => hook.result.current.navigateAcademic('curriculum-options'))
-    expect(window.location.search).toContain('academic=curriculum-options')
+    expect(window.location.search).toContain('academic=curriculum-subjects')
     expect(window.location.search).toContain('institution=ALPHA')
     act(() => hook.result.current.navigateAcademic('enrollments'))
     expect(hook.result.current.academicPage).toBe('enrollments')
     act(() => window.history.back())
-    await waitFor(() => expect(hook.result.current.academicPage).toBe('curriculum-options'))
+    await waitFor(() => expect(hook.result.current.academicPage).toBe('curriculum-subjects'))
     act(() => window.history.forward())
     await waitFor(() => expect(hook.result.current.academicPage).toBe('enrollments'))
     hook.unmount()
@@ -60,7 +71,7 @@ describe('administrator browser navigation', () => {
   it('retains a direct link on initial sign-in but resets another account’s saved view', () => {
     window.history.replaceState(null, '', '/?view=academic-setup&academic=curriculum-options')
     const first = renderHook(() => useAdminWorkspaceNavigation('account-a'))
-    expect(first.result.current.academicPage).toBe('curriculum-options')
+    expect(first.result.current.academicPage).toBe('curriculum-subjects')
     act(() => first.result.current.navigateView('documents'))
     first.unmount()
     const replacement = renderHook(() => useAdminWorkspaceNavigation('account-b'))

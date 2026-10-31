@@ -18,7 +18,9 @@ mocks together when moving code.
 | `students/`     | Identity profile, notices and resources                                                  |
 
 `admin/academics.ts` owns department, degree-program, academic-year, dated-semester,
-course, program-course, offering and section reads/writes. Descendant
+course, program-course, offering and section reads/writes. Department/program
+and calendar DELETE transport also lives here; their RPCs reject active and
+inactive dependencies before removing an unused record. Descendant
 `institution_id` values are server-derived API context. Faculty teaching,
 attendance, results and retired academic packages remain removed. Do not reconnect retained legacy
 screens to retired endpoints; see the [removal record](../../../docs/retirements/academic-setup/README.md).
@@ -27,6 +29,8 @@ screens to retired endpoints; see the [removal record](../../../docs/retirements
 curriculum-subject, admission-cohort, academic-section and academic-offering API.
 Its contracts live in `types/academicStructure.ts`. It uses the same authenticated
 transport, session-expiry events and server-selected tenant context.
+Class-section deletion uses this client and the narrow calendar/section RPC;
+student assignments and active/inactive offerings block deletion on the server.
 
 `academics/semesterRegistration.ts` owns the additive administrator option-group
 and assignment endpoints and student own-semester reads/completion. It reuses the

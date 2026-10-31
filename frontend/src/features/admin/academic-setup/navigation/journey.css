@@ -48,6 +48,10 @@
 .academic-journey li {
   min-width: 0;
 }
+.academic-journey .academic-step-description {
+  margin: 8px 4px 0;
+  font-size: var(--ui-type-small);
+}
 .academic-journey nav button {
   display: flex;
   align-items: center;
@@ -89,6 +93,22 @@
 }
 .academic-journey-next p {
   max-width: 70ch;
+}
+.academic-journey-context {
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--ui-accent);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+}
+.academic-journey-context strong {
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
+}
+.academic-journey-context p {
+  margin: 0;
+  max-width: 85ch;
 }
 .academic-journey-next button {
   flex-shrink: 0;

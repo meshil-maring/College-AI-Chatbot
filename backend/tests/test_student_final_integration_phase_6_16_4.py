@@ -8,8 +8,8 @@ scope ("no backend changes unless a genuine defect is found" — none was), this
 final suite REGRESSION-PINS the invariants the integrated experience depends
 on, at the route layer:
 
-* every ``/students/me/*`` route accepts ONLY ``GET`` (read-only academic
-  access — the student experience has no mutation path anywhere);
+* every ``/students/me/*`` route is ``GET``-only except the student's own
+  registration completion and notification read-receipt actions;
 * every student surface route takes NO client-suppliable identity parameter
   (server-authoritative identity; nothing for a caller to forge);
 * privileged management routes (admin surfaces) remain OUTSIDE the student
@@ -23,6 +23,10 @@ from __future__ import annotations
 
 from app.main import app
 
+STUDENT_ME_METHOD_EXCEPTIONS = {
+    "/api/v1/students/me/notifications/{notification_id}/read": {"patch"},
+    "/api/v1/students/me/semester-registrations/{registration_id}/complete": {"post"},
+}
 
 
 class TestStudentSurfacesRemainReadOnly:
@@ -36,13 +40,9 @@ class TestStudentSurfacesRemainReadOnly:
             if path.startswith("/api/v1/students/me/")
         ]
         assert student_me_paths, "the /students/me surface must exist"
-        # The one documented exception is the pre-existing Phase 6.11
-        # notification READ-RECEIPT (PATCH /me/notifications/{id}/read) — an
-        # unrelated student-owned contract that predates this experience.
         for path in student_me_paths:
-            if path == "/api/v1/students/me/notifications/{notification_id}/read":
-                continue
-            assert set(paths[path]) == {"get"}, f"{path}: {sorted(paths[path])}"
+            expected = STUDENT_ME_METHOD_EXCEPTIONS.get(path, {"get"})
+            assert set(paths[path]) == expected, f"{path}: {sorted(paths[path])}"
 
     def test_no_students_me_route_accepts_identity_parameters(self):
         """A caller can never tell the backend WHOSE data to return."""
@@ -55,11 +55,7 @@ class TestStudentSurfacesRemainReadOnly:
             if not path.startswith("/api/v1/students/me/"):
                 continue
             for method, operation in operations.items():
-                # GET-only everywhere except the documented Phase 6.11
-                # notification read-receipt PATCH (see the previous test).
-                if path == "/api/v1/students/me/notifications/{notification_id}/read":
-                    continue
-                assert method == "get"
+                assert method in STUDENT_ME_METHOD_EXCEPTIONS.get(path, {"get"})
                 for parameter in operation.get("parameters", []):
                     assert parameter.get("name") not in identity_fields, (
                         f"{path}: client-suppliable identity parameter "
@@ -102,7 +98,10 @@ class TestDataMinimization:
 
 
     def test_notice_projection_stays_minimal(self):
-        from app.schemas.students.student_notices import StudentNotice, StudentNoticeList
+        from app.schemas.students.student_notices import (
+            StudentNotice,
+            StudentNoticeList,
+        )
 
         item_fields = set(StudentNotice.model_fields.keys())
         assert item_fields == {
@@ -123,5 +122,3 @@ class TestDataMinimization:
             "effective_from", "effective_until",
         }
         assert "items" in StudentResourceList.model_fields
-
-

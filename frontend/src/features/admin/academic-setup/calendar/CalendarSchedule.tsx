@@ -3,8 +3,17 @@ import type { CalendarState } from './useCalendar.ts'
 import { formatCalendarDate, localDate, periodStatus } from './calendarModel.ts'
 import CalendarActions from './CalendarActions.tsx'
 import type { CalendarEditor } from './useCalendarEditor.ts'
+import type { CalendarDeletion } from './useCalendarDeletion.ts'
 
-export default function CalendarSchedule({ state, editor }: { state: CalendarState; editor: CalendarEditor }) {
+export default function CalendarSchedule({
+  state,
+  editor,
+  deletion,
+}: {
+  state: CalendarState
+  editor: CalendarEditor
+  deletion: CalendarDeletion
+}) {
   if (state.tab === 'dates') {
     const periods = state.filteredYears.flatMap((year) => [
       year,
@@ -36,6 +45,7 @@ export default function CalendarSchedule({ state, editor }: { state: CalendarSta
             <CalendarActions
               record={period}
               editor={editor}
+              deletion={deletion}
               canEdit={!state.busy && ('semester_id' in period ? state.canManageSemesters : state.canManageYears)}
             />
           </article>

@@ -1,0 +1,81 @@
+.semester-choices {
+  display: grid;
+  gap: var(--ui-space-3);
+  margin: var(--ui-space-4) var(--study-plan-inset) 0;
+  padding: var(--ui-space-4);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-bg);
+  min-width: 0;
+}
+.semester-choices > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+}
+.semester-choices :is(h4, h5, h6) {
+  margin: 0;
+  color: var(--ui-text);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.semester-choices h4 {
+  font-size: var(--ui-type-card);
+}
+.semester-choices h5 {
+  font-size: var(--ui-type-body);
+}
+.semester-choices h6 {
+  font-size: var(--ui-type-small);
+}
+.semester-choices p {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
+  font-weight: 400;
+  line-height: 1.6;
+}
+.semester-choices :is(.registration-panel, .semester-choice-group) {
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
+  min-width: 0;
+}
+.semester-choice-group {
+  display: grid;
+  gap: var(--ui-space-3);
+}
+.semester-choice-group ul {
+  margin-top: var(--ui-space-2);
+  padding-left: var(--ui-space-4);
+  list-style: disc;
+  font-size: var(--ui-type-body);
+  font-weight: 400;
+  line-height: 1.6;
+}
+.semester-choice-option {
+  padding: var(--ui-space-3);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+}
+.semester-choices :is(input, button, legend) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.semester-choices .registration-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.semester-choices .registration-option {
+  padding: var(--ui-space-3);
+}
+.semester-choices .registration-option legend {
+  font-size: var(--ui-type-small);
+  font-weight: 500;
+}
+.semester-choices button:disabled {
+  opacity: 0.5;
+}

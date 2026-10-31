@@ -1,10 +1,30 @@
+import runpy
+from pathlib import Path
 from uuid import uuid4
 
-from pydantic import ValidationError
 import pytest
+from app.schemas.academics.academic_structure import CREATE_MODELS, UPDATE_MODELS
+from app.schemas.academics.academic_structure import StructureEntity as Entity
+from pydantic import ValidationError
 
-from app.schemas.academics.academic_structure import CREATE_MODELS, UPDATE_MODELS, StructureEntity as Entity
-from ..support import PROGRAM, YEAR, COURSE, SEMESTER
+from ..support import COURSE, PROGRAM, SEMESTER, YEAR
+
+
+def test_snapshot_forward_migration_matches_source_and_updates_published_records():
+    root = Path(__file__).resolve().parents[4]
+    target, expected = runpy.run_path(
+        str(root / "scripts/maintenance/migrations/build_academic_workspace.py")
+    )["render_follow_up"]()
+    source = (root / "supabase/migration_sources/academic_workspace/subject_snapshots.sql").read_text()
+
+    assert target.name == "20261031000000_academic_curriculum_subject_snapshots.sql"
+    assert target.read_text() == expected
+    assert "ADD COLUMN IF NOT EXISTS subject_code" in source
+    assert "UPDATE public.curriculum_subjects mapping" in source
+    assert "OLD.status='draft' AND NEW.status='published'" in source
+    assert "DISABLE TRIGGER structure_lifecycle" in source
+    assert "ENABLE TRIGGER structure_lifecycle" in source
+    assert "NOTIFY pgrst, 'reload schema'" in source
 
 
 def payloads():

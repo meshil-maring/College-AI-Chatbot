@@ -1,13 +1,17 @@
-import { Eye, MoreHorizontal, Pencil } from 'lucide-react'
+import { Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { sectionLabel, type SectionRecord, type SectionStatus } from './sectionModel.ts'
 import type { SectionsState } from './useSections.ts'
 
 export interface SectionActions {
   onOpen: (mode: 'view' | 'edit', record: SectionRecord, status?: SectionStatus) => void
+  onDelete: (record: SectionRecord) => void
+  deletionSaving: boolean
 }
 export default function SectionRow({
   record,
   onOpen,
+  onDelete,
+  deletionSaving,
   state,
 }: { record: SectionRecord; state: SectionsState } & SectionActions) {
   const batch = state.batches.find((item) => item.id === record.batchId)
@@ -53,11 +57,22 @@ export default function SectionRow({
             type="button"
             aria-label={`Edit ${label}`}
             title="Edit section"
-            disabled={!state.canManage || state.write.saving}
+            disabled={!state.canManage || state.write.saving || deletionSaving}
             onClick={() => onOpen('edit', record)}
           >
             <Pencil aria-hidden="true" />
           </button>
+          {state.canManage && (
+            <button
+              type="button"
+              aria-label={`Delete ${label}`}
+              title="Delete unused section"
+              disabled={state.write.saving || deletionSaving}
+              onClick={() => onDelete(record)}
+            >
+              <Trash2 aria-hidden="true" />
+            </button>
+          )}
           <details className="section-more">
             <summary aria-label={`More actions for ${label}`} title="More actions">
               <MoreHorizontal aria-hidden="true" />
@@ -65,7 +80,7 @@ export default function SectionRow({
             <div aria-label={`Status actions for ${label}`}>
               <button
                 type="button"
-                disabled={!state.canManage || state.write.saving}
+                disabled={!state.canManage || state.write.saving || deletionSaving}
                 onClick={(event) => {
                   const menu = event.currentTarget.closest('details')
                   menu?.removeAttribute('open')

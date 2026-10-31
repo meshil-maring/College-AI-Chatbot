@@ -1,0 +1,103 @@
+.academic-setup-readiness {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--admin-panel);
+}
+.academic-setup-readiness > h2 {
+  margin: 0;
+  font-size: var(--ui-type-card);
+}
+.academic-readiness-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.academic-readiness-heading p,
+.academic-readiness-heading h2,
+.academic-readiness-heading span {
+  display: block;
+  margin: 0;
+}
+.academic-readiness-heading p {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
+}
+.academic-readiness-heading h2 {
+  margin-block: 4px;
+  font-size: var(--ui-type-card);
+}
+.academic-readiness-heading span,
+.academic-readiness-steps p,
+.academic-readiness-note {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
+}
+.academic-readiness-heading button {
+  flex-shrink: 0;
+}
+.academic-readiness-heading button > svg {
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+}
+.academic-readiness-program {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
+}
+.academic-readiness-program select {
+  min-width: 220px;
+  min-height: var(--ui-control-height);
+}
+.academic-readiness-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.academic-readiness-steps > li {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+}
+.academic-readiness-step-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ui-type-small);
+  font-weight: 600;
+}
+.academic-readiness-step-heading > svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.academic-readiness-step-heading small {
+  margin-left: auto;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
+}
+.academic-readiness-steps p {
+  margin: 8px 0 0;
+}
+.academic-readiness-steps .is-ready .academic-readiness-step-heading > svg {
+  color: var(--ui-success);
+}
+.academic-readiness-steps .is-next {
+  border-color: var(--ui-accent);
+}
+.academic-readiness-steps .is-waiting {
+  opacity: 0.75;
+}
+.academic-readiness-note {
+  margin: 0;
+}

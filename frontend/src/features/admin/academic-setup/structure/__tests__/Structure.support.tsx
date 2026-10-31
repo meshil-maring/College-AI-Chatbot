@@ -9,6 +9,6 @@ export { auth, catalogue, structureCatalogue } from '../../__tests__/AcademicSet
 export { stage, version, mapping, cohort, section, offering } from '../../__tests__/academicStructureFixtures.ts'
 export * as api from '../../../../../services/admin/academicStructure.ts'
 beforeEach(populateStructure)
-export function renderStructure(page: AcademicPage = 'program-semesters') {
+export function renderStructure(page: AcademicPage = 'curriculum-versions') {
   return render(<AcademicWorkspace page={page} search="" onNavigate={vi.fn()} onClearSearch={vi.fn()} />)
 }

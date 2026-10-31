@@ -1,0 +1,5 @@
+{
+  "version": "20261030030000",
+  "name": "unused_calendar_section_deletion",
+  "files": ["delete.sql"]
+}

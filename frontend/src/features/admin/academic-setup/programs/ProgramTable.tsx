@@ -11,6 +11,8 @@ interface Props {
   onCreate: () => void
   onOpen: (mode: 'view' | 'edit', record: DegreeProgram) => void
   onStatus: (record: DegreeProgram) => void
+  onDelete: (record: DegreeProgram) => void
+  saving: boolean
 }
 const columns: [ProgramSortField, string][] = [
   ['name', 'Program Name'],
@@ -21,7 +23,7 @@ const columns: [ProgramSortField, string][] = [
   ['total_credits', 'Credits'],
   ['is_active', 'Status'],
 ]
-export default function ProgramTable({ state, onCreate, onOpen, onStatus }: Props) {
+export default function ProgramTable({ state, onCreate, onOpen, onStatus, onDelete, saving }: Props) {
   return (
     <section className="program-table-panel" aria-label="Program records" aria-busy={state.loading}>
       {state.loading && (
@@ -77,7 +79,9 @@ export default function ProgramTable({ state, onCreate, onOpen, onStatus }: Prop
                 record={record}
                 index={index}
                 department={state.departments?.find((item) => item.department_id === record.department_id)}
-                editable={state.manageable && !state.busy}
+                editable={state.manageable && !state.busy && !saving}
+                canDelete={state.manageable}
+                onDelete={onDelete}
                 onOpen={onOpen}
                 onStatus={onStatus}
               />

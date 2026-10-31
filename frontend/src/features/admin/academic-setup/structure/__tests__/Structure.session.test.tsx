@@ -9,14 +9,14 @@ afterEach(() => {
 })
 
 function workspace() {
-  return <AcademicWorkspace page="program-semesters" search="" onNavigate={vi.fn()} onClearSearch={vi.fn()} />
+  return <AcademicWorkspace page="curriculum-versions" search="" onNavigate={vi.fn()} onClearSearch={vi.fn()} />
 }
 
 async function openDraft() {
-  const trigger = screen.getByRole('button', { name: 'Add Program Semester' })
+  const trigger = screen.getByRole('button', { name: 'Add Curriculum' })
   await waitFor(() => expect(trigger).toBeEnabled())
   fireEvent.click(trigger)
-  fireEvent.change(screen.getByRole('textbox', { name: 'Semester Name' }), {
+  fireEvent.change(screen.getByRole('textbox', { name: 'Curriculum Name' }), {
     target: { value: 'Unsaved semester draft' },
   })
 }
@@ -28,7 +28,7 @@ describe('Academic draft lifetime', () => {
     await openDraft()
     auth.accessToken = 'rotated-provider-token'
     view.rerender(workspace())
-    expect(screen.getByRole('textbox', { name: 'Semester Name' })).toHaveValue('Unsaved semester draft')
+    expect(screen.getByRole('textbox', { name: 'Curriculum Name' })).toHaveValue('Unsaved semester draft')
   })
 
   it('discards a draft when a fresh login replaces the session for the same account', async () => {

@@ -1,5 +1,12 @@
 import '../__tests__/AcademicSetup.support.ts'
-import { auth, catalogue, department, setCatalogue, structureCatalogue } from '../__tests__/AcademicSetup.support.ts'
+import {
+  auth,
+  catalogue,
+  department,
+  program,
+  setCatalogue,
+  structureCatalogue,
+} from '../__tests__/AcademicSetup.support.ts'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -9,6 +16,7 @@ import AcademicSidebar from './AcademicSidebar.tsx'
 import AcademicSearch from './AcademicSearch.tsx'
 import type { AcademicPage } from './academicOverviewModel.ts'
 import type { AcademicCatalogue } from '../../../../types/academicSetup.ts'
+import { populateStructure } from '../__tests__/academicStructureFixtures.ts'
 
 function Workspace() {
   const [page, setPage] = useState<AcademicPage>('overview')
@@ -37,16 +45,16 @@ describe('Academic Setup overview', () => {
       'Programs',
       'Academic Years',
       'Academic Terms',
-      'Program Semesters',
       'Subjects',
       'Curriculum Versions',
-      'Curriculum Subjects',
+      'Subjects by semester',
       'Batches',
       'Academic Sections',
       'Academic Offerings',
     ]) {
       expect(within(nav).getByRole('button', { name, exact: true })).toBeInTheDocument()
     }
+    expect(within(nav).queryByRole('button', { name: 'Program Semesters', exact: true })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Academic Setup', level: 1 })).toBeInTheDocument()
     expect(screen.getByText(/One section can contain multiple subject offerings/)).toBeInTheDocument()
     expect(screen.getByText(/one program semester and one academic term/)).toBeInTheDocument()
@@ -68,6 +76,29 @@ describe('Academic Setup overview', () => {
     expect(within(summary).getByRole('button', { name: /Subjects/ })).toHaveTextContent('—Unavailable')
   })
 
+  it('recommends the next missing setup step from saved records', async () => {
+    catalogue.records.programs = [{ ...program, institution_id: 'foreign' }]
+    catalogue.records.courses = []
+    render(<Workspace />)
+    const progress = await screen.findByRole('region', { name: 'Academic setup progress' })
+    expect(await within(progress).findByRole('heading', { name: 'Set up a program' })).toBeInTheDocument()
+    expect(within(progress).getByRole('button', { name: 'Set up a program' })).toBeInTheDocument()
+    fireEvent.click(within(progress).getByRole('button', { name: 'Set up a program' }))
+    expect(await screen.findByRole('heading', { name: 'Programs', level: 1 })).toBeInTheDocument()
+  })
+
+  it('shows completed readiness for the selected program and keeps class delivery explicitly optional', async () => {
+    populateStructure()
+    render(<Workspace />)
+    const progress = await screen.findByRole('region', { name: 'Academic setup progress' })
+    expect(
+      await within(progress).findByRole('heading', { name: 'Enroll students in this program’s sections' }),
+    ).toBeInTheDocument()
+    expect(within(progress).getByText(/Class sections aren’t needed to prepare a curriculum/)).toBeInTheDocument()
+    expect(within(progress).getByText(/1 active reusable subject · 1 active academic year/)).toBeInTheDocument()
+    expect(within(progress).getByText(/1 active batch/)).toBeInTheDocument()
+  })
+
   it('searches separate curriculum destinations and tenant-readable record names', async () => {
     catalogue.records.departments!.push({
       ...department,
@@ -81,14 +112,16 @@ describe('Academic Setup overview', () => {
     fireEvent.change(search, { target: { value: 'curricula' } })
     const results = screen.getByRole('region', { name: 'Academic management areas' })
     expect(within(results).getByRole('heading', { name: 'Curriculum Versions' })).toBeInTheDocument()
-    expect(within(results).getByRole('heading', { name: 'Curriculum Subjects' })).toBeInTheDocument()
+    expect(within(results).getByRole('heading', { name: 'Subjects by semester' })).toBeInTheDocument()
+    fireEvent.change(search, { target: { value: 'subject options' } })
+    expect(within(results).getByRole('heading', { name: 'Subjects by semester' })).toBeInTheDocument()
     fireEvent.change(search, { target: { value: 'CSE' } })
     expect(within(results).getByRole('button', { name: /Computer Science and Engineering/ })).toBeInTheDocument()
     fireEvent.change(search, { target: { value: 'Foreign Biology' } })
     expect(within(results).getByRole('heading', { name: 'No academic areas found' })).toBeInTheDocument()
     fireEvent.click(within(results).getByRole('button', { name: 'Clear search' }))
     expect(search).toHaveValue('')
-    expect(within(results).getAllByRole('article')).toHaveLength(9)
+    expect(within(results).getAllByRole('article')).toHaveLength(8)
   })
 
   it('opens an authorized quick action in the existing form without creating anything', async () => {
@@ -181,7 +214,7 @@ describe('Academic Setup overview', () => {
       render(<Workspace />)
       expect(screen.getByRole('status')).toHaveTextContent('does not have academic catalogue access')
       expect(screen.getByRole('region', { name: 'Academic summary' })).toHaveAttribute('aria-busy', 'false')
-      expect(screen.getAllByRole('article')).toHaveLength(9)
+      expect(screen.getAllByRole('article')).toHaveLength(8)
       expect(screen.getByRole('button', { name: 'Add Department', exact: true })).toBeDisabled()
       expect(api.getAcademicSetup).not.toHaveBeenCalled()
     },

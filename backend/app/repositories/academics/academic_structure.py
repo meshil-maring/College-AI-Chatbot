@@ -8,7 +8,7 @@ PRIMARY_KEYS = {entity: entity.value.removesuffix("s") + "_id" for entity in Str
 FIELDS = {
     StructureEntity.program_semesters: "program_id,name,code,semester_number,is_active",
     StructureEntity.curriculum_versions: "program_id,academic_year_id,name,version,total_semesters,description,status,is_active,published_at",
-    StructureEntity.curriculum_subjects: "curriculum_version_id,program_semester_id,course_id,course_type,is_required,is_active",
+    StructureEntity.curriculum_subjects: "curriculum_version_id,program_semester_id,course_id,subject_code,subject_name,credits,lecture_hours,tutorial_hours,practical_hours,course_type,is_required,is_active",
     StructureEntity.admission_cohorts: "program_id,curriculum_version_id,academic_year_id,name,code,start_year,end_year,expected_count,description,status,is_active",
     StructureEntity.academic_sections: "admission_cohort_id,program_semester_id,semester_id,name,code,capacity,description,is_active",
     StructureEntity.academic_offerings: "academic_section_id,curriculum_subject_id,capacity,is_active",
@@ -33,6 +33,13 @@ def manage_record(client, actor_id, institution_id, entity, record_id, payload):
     return client.rpc("manage_academic_structure_record", {
         "p_actor_user_id": actor_id, "p_institution_id": institution_id,
         "p_entity": entity.value, "p_record_id": record_id, "p_payload": payload,
+    }).execute().data
+
+
+def delete_section(client, actor_id, institution_id, record_id):
+    return client.rpc("delete_unused_academic_calendar_record", {
+        "p_actor_user_id": actor_id, "p_institution_id": institution_id,
+        "p_entity": "academic_sections", "p_record_id": record_id,
     }).execute().data
 
 

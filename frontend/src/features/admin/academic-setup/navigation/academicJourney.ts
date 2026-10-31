@@ -5,18 +5,8 @@ export const academicJourney = [
     id: 'foundation',
     title: 'Foundations',
     page: 'departments',
-    pages: [
-      'departments',
-      'programs',
-      'calendar',
-      'years',
-      'terms',
-      'calendar-dates',
-      'calendar-timeline',
-      'program-semesters',
-      'subjects',
-    ],
-    description: 'Set up programs, teaching dates, study semesters and reusable subjects.',
+    pages: ['departments', 'programs', 'calendar', 'years', 'terms', 'calendar-dates', 'calendar-timeline', 'subjects'],
+    description: 'Create programs, set dated teaching periods, and add reusable subjects.',
   },
   {
     id: 'curriculum',
@@ -27,31 +17,32 @@ export const academicJourney = [
       'curriculum-versions',
       'curriculum-subjects',
       'curriculum-options',
+      'program-semesters',
       'curriculum-history',
       'curriculum-existing',
     ],
-    description: 'Map subjects, define options and publish the curriculum.',
+    description: 'Build each program’s semester-by-semester subject plan, then publish it.',
   },
   {
     id: 'batches',
     title: 'Batches',
     page: 'cohorts',
     pages: ['cohorts'],
-    description: 'Assign a published curriculum to an admission intake.',
+    description: 'Create an intake batch and assign its published curriculum.',
   },
   {
     id: 'delivery',
     title: 'Classes & subjects',
     page: 'sections',
     pages: ['sections', 'offerings'],
-    description: 'Create term-specific sections and offer their curriculum subjects.',
+    description: 'Create the class groups you need for a batch, then offer their subjects.',
   },
   {
     id: 'enrollment',
     title: 'Student enrollment',
     page: 'enrollments',
     pages: ['enrollments'],
-    description: 'Assign students to sections; students then register their subject options.',
+    description: 'Assign students to class groups; students then register their subject options.',
   },
 ] as const
 
@@ -73,8 +64,8 @@ const guidance: Partial<Record<AcademicPage, Guidance>> = {
   },
   calendar: {
     description: 'Academic years and terms describe when teaching happens.',
-    next: 'program-semesters',
-    action: 'Define program semesters',
+    next: 'subjects',
+    action: 'Manage subjects',
   },
   years: {
     description: 'Add the dated teaching terms within each academic year.',
@@ -82,40 +73,33 @@ const guidance: Partial<Record<AcademicPage, Guidance>> = {
     action: 'Configure academic terms',
   },
   terms: {
-    description: 'Keep teaching dates separate from the study stages of a degree.',
-    next: 'program-semesters',
-    action: 'Define program semesters',
-  },
-  'program-semesters': {
-    description: 'Define the study stages, such as Semester 1–8, then prepare the reusable subject catalogue.',
+    description:
+      'These dated teaching periods say when classes run; curriculum semesters say where students are in their degree.',
     next: 'subjects',
     action: 'Manage subjects',
   },
   subjects: {
-    description: 'Subjects are reusable. Assign them to specific semesters through Curriculum Subjects.',
+    description:
+      'Your subjects are ready. Next, create a study plan and choose which subjects belong in each semester.',
     next: 'curriculum-versions',
     action: 'Prepare a curriculum',
   },
   curriculum: {
-    description: 'Create a draft, map its semester subjects, and review any subject options before publishing.',
+    description: 'Create a draft study plan, choose subjects for each semester, then review and publish it.',
     next: 'curriculum-subjects',
-    action: 'Map semester subjects',
+    action: 'Choose semester subjects',
   },
   'curriculum-versions': {
-    description: 'Finish subject mappings and options before publishing. A batch can use a published curriculum.',
+    description:
+      'After creating a draft, choose what students study in each semester. Publish when the study plan is ready.',
     next: 'curriculum-subjects',
-    action: 'Map semester subjects',
+    action: 'Choose semester subjects',
   },
   'curriculum-subjects': {
-    description: 'Mark common subjects Required. Optional mappings can be grouped into complete alternatives.',
-    next: 'curriculum-options',
-    action: 'Define subject options',
-  },
-  'curriculum-options': {
     description:
-      'After saving your options, review the curriculum and publish it. Publishing preserves its mappings and options.',
+      'Set up the program’s numbered study stages here, then assign compulsory subjects and student choice groups. These stages are separate from dated teaching periods.',
     next: 'curriculum-versions',
-    action: 'Review and publish curriculum',
+    action: 'Back to curriculum list',
   },
   'curriculum-history': {
     description: 'Published versions remain assigned to their original batches.',
@@ -124,13 +108,13 @@ const guidance: Partial<Record<AcademicPage, Guidance>> = {
   },
   cohorts: {
     description:
-      'Choose a published curriculum for the admission intake, then organize its classes for a teaching term.',
+      'A batch is an intake group with one published curriculum. Create sections only when you need class groups for teaching or enrollment.',
     next: 'sections',
-    action: 'Create academic sections',
+    action: 'Set up sections (optional)',
   },
   sections: {
     description:
-      'Connect a batch, study semester and dated teaching term. Next, offer the subjects that class can take.',
+      'Each section connects a batch, one program semester and one dated teaching term. Next, offer the subjects that class group can take.',
     next: 'offerings',
     action: 'Offer section subjects',
   },
@@ -148,5 +132,44 @@ const guidance: Partial<Record<AcademicPage, Guidance>> = {
 }
 
 export function academicGuidance(page: AcademicPage) {
-  return guidance[page]
+  return guidance[page === 'curriculum-options' || page === 'program-semesters' ? 'curriculum-subjects' : page]
+}
+
+interface AcademicDistinction {
+  title: string
+  description: string
+}
+
+const calendarPages: AcademicPage[] = ['calendar', 'years', 'terms', 'calendar-dates', 'calendar-timeline']
+const progressionPages: AcademicPage[] = ['curriculum-subjects', 'curriculum-options', 'program-semesters']
+const distinctionByPage: Partial<Record<AcademicPage, AcademicDistinction>> = {
+  calendar: {
+    title: 'Calendar terms are about when',
+    description:
+      'These semesters have start and end dates. Curriculum semesters are numbered stages in a degree and hold the subject plan.',
+  },
+  'curriculum-subjects': {
+    title: 'Curriculum semesters are about study progression',
+    description:
+      'Assign subjects to numbered degree stages here. Dated teaching terms live in Academic Calendar; sections later connect a stage to a teaching term.',
+  },
+  cohorts: {
+    title: 'Batch and section are different',
+    description:
+      'A batch groups students admitted together and keeps their curriculum. A section is a class group for one program semester and teaching term; add sections only when needed.',
+  },
+  sections: {
+    title: 'A section is a class group',
+    description:
+      'It links one batch, one program semester and one dated teaching term. Create a section for each group that needs its own enrollment and subject offerings.',
+  },
+}
+
+export function academicDistinction(page: AcademicPage) {
+  const destination = calendarPages.includes(page)
+    ? 'calendar'
+    : progressionPages.includes(page)
+      ? 'curriculum-subjects'
+      : page
+  return distinctionByPage[destination]
 }

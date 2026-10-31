@@ -31,3 +31,27 @@ def translate_database_error(exc: Exception) -> AppError:
     return AppError(message, status, public_code)
 
 
+def translate_deletion_error(exc: Exception, noun: str) -> AppError:
+    code = str(getattr(exc, "code", ""))
+    if code == "P2004":
+        return AppError(
+            "Select a replacement current academic year or semester before deleting this record.",
+            409, "ACADEMIC_CURRENT_PERIOD",
+        )
+    if code in {"P2001", "P2002", "P2003", "23503"}:
+        label = {
+            "programs": "programs", "courses": "subjects", "semesters": "semesters",
+            "program_courses": "subject mappings", "course_offerings": "course offerings",
+            "program_semesters": "program semesters", "curriculum_versions": "curricula",
+            "admission_cohorts": "batches", "academic_sections": "class sections",
+            "academic_offerings": "subject offerings",
+            "student_semester_registrations": "student assignments or registrations",
+        }.get(str(getattr(exc, "details", "")), "records")
+        return AppError(
+            f"This {noun} cannot be deleted because it has linked {label}, "
+            "including inactive records. Review its connections before closing it.",
+            409, f"{noun.upper().replace(' ', '_')}_IN_USE",
+        )
+    return translate_database_error(exc)
+
+

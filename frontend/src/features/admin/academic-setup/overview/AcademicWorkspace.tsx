@@ -100,7 +100,13 @@ function AcademicWorkspaceContent(
     canReadCatalogues: props.canReadCatalogues,
   }
   if (props.page === 'cohorts')
-    return <BatchesPage {...structureContext} onOverview={() => props.onNavigate('overview')} />
+    return (
+      <BatchesPage
+        {...structureContext}
+        onOverview={() => props.onNavigate('overview')}
+        onCreateSections={() => props.onNavigate('sections')}
+      />
+    )
   if (props.page === 'sections')
     return (
       <SectionsPage
@@ -111,7 +117,7 @@ function AcademicWorkspaceContent(
     )
   if (props.page === 'enrollments')
     return <StudentEnrollmentPage context={structureContext} onBack={() => props.onNavigate('sections')} />
-  if (props.page === 'curriculum' || props.page.startsWith('curriculum-'))
+  if (props.page === 'program-semesters' || props.page === 'curriculum' || props.page.startsWith('curriculum-'))
     return (
       <CurriculumPage
         accessToken={props.accessToken}
@@ -120,38 +126,37 @@ function AcademicWorkspaceContent(
         canReadCatalogues={props.canReadCatalogues}
         initialTab={props.page === 'curriculum-subjects' ? 'mapping' : 'list'}
         activeTab={
-          props.page === 'curriculum-subjects'
+          props.page === 'program-semesters' ||
+          props.page === 'curriculum-subjects' ||
+          props.page === 'curriculum-options'
             ? 'subjects'
-            : props.page === 'curriculum-options'
-              ? 'options'
-              : props.page === 'curriculum-history'
-                ? 'history'
-                : props.page === 'curriculum-existing'
-                  ? 'existing'
-                  : 'versions'
+            : props.page === 'curriculum-history'
+              ? 'history'
+              : props.page === 'curriculum-existing'
+                ? 'existing'
+                : 'versions'
         }
         onTabChange={(tab) =>
           props.onNavigate(
-            tab === 'subjects'
+            tab === 'subjects' || tab === 'options'
               ? 'curriculum-subjects'
-              : tab === 'options'
-                ? 'curriculum-options'
-                : tab === 'history'
-                  ? 'curriculum-history'
-                  : tab === 'existing'
-                    ? 'curriculum-existing'
-                    : 'curriculum-versions',
+              : tab === 'history'
+                ? 'curriculum-history'
+                : tab === 'existing'
+                  ? 'curriculum-existing'
+                  : 'curriculum-versions',
           )
         }
         onOverview={() => props.onNavigate('overview')}
+        onBatches={() => props.onNavigate('cohorts')}
       />
     )
-  if (props.page === 'program-semesters' || props.page === 'offerings')
+  if (props.page === 'offerings')
     return (
       <StructureRecordsPage
         key={props.page}
         context={structureContext}
-        entity={props.page === 'program-semesters' ? 'program_semesters' : 'academic_offerings'}
+        entity="academic_offerings"
         onOverview={() => props.onNavigate('overview')}
       />
     )

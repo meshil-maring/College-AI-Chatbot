@@ -30,7 +30,8 @@ showing the error; late responses from a replaced session are discarded.
 | `academic-setup/sections/`    | Stored cohort-owned sections, program progression, dated terms and add/view/edit drawers          |
 | `academic-setup/structure/`   | Shared structure catalogue, mutation guards, forms and drawers for progression and offerings      |
 | `academic-setup/registration/` | Administrator semester assignments and registration query state                                  |
-| `academic-setup/curriculum/choices/` | Complete subject option groups within draft curricula                                       |
+| `academic-setup/curriculum/choices/` | Semester-scoped choice groups embedded beside compulsory and optional subjects              |
+| `academic-setup/curriculum/semester-plan/` | Semester subject cards, preset subject drawers and explicit publication review                         |
 | `documents/`                  | Retained former document manager; active navigation mounts shared `learning-resources/`           |
 | `faqs/`, `notices/`           | Published institution information                                                                 |
 | `permissions/`                | Nonacademic staff permission management                                                           |
@@ -56,6 +57,12 @@ for a year and semester. A section belongs to one offering, with optional capaci
 Form definitions and ancestry-filtered choices live in `academic-setup/forms/`.
 Parent references and section codes are immutable; active children prevent
 parent deactivation. Attendance, results and teaching workflows remain removed.
+Departments, programs, calendar years/semesters and cohort-owned class sections
+expose a confirmed Delete action for unused records. Academic Setup's shared
+`deletion/` owns the dialog, eligibility model, styles and guarded mutations.
+Current periods and known links block confirmation. The backend checks every
+link, including inactive curricula, batches, offerings and student registrations.
+Read-only users have no Delete action, and identity replacement clears pending UI.
 Legacy roster/import helpers and the old dashboard remain as
 source at the owner's request; they are disconnected from the active shell.
 See the [removal record](../../../../docs/retirements/academic-setup/README.md).

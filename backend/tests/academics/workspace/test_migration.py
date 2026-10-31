@@ -2,7 +2,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[4]
 SOURCE = ROOT / "supabase/migration_sources/academic_workspace"
 
@@ -20,7 +19,8 @@ def test_generated_migration_is_current_and_sources_respect_limits():
 
 
 def test_forward_extension_keeps_existing_tables_and_writer():
-    sql = "\n".join(path.read_text() for path in SOURCE.glob("*.sql"))
+    manifest = json.loads((SOURCE / "manifest.json").read_text())
+    sql = "\n".join((SOURCE / name).read_text() for name in manifest["files"])
     assert "DROP TABLE" not in sql
     assert "ALTER TABLE public.programs ADD" not in sql
     assert "CREATE OR REPLACE FUNCTION" not in sql

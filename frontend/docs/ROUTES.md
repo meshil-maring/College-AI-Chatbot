@@ -27,7 +27,7 @@ library, own submissions, uploads and admin review. Only Notices remains a facul
 availability placeholder.
 
 Academic Setup opens on an overview for the eleven setup entities and student
-enrollment. Its grouped sidebar exposes Subject Options, Version History and
+enrollment. Its grouped sidebar exposes Subjects by semester, Version History and
 Student Enrollment directly. A compact setup guide links Foundations, Curriculum,
 Batches, Classes & subjects and Student enrollment, with next actions on each page.
 Curriculum and calendar tabs share their destination with the sidebar, including
@@ -38,8 +38,9 @@ See the [Academic Setup design guide](ACADEMIC_SETUP_DESIGN.md).
 
 Administrator links retain the current application entry path and use `view`,
 `academic` and `academic-search` query parameters. For example,
-`/?view=academic-setup&academic=curriculum-options` opens Subject Options after
-authentication. Unknown destinations fall back safely. Search replaces the current
+`/?view=academic-setup&academic=curriculum-subjects` opens compulsory subjects and
+student choice groups together after authentication. Existing `curriculum-options`
+links resolve to this combined destination. Unknown destinations fall back safely. Search replaces the current
 overview entry while typing; choosing another page clears the search. URL values
 select presentation only and never authorize catalogue reads or mutations.
 

@@ -1,6 +1,6 @@
 import { ArrowRight, Compass } from 'lucide-react'
 import type { AcademicPage } from '../overview/academicOverviewModel.ts'
-import { academicGuidance, academicJourney } from './academicJourney.ts'
+import { academicDistinction, academicGuidance, academicJourney } from './academicJourney.ts'
 import './journey.css'
 
 export default function AcademicJourney({
@@ -11,6 +11,7 @@ export default function AcademicJourney({
   onNavigate: (page: AcademicPage) => void
 }) {
   const guidance = academicGuidance(page)
+  const distinction = academicDistinction(page)
   const currentStep = academicJourney.findIndex((step) => (step.pages as readonly string[]).includes(page))
   return (
     <section className="academic-journey" aria-label="Academic setup guide">
@@ -18,7 +19,7 @@ export default function AcademicJourney({
         <Compass aria-hidden="true" />
         <div>
           <p className="academic-journey-title">From setup to student registration</p>
-          <p>Follow the steps or jump to the area you need.</p>
+          <p>Start with foundations, then follow curriculum → intake → classes → enrollment.</p>
         </div>
       </div>
       <details className="academic-journey-steps" open={page === 'overview'}>
@@ -42,12 +43,19 @@ export default function AcademicJourney({
                     <span className="academic-step-number">{index + 1}</span>
                     <span>{step.title}</span>
                   </button>
+                  <p className="academic-step-description">{step.description}</p>
                 </li>
               )
             })}
           </ol>
         </nav>
       </details>
+      {distinction && (
+        <aside className="academic-journey-context" aria-label="Key distinction">
+          <strong>{distinction.title}</strong>
+          <p>{distinction.description}</p>
+        </aside>
+      )}
       {guidance && (
         <div className="academic-journey-next">
           <p>{guidance.description}</p>

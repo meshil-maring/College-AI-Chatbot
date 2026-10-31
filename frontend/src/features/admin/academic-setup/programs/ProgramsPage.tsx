@@ -6,6 +6,8 @@ import ProgramSummary from './ProgramSummary.tsx'
 import ProgramFilters from './ProgramFilters.tsx'
 import ProgramTable from './ProgramTable.tsx'
 import ProgramDrawer from './ProgramDrawer.tsx'
+import AcademicDeleteDialog from '../deletion/AcademicDeleteDialog.tsx'
+import { useAcademicDeletion } from '../deletion/useAcademicDeletion.ts'
 import './styles/programs.css'
 
 interface Props extends ProgramsContext {
@@ -19,6 +21,13 @@ export default function ProgramsPage({ createInitially, onCreateHandled, onOverv
     ...context,
     catalogue: state.catalogue,
     busy: state.busy,
+    refresh: state.query.refetch,
+  })
+  const deletion = useAcademicDeletion({
+    ...context,
+    entity: 'programs',
+    catalogue: state.catalogue,
+    busy: state.busy || editor.saving,
     refresh: state.query.refetch,
   })
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function ProgramsPage({ createInitially, onCreateHandled, onOverv
         <button
           type="button"
           className="academic-primary-button"
-          disabled={!state.canCreate || state.busy || editor.saving}
+          disabled={!state.canCreate || state.busy || editor.saving || deletion.saving}
           onClick={() => editor.open('add')}
         >
           <Plus aria-hidden="true" /> Add Program
@@ -88,16 +97,24 @@ export default function ProgramsPage({ createInitially, onCreateHandled, onOverv
         </p>
       )}
       <ProgramFilters state={state} />
+      {deletion.notice && (
+        <p className="program-save-notice" role="status">
+          {deletion.notice}
+        </p>
+      )}
       <ProgramTable
         state={state}
         onCreate={() => editor.open('add')}
         onOpen={editor.open}
+        onDelete={deletion.open}
+        saving={editor.saving || deletion.saving}
         onStatus={(record) => {
           editor.open('edit', record)
           editor.change('is_active', !record.is_active)
         }}
       />
       {editor.panel && state.records && <ProgramDrawer editor={editor} departments={state.departments} />}
+      {deletion.record && state.records && <AcademicDeleteDialog deletion={deletion} />}
     </section>
   )
 }

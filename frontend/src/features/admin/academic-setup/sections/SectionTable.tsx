@@ -3,7 +3,12 @@ import type { SectionsState } from './useSections.ts'
 import SectionRow, { type SectionActions } from './SectionRow.tsx'
 import SectionPagination from './SectionPagination.tsx'
 
-export default function SectionTable({ state, onOpen }: { state: SectionsState } & SectionActions) {
+export default function SectionTable({
+  state,
+  onOpen,
+  onDelete,
+  deletionSaving,
+}: { state: SectionsState } & SectionActions) {
   function sortable(label: string, field: 'name' | 'code' | 'status') {
     const sorted = state.sort.startsWith(`${field}-`)
     const descending = state.sort.endsWith('-desc')
@@ -36,7 +41,16 @@ export default function SectionTable({ state, onOpen }: { state: SectionsState }
           </thead>
           <tbody>
             {state.rows.length ? (
-              state.rows.map((record) => <SectionRow key={record.id} record={record} state={state} onOpen={onOpen} />)
+              state.rows.map((record) => (
+                <SectionRow
+                  key={record.id}
+                  record={record}
+                  state={state}
+                  onOpen={onOpen}
+                  onDelete={onDelete}
+                  deletionSaving={deletionSaving}
+                />
+              ))
             ) : (
               <tr>
                 <td colSpan={8}>

@@ -1,6 +1,8 @@
 import { beforeEach, vi } from 'vitest'
 import * as api from '../../../../services/admin/academics.ts'
 import * as structureApi from '../../../../services/admin/academicStructure.ts'
+import * as registrationApi from '../../../../services/academics/semesterRegistration.ts'
+import type { RegistrationCatalogue } from '../../../../types/semesterRegistration.ts'
 import type { StructureCatalogue, StructureEntity, StructureRecordMap } from '../../../../types/academicStructure.ts'
 import type { AcademicCatalogue, AcademicYear, DegreeProgram, Department } from '../../../../types/academicSetup.ts'
 import { academicRecordId } from '../academicSetupForm.ts'
@@ -14,6 +16,7 @@ const auth = vi.hoisted(() => ({
 vi.mock('../../../auth/session/AuthProvider.tsx', () => ({ useAuth: () => auth }))
 vi.mock('../../../../services/admin/academics.ts')
 vi.mock('../../../../services/admin/academicStructure.ts')
+vi.mock('../../../../services/academics/semesterRegistration.ts')
 
 export const department: Department = {
   department_id: 'department-1',
@@ -47,6 +50,7 @@ export const year: AcademicYear = {
 }
 export let catalogue: AcademicCatalogue
 export let structureCatalogue: StructureCatalogue
+export let registrationCatalogue: RegistrationCatalogue
 export function setStructureCatalogue(value: StructureCatalogue) {
   structureCatalogue = value
 }
@@ -62,6 +66,38 @@ beforeEach(() => {
   auth.user.user_id = 'admin-1'
   auth.user.institution_id = 'institution-1'
   auth.user.effective_permissions = ['*']
+  registrationCatalogue = {
+    institution_id: 'institution-1',
+    groups: [],
+    students: [],
+    assignments: [],
+    can_manage_choices: true,
+    can_assign: true,
+  }
+  vi.mocked(registrationApi.getRegistrationCatalogue).mockImplementation(async () =>
+    structuredClone(registrationCatalogue),
+  )
+  vi.mocked(registrationApi.saveChoiceGroup).mockImplementation(async (_token, draft, id) => {
+    const groupId = id ?? `group-${registrationCatalogue.groups.length + 1}`
+    const group = {
+      ...structuredClone(draft),
+      choice_group_id: groupId,
+      institution_id: registrationCatalogue.institution_id,
+      options: draft.options.map((option, index) => ({
+        ...structuredClone(option),
+        choice_option_id: `${groupId}-option-${index + 1}`,
+      })),
+    }
+    registrationCatalogue.groups = [
+      ...registrationCatalogue.groups.filter((item) => item.choice_group_id !== groupId),
+      group,
+    ]
+    return { choice_group_id: groupId, institution_id: registrationCatalogue.institution_id }
+  })
+  vi.mocked(registrationApi.deleteChoiceGroup).mockImplementation(async (_token, id) => {
+    registrationCatalogue.groups = registrationCatalogue.groups.filter((group) => group.choice_group_id !== id)
+    return { choice_group_id: id, institution_id: registrationCatalogue.institution_id }
+  })
   catalogue = {
     institution_id: 'institution-1',
     records: { departments: [structuredClone(department)], programs: [], academic_years: [] },
@@ -90,9 +126,17 @@ beforeEach(() => {
   }
   vi.mocked(structureApi.getAcademicStructure).mockImplementation(async () => structuredClone(structureCatalogue))
   vi.mocked(structureApi.createStructureRecord).mockImplementation(async (_token, entity, payload) => {
+    const key = `${entity.slice(0, -1)}_id`
+    let id = `new-${entity}`
+    for (
+      let suffix = 2;
+      structureCatalogue.records[entity]?.some((item) => (item as unknown as Record<string, unknown>)[key] === id);
+      suffix += 1
+    )
+      id = `new-${entity}-${suffix}`
     const record = {
       ...payload,
-      [`${entity.slice(0, -1)}_id`]: `new-${entity}`,
+      [key]: id,
       institution_id: structureCatalogue.institution_id,
       created_at: '2026-10-27T00:00:00Z',
       updated_at: '2026-10-27T00:00:00Z',

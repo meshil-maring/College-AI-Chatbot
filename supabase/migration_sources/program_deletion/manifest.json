@@ -1,0 +1,5 @@
+{
+  "version": "20261030020000",
+  "name": "unused_program_deletion",
+  "files": ["delete.sql"]
+}
