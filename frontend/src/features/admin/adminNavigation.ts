@@ -11,6 +11,7 @@ export type AdminView =
   | 'assistant'
   | 'profile'
   | 'permissions'
+export type StudentWorkspacePage = 'register' | 'all' | 'bulk' | 'requests'
 export interface AdminNavItem {
   readonly key: AdminView
   readonly label: string
@@ -19,7 +20,7 @@ export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
   { key: 'profile', label: 'Profile' },
   { key: 'academic-setup', label: 'Academic Setup' },
   { key: 'staff-faculty', label: 'Staff & Faculty' },
-  { key: 'approvals', label: 'Student Approvals' },
+  { key: 'approvals', label: 'Students' },
   { key: 'notices', label: 'Notices' },
   { key: 'documents', label: 'Learning Resources' },
   { key: 'faqs', label: 'FAQs' },
@@ -31,7 +32,7 @@ const VIEW_PERMISSIONS: Record<AdminView, readonly string[]> = {
   // The design overview is available to admins; catalogue access is checked separately.
   'academic-setup': [],
   'staff-faculty': ['users.read'],
-  approvals: ['students.read', 'students.approve', 'students.reject'],
+  approvals: ['students.read'],
   notices: ['notices.read'],
   documents: ['documents.read'],
   faqs: ['ai.knowledge.read'],
@@ -53,7 +54,7 @@ export const ADMIN_VIEW_HEADINGS: Record<AdminView, string> = {
   profile: 'Profile',
   'academic-setup': 'Academic Setup',
   'staff-faculty': 'Staff & Faculty',
-  approvals: 'Student Approvals',
+  approvals: 'Students',
   notices: 'Notices',
   documents: 'Learning Resources',
   faqs: 'FAQs',

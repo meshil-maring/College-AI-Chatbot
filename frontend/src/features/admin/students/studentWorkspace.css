@@ -1,0 +1,71 @@
+.student-sidebar-subnav {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.15rem 0 0.55rem !important;
+  padding: 0 0 0 1.15rem !important;
+}
+.student-workspace-navigation-item {
+  display: flex;
+  min-width: 0;
+  min-height: 2.35rem;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  margin-bottom: 0.15rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--ui-text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.student-workspace-navigation-item:hover {
+  background: var(--ui-surface-hover);
+  color: var(--ui-text);
+}
+.student-workspace-navigation-item[aria-current='page'] {
+  background: var(--ui-surface-hover);
+  color: var(--ui-accent);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+.student-workspace-navigation-item:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.student-workspace-placeholder {
+  display: grid;
+  min-height: 15rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  padding: 2rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  background: var(--ui-surface);
+  text-align: center;
+}
+.student-workspace-placeholder svg {
+  color: var(--ui-accent);
+}
+.student-workspace-placeholder h2,
+.student-workspace-placeholder p {
+  margin: 0;
+}
+.student-workspace-placeholder h2 {
+  font-size: 1.1rem;
+}
+.student-workspace-placeholder p {
+  max-width: 34rem;
+  color: var(--ui-text-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.student-workspace-navigation-item:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}

@@ -9,6 +9,7 @@ import InstitutionGatewayPage from './features/landing/InstitutionGatewayPage.ts
 import PublicChatPage, { PublicChatRouteError } from './features/publicChat/PublicChatPage.tsx'
 import SuperAdminRegisterEntryPage from './features/superAdmin/SuperAdminRegisterEntryPage.tsx'
 import SuperAdminRegistrationPage from './features/superAdmin/SuperAdminRegistrationPage.tsx'
+import StudentSetupPage from './features/auth/student-invitation/StudentSetupPage.tsx'
 import { useBrowserLocation } from './lib/navigation.ts'
 function NotFoundPage() {
   return (
@@ -48,6 +49,7 @@ function App() {
         <AdminInvitationPage token={route.token} />
       </AuthProvider>
     )
+  if (route.kind === 'student-setup') return <StudentSetupPage />
   if (route.kind === 'super-admin-register') return <SuperAdminRegisterEntryPage />
   if (route.kind === 'super-admin-invitation') {
     return <SuperAdminRegistrationPage token={route.token} />

@@ -16,11 +16,20 @@ remain in their owning modules.
 | `admin/` | `admin_academics.py` (student account identity and approvals), `admin_audit.py`, `admin_knowledge.py`, `admin_memberships.py` |
 | `ai/` | `ai_response.py`, `conversation.py`, `message.py`, `message_citation.py`, `chat_turns.py` (service-only durable turn RPCs) |
 | `email/` | `email_outbox.py` |
-| `invitations/` | `platform_admin_invitations.py` |
+| `invitations/` | `platform_admin_invitations.py`, `student_onboarding.py` |
 | `knowledge/` | `embeddings.py`, `ingestion.py`, `public_knowledge.py`, `retrieval_operation.py`, `vector_search.py`; `resources.py` calls scoped revision/library and audience-search RPCs |
 | `platform/` | `platform_institutions.py`, `tenancy.py` |
-| `students/` | `student_content.py` (tenant-scoped notices and resources), `student_notifications.py` |
+| `students/` | `student_content.py` (tenant-scoped notices and resources), `student_directory.py` (admin-scoped directory reads and audited profile mutations), `student_notifications.py` |
 | `shared/` | `query_pages.py` (shared row reads and pagination) |
+
+`invitations/student_onboarding.py` calls a service-role-only, tenant-scoped
+identity-review and pending-invitation management RPCs; it does not fetch
+another institution's account details.
+`students/student_directory.py` calls the separate service-role-only directory RPC
+and returns only rows belonging to the requested institution. Its profile,
+active-state and guarded-deletion RPCs recheck the actor and tenant, audit
+successful mutations atomically, and refuse deletion while any linked record
+exists.
 
 Import repositories and helpers explicitly:
 

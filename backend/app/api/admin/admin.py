@@ -13,6 +13,7 @@ from app.api.admin import (
     permissions,
 )
 from app.api.admin import student_approvals
+from app.api.admin import student_onboarding
 from app.api.admin.dependencies import _authorize_admin_endpoint
 
 
@@ -30,3 +31,4 @@ router.include_router(notices.router)
 router.include_router(audit.router)
 router.include_router(permissions.router)
 router.include_router(student_approvals.router)
+router.include_router(student_onboarding.router)

@@ -1,0 +1,74 @@
+@media (max-width: 760px) {
+  .student-onboarding-mode-picker {
+    grid-template-columns: 1fr;
+  }
+  .student-onboarding-progress li {
+    display: grid;
+    justify-items: start;
+    gap: 0.4rem;
+  }
+  .student-onboarding-progress li:not(:last-child)::after {
+    top: 0.9rem;
+    right: 0.2rem;
+    left: 2rem;
+  }
+  .student-onboarding-step-copy small {
+    max-width: 7rem;
+  }
+  .student-onboarding-form-grid,
+  .student-onboarding-review-grid {
+    grid-template-columns: 1fr;
+  }
+  .student-onboarding-stage-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .student-onboarding-stage-actions > div {
+    width: 100%;
+  }
+  .student-onboarding-stage-actions > div button {
+    flex: 1;
+  }
+  .student-onboarding-step-hint {
+    display: none;
+  }
+  .student-import-upload-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .student-template-button {
+    margin-left: 3.2rem;
+  }
+}
+@media (max-width: 420px) {
+  .student-onboarding-progress {
+    margin-inline: -0.25rem;
+  }
+  .student-onboarding-progress li {
+    gap: 0.3rem;
+  }
+  .student-onboarding-step-copy strong {
+    font-size: 0.68rem;
+  }
+  .student-onboarding-step-copy small {
+    font-size: 0.62rem;
+  }
+  .student-onboarding-progress li:not(:last-child)::after {
+    right: 0;
+  }
+  .student-onboarding-workflow-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .student-onboarding-file-pill {
+    max-width: 100%;
+  }
+  .student-onboarding-result-counts {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .student-onboarding-mode-picker > button {
+    transition: none;
+  }
+}

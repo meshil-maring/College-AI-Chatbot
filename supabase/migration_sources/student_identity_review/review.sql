@@ -1,0 +1,96 @@
+CREATE FUNCTION public.review_student_onboarding_identity(
+    p_actor uuid,
+    p_tenant uuid,
+    p_email text,
+    p_register_number text,
+    p_university_roll_number text
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE student_matches jsonb; invitation_matches jsonb; email_conflict boolean:=false;
+BEGIN
+    PERFORM public.assert_semester_registration_admin(p_actor,p_tenant,'students.read');
+    PERFORM public.assert_semester_registration_admin(p_actor,p_tenant,'students.create');
+
+    IF p_email IS NULL AND p_register_number IS NULL AND p_university_roll_number IS NULL THEN
+        RAISE EXCEPTION 'At least one student identifier is required' USING ERRCODE='22023';
+    END IF;
+
+    IF p_email IS NOT NULL THEN
+        SELECT EXISTS (
+            SELECT 1 FROM public.users WHERE lower(email)=lower(btrim(p_email))
+            UNION ALL
+            SELECT 1 FROM auth.users WHERE lower(email)=lower(btrim(p_email))
+        ) INTO email_conflict;
+    END IF;
+
+    SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'student_name',coalesce(nullif(btrim(concat_ws(' ',u.first_name,u.last_name)),''),'Unknown student'),
+        'email',coalesce(s.email,u.email),
+        'register_number',s.register_number,
+        'university_roll_number',s.university_roll_number,
+        'approval_status',s.approval_status,
+        'account_status',u.status,
+        'student_status',s.status,
+        'is_active',s.is_active,
+        'has_signed_in',auth_user.last_sign_in_at IS NOT NULL,
+        'last_sign_in_at',auth_user.last_sign_in_at,
+        'matches_email',p_email IS NOT NULL AND lower(coalesce(s.email,u.email,''))=lower(btrim(p_email)),
+        'matches_register_number',p_register_number IS NOT NULL
+            AND lower(btrim(coalesce(s.register_number,'')))=lower(btrim(p_register_number)),
+        'matches_university_roll_number',p_university_roll_number IS NOT NULL
+            AND lower(btrim(coalesce(s.university_roll_number,'')))=lower(btrim(p_university_roll_number))
+    ) ORDER BY s.created_at DESC),'[]'::jsonb)
+    INTO student_matches
+    FROM public.students s
+    LEFT JOIN public.users u ON u.id=s.user_id
+    LEFT JOIN auth.users auth_user ON auth_user.id=u.auth_user_id
+    WHERE s.institution_id=p_tenant
+      AND (
+        (p_email IS NOT NULL AND lower(coalesce(s.email,u.email,''))=lower(btrim(p_email)))
+        OR (p_register_number IS NOT NULL
+            AND lower(btrim(coalesce(s.register_number,'')))=lower(btrim(p_register_number)))
+        OR (p_university_roll_number IS NOT NULL
+            AND lower(btrim(coalesce(s.university_roll_number,'')))=lower(btrim(p_university_roll_number)))
+      );
+
+    SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'student_name',i.student_name,
+        'email',i.email,
+        'register_number',i.register_number,
+        'university_roll_number',i.university_roll_number,
+        'status',i.status,
+        'email_delivery_status',i.email_delivery_status,
+        'expires_at',i.expires_at,
+        'last_sent_at',i.last_sent_at,
+        'has_signed_in',auth_user.last_sign_in_at IS NOT NULL,
+        'matches_email',p_email IS NOT NULL AND lower(i.email)=lower(btrim(p_email)),
+        'matches_register_number',p_register_number IS NOT NULL
+            AND lower(btrim(i.register_number))=lower(btrim(p_register_number)),
+        'matches_university_roll_number',p_university_roll_number IS NOT NULL
+            AND lower(btrim(coalesce(i.university_roll_number,'')))=lower(btrim(p_university_roll_number))
+    ) ORDER BY i.created_at DESC),'[]'::jsonb)
+    INTO invitation_matches
+    FROM public.student_onboarding_invitations i
+    LEFT JOIN auth.users auth_user ON auth_user.id=i.provisioned_auth_user_id
+    WHERE i.institution_id=p_tenant AND i.status='pending'
+      AND (
+        (p_email IS NOT NULL AND lower(i.email)=lower(btrim(p_email)))
+        OR (p_register_number IS NOT NULL
+            AND lower(btrim(i.register_number))=lower(btrim(p_register_number)))
+        OR (p_university_roll_number IS NOT NULL
+            AND lower(btrim(coalesce(i.university_roll_number,'')))=lower(btrim(p_university_roll_number)))
+      );
+
+    RETURN jsonb_build_object(
+        'students',student_matches,
+        'invitations',invitation_matches,
+        'email_conflict_exists',email_conflict
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.review_student_onboarding_identity(uuid,uuid,text,text,text)
+    FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.review_student_onboarding_identity(uuid,uuid,text,text,text)
+    TO service_role;
+NOTIFY pgrst,'reload schema';

@@ -17,10 +17,25 @@ continue to own database access and schemas continue to own request/response typ
 | `ai/` | Authenticated/public chat, conversation history and intent, context, generation, privacy safeguards and query rewriting |
 | `auth/` | Sign-in, sessions, account registration, authorization, RBAC and shared request-abuse controls |
 | `email/` | Email delivery, encrypted outbox payloads, outbox worker and Mailgun webhooks |
-| `invitations/` | Platform/admin invitations, invitation abuse controls and account acceptance/recovery |
+| `invitations/` | Platform/admin invitations, student onboarding links, invitation abuse controls and account acceptance/recovery |
 | `knowledge/` | Document pipeline and audience-aware retrieval; `resources/` owns drafts, review, staged uploads, legacy adapters and answer/history policy |
 | `platform/` | Institutions, organizations, tenancy and staff/faculty onboarding |
-| `students/` | Account identity profiles, notices, notifications and resources |
+| `students/` | Account identity profiles and permission-checked directory mutations, notices, notifications and resources |
+
+`students/student_directory.py` reads the institution-admin directory with
+server-validated `students.read` permission and tenant-scoped academic placement.
+`students/student_management.py` requires server-validated `students.update` or
+`students.delete` grants, delegates atomic audited mutations to the repository,
+and maps database conflicts without exposing internal details. Placement changes
+also require `courses.manage` and reuse the guarded semester-assignment RPC.
+
+`invitations/student_onboarding.py` reviews matching student accounts and
+pending setup invitations within the acting administrator's institution.
+`student_onboarding_management.py` provides scoped edits and cancellation for
+pending invites. Authenticated administrators with `students.update` may correct
+a pending invitation email before setup starts; the change rotates the one-time
+token and sends a replacement link. Setup claims prevent an in-flight signup
+from racing that update. Registered account emails remain outside this workflow.
 
 Import from the feature package explicitly:
 

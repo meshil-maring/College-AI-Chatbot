@@ -1,0 +1,110 @@
+.student-onboarding-completion,
+.student-onboarding-results {
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  padding: 1.3rem 0;
+  text-align: center;
+}
+.student-onboarding-completion-icon {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+}
+.student-onboarding-completion-icon.is-warning {
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning);
+}
+.student-onboarding-completion p {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.85rem;
+}
+.student-onboarding-completion button {
+  margin-top: 0.4rem;
+}
+.student-onboarding-result-counts {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0.4rem 0;
+}
+.student-onboarding-result-counts span {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.35rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.5rem;
+}
+.student-onboarding-result-counts strong {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.student-onboarding-result-counts small {
+  color: var(--ui-text-muted);
+  font-size: 0.68rem;
+}
+.student-onboarding-result-list,
+.student-onboarding-unresolved {
+  display: grid;
+  width: 100%;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.student-onboarding-result-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.6rem;
+  padding: 0.65rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.45rem;
+}
+.student-onboarding-result-list li.is-created {
+  border-left: 3px solid var(--ui-success);
+}
+.student-onboarding-result-list li.has-issues {
+  border-left: 3px solid var(--ui-warning);
+}
+.student-onboarding-result-list li strong,
+.student-onboarding-result-list li span {
+  font-size: 0.75rem;
+}
+.student-onboarding-result-list li small {
+  grid-column: 1 / -1;
+  color: var(--ui-text-muted);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+.student-onboarding-unresolved {
+  padding: 0.7rem;
+  border-radius: 0.45rem;
+  background: var(--ui-warning-bg);
+}
+.student-onboarding-unresolved strong {
+  color: var(--ui-warning);
+  font-size: 0.78rem;
+}
+.student-onboarding-unresolved p {
+  margin: 0.3rem 0 0;
+  color: var(--ui-text);
+  font-size: 0.75rem;
+  text-align: left;
+}
+.student-onboarding-notice {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--ui-success);
+  border-radius: 0.45rem;
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+  font-size: 0.82rem;
+}

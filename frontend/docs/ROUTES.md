@@ -17,7 +17,7 @@ parser. They do not mount an academic screen or call its former endpoints.
 Administrator navigation uses validated URL query parameters and starts on Profile
 when no destination is supplied. Browser Back/Forward and refresh retain the
 selected view. Staff navigation continues to use local view state.
-Administrator views are Profile, Academic Setup, Staff & Faculty, Student Approvals, Notices,
+Administrator views are Profile, Academic Setup, Staff & Faculty, Student registration and approvals, Notices,
 Learning Resources, FAQs, AI Assistant and Staff Permissions. Staff views are Profile,
 Student Approvals, Learning Resources and AI Assistant. Student views are Profile, Notices, Learning
 Resources, Semester Registration and AI Assistant after account approval. Server permissions filter
@@ -36,13 +36,19 @@ links directly to enrollment; students complete Semester Registration in their p
 Its existing catalogue workflow is preserved separately.
 See the [Academic Setup design guide](ACADEMIC_SETUP_DESIGN.md).
 
+The public `/student-setup#<single-use-token>` route verifies an admin-created
+student invitation and sets the student's password. The token stays in the URL
+fragment until the client submits it to the backend.
+
 Administrator links retain the current application entry path and use `view`,
-`academic` and `academic-search` query parameters. For example,
+`academic`, `academic-search` and `student-page` query parameters. For example,
 `/?view=academic-setup&academic=curriculum-subjects` opens compulsory subjects and
 student choice groups together after authentication. Existing `curriculum-options`
 links resolve to this combined destination. Unknown destinations fall back safely. Search replaces the current
 overview entry while typing; choosing another page clears the search. URL values
 select presentation only and never authorize catalogue reads or mutations.
+The Students workspace uses `student-page=all`, `student-page=bulk`, and
+`student-page=requests`; Add Student is the default when no student page is set.
 
 Legacy roster hash-navigation helpers and old dashboard navigation remain as
 disconnected source at the owner's request. See the

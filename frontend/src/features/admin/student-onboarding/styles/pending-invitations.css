@@ -1,0 +1,97 @@
+.student-invitation-section {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+.student-invitation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.student-invitation-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.student-invitation-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--ui-text-muted);
+  font-size: 0.78rem;
+}
+.student-invitation-heading button,
+.student-invitation-actions button {
+  min-height: 2.25rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 0.45rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.student-invitation-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.student-invitation-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.55rem;
+}
+.student-invitation-table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.75rem;
+}
+.student-invitation-table th {
+  padding: 0.7rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.student-invitation-table td {
+  padding: 0.65rem 0.7rem;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text-muted);
+  vertical-align: middle;
+}
+.student-invitation-table td strong,
+.student-invitation-table td small {
+  display: block;
+}
+.student-invitation-table td strong {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+.student-invitation-table td small {
+  max-width: 14rem;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+  font-size: 0.7rem;
+}
+.student-invitation-status {
+  display: inline-block;
+  padding: 0.22rem 0.45rem;
+  border-radius: 999px;
+  background: var(--ui-neutral-bg);
+  color: var(--ui-neutral);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.student-invitation-status.is-sent {
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+}
+.student-invitation-status.is-failed {
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning);
+}
+.student-invitation-actions {
+  display: flex;
+  gap: 0.4rem;
+}

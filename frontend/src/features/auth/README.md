@@ -10,6 +10,7 @@ directly from its workflow, and update mock paths when moving code.
 | `login/`        | `LoginForm.tsx`, login audience selection, and form validation tests                                 |
 | `password/`     | Password fields, change-password form, recovery, and reset screens                                   |
 | `registration/` | `RegistrationForm.tsx`, university onboarding, institution lookup, fields, and confirmation          |
+| `student-invitation/` | Public secure-link student verification and password setup; tokens stay in URL fragments and are submitted only to the backend |
 | `access/`       | Server-resolved permission helpers, the permissions hook, and the generated RBAC reference           |
 
 Keep tests beside their screen or helper. Shared test setup belongs in the

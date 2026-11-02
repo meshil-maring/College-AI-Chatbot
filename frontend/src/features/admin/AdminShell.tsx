@@ -17,7 +17,7 @@ import { useAdminWorkspaceNavigation } from './navigation/useAdminWorkspaceNavig
 const descriptions: Partial<Record<AdminView, string>> = {
   profile: 'Your administrator identity and institution details.',
   'staff-faculty': 'Review membership requests and manage your institution’s staff and faculty accounts.',
-  approvals: 'Review student registration requests for your institution.',
+  approvals: 'Register students, send secure account setup links, and review self-registration requests.',
   notices: 'Create and manage information shared with your institution.',
   documents: 'Manage the documents and knowledge sources used by your institution’s AI.',
   faqs: 'Maintain clear answers to frequently asked questions.',
@@ -45,6 +45,8 @@ export default function AdminShell() {
     navigateAcademic,
     searchAcademic,
     clearAcademicSearch,
+    studentPage,
+    navigateStudentPage,
   } = useAdminWorkspaceNavigation(
     user ? JSON.stringify([user.auth_user_id ?? user.user_id, user.institution_id]) : undefined,
   )
@@ -63,10 +65,12 @@ export default function AdminShell() {
       onAcademicNavigate={navigateAcademic}
       academicSearch={academicSearch}
       onAcademicSearch={searchAcademic}
+      studentPage={studentPage}
+      onStudentNavigate={navigateStudentPage}
     >
       {view ? (
         <>
-          {view !== 'assistant' && view !== 'academic-setup' && view !== 'documents' && (
+          {view !== 'assistant' && view !== 'academic-setup' && view !== 'documents' && view !== 'approvals' && (
             <WorkspacePageHeader title={ADMIN_VIEW_HEADINGS[view]} description={descriptions[view]} />
           )}
           {view === 'profile' && <AdminProfile user={user} />}
@@ -79,7 +83,7 @@ export default function AdminShell() {
             />
           )}
           {view === 'staff-faculty' && accessToken && <StaffFacultyManager accessToken={accessToken} />}
-          {view === 'approvals' && <StudentManager />}
+          {view === 'approvals' && <StudentManager page={studentPage} />}
           {view === 'notices' && <NoticeManager />}
           {view === 'documents' && <LearningResourcesPage />}
           {view === 'faqs' && <FaqManager />}

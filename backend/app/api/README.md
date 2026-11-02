@@ -9,14 +9,30 @@ URL prefix, permissions or request/response models.
 | Package | Router modules |
 | --- | --- |
 | `academics/` | `academic_setup.py`: existing eight-entity API; `academic_structure.py`: versioned curricula, program semesters, cohorts, class sections and offerings |
-| `admin/` | `admin.py` assembles feature routers; see the [Admin API guide](admin/README.md) |
+| `admin/` | `admin.py` assembles feature routers; see the [Admin API guide](admin/README.md). `student_onboarding.py` provisions students, sends setup links, exposes the directory, and routes permission-checked profile management |
 | `ai/` | `conversations.py`, `chat_turns.py` (authenticated read-only recovery status) |
 | `auth/` | Core auth feature routers, student login, registration and development tools; see the [Auth API guide](auth/README.md) |
 | `email/` | `mailgun_webhooks.py` |
-| `invitations/` | `admin_invitations.py`, `super_admin_registration.py` |
+| `invitations/` | `admin_invitations.py`, `student_onboarding.py`, `super_admin_registration.py` |
 | `knowledge/` | `ingestion.py`; `resources.py` shared library/draft/review; `resource_uploads.py` staged uploads and indexing retries |
 | `platform/` | `institutions.py`, `organizations.py`; `platform.py` assembles institution, invitation and audit routes with shared `dependencies.py` |
 | `students/` | `students.py`, `student_notifications.py` |
+
+`POST /admin/students/onboarding-invitations/review` lets institution admins
+check registration identifiers before creating an invitation. Student and
+invitation details stay institution-scoped; an email conflict outside the
+institution is reported without exposing that account's details. Account details
+are shown only for matching student records within the institution.
+`GET /admin/students/directory` requires `students.read` and returns paginated
+tenant-scoped student profiles plus pending setup invitations. Account sign-in
+timestamps and Course, Branch, Batch and Section fields come from server-side
+records; conflict history and phone numbers are not inferred or exposed.
+`PATCH /admin/students/{student_id}` edits name and registration identifiers;
+email remains read-only until a verified email-change workflow exists.
+`POST .../{student_id}/deactivate` and `/reactivate` require `students.update`
+and preserve account history. `DELETE /admin/students/{student_id}` requires
+`students.delete` and succeeds only when no records reference the profile; it
+audits the removal and retains the underlying Auth identity.
 
 `app/main.py` creates the application and uses `core/application_routes.py` to
 register feature routers explicitly. The replacement academic router enforces

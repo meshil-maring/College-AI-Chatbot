@@ -1,0 +1,168 @@
+.student-directory-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+}
+.student-directory-table {
+  width: 100%;
+  min-width: 60rem;
+  border-collapse: collapse;
+  text-align: left;
+}
+.student-directory-table th,
+.student-directory-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--ui-border);
+  vertical-align: top;
+}
+.student-directory-table th {
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.student-directory-table td {
+  font-size: 0.84rem;
+}
+.student-directory-table tr:last-child td {
+  border-bottom: 0;
+}
+.student-directory-table td strong,
+.student-directory-secondary {
+  display: block;
+}
+.student-directory-secondary {
+  margin-top: 0.25rem;
+  color: var(--ui-text-muted);
+  font-size: 0.74rem;
+}
+.student-directory-badge {
+  display: inline-flex;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--ui-radius-sm);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.student-directory-badge.is-pending_sign_in {
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning);
+}
+.student-directory-badge.is-signed_in {
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+}
+.student-directory-badge.is-no_signin {
+  background: var(--ui-neutral-bg);
+  color: var(--ui-neutral);
+}
+.student-directory-actions {
+  position: relative;
+  margin-top: 0.45rem;
+}
+.student-directory-actions > button {
+  width: fit-content;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.student-directory-actions > button:focus-visible,
+.student-directory-actions button:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.student-directory-actions > div {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: max-content;
+  padding: 0.25rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+}
+.student-directory-actions button {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+.student-directory-actions button:hover:not(:disabled) {
+  background: var(--ui-surface-hover);
+}
+.student-directory-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.student-directory-state,
+.student-directory-empty,
+.student-directory-first-empty {
+  padding: 1.5rem;
+  color: var(--ui-text-muted);
+  text-align: center;
+}
+.student-directory-state.is-error {
+  color: var(--ui-danger);
+}
+.student-directory-action-message {
+  margin: 0;
+  color: var(--ui-success);
+}
+.student-directory-action-message.is-error {
+  color: var(--ui-danger);
+}
+.student-directory-state.is-error p {
+  margin-top: 0;
+}
+.student-directory-first-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+}
+.student-directory-first-empty svg {
+  color: var(--ui-accent);
+}
+.student-directory-first-empty p {
+  margin: 0;
+}
+.student-directory-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--ui-text-muted);
+  font-size: 0.8rem;
+}
+.student-directory-pagination p {
+  margin: 0;
+}
+.student-directory-pagination > div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+.student-directory-pagination button {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem;
+}
+@media (max-width: 760px) {
+  .student-directory-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

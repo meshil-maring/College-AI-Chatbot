@@ -1,0 +1,94 @@
+.student-record-dialog {
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: min(90vh, 48rem);
+  overflow: auto;
+  margin: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%);
+}
+.student-record-dialog::backdrop {
+  background: rgb(0 0 0 / 52%);
+}
+.student-record-dialog header,
+.student-record-dialog footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.student-record-dialog header h2,
+.student-record-dialog header p,
+.student-record-dialog > h2,
+.student-record-dialog > p {
+  margin: 0 0 0.5rem;
+}
+.student-record-dialog header p,
+.student-record-dialog > p {
+  color: var(--ui-text-muted);
+  font-size: 0.85rem;
+}
+.student-record-dialog form {
+  display: grid;
+  gap: 0.9rem;
+}
+.student-record-dialog label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.student-record-dialog input,
+.student-record-dialog select {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font: inherit;
+}
+.student-record-dialog small {
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+.student-record-dialog footer {
+  justify-content: flex-end;
+  margin-top: 0.35rem;
+}
+.student-record-dialog footer button,
+.student-record-dialog header button {
+  min-height: 2.4rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font: inherit;
+  cursor: pointer;
+}
+.student-record-dialog footer .is-danger {
+  border-color: var(--ui-danger);
+  background: var(--ui-danger);
+  color: var(--ui-on-danger, #fff);
+}
+.student-record-dialog .student-record-error {
+  color: var(--ui-danger);
+}
+.student-record-dialog button:disabled,
+.student-record-dialog select:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.student-record-dialog :focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.student-record-dialog.is-confirmation {
+  max-width: 30rem;
+}

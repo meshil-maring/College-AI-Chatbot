@@ -1,0 +1,19 @@
+{
+  "migrations": [
+    {
+      "version": "20261101000000",
+      "name": "student_onboarding",
+      "files": ["tables.sql", "admin.sql", "acceptance.sql", "security.sql"]
+    },
+    {
+      "version": "20261101050000",
+      "name": "student_invitation_management",
+      "files": ["management.sql", "management_security.sql"]
+    },
+    {
+      "version": "20261101060000",
+      "name": "student_invitation_email",
+      "files": ["email_management.sql", "setup_claim.sql", "email_management_security.sql"]
+    }
+  ]
+}

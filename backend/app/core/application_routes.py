@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from app.api.platform.platform import router as platform_router
 from app.api.invitations.admin_invitations import router as admin_invitations_router
+from app.api.invitations.student_onboarding import router as student_onboarding_router
 from app.api.invitations.super_admin_registration import (
     router as super_admin_registration_router,
 )
@@ -52,6 +53,7 @@ def register_feature_routes(app: FastAPI) -> None:
     # Phase 7.14: the invitation boundary is token-authorized, not session-
     # authorized, so it is mounted as its own router rather than under /platform.
     app.include_router(admin_invitations_router, prefix="/api/v1")
+    app.include_router(student_onboarding_router, prefix="/api/v1")
     app.include_router(super_admin_registration_router, prefix="/api/v1")
     app.include_router(mailgun_webhooks_router, prefix="/api/v1")
     app.include_router(identity_router)

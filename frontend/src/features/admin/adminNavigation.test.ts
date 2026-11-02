@@ -19,9 +19,10 @@ describe('administrator navigation with approved Academic Setup', () => {
   it.each(['student', 'staff', 'faculty', 'super_admin', 'unknown', null])('rejects role %s', (role) => {
     expect(buildAdminNavigation(role)).toEqual([])
   })
-  it('requires all account approval permissions and filters other views', () => {
-    expect(buildAdminNavigation('admin', ['students.read', 'students.approve']).map((item) => item.key)).toEqual([
+  it('shows student management to readers and leaves workflow actions permission-gated', () => {
+    expect(buildAdminNavigation('admin', ['students.read']).map((item) => item.key)).toEqual([
       'academic-setup',
+      'approvals',
     ])
     expect(
       buildAdminNavigation('admin', ['students.read', 'students.approve', 'students.reject']).map((item) => item.key),

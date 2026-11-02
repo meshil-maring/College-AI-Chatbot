@@ -87,7 +87,16 @@ describe('role -> navigation isolation', () => {
   it('renders exactly its own navigation model for each role', async () => {
     const { rerender } = render(<App />)
 
-    expect(await navigationLabels('admin')).toEqual(ADMIN_NAV_ITEMS.map((item) => item.label))
+    const adminItems = ADMIN_NAV_ITEMS.map((item) => item.label)
+    const studentsIndex = adminItems.indexOf('Students')
+    expect(await navigationLabels('admin')).toEqual([
+      ...adminItems.slice(0, studentsIndex + 1),
+      'All Students',
+      'Add Student',
+      'Bulk Import',
+      'Registration Requests',
+      ...adminItems.slice(studentsIndex + 1),
+    ])
 
     setIdentity(STAFF_A, 'staff')
     rerender(<App />)

@@ -1,0 +1,212 @@
+.student-onboarding-dashboard {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  color: var(--ui-text);
+}
+.student-onboarding-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.student-onboarding-page-heading h2 {
+  margin: 0.2rem 0 0.3rem;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+.student-onboarding-page-heading p {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.student-onboarding-bulk-heading {
+  display: grid;
+  justify-content: start;
+  gap: 0.25rem;
+}
+.student-onboarding-bulk-heading h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.25;
+}
+.student-onboarding-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.35rem;
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+}
+.student-onboarding-breadcrumb span[aria-current='page'] {
+  color: var(--ui-text);
+}
+.student-onboarding-bulk-content {
+  min-width: 0;
+}
+.student-onboarding-dashboard.is-bulk-import {
+  gap: 1rem;
+}
+.student-onboarding-dashboard.is-bulk-import .student-onboarding-workflow {
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  border-radius: 0.65rem;
+}
+.student-onboarding-register-cta {
+  display: inline-flex;
+  min-height: 2.5rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.student-onboarding-register-cta:hover {
+  background: var(--ui-accent-hover);
+}
+.student-onboarding-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.student-onboarding-metric {
+  display: flex;
+  min-width: 0;
+  min-height: 4.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.7rem;
+  background: var(--ui-surface);
+}
+.student-onboarding-metric-icon {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ui-surface-raised);
+  color: var(--ui-accent);
+}
+.student-onboarding-metric.is-success .student-onboarding-metric-icon {
+  color: var(--ui-success);
+}
+.student-onboarding-metric.is-warning .student-onboarding-metric-icon {
+  color: var(--ui-warning);
+}
+.student-onboarding-metric > div {
+  display: grid;
+  min-width: 0;
+}
+.student-onboarding-metric strong {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.student-onboarding-metric > div > span {
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+}
+.student-onboarding-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(19rem, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+.student-onboarding-records,
+.student-onboarding-registration-card {
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.75rem;
+  background: var(--ui-surface);
+}
+.student-onboarding-records {
+  overflow: hidden;
+}
+.student-onboarding-dashboard-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 0.65rem 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+.student-onboarding-dashboard-tabs button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--ui-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.student-onboarding-dashboard-tabs button[aria-pressed='true'] {
+  border-bottom-color: var(--ui-accent);
+  color: var(--ui-accent);
+}
+.student-onboarding-dashboard-tabs button span {
+  min-width: 1.25rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 999px;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  text-align: center;
+  font-size: 0.68rem;
+}
+.student-onboarding-records-content {
+  min-width: 0;
+  padding: 0.85rem;
+}
+.student-onboarding-records-content .students-content {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+@media (max-width: 1120px) {
+  .student-onboarding-dashboard-grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.9fr);
+  }
+}
+@media (max-width: 900px) {
+  .student-onboarding-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .student-onboarding-registration-card {
+    order: -1;
+  }
+}
+@media (max-width: 600px) {
+  .student-onboarding-page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .student-onboarding-metrics {
+    grid-template-columns: 1fr;
+  }
+  .student-onboarding-dashboard-tabs {
+    overflow-x: auto;
+  }
+  .student-onboarding-dashboard-tabs button {
+    white-space: nowrap;
+  }
+  .student-onboarding-records-content {
+    padding: 0.6rem;
+  }
+  .student-onboarding-bulk-heading h1 {
+    font-size: 1.5rem;
+  }
+}

@@ -24,6 +24,7 @@ export type AppRoute =
   | { readonly kind: 'super-admin' }
   | { readonly kind: 'faculty' }
   | { readonly kind: 'admin-invitation'; readonly token: string }
+  | { readonly kind: 'student-setup' }
   | { readonly kind: 'super-admin-invitation'; readonly token: string }
   | { readonly kind: 'super-admin-register' }
   | { readonly kind: 'university-registration' }
@@ -56,6 +57,7 @@ export function resolveInvitationToken(pathname: string): string | null | undefi
 
 export function resolveAppRoute(pathname: string): AppRoute {
   if (resolveFacultyRoute(pathname)) return { kind: 'faculty' }
+  if (/^\/student-setup\/?$/.test(pathname)) return { kind: 'student-setup' }
   const publicInstitutionCode = resolvePublicInstitutionCode(pathname)
   if (publicInstitutionCode !== undefined) {
     return { kind: 'public-chat', institutionCode: publicInstitutionCode }

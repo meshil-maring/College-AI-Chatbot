@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import type { AdminNavItem, AdminView } from './adminNavigation.ts'
+import type { AdminNavItem, AdminView, StudentWorkspacePage } from './adminNavigation.ts'
 import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
 import AcademicSidebar from './academic-setup/overview/AcademicSidebar.tsx'
 import AcademicSearch from './academic-setup/overview/AcademicSearch.tsx'
 import type { AcademicPage } from './academic-setup/overview/academicOverviewModel.ts'
+import StudentWorkspaceNavigation from './students/StudentWorkspaceNavigation.tsx'
 
 interface Props {
   children: ReactNode
@@ -18,6 +19,8 @@ interface Props {
   onAcademicNavigate: (page: AcademicPage) => void
   academicSearch: string
   onAcademicSearch: (value: string) => void
+  studentPage: StudentWorkspacePage
+  onStudentNavigate: (page: StudentWorkspacePage) => void
 }
 export default function AdminFrame(props: Props) {
   const academic = props.currentView === 'academic-setup'
@@ -32,20 +35,27 @@ export default function AdminFrame(props: Props) {
       headerContent={
         academic ? <AcademicSearch value={props.academicSearch} onChange={props.onAcademicSearch} /> : undefined
       }
-      renderNavigationChildren={
-        academic
-          ? (view, close) =>
-              view === 'academic-setup' && (
-                <AcademicSidebar
-                  page={props.academicPage}
-                  onNavigate={(page) => {
-                    props.onAcademicNavigate(page)
-                    close()
-                  }}
-                />
-              )
-          : undefined
-      }
+      renderNavigationChildren={(view, close) => {
+        if (view === 'approvals')
+          return (
+            <StudentWorkspaceNavigation
+              currentPage={props.studentPage}
+              onNavigate={(page) => {
+                props.onStudentNavigate(page)
+                close()
+              }}
+            />
+          )
+        return academic && view === 'academic-setup' ? (
+          <AcademicSidebar
+            page={props.academicPage}
+            onNavigate={(page) => {
+              props.onAcademicNavigate(page)
+              close()
+            }}
+          />
+        ) : null
+      }}
       onProfile={
         props.navigation.some((item) => item.key === 'profile') ? () => props.onNavigate('profile') : undefined
       }

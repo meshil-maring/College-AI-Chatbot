@@ -1,0 +1,91 @@
+.student-import-upload {
+  display: grid;
+  gap: 1rem;
+}
+.student-import-upload-heading {
+  justify-content: flex-start;
+}
+.student-import-upload-heading > div {
+  min-width: 0;
+  flex: 1;
+}
+.student-import-upload-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.55rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-accent);
+}
+.student-template-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.student-import-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.student-import-dropzone {
+  display: grid;
+  min-height: 10rem;
+  justify-items: center;
+  align-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px dashed var(--ui-border-control);
+  border-radius: 0.65rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  cursor: pointer;
+}
+.student-import-dropzone:hover {
+  border-color: var(--ui-accent);
+  background: var(--ui-surface-hover);
+}
+.student-import-dropzone-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ui-surface);
+  color: var(--ui-accent);
+}
+.student-import-dropzone strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+}
+.student-import-dropzone > span:last-child {
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+}
+.student-import-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.student-import-columns li {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.35rem;
+  color: var(--ui-text-muted);
+  font-size: 0.72rem;
+}
+.student-import-columns b {
+  margin-right: 0.25rem;
+  color: var(--ui-accent);
+  font-size: 0.63rem;
+  text-transform: uppercase;
+}

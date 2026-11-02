@@ -17,7 +17,30 @@ describe('administrator browser navigation', () => {
       view: 'profile',
       page: 'overview',
       search: '',
+      studentPage: 'register',
     })
+  })
+
+  it('restores student subpages and writes the selected page to the URL', () => {
+    window.history.replaceState(null, '', '/login/admin')
+    const hook = renderHook(useAdminWorkspaceNavigation)
+    act(() => hook.result.current.navigateStudentPage('all'))
+    expect(window.location.search).toContain('view=approvals')
+    expect(window.location.search).toContain('student-page=all')
+    expect(hook.result.current.studentPage).toBe('all')
+    expect(resolveAdminLocation(window.location.search).studentPage).toBe('all')
+
+    act(() => hook.result.current.navigateStudentPage('register'))
+    expect(window.location.search).not.toContain('student-page')
+    expect(hook.result.current.studentPage).toBe('register')
+
+    act(() => hook.result.current.navigateStudentPage('bulk'))
+    expect(window.location.search).toContain('student-page=bulk')
+    expect(resolveAdminLocation(window.location.search).studentPage).toBe('bulk')
+
+    act(() => hook.result.current.navigateStudentPage('requests'))
+    expect(window.location.search).toContain('student-page=requests')
+    expect(resolveAdminLocation(window.location.search).studentPage).toBe('requests')
   })
 
   it('writes the combined curriculum destination for legacy semester links', () => {

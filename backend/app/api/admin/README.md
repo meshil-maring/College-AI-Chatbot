@@ -14,6 +14,7 @@ permission dependency; it contains no endpoint handlers.
 | `faqs.py` | FAQ management and publication |
 | `notices.py` | Notice management |
 | `student_approvals.py` | Pending student account queue, approval and rejection |
+| `student_onboarding.py` | Student invitations, identity review, paginated directory, authenticated pending invitation email correction/edits/cancellation, profile edits, access state and guarded deletion |
 | `audit.py` | Audit log queries |
 | `permissions.py` | Staff permission delegation |
 
@@ -35,6 +36,9 @@ cannot authorize the handler.
 Tenant guards and audit writes go through `common`. Student approval retains its
 existing service-owned atomic provisioning/audit workflow. Approval passes the
 authenticated actor to the service; it does not issue a second approval audit.
+Student profile mutations instead use server-validated grants and audited,
+tenant-scoped RPCs; deletion is rejected whenever a foreign key references the
+student profile.
 Features call the existing services and repositories. Academic management,
 rosters, attendance, examinations and faculty teaching APIs are retired.
 

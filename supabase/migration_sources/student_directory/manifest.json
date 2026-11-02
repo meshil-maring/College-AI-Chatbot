@@ -1,0 +1,15 @@
+{
+  "version": "20261101020000",
+  "name": "student_directory",
+  "files": ["directory.sql", "security.sql"],
+  "follow_up": {
+    "version": "20261101040000",
+    "name": "student_directory_academic_scope",
+    "files": [
+      "scope_fix.sql",
+      "profile_management.sql",
+      "profile_deletion.sql",
+      "profile_management_security.sql"
+    ]
+  }
+}

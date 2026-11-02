@@ -24,7 +24,11 @@ describe('administrator account workspace', () => {
       'Profile',
       'Academic Setup',
       'Staff & Faculty',
-      'Student Approvals',
+      'Students',
+      'All Students',
+      'Add Student',
+      'Bulk Import',
+      'Registration Requests',
       'Notices',
       'Learning Resources',
       'FAQs',
@@ -35,17 +39,39 @@ describe('administrator account workspace', () => {
       expect(screen.queryByText(value, { exact: true })).not.toBeInTheDocument()
     }
   })
-  it('keeps student account approvals available without a roster submenu', async () => {
+  it('keeps student approvals available beneath the Students sidebar item', async () => {
     render(<AdminShell />)
-    await userEvent.click(screen.getByRole('button', { name: 'Student Approvals', exact: true }))
+    await userEvent.click(screen.getByRole('button', { name: 'Students', exact: true }))
     expect(await screen.findByText('No students are awaiting approval right now.')).toBeInTheDocument()
     expect(adminApi.listPendingStudents).toHaveBeenCalledWith('test-token')
-    expect(screen.queryByRole('navigation', { name: 'Students pages' })).not.toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Students pages' })).toBeInTheDocument()
   })
-  it('enforces the whole approval permission set in navigation', () => {
+  it('places student destinations under the existing Students sidebar item', async () => {
+    window.history.replaceState(null, '', '/login/admin')
+    render(<AdminShell />)
+    const adminNavigation = screen.getByRole('navigation', { name: 'Admin navigation' })
+    await userEvent.click(within(adminNavigation).getByRole('button', { name: 'Students', exact: true }))
+
+    const studentPages = screen.getByRole('list', { name: 'Students pages' })
+    expect(
+      within(studentPages)
+        .getAllByRole('button')
+        .map((item) => item.textContent),
+    ).toEqual(['All Students', 'Add Student', 'Bulk Import', 'Registration Requests'])
+    expect(within(studentPages).getByRole('button', { name: 'Add Student' })).toHaveAttribute('aria-current', 'page')
+    await userEvent.click(within(studentPages).getByRole('button', { name: 'Bulk Import' }))
+    expect(screen.getByRole('heading', { name: 'Bulk Student Import' })).toBeInTheDocument()
+    expect(window.location.search).toContain('student-page=bulk')
+    await userEvent.click(within(studentPages).getByRole('button', { name: 'Registration Requests' }))
+    expect(screen.getByText('No students are awaiting approval right now.')).toBeInTheDocument()
+    expect(window.location.search).toContain('student-page=requests')
+  })
+  it('shows Students to readers and keeps student actions behind their required grants', async () => {
     authState.user.effective_permissions = ['profile.own.read', 'students.read', 'students.approve']
     render(<AdminShell />)
-    expect(screen.queryByRole('button', { name: 'Student Approvals' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Students', exact: true }))
+    expect(screen.getByRole('list', { name: 'Students pages' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('does not have permission')
   })
   it('reuses chat and the existing sign-out lifecycle', async () => {
     render(<AdminShell />)
@@ -68,7 +94,7 @@ describe('administrator account workspace', () => {
     await userEvent.click(within(nav).getByRole('button', { name: 'Academic Terms', exact: true }))
     expect(screen.getByRole('heading', { name: 'Academic Calendar', level: 1 })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Semesters' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('button', { name: 'Student Approvals', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Students', exact: true })).toBeInTheDocument()
   })
   it('supports desktop navigation collapse and search from the academic header', async () => {
     render(<AdminShell />)

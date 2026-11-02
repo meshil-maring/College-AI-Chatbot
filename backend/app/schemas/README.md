@@ -16,10 +16,19 @@ and serialization rules stay in their existing modules.
 | `admin/` | `admin.py`, `admin_dashboard.py`, `admin_memberships.py` |
 | `ai/` | `chat.py`, `chat_turns.py`, `chat_response.py`, `citation.py`, `conversation.py`, `generation.py`, `session.py` |
 | `auth/` | `auth.py`, `student_auth.py`, `users.py`, `phase81.py` (scoped permission requests) |
-| `invitations/` | `admin_invitations.py`, `super_admin_registration.py` |
+| `invitations/` | `admin_invitations.py`, `student_onboarding.py`, `student_onboarding_management.py`, `super_admin_registration.py` |
 | `knowledge/` | `ingestion.py`, `retrieval.py`; `resources.py` defines strict audience/draft/review inputs and safe resource/revision/file projections |
 | `platform/` | `platform.py`, `tenancy.py` |
-| `students/` | `student_notices.py`, `student_notifications.py`, `student_profile.py`, `student_resources.py` |
+| `students/` | `student_directory.py`, `student_notices.py`, `student_notifications.py`, `student_profile.py`, `student_resources.py` |
+
+`invitations/student_onboarding.py` also defines the identity-review contract,
+including account approval/status and ever-signed-in metadata.
+`students/student_directory.py` defines paginated directory rows, academic
+placement, real sign-in state, summary counts, available program filters and
+strict identity/placement mutation contracts. Email changes are intentionally
+not part of the admin profile-update model. Authenticated pending-invitation
+email corrections use the separate `invitations/student_onboarding_management.py`
+contract and are blocked after account setup starts.
 
 Import models from their owning modules explicitly:
 
