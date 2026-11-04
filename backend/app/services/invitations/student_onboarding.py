@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from app.core.errors import AppError
+from app.config import settings
 from app.core.permissions import permission_matches
 from app.db.supabase import get_admin_client
 from app.repositories.invitations import student_onboarding as repository
@@ -107,6 +108,14 @@ def deliver_setup_link(client, tenant, actor_id, row, raw_token, expires_at):
     ))
     if not recorded:
         raise AppError("Invitation delivery status could not be recorded. Refresh before retrying.", 503, "DELIVERY_STATUS_UNAVAILABLE")
+    if status == "failed":
+        # An undelivered setup link must not consume a resend from the
+        # invitation's resend window. Refund the failed attempt so the
+        # student can be retried once email delivery is healthy.
+        _database(lambda: client.table("student_onboarding_invitations").update(
+            {"resend_window_count": max(0, int(row.get("resend_window_count") or 0) - 1)},
+        ).eq("invitation_id", str(row["invitation_id"])).execute())
+        row["resend_window_count"] = max(0, int(row.get("resend_window_count") or 0) - 1)
     row.update({
         "email_delivery_status": status,
         "email_delivery_attempts": attempt,
@@ -194,6 +203,8 @@ def resend(actor: dict[str, Any], invitation_id: UUID) -> StudentInvitationCreat
     expires_at = datetime.now(timezone.utc) + INVITATION_TTL
     row = _database(lambda: repository.resend(
         client, actor=actor_id, tenant=tenant, invitation=invitation_id,
-        token_hash=token_hash, expires_at=expires_at.isoformat(),
+        token_hash=token_hash,
+        expires_at=expires_at.isoformat(),
+        development_mode=settings.is_local_environment,
     ))
     return deliver_setup_link(client, tenant, actor_id, row, raw_token, expires_at)
