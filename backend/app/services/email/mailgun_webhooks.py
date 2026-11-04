@@ -229,4 +229,3 @@ def parse_configured_event(payload: Any) -> VerifiedMailgunEvent:
         configured_domain=(settings.mailgun_domain or "").strip(),
         tolerance_seconds=settings.mailgun_webhook_tolerance_seconds,
     )
-

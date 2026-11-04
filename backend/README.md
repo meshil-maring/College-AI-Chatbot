@@ -28,6 +28,9 @@ Run backend commands from this directory so settings load `backend/.env`.
 See the [repository README](../README.md) for setup, startup and test commands,
 and the [scripts guide](scripts/README.md) for manual tools.
 
+For Gmail student setup links, Supabase Auth configuration and a later Mailgun
+switch, see the [email delivery guide](../docs/architecture/email-delivery.md).
+
 ## Generated files and cleanup
 
 Keep test and diagnostic output in `../logs/backend/` instead of the backend root:

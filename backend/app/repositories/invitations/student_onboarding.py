@@ -80,10 +80,22 @@ def cancel(
     }).execute())
 
 
-def resend(client: Client, *, actor: str, tenant: UUID, invitation: UUID, token_hash: str, expires_at: str) -> dict[str, Any]:
+def resend(
+    client: Client,
+    *,
+    actor: str,
+    tenant: UUID,
+    invitation: UUID,
+    token_hash: str,
+    expires_at: str,
+    development_mode: bool,
+) -> dict[str, Any]:
     return _data(client.rpc("resend_student_onboarding_invitation", {
         "p_actor": actor, "p_tenant": str(tenant), "p_invitation": str(invitation),
-        "p_token_hash": token_hash, "p_expires_at": expires_at,
+        "p_token_hash": token_hash,
+        "p_expires_at": expires_at,
+        # This is server-owned configuration, never client input.
+        "p_development_mode": development_mode,
     }).execute())
 
 

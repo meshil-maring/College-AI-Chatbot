@@ -16,7 +16,7 @@ continue to own database access and schemas continue to own request/response typ
 | `admin/` | Student account approvals, dashboard, documents, FAQs, memberships and notices |
 | `ai/` | Authenticated/public chat, conversation history and intent, context, generation, privacy safeguards and query rewriting |
 | `auth/` | Sign-in, sessions, account registration, authorization, RBAC and shared request-abuse controls |
-| `email/` | Email delivery, encrypted outbox payloads, outbox worker and Mailgun webhooks |
+| `email/` | SMTP/Mailgun delivery, templates, encrypted outbox, worker and Mailgun webhooks |
 | `invitations/` | Platform/admin invitations, student onboarding links, invitation abuse controls and account acceptance/recovery |
 | `knowledge/` | Document pipeline and audience-aware retrieval; `resources/` owns drafts, review, staged uploads, legacy adapters and answer/history policy |
 | `platform/` | Institutions, organizations, tenancy and staff/faculty onboarding |
@@ -28,6 +28,13 @@ server-validated `students.read` permission and tenant-scoped academic placement
 `students.delete` grants, delegates atomic audited mutations to the repository,
 and maps database conflicts without exposing internal details. Placement changes
 also require `courses.manage` and reuse the guarded semester-assignment RPC.
+
+`email/email_delivery.py` preserves the shared provider API and safe workflow
+delivery. `contracts.py`, `capture.py`, `production.py`, `smtp_transport.py` and
+`mailgun_transport.py` own contracts, capture, retries and provider I/O.
+`invitation_messages.py` renders admin/staff/faculty invitations; `templates.py`
+provides escaped HTML and reusable transactional content. See the
+[SMTP setup guide](../../../docs/architecture/email-delivery.md).
 
 `invitations/student_onboarding.py` reviews matching student accounts and
 pending setup invitations within the acting administrator's institution.

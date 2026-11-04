@@ -7,22 +7,38 @@ from urllib.parse import urlparse
 from cryptography.fernet import Fernet
 
 from app.config import Settings
+from app.core.configuration.smtp import smtp_configuration_errors
 from app.core.startup_validation.models import ConfigurationCheck
 from app.core.startup_validation.helpers import _presence_check
 
 
 def collect_email_checks(cfg: Settings, *, is_local: bool) -> list[ConfigurationCheck]:
     checks = []
+    email_provider = (cfg.email_provider or "").strip().lower()
+    live_development = (
+        cfg.environment.strip().lower() in {"development", "dev", "local"}
+        and cfg.email_allow_live_in_development
+    )
+    if email_provider == "smtp" and (not is_local or live_development):
+        errors = smtp_configuration_errors(cfg)
+        for name in (
+            "SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD",
+            "EMAIL_FROM", "EMAIL_REPLY_TO", "EMAIL_BASE_URL",
+        ):
+            failed = any(error.split(" ")[0] == name for error in errors)
+            checks.append(ConfigurationCheck(
+                name=name, ok=not failed,
+                detail="invalid or missing" if failed else "configured (value withheld)",
+            ))
     if not is_local:
-        email_provider = (cfg.email_provider or "").strip().lower()
         checks.append(
             ConfigurationCheck(
                 name="EMAIL_PROVIDER",
-                ok=email_provider == "mailgun",
+                ok=email_provider in {"smtp", "mailgun"},
                 detail=(
-                    "authorized Mailgun provider configured"
-                    if email_provider == "mailgun"
-                    else "must be set to the authorized mailgun provider"
+                    "supported email provider configured"
+                    if email_provider in {"smtp", "mailgun"}
+                    else "must be set to smtp or mailgun"
                 ),
             )
         )

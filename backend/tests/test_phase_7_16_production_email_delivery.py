@@ -104,7 +104,7 @@ def test_production_startup_requires_email_configuration() -> None:
         run_startup_configuration_validation(cfg)
     message = str(error.value)
     assert "EMAIL_PROVIDER" in message
-    assert "must be set to the authorized mailgun provider" in message
+    assert "must be set to smtp or mailgun" in message
     assert "EMAIL_BASE_URL" in message
     assert "secret-placeholder" not in message
 

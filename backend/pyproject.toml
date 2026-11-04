@@ -5,6 +5,7 @@ description = "Backend API for the College AI Chatbot"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiosmtplib>=5.0,<6",
     "cryptography>=44.0.0",
     "fastapi>=0.141.1",
     "pyjwt[crypto]>=2.13.0",

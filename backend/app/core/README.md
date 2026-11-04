@@ -12,6 +12,7 @@ Follow the shared [backend structure rules](../../STRUCTURE.md).
 | `application.py` | Application creation, middleware and safe HTTP error handlers |
 | `application_routes.py` | Feature router registration with unchanged public paths |
 | `operational_routes.py` | Root, health and read-only readiness endpoints |
+| `configuration/` | Email setting fields, safe SMTP validation and cross-field settings validators |
 
 ## Security
 
@@ -54,7 +55,7 @@ application settings.
 | `startup_validation/helpers.py` | Value-free presence checks and URL shape validation |
 | `startup_validation/required.py` | Required Supabase, AI and storage configuration |
 | `startup_validation/endpoints.py` | Production endpoint/issuer checks and CORS origins |
-| `startup_validation/email.py` | Mailgun configuration, outbox encryption key and email URLs |
+| `startup_validation/email.py` | SMTP/Mailgun configuration, outbox encryption key and email URLs |
 | `startup_validation/runtime.py` | Development flags, debug mode, allowed hosts and AI provider selection |
 | `startup_validation/runner.py` | Ordered collection, safe summaries and startup enforcement |
 
