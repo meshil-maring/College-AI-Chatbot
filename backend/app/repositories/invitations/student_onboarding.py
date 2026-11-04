@@ -110,33 +110,52 @@ def record_delivery(
 
 
 def inspect(client: Client, *, token_hash: str) -> dict[str, Any] | None:
-    data = _data(client.rpc("inspect_student_onboarding_invitation", {
+    response = client.rpc("inspect_student_onboarding_invitation", {
         "p_token_hash": token_hash,
-    }).execute())
+    }).execute()
+    data = response.data if response is not None else None
+    # PostgREST may return the jsonb result directly as a dict, as a list
+    # wrapping the dict, or as [{"inspect_student_onboarding_invitation": {...}}].
+    if isinstance(data, list):
+        data = data[0] if data else None
+    if isinstance(data, dict) and "inspect_student_onboarding_invitation" in data:
+        data = data["inspect_student_onboarding_invitation"]
     return data if isinstance(data, dict) else None
 
 
+def _unwrap_jsonb(data: Any, fn_name: str) -> Any:
+    """Unwrap PostgREST jsonb envelope: list wrapper and optional function-name key."""
+    if isinstance(data, list):
+        data = data[0] if data else None
+    if isinstance(data, dict) and fn_name in data:
+        data = data[fn_name]
+    return data
+
+
 def claim_setup(client: Client, *, invitation: UUID, token_hash: str) -> bool:
-    return _data(client.rpc("claim_student_onboarding_setup", {
+    data = _unwrap_jsonb(_data(client.rpc("claim_student_onboarding_setup", {
         "p_invitation": str(invitation), "p_token_hash": token_hash,
-    }).execute()) is True
+    }).execute()), "claim_student_onboarding_setup")
+    return data is True
 
 
 def release_setup(client: Client, *, invitation: UUID, token_hash: str) -> bool:
-    return _data(client.rpc("release_student_onboarding_setup", {
+    data = _unwrap_jsonb(_data(client.rpc("release_student_onboarding_setup", {
         "p_invitation": str(invitation), "p_token_hash": token_hash,
-    }).execute()) is True
+    }).execute()), "release_student_onboarding_setup")
+    return data is True
 
 
 def record_auth_user(client: Client, *, invitation: UUID, token_hash: str, auth_user: str) -> bool:
-    return _data(client.rpc("record_student_onboarding_auth_user", {
+    data = _unwrap_jsonb(_data(client.rpc("record_student_onboarding_auth_user", {
         "p_invitation": str(invitation), "p_token_hash": token_hash,
         "p_auth_user": auth_user,
-    }).execute()) is True
+    }).execute()), "record_student_onboarding_auth_user")
+    return data is True
 
 
 def complete(client: Client, *, invitation: UUID, token_hash: str, auth_user: str) -> dict[str, Any]:
-    return _data(client.rpc("complete_student_onboarding_invitation", {
+    return _unwrap_jsonb(_data(client.rpc("complete_student_onboarding_invitation", {
         "p_invitation": str(invitation), "p_token_hash": token_hash,
         "p_auth_user": auth_user,
-    }).execute())
+    }).execute()), "complete_student_onboarding_invitation")

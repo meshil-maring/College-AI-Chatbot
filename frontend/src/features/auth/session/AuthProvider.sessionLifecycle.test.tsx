@@ -101,10 +101,12 @@ describe('login bootstrap', () => {
       expect(captured?.status).toBe('unauthenticated')
     })
 
+    let loggedIn = false
     await act(async () => {
-      await captured?.login('REG2026001', 'secret123', 'GIT')
+      loggedIn = (await captured?.login('REG2026001', 'secret123', 'GIT')) ?? false
     })
 
+    expect(loggedIn).toBe(true)
     expect(captured?.status).toBe('authenticated')
     expect(captured?.role).toBe('student')
     expect(captured?.accessToken).toBe('fresh-token')
@@ -122,10 +124,12 @@ describe('login bootstrap', () => {
       expect(captured?.status).toBe('unauthenticated')
     })
 
+    let loggedIn = true
     await act(async () => {
-      await captured?.login('REG2026001', 'wrong', 'GIT')
+      loggedIn = (await captured?.login('REG2026001', 'wrong', 'GIT')) ?? true
     })
 
+    expect(loggedIn).toBe(false)
     expect(captured?.status).toBe('unauthenticated')
     expect(captured?.error).toBe(
       'Invalid login credentials. Please check your details and try again. For help with account approval or access, contact your administrator.',

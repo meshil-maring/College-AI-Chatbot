@@ -4,6 +4,7 @@ import {
   inspectStudentSetup,
   type StudentInvitationDetails,
 } from '../../../services/registration/studentOnboarding.ts'
+import { useAuth } from '../session/AuthProvider.tsx'
 
 type State = 'loading' | 'ready' | 'submitting' | 'complete' | 'unavailable'
 
@@ -15,6 +16,7 @@ export default function StudentSetupPage() {
   const [confirmation, setConfirmation] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const { login } = useAuth()
 
   useEffect(() => {
     let active = true
@@ -46,8 +48,24 @@ export default function StudentSetupPage() {
     setState('submitting')
     setError('')
     try {
-      const result = await completeStudentSetup(token, password)
-      setMessage(result.message)
+      await completeStudentSetup(token, password)
+
+      // Auto-sign in with the email and password just set, then go to the
+      // student dashboard. If login fails, fall back to the login link below.
+      let successMessage = 'Your student account is ready. Sign in to continue.'
+      if (details) {
+        try {
+          if (await login(details.email, password)) {
+            window.location.assign('/')
+            return
+          }
+        } catch {
+          // AuthProvider keeps the failure details and the account remains ready.
+        }
+        successMessage = 'Your account is ready, but automatic sign-in failed. Please sign in to continue.'
+      }
+
+      setMessage(successMessage)
       setState('complete')
       window.history.replaceState(window.history.state, '', window.location.pathname)
     } catch (reason) {

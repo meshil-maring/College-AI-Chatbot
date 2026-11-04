@@ -22,7 +22,7 @@ export interface AuthContextValue {
    * institution code (required by the backend contract). The service layer
    * (`authenticate`) owns the routing decision.
    */
-  readonly login: (identifier: string, password: string, institutionCode?: string) => Promise<void>
+  readonly login: (identifier: string, password: string, institutionCode?: string) => Promise<boolean>
   readonly logout: () => Promise<void>
   readonly logoutAll: () => Promise<void>
 }

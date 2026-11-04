@@ -20,6 +20,8 @@ from app.services.invitations.student_onboarding_common import (
 
 
 def _resolve(token: str) -> tuple[str, dict[str, Any]]:
+    import logging as _l
+    _log = _l.getLogger(__name__)
     if (
         not token or len(token) < 32 or len(token) > 256
         or not token.isascii()
@@ -27,7 +29,13 @@ def _resolve(token: str) -> tuple[str, dict[str, Any]]:
     ):
         raise INVALID_LINK
     token_hash = hashlib.sha256(token.encode("ascii")).hexdigest()
-    row = database(lambda: repository.inspect(get_admin_client(), token_hash=token_hash))
+    try:
+        raw = repository.inspect(get_admin_client(), token_hash=token_hash)
+        _log.warning("RAW row type=%s val=%s", type(raw).__name__, repr(raw)[:400])
+        row = database(lambda: raw)
+    except Exception as exc:
+        _log.warning("EXC type=%s code=%s msg=%s", type(exc).__name__, getattr(exc, 'code', None), str(exc)[:300])
+        raise
     if not row:
         raise INVALID_LINK
     return token_hash, row

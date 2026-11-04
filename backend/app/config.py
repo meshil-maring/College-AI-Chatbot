@@ -9,7 +9,7 @@ class Settings(EmailSettings, SettingsValidation):
     app_name: str = "College AI Chatbot API"
     app_version: str = "0.1.0"
     environment: str = "development"
-    debug: bool = True
+    debug: bool = Field(default=True, alias="APP_DEBUG", validation_alias="APP_DEBUG")
     # Comma-separated host names accepted by TrustedHostMiddleware. An empty
     # value uses loopback/test defaults locally and is rejected in production.
     allowed_hosts: str = ""

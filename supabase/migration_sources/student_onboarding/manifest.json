@@ -14,6 +14,11 @@
       "version": "20261101060000",
       "name": "student_invitation_email",
       "files": ["email_management.sql", "setup_claim.sql", "email_management_security.sql"]
+    },
+    {
+      "version": "20261104170000",
+      "name": "student_onboarding_function_ownership",
+      "files": ["function_ownership.sql"]
     }
   ]
 }

@@ -54,5 +54,17 @@ def database(operation: Callable[[], Any]) -> Any:
         if code == "23514":
             raise AppError("The academic section is no longer available. Ask your administrator to assign an active section.", 409, "SECTION_INACTIVE") from exc
         if code == "42501":
-            raise AppError("Student setup requires administrator review. Contact your institution administrator.", 403, "STUDENT_SETUP_REVIEW_REQUIRED") from exc
+            message = str(getattr(exc, "message", "") or "").lower()
+            if "permission denied for table" in message:
+                raise AppError(
+                    "Student setup is temporarily unavailable because the onboarding database permissions are incomplete. "
+                    "Ask your administrator to apply the latest student onboarding migration.",
+                    503,
+                    "STUDENT_ONBOARDING_PERMISSION_UNAVAILABLE",
+                ) from exc
+            raise AppError(
+                "Student setup requires administrator review. Contact your institution administrator.",
+                403,
+                "STUDENT_SETUP_REVIEW_REQUIRED",
+            ) from exc
         raise translate_database_error(exc) from exc

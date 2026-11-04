@@ -12,7 +12,7 @@ export function useSessionActions(session: AuthSessionState) {
   const { setStatus, setUser, setError, sessionTokenRef, sessionGenerationRef, setSessionToken, clearSession } = session
 
   const login = useCallback(
-    async (identifier: string, password: string, institutionCode?: string): Promise<void> => {
+    async (identifier: string, password: string, institutionCode?: string): Promise<boolean> => {
       const generationAtStart = ++sessionGenerationRef.current
       setStatus('authenticating')
       setError(null)
@@ -28,20 +28,22 @@ export function useSessionActions(session: AuthSessionState) {
         const me = await fetchCurrentUser(response.access_token)
         // A logout/expiry/newer-login that settled while the login was
         // in-flight invalidates this result — never restore over it.
-        if (sessionGenerationRef.current !== generationAtStart) return
+        if (sessionGenerationRef.current !== generationAtStart) return false
         storeProviderSession(response.access_token, response.refresh_token, response.expires_in)
         setUser(me)
         setSessionToken(response.access_token)
         setError(null)
         setStatus('authenticated')
+        return true
       } catch (err) {
-        if (sessionGenerationRef.current !== generationAtStart) return
+        if (sessionGenerationRef.current !== generationAtStart) return false
         setStatus('unauthenticated')
         setError(
           err instanceof AuthError
             ? authErrorMessage(err)
             : 'Something went wrong during authentication. Please try again.',
         )
+        return false
       }
     },
     [setSessionToken],

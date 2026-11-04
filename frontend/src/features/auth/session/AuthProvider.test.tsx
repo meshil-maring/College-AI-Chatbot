@@ -144,7 +144,7 @@ describe('session renewal race regressions', () => {
     vi.mocked(authService.fetchCurrentUser).mockResolvedValue(ME_STUDENT)
     renderProvider()
     await waitFor(() => expect(captured?.status).toBe('unauthenticated'))
-    let first!: Promise<void>
+    let first!: Promise<boolean>
     act(() => {
       first = captured!.login('first@example.com', 'test-password')
     })

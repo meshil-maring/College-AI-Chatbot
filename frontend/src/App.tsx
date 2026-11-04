@@ -49,7 +49,11 @@ function App() {
         <AdminInvitationPage token={route.token} />
       </AuthProvider>
     )
-  if (route.kind === 'student-setup') return <StudentSetupPage />
+  if (route.kind === 'student-setup') return (
+    <AuthProvider>
+      <StudentSetupPage />
+    </AuthProvider>
+  )
   if (route.kind === 'super-admin-register') return <SuperAdminRegisterEntryPage />
   if (route.kind === 'super-admin-invitation') {
     return <SuperAdminRegistrationPage token={route.token} />

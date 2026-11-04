@@ -92,6 +92,21 @@ describe('lookupInstitution', () => {
     expect(registrationErrorMessage(err)).toBe('This institution is not currently accepting registrations.')
   })
 
+  it('does not describe unrelated 403 responses as closed registration', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(403, {
+          error: { code: 'STUDENT_SETUP_REVIEW_REQUIRED', message: 'Administrator review is required.' },
+        }),
+      ),
+    )
+
+    const err = await lookupInstitution('IMPHAL').catch((e) => e)
+    expect(err.kind).toBe<RegistrationErrorKind>('unknown')
+    expect(registrationErrorMessage(err)).toBe('Something went wrong. Please try again.')
+  })
+
   it('maps a 422 envelope to the validation kind', async () => {
     vi.stubGlobal(
       'fetch',

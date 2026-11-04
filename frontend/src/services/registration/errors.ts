@@ -126,7 +126,7 @@ export async function buildRegistrationError(response: Response): Promise<Regist
   }
   if (status === 403) {
     const kind = kindForCode(code)
-    return new RegistrationError(kind === 'unknown' ? 'institution_not_accepting' : kind, status, code)
+    return new RegistrationError(kind, status, code)
   }
   if (status >= 500) {
     return new RegistrationError(code === 'INSTITUTION_LOOKUP_UNAVAILABLE' ? 'unavailable' : 'server', status, code)
