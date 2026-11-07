@@ -13,9 +13,6 @@ FIELDS = {
     Entity.academic_years: "academic_year_id,institution_id,name,code,start_date,end_date,is_current,is_active",
     Entity.semesters: "semester_id,academic_year_id,name,code,semester_number,start_date,end_date,is_current,is_active",
     Entity.courses: "course_id,department_id,name,code,description,credits,lecture_hours,tutorial_hours,practical_hours,is_active",
-    Entity.program_courses: "program_course_id,program_id,course_id,semester_id,course_type,is_required,is_active",
-    Entity.course_offerings: "course_offering_id,course_id,program_id,academic_year_id,semester_id,capacity,is_active",
-    Entity.sections: "section_id,course_offering_id,name,code,capacity,is_active",
 }
 DEPARTMENT = "department:departments!inner(institution_id)"
 PROGRAM = f"program:programs!inner({DEPARTMENT})"
@@ -27,12 +24,6 @@ JOINS = {
     Entity.programs: (DEPARTMENT, ("department.institution_id",)),
     Entity.courses: (DEPARTMENT, ("department.institution_id",)),
     Entity.semesters: (YEAR, ("year.institution_id",)),
-    Entity.program_courses: (f"{PROGRAM},{COURSE}", ("program.department.institution_id", "course.department.institution_id")),
-    Entity.course_offerings: (f"{PROGRAM},{COURSE},{YEAR}", ("program.department.institution_id", "course.department.institution_id", "year.institution_id")),
-    Entity.sections: (
-        f"offering:course_offerings!inner({PROGRAM},{COURSE},{YEAR})",
-        ("offering.program.department.institution_id", "offering.course.department.institution_id", "offering.year.institution_id"),
-    ),
 }
 PROJECTIONS = {entity: ",".join(part for part in (FIELDS[entity], JOINS[entity][0]) if part) for entity in Entity}
 
@@ -57,14 +48,11 @@ def _query(client, institution_id, entity):
 def _project(row, institution_id):
     # institution_id is an API envelope derived from the scoped join, not a
     # physical column on descendants. Embedded join data stays in the repository.
-    return {key: value for key, value in row.items() if key not in {"department", "program", "course", "year", "offering"}} | {"institution_id": institution_id}
+    return {key: value for key, value in row.items() if key not in {"department", "program", "course", "year"}} | {"institution_id": institution_id}
 
 
 def list_records(client, institution_id, entity):
-    query = _query(client, institution_id, entity)
-    if entity not in {Entity.program_courses, Entity.course_offerings}:
-        query = query.order("name")
-    rows = read_all(query.order(PRIMARY_KEYS[entity]))
+    rows = read_all(_query(client, institution_id, entity).order("name").order(PRIMARY_KEYS[entity]))
     return [_project(row, institution_id) for row in rows]
 
 

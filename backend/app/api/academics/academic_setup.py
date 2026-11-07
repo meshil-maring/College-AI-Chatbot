@@ -16,7 +16,7 @@ _ADMIN = require_institution_roles("admin")
 
 
 @router.get("", response_model=AcademicSetupResponse, summary="Read institution Academic Setup",
-            description="Departments, programs, academic years, dated semesters, courses, program-course links, offerings and sections. Tenant context is server-selected.")
+            description="Departments, programs, academic years, dated semesters and courses. Tenant context is server-selected.")
 def get_academic_setup(user: dict = Depends(_ADMIN)):
     return service.get_setup(user)
 
@@ -30,13 +30,13 @@ def _write(user, entity, body, record_id=None):
 
 
 @router.post("/{entity}", status_code=201, summary="Create an Academic Setup record",
-             description="Semesters belong to academic years and require dates. Program-course links define curricula. Offerings select a linked course, program, academic year and semester. Sections belong to one offering.")
+             description="Semesters belong to academic years and require dates. Courses belong to departments.")
 def create_academic_record(entity: AcademicEntity, body: dict = Body(...), user: dict = Depends(_ADMIN)):
     return _write(user, entity, body)
 
 
 @router.patch("/{entity}/{record_id}", summary="Edit or deactivate an Academic Setup record",
-              description="Parent references and section codes are immutable. Records are deactivated to retain history. Actor and institution cannot be supplied by the caller.")
+              description="Parent references are immutable. Records are deactivated to retain history. Actor and institution cannot be supplied by the caller.")
 def update_academic_record(entity: AcademicEntity, record_id: UUID, body: dict = Body(...), user: dict = Depends(_ADMIN)):
     return _write(user, entity, body, str(record_id))
 

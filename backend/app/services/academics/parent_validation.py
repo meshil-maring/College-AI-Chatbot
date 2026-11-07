@@ -1,4 +1,4 @@
-"""Validate the export's active ancestry and matching program-course links."""
+"""Validate the active ancestry for Academic Setup entities."""
 
 from app.core.errors import AppError
 from app.repositories.academics import academic_setup as repository
@@ -30,22 +30,3 @@ def validate_structure_parents(client, institution_id, entity, fields, existing)
         parent(Entity.departments, "department_id", "department")
     elif entity == Entity.semesters:
         parent(Entity.academic_years, "academic_year_id", "academic year")
-    elif entity in {Entity.program_courses, Entity.course_offerings}:
-        program = parent(Entity.programs, "program_id", "program")
-        course = parent(Entity.courses, "course_id", "course")
-        for owner in (program, course):
-            active_parent(client, institution_id, Entity.departments, owner["department_id"], "department")
-        if values.get("semester_id"):
-            semester = parent(Entity.semesters, "semester_id", "semester")
-            active_parent(client, institution_id, Entity.academic_years, semester["academic_year_id"], "academic year")
-            if entity == Entity.course_offerings and semester["academic_year_id"] != values["academic_year_id"]:
-                raise AppError("Offering year and semester must match", 422, "ACADEMIC_REFERENCE_INVALID")
-        if entity == Entity.course_offerings:
-            links = repository.list_records(client, institution_id, Entity.program_courses)
-            if not any(link["is_active"] and link["program_id"] == values["program_id"]
-                       and link["course_id"] == values["course_id"]
-                       and link["semester_id"] in (None, values["semester_id"]) for link in links):
-                raise AppError("Choose an active matching program-course link", 422, "ACADEMIC_REFERENCE_INVALID")
-    elif entity == Entity.sections:
-        offering = parent(Entity.course_offerings, "course_offering_id", "course offering")
-        validate_structure_parents(client, institution_id, Entity.course_offerings, offering, None)

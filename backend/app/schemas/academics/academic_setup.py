@@ -8,22 +8,18 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints, model_validator
 
 
+
 class AcademicEntity(StrEnum):
     departments = "departments"
     programs = "programs"
     academic_years = "academic_years"
     semesters = "semesters"
     courses = "courses"
-    program_courses = "program_courses"
-    course_offerings = "course_offerings"
-    sections = "sections"
 
     @property
     def permission_resource(self):
         if self == self.programs:
             return "departments"
-        if self in {self.program_courses, self.course_offerings, self.sections}:
-            return "courses"
         return self.value
 
 
@@ -84,36 +80,6 @@ class CourseCreate(DepartmentCreate):
     practical_hours: Hours | None = None
 
 
-class CourseType(StrEnum):
-    core = "core"
-    elective = "elective"
-    open_elective = "open_elective"
-    skill = "skill"
-    project = "project"
-
-
-class ProgramCourseCreate(AcademicModel):
-    program_id: UUID
-    course_id: UUID
-    semester_id: UUID | None = None
-    course_type: CourseType
-    is_required: StrictBool = True
-    is_active: StrictBool = True
-
-
-class CourseOfferingCreate(AcademicModel):
-    course_id: UUID
-    program_id: UUID
-    academic_year_id: UUID
-    semester_id: UUID
-    capacity: Capacity | None = None
-    is_active: StrictBool = True
-
-
-class SectionCreate(MasterCreate):
-    course_offering_id: UUID
-    capacity: Capacity | None = None
-
 
 class MasterUpdate(AcademicModel):
     name: Name | None = None
@@ -165,39 +131,12 @@ class CourseUpdate(DepartmentUpdate):
     practical_hours: Hours | None = None
 
 
-class RelationUpdate(AcademicModel):
-    is_active: StrictBool | None = None
-
-    @model_validator(mode="after")
-    def require_changes(self) -> Self:
-        if not self.model_fields_set or any(
-            getattr(self, key) is None for key in self.model_fields_set - {"capacity"}
-        ):
-            raise ValueError("Provide non-null changes")
-        return self
-
-
-class ProgramCourseUpdate(RelationUpdate):
-    course_type: CourseType | None = None
-    is_required: StrictBool | None = None
-
-
-class CourseOfferingUpdate(RelationUpdate):
-    capacity: Capacity | None = None
-
-
-class SectionUpdate(RelationUpdate):
-    name: Name | None = None
-    capacity: Capacity | None = None
-
 
 CREATE_MODELS = dict(zip(AcademicEntity, (
-    DepartmentCreate, ProgramCreate, AcademicYearCreate, SemesterCreate,
-    CourseCreate, ProgramCourseCreate, CourseOfferingCreate, SectionCreate,
+    DepartmentCreate, ProgramCreate, AcademicYearCreate, SemesterCreate, CourseCreate,
 )))
 UPDATE_MODELS = dict(zip(AcademicEntity, (
-    DepartmentUpdate, ProgramUpdate, AcademicYearUpdate, SemesterUpdate,
-    CourseUpdate, ProgramCourseUpdate, CourseOfferingUpdate, SectionUpdate,
+    DepartmentUpdate, ProgramUpdate, AcademicYearUpdate, SemesterUpdate, CourseUpdate,
 )))
 
 

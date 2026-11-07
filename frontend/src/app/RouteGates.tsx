@@ -28,11 +28,8 @@ export function AuthGate({ audience = 'general' }: { audience?: LoginAudience })
       const registering = new URLSearchParams(window.location.search).get('register') === '1'
       if (role !== 'student' || registering) return <StudentAccountSwitch registering={registering} />
     }
-    return (
-      <>
-        <AuthenticatedExperience />
-      </>
-    )
+    window.location.replace('/')
+    return <RestoringShell />
   }
   return <LoginForm audience={audience} />
 }
