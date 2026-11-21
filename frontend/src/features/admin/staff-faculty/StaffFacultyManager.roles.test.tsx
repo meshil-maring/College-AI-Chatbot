@@ -14,7 +14,7 @@ describe('Staff and Faculty Management — roles', () => {
       within(role)
         .getAllByRole('option')
         .map((option) => option.textContent),
-    ).toEqual(['Faculty', 'Staff'])
+    ).toEqual(['Faculty (Teacher)', 'Staff'])
   })
 
   it('approves an applicant as the role the administrator chose', async () => {

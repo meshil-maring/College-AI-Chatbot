@@ -17,17 +17,31 @@ endpoints remain authoritative for authorization and tenant isolation.
 
 `staff-faculty/useStaffFacultyManagement.ts` owns request loading and account
 actions. The administrator chooses each new member's department when approving
-(`MembershipRequests.tsx`) and can change it from `MembershipRosterTable.tsx`;
+(`requests/MembershipRequests.tsx`) and can change it from `roster/MembershipRosterTable.tsx`;
 applicants no longer pick a department. The administrator also confirms Staff or
 Faculty on approval and can switch it from the roster; the server refuses a switch
 while the member is a current Head of Department or holds extra Staff permissions.
-The roster also shows an HOD badge and offers Make HOD / Remove HOD for active
-Faculty (`useDepartmentHeadActions.ts`), using the same department-head endpoint
-as Academic Setup; HOD is an appointment on top of Faculty, not a separate role. The roster's Permissions button opens that
+The roster shows one HOD badge per department a member heads, and **Manage HOD**
+(`roster/HodDialog.tsx`, `useDepartmentHeadActions.ts`) lets the administrator tick
+every department an active Faculty member heads. A department may have several
+equal heads and a head may lead any active department; changes are saved as single
+add/end appointment calls. HOD is an appointment on top of Faculty, not a separate role. The roster's Permissions button opens that
 Staff member in the embedded `permissions/StaffPermissionManager.tsx`. Approved requests expose **Retry sign-in setup** through the existing
 approval endpoint, so a provider confirmation failure can be retried without
 creating a new registration. Failed decisions refresh the recorded state before
 showing the error; late responses from a replaced session are discarded.
+`StaffFacultySummary.tsx` shows pending, active Faculty/Staff and unassigned counts;
+`roster/useRosterFilters.ts` searches and filters the loaded roster in the browser,
+and `StaffFacultyUI.tsx` holds the page's shared buttons, badges and dismissible feedback.
+**Add member** (`invitations/AddMemberDialog.tsx`) invites new Staff or Faculty by
+email with a name, role and department; `invitations/useMemberInvitations.ts` owns the
+pending list and resend/cancel, and `invitations/PendingInvitations.tsx` renders it
+(expired links offer **Invite again**). The person accepts through the existing
+invitation page; the database then records an approved membership request decided by
+the inviting administrator, grants the role and assigns the department together
+(`20261127000000`/`20261127010000` migrations).
+The embedded permission list (`permissions/StaffPermissionList.tsx`) shows role grants
+read-only beside delegable permissions with readable labels.
 
 | Folder                                     | Current responsibility                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -26,6 +26,7 @@ def test_generated_migrations_match_sources_and_own_their_versions():
         "20261122000000_student_transfer_direct.sql",
         "20261123000000_student_transfer_same_semester.sql",
         "20261124000000_student_transfer_notifications.sql",
+        "20261126000000_department_co_heads.sql",
     ]
     for target, sql in migrations:
         assert target.read_text(encoding="utf-8") == sql
@@ -33,7 +34,8 @@ def test_generated_migrations_match_sources_and_own_their_versions():
 
 
 def test_sources_stay_within_maintenance_limits():
-    for folder in (SOURCE, SOURCE / "direct", SOURCE / "semester", SOURCE / "notifications"):
+    for folder in (SOURCE, SOURCE / "direct", SOURCE / "semester", SOURCE / "notifications",
+                   SOURCE / "co_heads"):
         files = [path for path in folder.iterdir() if path.is_file()]
         assert len(files) <= 15
         for path in files:

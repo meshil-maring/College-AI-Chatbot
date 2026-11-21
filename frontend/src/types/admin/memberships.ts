@@ -96,3 +96,46 @@ export interface MembershipLifecycleResult {
   already_applied: boolean
   message: string
 }
+
+// ============================================================================
+// Staff / Faculty invited by the administrator
+// ============================================================================
+
+export interface MemberInvitationCreate {
+  email: string
+  full_name: string
+  role: MembershipRole
+  department_id: string
+}
+
+export interface MemberInvitation {
+  invitation_id: string
+  email: string
+  full_name: string | null
+  role: MembershipRole
+  department_id: string | null
+  status: 'invited' | 'accepted' | 'cancelled' | 'expired'
+  expires_at: string | null
+  created_at: string | null
+  email_delivery_status: string
+  resend_count: number
+  last_sent_at: string | null
+}
+
+export interface MemberInvitationList {
+  invitations: MemberInvitation[]
+  total: number
+}
+
+export interface MemberInvitationCreated {
+  invitation: MemberInvitation
+  email_delivery: { status: 'pending' | 'sent' | 'failed'; provider: string; detail?: string | null }
+  expires_in_hours: number
+  message: string
+}
+
+export interface MemberInvitationCancelled {
+  invitation_id: string
+  already_applied: boolean
+  message: string
+}

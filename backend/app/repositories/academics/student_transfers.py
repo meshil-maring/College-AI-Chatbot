@@ -68,3 +68,17 @@ def assign_department_head(client, actor_id, tenant, department_id, faculty_user
         "p_actor": actor_id, "p_tenant": tenant,
         "p_department": department_id, "p_faculty": faculty_user_id,
     }).execute().data
+
+
+def add_department_head(client, actor_id, tenant, department_id, faculty_user_id):
+    return client.rpc("add_department_head", {
+        "p_actor": actor_id, "p_tenant": tenant,
+        "p_department": department_id, "p_faculty": faculty_user_id,
+    }).execute().data
+
+
+def end_department_head(client, actor_id, tenant, department_id, faculty_user_id):
+    return client.rpc("end_department_head", {
+        "p_actor": actor_id, "p_tenant": tenant,
+        "p_department": department_id, "p_faculty": faculty_user_id,
+    }).execute().data

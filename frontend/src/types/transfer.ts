@@ -121,6 +121,17 @@ export interface FacultyCandidate {
   email: string | null
 }
 
+/** Result of adding or ending one Head of Department appointment. */
+export interface DepartmentHeadChange {
+  department_id: string
+  faculty_user_id: string
+  institution_id: string
+  /** True when the appointment was already in the requested state. */
+  already_applied: boolean
+  /** Every current head of the department after the change. */
+  head_ids: string[]
+}
+
 export interface DepartmentHeads {
   institution_id: string
   heads: DepartmentHead[]

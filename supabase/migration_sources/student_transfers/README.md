@@ -15,6 +15,7 @@ Moving to another batch of the same program is not handled here.
 | `20261122000000` | `student_transfer_direct` | Admin/HOD direct transfers and the shared placement move |
 | `20261123000000` | `student_transfer_same_semester` | Same-semester rule and the admin override |
 | `20261124000000` | `student_transfer_notifications` | Student notifications for transfer outcomes |
+| `20261126000000` | `department_co_heads` | Several equal HODs per department; one HOD may head several departments |
 
 Applied migrations never change; new behaviour is a new entry in `follow_ups`
 (`manifest.json`) with its SQL in a subfolder. Generate everything with
@@ -46,12 +47,18 @@ current placement, so a transferred student can be assigned to later terms.
 | --- | --- |
 | Student (`transfers.request`, `transfers.read`) | Request, view and cancel their own transfers; one open request at a time |
 | Administrator (`transfers.read`, `transfers.approve`) | Review every request; transfer any student directly |
-| Head of Department | Review requests into their department; transfer students directly only between sections of their department |
+| Head of Department | Review requests into every department they head; transfer students directly only between sections of those departments |
 
-HOD is an appointment, not a role: an administrator appoints one active faculty
-member per department (`department_heads`, managed with `departments.manage`).
-Replacing or removing an appointment keeps the earlier row. A faculty member who
-loses their faculty grant loses HOD authority immediately.
+HOD is an appointment, not a role: an administrator appoints active faculty
+members as heads (`department_heads`, managed with `departments.manage`). Since
+`20261126000000` a department may have several equal heads and one faculty member
+may head any number of active departments in the institution; the only rule is one
+current appointment per person per department. Every current head of a department
+may review its requests, and the first decision counts. `add_department_head` and
+`end_department_head` change one appointment; `assign_department_head` still
+replaces all heads with one (or removes all). Ended appointments keep their row,
+and every change is audited. A faculty member who loses their faculty grant loses
+HOD authority immediately.
 
 - Rejection requires a reason. Reviewers may first mark a request `under_review`.
 - A direct transfer applies immediately, with no approval step. It is refused while

@@ -12,6 +12,7 @@ import {
 import { getAcademicSetup } from '../../../services/admin/academics.ts'
 import type { MembershipRequest, MembershipRole, MembershipRosterEntry } from '../../../types/admin.ts'
 import { getDepartmentHeads } from '../../../services/students/transferApi.ts'
+import { roleLabel } from './StaffFacultyUI.tsx'
 import { useDepartmentHeadActions } from './useDepartmentHeadActions.ts'
 import { staffFacultyKeys, type RequestFilter } from './staffFacultyKeys.ts'
 
@@ -38,6 +39,16 @@ export function useStaffFacultyManagement(accessToken: string) {
           requestFilter === 'staff' || requestFilter === 'faculty' ? requestFilter : undefined,
           requestFilter === 'pending' ? 'pending' : undefined,
         ),
+      ...NAVIGATION_QUERY_POLICY,
+    },
+    queryClient,
+  )
+  // Pending requests for the summary, whichever filter is open. With the
+  // default Pending filter this is the same cached query, so no extra request.
+  const pendingQuery = useQuery(
+    {
+      queryKey: staffFacultyKeys.requests(accessToken, 'pending'),
+      queryFn: () => listMembershipRequests(accessToken, undefined, 'pending'),
       ...NAVIGATION_QUERY_POLICY,
     },
     queryClient,
@@ -86,6 +97,12 @@ export function useStaffFacultyManagement(accessToken: string) {
         ? 'Could not load departments. Add or check them in Academic Setup.'
         : null
   const error = actionError ?? loadError
+  const pendingCount = pendingQuery.data?.requests.length ?? null
+
+  function dismiss() {
+    setError(null)
+    setSuccess(null)
+  }
 
   /** Refresh every read on this page after a change, and wait for it. */
   const latestLoad = useRef(() => queryClient.invalidateQueries({ queryKey: staffFacultyKeys.all(accessToken) }))
@@ -105,7 +122,7 @@ export function useStaffFacultyManagement(accessToken: string) {
   ) {
     const retry = decision === 'approve' && request.status === 'approved'
     const action = retry ? 'Retry sign-in setup for' : decision === 'approve' ? 'Approve' : 'Reject'
-    const as = decision === 'approve' && !retry && role ? ` as ${role === 'staff' ? 'Staff' : 'Faculty'}` : ''
+    const as = decision === 'approve' && !retry && role ? ` as ${roleLabel(role)}` : ''
     if (!window.confirm(`${action} ${request.full_name || request.email}${as}?`)) return
     setActionKey(`${decision}:${request.request_id}`)
     setError(null)
@@ -167,7 +184,7 @@ export function useStaffFacultyManagement(accessToken: string) {
 
   async function changeRole(member: MembershipRosterEntry, role: MembershipRole) {
     if (!member.user_id || role === member.role) return
-    const label = role === 'staff' ? 'Staff' : 'Faculty'
+    const label = roleLabel(role)
     if (!window.confirm(`Change ${member.name || member.email} to ${label}? They will need to sign in again.`)) return
     await runAction(
       `role:${member.user_id}`,
@@ -199,6 +216,10 @@ export function useStaffFacultyManagement(accessToken: string) {
     actionKey,
     error,
     success,
+    dismiss,
+    pendingCount,
+    // People, not appointments: one HOD may head several departments.
+    headCount: new Set(heads.map((head) => head.faculty_user_id)).size,
     decide,
     lifecycle,
     changeDepartment,

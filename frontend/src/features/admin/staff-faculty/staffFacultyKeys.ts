@@ -11,6 +11,7 @@ export const staffFacultyKeys = {
   all: (token: string) => ['admin', 'staff-faculty', token] as const,
   requests: (token: string, filter: RequestFilter) => [...staffFacultyKeys.all(token), 'requests', filter] as const,
   roster: (token: string) => [...staffFacultyKeys.all(token), 'roster'] as const,
+  invitations: (token: string) => [...staffFacultyKeys.all(token), 'invitations'] as const,
   departments: (token: string) => [...staffFacultyKeys.all(token), 'departments'] as const,
   heads: (token: string) => [...staffFacultyKeys.all(token), 'department-heads'] as const,
   permissionMembers: (token: string) => [...staffFacultyKeys.all(token), 'permission-members'] as const,

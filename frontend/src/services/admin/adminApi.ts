@@ -16,12 +16,15 @@ export {
   uploadDocumentVersion,
 } from './knowledge.ts'
 export {
+  cancelMembershipInvitation,
   changeMembershipStatus,
   changeStaffPermissions,
+  createMembershipInvitation,
   decideMembershipRequest,
   getDelegableStaffPermissions,
   getStaffPermissions,
   listAuditLogs,
+  listMembershipInvitations,
   listMembershipRequests,
   listMembershipRoster,
   resendMembershipInvitation,

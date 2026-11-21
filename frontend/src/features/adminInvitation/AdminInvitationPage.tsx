@@ -22,6 +22,23 @@ import { InvitationAcceptanceForm } from './InvitationAcceptanceForm.tsx'
 import { formatExpiry, useInvitationAcceptance } from './useInvitationAcceptance.ts'
 export type { Phase } from './useInvitationAcceptance.ts'
 
+const INVITATION_LABELS = {
+  admin: 'University Admin Invitation',
+  staff: 'Staff Invitation',
+  faculty: 'Faculty (Teacher) Invitation',
+} as const
+
+/** Staff and Faculty use the same link and account setup as University Admins. */
+function invitationLabel(phase: ReturnType<typeof useInvitationAcceptance>['phase']) {
+  const role =
+    phase.kind === 'ready' || phase.kind === 'submitting'
+      ? (phase.invitation.role ?? 'admin')
+      : phase.kind === 'accepted'
+        ? phase.role
+        : 'admin'
+  return INVITATION_LABELS[role]
+}
+
 export default function AdminInvitationPage(props: Parameters<typeof useInvitationAcceptance>[0]) {
   const model = useInvitationAcceptance(props)
   const { phase, recoveryMode, membershipMode, localError } = model
@@ -29,7 +46,7 @@ export default function AdminInvitationPage(props: Parameters<typeof useInvitati
   return (
     <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-content">
       <section className="w-full max-w-lg rounded-xl border border-line bg-surface p-8 shadow-none">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">University Admin Invitation</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">{invitationLabel(phase)}</p>
 
         {phase.kind === 'loading' ? (
           <p role="status" className="mt-4 text-sm text-muted">

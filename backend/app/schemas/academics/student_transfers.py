@@ -42,3 +42,8 @@ class TransferDecision(AcademicModel):
 class DepartmentHeadWrite(AcademicModel):
     # None removes the current Head of Department.
     faculty_user_id: UUID | None
+
+
+class DepartmentHeadAdd(AcademicModel):
+    # One more Head of Department for the department; existing heads stay.
+    faculty_user_id: UUID

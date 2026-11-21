@@ -10,6 +10,8 @@ vi.mock('../../../../services/admin/academics.ts', () => ({ getAcademicSetup: vi
 vi.mock('../../../../services/students/transferApi.ts', () => ({
   getDepartmentHeads: vi.fn(),
   assignDepartmentHead: vi.fn(),
+  addDepartmentHead: vi.fn(),
+  endDepartmentHead: vi.fn(),
 }))
 
 export const request = {
@@ -53,6 +55,7 @@ beforeEach(() => {
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.mocked(api.listMembershipRequests).mockResolvedValue({ requests: [request], total: 1 })
   vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [], total: 0 })
+  vi.mocked(api.listMembershipInvitations).mockResolvedValue({ invitations: [], total: 0 })
   vi.mocked(api.getDelegableStaffPermissions).mockResolvedValue(['documents.read'])
   vi.mocked(api.getStaffPermissions).mockResolvedValue({
     user_id: member().user_id,

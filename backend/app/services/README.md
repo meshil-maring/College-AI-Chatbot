@@ -8,7 +8,8 @@ institution grants, account approval and ownership; SQL commands atomically
 enroll required and selected subjects and check offerings and capacity.
 
 `academics/student_transfers.py` authorizes student section/program transfer
-requests, administrator and Head of Department decisions, and HOD appointments.
+requests, administrator and Head of Department decisions, and HOD appointments
+(several equal heads per department; one head may lead several departments).
 Students act only on their own placement; SQL re-derives reviewer scope and
 atomically reassigns the current-term registration on approval.
 
@@ -18,7 +19,7 @@ continue to own database access and schemas continue to own request/response typ
 | Package | Related services |
 | --- | --- |
 | `academics/` | Export-aligned foundation, dated-semester, course, curriculum-link, offering and section setup |
-| `admin/` | Student account approvals, dashboard, documents, FAQs, memberships and notices |
+| `admin/` | Student account approvals, dashboard, documents, FAQs, memberships, Staff/Faculty invitations (`member_invitations.py`) and notices |
 | `ai/` | Authenticated/public chat, conversation history and intent, context, generation, privacy safeguards and query rewriting |
 | `auth/` | Sign-in, sessions, account registration, authorization, RBAC and shared request-abuse controls |
 | `email/` | SMTP/Mailgun delivery, templates, encrypted outbox, worker and Mailgun webhooks |

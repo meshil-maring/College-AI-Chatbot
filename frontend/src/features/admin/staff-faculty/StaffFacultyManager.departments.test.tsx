@@ -79,8 +79,8 @@ describe('Staff and Faculty Management — permissions', () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [member(), other], total: 2 })
     render(<StaffFacultyManager accessToken="jwt" />)
     expect(await screen.findByRole('heading', { name: 'Staff permissions' })).toBeInTheDocument()
-    const rows = await screen.findAllByRole('button', { name: 'Permissions' })
-    fireEvent.click(rows[1])
+    const row = (await screen.findByText('Pat Staff')).closest('tr') as HTMLElement
+    fireEvent.click(within(row).getByRole('button', { name: 'Permissions' }))
     await waitFor(() => expect(api.getStaffPermissions).toHaveBeenLastCalledWith('jwt', other.user_id))
     expect(screen.getByRole('combobox', { name: 'Staff member' })).toHaveValue(other.user_id)
   })

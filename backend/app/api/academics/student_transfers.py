@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.security import get_current_user, require_institution_roles
 from app.schemas.academics.student_transfers import (
-    DepartmentHeadWrite, DirectTransfer, TransferDecision, TransferSubmit,
+    DepartmentHeadAdd, DepartmentHeadWrite, DirectTransfer, TransferDecision, TransferSubmit,
 )
 from app.services.academics import student_transfers as service
 
@@ -65,9 +65,26 @@ def department_heads(user: dict = Depends(_ADMIN)):
     return service.department_heads(user)
 
 
+# Replaces every current head with one faculty member, or removes them all.
 @router.put("/admin/department-heads/{department_id}")
 def assign_department_head(
     department_id: UUID, body: DepartmentHeadWrite, user: dict = Depends(_ADMIN),
 ):
     faculty = str(body.faculty_user_id) if body.faculty_user_id else None
     return service.assign_department_head(user, str(department_id), faculty)
+
+
+# A department may have several equal heads, and one faculty member may head
+# several departments. These add or end a single appointment.
+@router.post("/admin/department-heads/{department_id}/heads", status_code=201)
+def add_department_head(
+    department_id: UUID, body: DepartmentHeadAdd, user: dict = Depends(_ADMIN),
+):
+    return service.add_department_head(user, str(department_id), str(body.faculty_user_id))
+
+
+@router.delete("/admin/department-heads/{department_id}/heads/{faculty_user_id}")
+def end_department_head(
+    department_id: UUID, faculty_user_id: UUID, user: dict = Depends(_ADMIN),
+):
+    return service.end_department_head(user, str(department_id), str(faculty_user_id))

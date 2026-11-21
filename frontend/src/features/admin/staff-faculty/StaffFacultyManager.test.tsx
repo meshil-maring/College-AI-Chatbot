@@ -134,10 +134,14 @@ describe('StaffFacultyManager', () => {
     await chooseDepartment()
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
     fireEvent.click(screen.getByRole('tab', { name: 'Staff' }))
+    const staffReads = () =>
+      vi.mocked(api.listMembershipRequests).mock.calls.filter((call) => call[1] === 'staff').length
+    await waitFor(() => expect(staffReads()).toBe(1))
     await act(async () => {
       finish({ request_id: request.request_id, status: 'approved', already_applied: false, message: 'Approved' })
     })
-    expect(api.listMembershipRequests).toHaveBeenLastCalledWith('jwt', 'staff', undefined)
+    // The open Staff filter is reloaded (the summary's pending count refreshes too).
+    await waitFor(() => expect(staffReads()).toBe(2))
   })
 
   it('shows saved requests at once when returning to the page, without requesting again', async () => {

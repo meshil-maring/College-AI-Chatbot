@@ -1,4 +1,5 @@
 import type {
+  DepartmentHeadChange,
   DepartmentHeads,
   DirectTransferBody,
   DirectTransferOptions,
@@ -57,6 +58,30 @@ export function assignDepartmentHead(
   return requestJson('PUT', `${ADMIN_BASE}/department-heads/${encodeURIComponent(departmentId)}`, token, {
     faculty_user_id: facultyUserId,
   })
+}
+
+/** Appoint one more Head of Department; the department's other heads stay. */
+export function addDepartmentHead(
+  token: string,
+  departmentId: string,
+  facultyUserId: string,
+): Promise<DepartmentHeadChange> {
+  return requestJson('POST', `${ADMIN_BASE}/department-heads/${encodeURIComponent(departmentId)}/heads`, token, {
+    faculty_user_id: facultyUserId,
+  })
+}
+
+/** End one Head of Department's appointment; the department's other heads stay. */
+export function endDepartmentHead(
+  token: string,
+  departmentId: string,
+  facultyUserId: string,
+): Promise<DepartmentHeadChange> {
+  return requestJson(
+    'DELETE',
+    `${ADMIN_BASE}/department-heads/${encodeURIComponent(departmentId)}/heads/${encodeURIComponent(facultyUserId)}`,
+    token,
+  )
 }
 
 export function getDirectTransferStudents(token: string, signal?: AbortSignal): Promise<DirectTransferStudents> {

@@ -1,6 +1,10 @@
 import type {
   AuditLogEntry,
   MemberDepartmentResult,
+  MemberInvitationCancelled,
+  MemberInvitationCreate,
+  MemberInvitationCreated,
+  MemberInvitationList,
   MemberRoleResult,
   MembershipDecisionResult,
   MembershipLifecycleResult,
@@ -162,5 +166,30 @@ export async function resendMembershipInvitation(accessToken: string, invitation
     `${ADMIN_BASE}/memberships/invitations/${encodeURIComponent(invitationId)}/resend`,
     accessToken,
     {},
+  )
+}
+
+/** Staff/Faculty invitations still waiting for the person (or expired, to invite again). */
+export function listMembershipInvitations(accessToken: string): Promise<MemberInvitationList> {
+  return requestJson<MemberInvitationList>('GET', `${ADMIN_BASE}/memberships/invitations`, accessToken)
+}
+
+/** Invite a new Staff or Faculty member by email into the chosen department. */
+export function createMembershipInvitation(
+  accessToken: string,
+  body: MemberInvitationCreate,
+): Promise<MemberInvitationCreated> {
+  return requestJson<MemberInvitationCreated>('POST', `${ADMIN_BASE}/memberships/invitations`, accessToken, body)
+}
+
+/** Cancel a pending invitation; its link stops working. */
+export function cancelMembershipInvitation(
+  accessToken: string,
+  invitationId: string,
+): Promise<MemberInvitationCancelled> {
+  return requestJson<MemberInvitationCancelled>(
+    'POST',
+    `${ADMIN_BASE}/memberships/invitations/${encodeURIComponent(invitationId)}/cancel`,
+    accessToken,
   )
 }

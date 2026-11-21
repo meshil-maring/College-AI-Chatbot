@@ -180,3 +180,23 @@ def assign_department_head(user, department_id, faculty_user_id):
             client, str(user["user_id"]), tenant, department_id, faculty_user_id
         )
     return _call(write)
+
+
+def add_department_head(user, department_id, faculty_user_id):
+    """Appoint one more Head of Department; current heads keep their appointment."""
+    def write():
+        client, tenant = _department_admin(user, "departments.manage")
+        return repository.add_department_head(
+            client, str(user["user_id"]), tenant, department_id, faculty_user_id
+        )
+    return _call(write)
+
+
+def end_department_head(user, department_id, faculty_user_id):
+    """End one Head of Department's appointment; other heads stay."""
+    def write():
+        client, tenant = _department_admin(user, "departments.manage")
+        return repository.end_department_head(
+            client, str(user["user_id"]), tenant, department_id, faculty_user_id
+        )
+    return _call(write)

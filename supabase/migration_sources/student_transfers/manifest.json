@@ -42,6 +42,14 @@
       "files": [
         "notifications/notify.sql"
       ]
+    },
+    {
+      "version": "20261126000000",
+      "name": "department_co_heads",
+      "files": [
+        "co_heads/heads.sql",
+        "co_heads/security.sql"
+      ]
     }
   ]
 }

@@ -16,7 +16,13 @@ from app.schemas.admin.admin_memberships import (
     MembershipRequestList,
     MembershipRoster,
 )
-from app.services.admin import admin_memberships, member_departments, member_roles
+from app.schemas.admin.member_invitations import (
+    MemberInvitationCancelled,
+    MemberInvitationCreate,
+    MemberInvitationCreated,
+    MemberInvitationList,
+)
+from app.services.admin import admin_memberships, member_departments, member_invitations, member_roles
 from app.api.admin import common
 from app.api.admin.dependencies import create_feature_router, _ADMIN
 
@@ -150,4 +156,32 @@ def resend_membership_invitation(
     peer = request.client.host if request.client else "unknown"
     return admin_memberships.resend(
         current_user, common.required_institution(current_user), invitation_id, peer
+    )
+
+
+# Staff and Faculty invited by the administrator. The institution is always the
+# administrator's own; role, department and name come from the body.
+@router.get("/memberships/invitations", response_model=MemberInvitationList)
+def list_membership_invitations(current_user: dict = Depends(_ADMIN)) -> MemberInvitationList:
+    return member_invitations.list_pending(common.required_institution(current_user))
+
+
+@router.post("/memberships/invitations", response_model=MemberInvitationCreated, status_code=201)
+def create_membership_invitation(
+    body: MemberInvitationCreate,
+    current_user: dict = Depends(_ADMIN),
+) -> MemberInvitationCreated:
+    return member_invitations.create(current_user, common.required_institution(current_user), body)
+
+
+@router.post(
+    "/memberships/invitations/{invitation_id}/cancel",
+    response_model=MemberInvitationCancelled,
+)
+def cancel_membership_invitation(
+    invitation_id: UUID,
+    current_user: dict = Depends(_ADMIN),
+) -> MemberInvitationCancelled:
+    return member_invitations.cancel(
+        current_user, common.required_institution(current_user), invitation_id
     )
