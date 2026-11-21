@@ -153,7 +153,9 @@ export default function StudentEditDialog({
           </select>
           <small>
             {canManagePlacement
-              ? 'Completed semester registrations and batch transfers are protected.'
+              ? student.academic_section_id
+                ? 'Use this only to correct a placement; completed registrations and batch changes are protected. To move a student with a reason, history and a student notification, use Students → New Transfer.'
+                : 'Completed semester registrations and batch transfers are protected.'
               : 'Your account does not have permission to change academic placement.'}
           </small>
           {canManagePlacement && placementLoading && <small role="status">Loading active sections…</small>}
