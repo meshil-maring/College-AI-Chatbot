@@ -1,9 +1,15 @@
 import { useId, useState } from 'react'
-import type { TransferDecisionAction, TransferRequest } from '../../../types/transfer.ts'
-import TransferSummary from '../TransferSummary.tsx'
-import { formatTransferDate, isOpenTransfer, seatSummary } from '../transferLabels.ts'
+import { ChevronDown } from 'lucide-react'
+import type { TransferDecisionAction, TransferRequest, TransferSection } from '../../../types/transfer.ts'
+import TransferSummary, { TransferStatusBadge } from '../TransferSummary.tsx'
+import { TRANSFER_STATUS_LABEL, formatTransferDate, isOpenTransfer, seatSummary } from '../transferLabels.ts'
+import { activityDate } from './transferFilters.ts'
 
 type Pending = Exclude<TransferDecisionAction, 'start_review'> | null
+
+function shortSection(section: TransferSection | null) {
+  return section ? `${section.program_code || section.program_name} ${section.section_name}` : '—'
+}
 
 export default function TransferReviewCard({
   request,
@@ -19,6 +25,7 @@ export default function TransferReviewCard({
   const id = useId()
   const [pending, setPending] = useState<Pending>(null)
   const [comment, setComment] = useState('')
+  const [expanded, setExpanded] = useState(false)
   const trimmed = comment.trim()
   const open = isOpenTransfer(request.status)
   const target = request.to_section
@@ -29,14 +36,38 @@ export default function TransferReviewCard({
   }
   return (
     <li className="ui-panel space-y-3 p-4 sm:p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-semibold text-content">
-          {request.student_name ?? 'Student'}
-          {request.register_number ? <span className="text-muted"> · {request.register_number}</span> : null}
-        </h3>
-        <span className="text-xs text-muted">Submitted {formatTransferDate(request.submitted_at)}</span>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-content">
+            {request.student_name ?? 'Student'}
+            {request.register_number ? <span className="text-muted"> · {request.register_number}</span> : null}
+          </h3>
+          <p className="text-sm text-muted">
+            {shortSection(request.from_section)} → {shortSection(request.to_section)}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <TransferStatusBadge status={request.status} />
+          <span className="text-xs text-muted">
+            {open ? 'Submitted' : TRANSFER_STATUS_LABEL[request.status]} {formatTransferDate(activityDate(request))}
+          </span>
+        </div>
       </div>
-      <TransferSummary request={request} />
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={`${id}-details`}
+        onClick={() => setExpanded((value) => !value)}
+        className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-sm text-content hover:bg-hover"
+      >
+        <ChevronDown size={16} aria-hidden="true" className={expanded ? 'rotate-180' : ''} />
+        {expanded ? 'Hide details' : 'Show details and history'}
+      </button>
+      {expanded && (
+        <div id={`${id}-details`} className="border-t border-line pt-3">
+          <TransferSummary request={request} />
+        </div>
+      )}
       {open && target && (
         <p className={`text-sm ${full ? 'text-danger' : 'text-muted'}`}>
           Target section: {full ? 'full — approval will fail until a seat is free' : seatSummary(target)}

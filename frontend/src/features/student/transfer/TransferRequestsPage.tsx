@@ -81,7 +81,6 @@ function TransferSession({
           ) : (
             <RequestAction data={data} canRequest={canRequest} onStart={() => setShowForm(true)} />
           )}
-          <h2 className="text-section font-semibold text-content">My requests</h2>
           <TransferTimeline
             requests={data.requests}
             canCancel={canRequest}

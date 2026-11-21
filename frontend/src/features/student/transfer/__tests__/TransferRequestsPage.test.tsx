@@ -62,6 +62,8 @@ it('offers cancel instead of a new request while one is open', async () => {
   expect(await screen.findByText(/You have an open request/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Request a transfer' })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Cancel request' }))
+  expect(api.cancelTransfer).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel it' }))
   await waitFor(() => expect(api.cancelTransfer).toHaveBeenCalledExactlyOnceWith('token-1', 'request-1'))
 })
 

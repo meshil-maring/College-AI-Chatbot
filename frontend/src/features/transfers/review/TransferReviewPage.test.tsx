@@ -45,7 +45,7 @@ it('lets an HOD approve with an optional note after confirmation', async () => {
   await waitFor(() =>
     expect(api.decideTransfer).toHaveBeenCalledExactlyOnceWith('token-1', 'request-1', 'approve', null),
   )
-  expect(await screen.findByText(/The student has been moved/)).toBeInTheDocument()
+  expect(await screen.findByText(/Asha Rao was moved to the new section/)).toBeInTheDocument()
 })
 
 it('requires a reason before rejecting', async () => {
@@ -61,7 +61,7 @@ it('requires a reason before rejecting', async () => {
   )
 })
 
-it('blocks approval into a full section and loads all requests on demand', async () => {
+it('blocks approval into a full section from a single load of every request', async () => {
   vi.mocked(api.getTransferReviews).mockResolvedValue(
     reviewsFixture({
       reviewer_role: 'admin',
@@ -71,6 +71,52 @@ it('blocks approval into a full section and loads all requests on demand', async
   render(<TransferReviewPage />)
   expect(await screen.findByText(/full — approval will fail/)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled()
-  fireEvent.click(screen.getByRole('button', { name: 'All requests' }))
-  await waitFor(() => expect(api.getTransferReviews).toHaveBeenCalledWith('token-1', 'all', expect.anything()))
+  expect(api.getTransferReviews).toHaveBeenCalledExactlyOnceWith('token-1', 'all', expect.anything())
+})
+
+it('searches, filters and shows decided transfers under History', async () => {
+  vi.mocked(api.getTransferReviews).mockResolvedValue(
+    reviewsFixture({
+      reviewer_role: 'admin',
+      requests: [
+        requestFixture(),
+        requestFixture({
+          transfer_request_id: 'request-2',
+          student_name: 'Ravi Kumar',
+          register_number: 'REG-002',
+          status: 'approved',
+          initiated_by: 'admin',
+          decided_at: '2026-11-20T12:00:00Z',
+          decided_as: 'admin',
+        }),
+        requestFixture({
+          transfer_request_id: 'request-3',
+          student_name: 'Meera Das',
+          status: 'rejected',
+          decided_at: '2026-11-20T13:00:00Z',
+          decided_as: 'hod',
+          decision_comment: 'Section full',
+        }),
+      ],
+    }),
+  )
+  render(<TransferReviewPage />)
+  const pending = await screen.findByRole('list', { name: 'Pending transfer requests' })
+  expect(pending.querySelectorAll(':scope > li')).toHaveLength(1)
+  fireEvent.click(screen.getByRole('tab', { name: /History \(2\)/ }))
+  const history = screen.getByRole('list', { name: 'Transfer history' })
+  expect(history).toHaveTextContent('Ravi Kumar')
+  expect(history).toHaveTextContent('Meera Das')
+  fireEvent.change(screen.getByLabelText('Started by'), { target: { value: 'admin' } })
+  expect(screen.getByRole('list', { name: 'Transfer history' })).not.toHaveTextContent('Meera Das')
+  fireEvent.change(screen.getByLabelText('Started by'), { target: { value: 'all' } })
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'reg-002' } })
+  expect(screen.getByRole('list', { name: 'Transfer history' })).toHaveTextContent('Ravi Kumar')
+  fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'nobody' } })
+  expect(screen.getByText('No transfer requests match these filters.')).toBeInTheDocument()
+  fireEvent.click(screen.getAllByRole('button', { name: 'Clear filters' })[0])
+  fireEvent.click(screen.getByRole('button', { name: /Rejected/ }))
+  expect(screen.getByRole('list', { name: 'Transfer history' })).not.toHaveTextContent('Ravi Kumar')
+  fireEvent.click(screen.getAllByRole('button', { name: /Show details and history/ })[0])
+  expect(screen.getByText('Section full')).toBeInTheDocument()
 })
