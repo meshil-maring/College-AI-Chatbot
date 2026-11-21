@@ -47,8 +47,12 @@ export function useInvitationAcceptance({ token }: { token: string }) {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
-  const invitationQuery = useApiQuery<AdminInvitationPublicView>(['admin-invitation', token], () =>
-    inspectInvitation(token),
+  // A one-time invitation's state can change at any moment; never reuse an old answer.
+  const invitationQuery = useApiQuery<AdminInvitationPublicView>(
+    ['admin-invitation', token],
+    () => inspectInvitation(token),
+    true,
+    { cache: 'none' },
   )
   const acceptMutation = useApiMutation<
     Awaited<ReturnType<typeof acceptInvitation>>,

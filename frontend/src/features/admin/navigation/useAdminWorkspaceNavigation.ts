@@ -5,7 +5,8 @@ import { allAcademicAreas, type AcademicPage } from '../academic-setup/overview/
 
 export function resolveAdminLocation(search: string) {
   const params = new URLSearchParams(search)
-  const requestedView = params.get('view')
+  // Staff Permissions is now part of Staff and Faculty Management; keep old links working.
+  const requestedView = params.get('view') === 'permissions' ? 'staff-faculty' : params.get('view')
   const requested = params.get('academic')
   const requestedPage =
     requested === 'curriculum-options' || requested === 'program-semesters' ? 'curriculum-subjects' : requested

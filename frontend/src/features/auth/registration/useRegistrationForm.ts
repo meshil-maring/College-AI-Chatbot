@@ -39,7 +39,6 @@ export function useRegistrationForm({ onBackToLogin, registrationType = 'student
   const [registerNumber, setRegisterNumber] = useState('')
   const [universityRollNumber, setUniversityRollNumber] = useState('')
   const [designation, setDesignation] = useState('')
-  const [department, setDepartment] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -124,8 +123,8 @@ export function useRegistrationForm({ onBackToLogin, registrationType = 'student
               university_roll_number: universityRollNumber.trim() || null,
             }
           : {
+              // The administrator chooses the department during approval.
               designation: designation.trim() || null,
-              department: department.trim() || null,
             }),
       }
       const response =
@@ -165,8 +164,6 @@ export function useRegistrationForm({ onBackToLogin, registrationType = 'student
     setUniversityRollNumber,
     designation,
     setDesignation,
-    department,
-    setDepartment,
     institutionCode,
     setInstitutionCode,
     institutionLookupGeneration,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   PlatformInstitutionError,
   createInvitation,
@@ -11,6 +11,8 @@ import type {
   AdminRosterEntry,
 } from '../../../types/platform.ts'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
+import { useApiQuery } from '../../../hooks/useApiQuery.ts'
+import { queryClient } from '../../../lib/queryClient.ts'
 export const inputClass =
   'w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent'
 
@@ -29,10 +31,8 @@ export function useAdminRoster({
   const { accessToken } = useAuth()
   const token = accessToken ?? ''
 
-  const [roster, setRoster] = useState<AdminRoster | null>(null)
-  const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<'invite' | 'cancel' | 'resend' | 'revoke' | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [actionError, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
   const [showInvite, setShowInvite] = useState(false)
@@ -45,23 +45,23 @@ export function useAdminRoster({
   const [confirmRevoke, setConfirmRevoke] = useState<AdminRosterEntry | null>(null)
   const [confirmResend, setConfirmResend] = useState<AdminRosterEntry | null>(null)
 
+  // Cached per institution: reopening an institution shows its admins at once.
+  const rosterKey = ['platform', 'admin-roster', token, institutionId] as const
+  const rosterQuery = useApiQuery<AdminRoster>(rosterKey, () => getAdminRoster(token, institutionId), token !== '')
+  const roster = rosterQuery.data ?? null
+  const loading = token !== '' && rosterQuery.isPending
+  const error =
+    actionError ??
+    (rosterQuery.isError
+      ? rosterQuery.error instanceof PlatformInstitutionError
+        ? rosterQuery.error.message
+        : 'Could not load the admin roster. Please try again.'
+      : null)
+
   const refresh = useCallback(async (): Promise<void> => {
     if (token === '') return
-    setLoading(true)
-    try {
-      setRoster(await getAdminRoster(token, institutionId))
-    } catch (err) {
-      setError(
-        err instanceof PlatformInstitutionError ? err.message : 'Could not load the admin roster. Please try again.',
-      )
-    } finally {
-      setLoading(false)
-    }
+    await queryClient.invalidateQueries({ queryKey: ['platform', 'admin-roster', token, institutionId] })
   }, [token, institutionId])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
 
   const run = useCallback(
     async (action: 'invite' | 'cancel' | 'resend' | 'revoke', operation: () => Promise<string>): Promise<void> => {

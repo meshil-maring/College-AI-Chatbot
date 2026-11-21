@@ -32,34 +32,33 @@ describe('Phase 7.11 demo landing role gateway', () => {
 
   afterEach(() => window.history.replaceState({}, '', '/'))
 
-  it('renders the platform identity and all six entry points', () => {
+  it('renders the platform identity and every entry point', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: 'College AI Platform' })).toBeInTheDocument()
     expect(screen.getByText('DEMO')).toBeInTheDocument()
 
     for (const entry of GATEWAY_ENTRIES) {
-      expect(screen.getAllByRole('link', { name: new RegExp(entry.label) }).map((link) => link.getAttribute('href'))).toContain(entry.href)
+      expect(
+        screen.getAllByRole('link', { name: new RegExp(entry.label) }).map((link) => link.getAttribute('href')),
+      ).toContain(entry.href)
     }
-    expect(screen.getByRole('link', { name: 'Register as Super Admin' })).toHaveAttribute('href', '/register/super-admin')
+    expect(screen.getByRole('link', { name: 'Register as Super Admin' })).toHaveAttribute(
+      'href',
+      '/register/super-admin',
+    )
   })
 
   it('maps each presentation label to the intended role semantic', () => {
     expect(Object.fromEntries(GATEWAY_ENTRIES.map((entry) => [entry.label, entry.role]))).toEqual({
       'Public AI Chat': 'public',
-      'Student Login': 'student',
-      'University Admin Login': 'admin',
-      'Staff Login': 'staff',
-      'Teacher / Faculty Login': 'faculty',
+      'Sign In': 'institution',
       'Super Admin': 'super_admin',
     })
   })
 
   it('resolves every gateway destination through the expected route boundary', () => {
     expect(resolveAppRoute('/u')).toEqual({ kind: 'institution-entry' })
-    expect(resolveAppRoute('/login/student')).toEqual({ kind: 'login', audience: 'student' })
-    expect(resolveAppRoute('/login/admin')).toEqual({ kind: 'login', audience: 'admin' })
-    expect(resolveAppRoute('/login/staff')).toEqual({ kind: 'login', audience: 'staff' })
-    expect(resolveAppRoute('/login/faculty')).toEqual({ kind: 'login', audience: 'faculty' })
+    expect(resolveAppRoute('/login')).toEqual({ kind: 'login' })
     expect(resolveAppRoute('/super-admin')).toEqual({ kind: 'super-admin' })
     expect(resolveAppRoute('/u/git/ai')).toEqual({ kind: 'institution-ai', institutionCode: 'GIT' })
     expect(resolveAppRoute('/public-chat/GIT')).toEqual({ kind: 'public-chat', institutionCode: 'GIT' })
@@ -76,18 +75,12 @@ describe('Phase 7.11 demo landing role gateway', () => {
 
   it('links directly to faculty registration from the home page', () => {
     render(<App />)
-    expect(screen.getByRole('link', { name: 'Register as faculty' })).toHaveAttribute(
-      'href',
-      '/login/faculty?register=1',
-    )
+    expect(screen.getByRole('link', { name: 'Register as faculty' })).toHaveAttribute('href', '/signup/faculty')
   })
 
   it('links directly to staff registration from the home page', () => {
     render(<App />)
-    expect(screen.getByRole('link', { name: 'Register as staff' })).toHaveAttribute(
-      'href',
-      '/login/staff?register=1',
-    )
+    expect(screen.getByRole('link', { name: 'Register as staff' })).toHaveAttribute('href', '/signup/staff')
   })
 
   it('resolves the Phase 7.14 invitation route as a PUBLIC, session-free page', () => {
@@ -105,7 +98,8 @@ describe('Phase 7.11 demo landing role gateway', () => {
 
   it('passes the opaque invitation token through verbatim', () => {
     // base64url is case-SENSITIVE: any normalization would corrupt the token.
-    const mixedCase = 'aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_a'
+    const mixedCase =
+      'aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_aB-_a'
     expect(resolveAppRoute(`/admin-invite/${mixedCase}`)).toEqual({
       kind: 'admin-invitation',
       token: mixedCase,
@@ -136,29 +130,32 @@ describe('Phase 7.11 demo landing role gateway', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('uses the existing shared login screen for role-specific entry routes', () => {
-    window.history.replaceState({}, '', '/login/faculty')
-    render(<App />)
-    expect(screen.getByText('Teacher / faculty access')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
-  })
+  it.each(['/login/student', '/login/admin', '/login/staff', '/login/faculty'])(
+    'moves the retired %s link to the one shared sign-in page',
+    (oldPath) => {
+      window.history.replaceState({}, '', `${oldPath}?institution=GIT`)
+      render(<App />)
+      expect(screen.getByText('Students · Faculty · Staff · Admins')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+      expect(window.location.pathname + window.location.search).toBe('/login?institution=GIT')
+    },
+  )
 
   it('opens the faculty registration form from the home-page registration link', () => {
-    window.history.replaceState({}, '', '/login/faculty?register=1')
+    window.history.replaceState({}, '', '/signup/faculty')
     render(<App />)
     expect(screen.getByText(/Faculty Registration/)).toBeInTheDocument()
     expect(screen.getByLabelText(/Designation/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Department/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Department/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Register Number')).not.toBeInTheDocument()
   })
 
   it('opens the staff registration form from the home-page registration link', () => {
-    window.history.replaceState({}, '', '/login/staff?register=1')
+    window.history.replaceState({}, '', '/signup/staff')
     render(<App />)
     expect(screen.getByText(/Staff Registration/)).toBeInTheDocument()
     expect(screen.getByLabelText(/Designation/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Department/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Department/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Register Number')).not.toBeInTheDocument()
   })
 })
-

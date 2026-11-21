@@ -1,11 +1,21 @@
-import { Bell, BookOpen, Bot, FileText, ShieldCheck, UserCircle, Users, type LucideIcon } from 'lucide-react'
+import {
+  Bell,
+  Bot,
+  BriefcaseBusiness,
+  CircleHelp,
+  FileText,
+  School,
+  UserCircle,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
+import { hasPermission } from '../auth/access/permissions.ts'
 import { useAuth } from '../auth/session/AuthProvider.tsx'
 import AdminFrame from './AdminFrame.tsx'
 import AdminProfile from './profile/AdminProfile.tsx'
 import AcademicWorkspace from './academic-setup/overview/AcademicWorkspace.tsx'
 import StudentManager from './students/StudentManager.tsx'
 import StaffFacultyManager from './staff-faculty/StaffFacultyManager.tsx'
-import StaffPermissionManager from './permissions/StaffPermissionManager.tsx'
 import NoticeManager from './notices/NoticeManager.tsx'
 import LearningResourcesPage from '../learning-resources/LearningResourcesPage.tsx'
 import FaqManager from './faqs/FaqManager.tsx'
@@ -16,24 +26,24 @@ import { useAdminWorkspaceNavigation } from './navigation/useAdminWorkspaceNavig
 
 const descriptions: Partial<Record<AdminView, string>> = {
   profile: 'Your administrator identity and institution details.',
-  'staff-faculty': 'Review membership requests and manage your institution’s staff and faculty accounts.',
+  'staff-faculty':
+    'Approve staff and faculty into a department, keep their departments up to date and give staff extra permissions.',
   approvals: 'Register students, send secure account setup links, and review self-registration requests.',
   notices: 'Create and manage information shared with your institution.',
   documents: 'Manage the documents and knowledge sources used by your institution’s AI.',
   faqs: 'Maintain clear answers to frequently asked questions.',
-  permissions: 'Manage the access granted to staff in your institution.',
 }
 
 const icons: Record<AdminView, LucideIcon> = {
   profile: UserCircle,
-  'academic-setup': BookOpen,
-  'staff-faculty': Users,
+  // One distinct icon per destination so the collapsed rail stays readable.
+  'academic-setup': School,
+  'staff-faculty': BriefcaseBusiness,
   approvals: Users,
   notices: Bell,
   documents: FileText,
-  faqs: BookOpen,
+  faqs: CircleHelp,
   assistant: Bot,
-  permissions: ShieldCheck,
 }
 export default function AdminShell() {
   const { user, role, accessToken, logout } = useAuth()
@@ -82,12 +92,19 @@ export default function AdminShell() {
               onClearSearch={clearAcademicSearch}
             />
           )}
-          {view === 'staff-faculty' && accessToken && <StaffFacultyManager accessToken={accessToken} />}
+          {view === 'staff-faculty' && accessToken && (
+            <StaffFacultyManager
+              accessToken={accessToken}
+              canManagePermissions={
+                user.effective_permissions === undefined ||
+                hasPermission(user.effective_permissions, 'permissions.read')
+              }
+            />
+          )}
           {view === 'approvals' && <StudentManager page={studentPage} />}
           {view === 'notices' && <NoticeManager />}
           {view === 'documents' && <LearningResourcesPage />}
           {view === 'faqs' && <FaqManager />}
-          {view === 'permissions' && accessToken && <StaffPermissionManager accessToken={accessToken} />}
           {view === 'assistant' && (
             <section aria-label="AI Assistant">
               <ChatShell />

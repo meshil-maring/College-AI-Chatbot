@@ -53,6 +53,6 @@ describe('student account setup', () => {
     )
     expect(mocks.complete).toHaveBeenCalledWith('setup-token', 'student-password')
     expect(mocks.login).toHaveBeenCalledWith('student@example.edu', 'student-password')
-    expect(screen.getByRole('link', { name: 'Continue to student login' })).toHaveAttribute('href', '/login/student')
+    expect(screen.getByRole('link', { name: 'Continue to sign in' })).toHaveAttribute('href', '/login')
   })
 })

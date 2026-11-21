@@ -14,7 +14,8 @@ export default function StudentWorkspaceNavigation({
   currentPage,
   onNavigate,
 }: {
-  currentPage: StudentWorkspacePage
+  /** Null when another admin view is open, so no sub-page appears selected. */
+  currentPage: StudentWorkspacePage | null
   onNavigate: (page: StudentWorkspacePage) => void
 }) {
   return (

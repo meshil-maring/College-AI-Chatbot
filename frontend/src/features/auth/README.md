@@ -7,9 +7,9 @@ directly from its workflow, and update mock paths when moving code.
 | Folder          | Responsibility and entry points                                                                      |
 | --------------- | ---------------------------------------------------------------------------------------------------- |
 | `session/`      | `AuthProvider.tsx`, context, browser storage, restore, renewal, cross-tab events, login/logout state |
-| `login/`        | `LoginForm.tsx`, login audience selection, and form validation tests                                 |
+| `login/`        | `LoginForm.tsx` (one sign-in for every role), `loginPaths.ts` with retired-URL redirects, and form validation tests |
 | `password/`     | Password fields, change-password form, recovery, and reset screens                                   |
-| `registration/` | `RegistrationForm.tsx`, university onboarding, institution lookup, fields, and confirmation          |
+| `registration/` | `RegistrationForm.tsx`, per-type `/signup/*` paths (`signupPaths.ts`), university onboarding, institution lookup, fields, and confirmation |
 | `student-invitation/` | Public secure-link student verification and password setup; tokens stay in URL fragments and are submitted only to the backend |
 | `access/`       | Server-resolved permission helpers, the permissions hook, and the generated RBAC reference           |
 

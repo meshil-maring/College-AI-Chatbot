@@ -1,5 +1,5 @@
-import { type LoginAudience } from '../features/auth/login/LoginForm.tsx'
 import { resolveFacultyRoute } from '../features/faculty/workspace/facultyRoutes.ts'
+import type { RegistrationType } from '../types/registration.ts'
 
 export function decodeInstitutionCode(value: string | undefined): string | null {
   if (value === undefined) return null
@@ -19,7 +19,8 @@ export function resolvePublicInstitutionCode(pathname: string): string | null | 
 
 export type AppRoute =
   | { readonly kind: 'home' }
-  | { readonly kind: 'login'; readonly audience: LoginAudience }
+  | { readonly kind: 'login' }
+  | { readonly kind: 'signup'; readonly registrationType: RegistrationType }
   | { readonly kind: 'reset-password' }
   | { readonly kind: 'super-admin' }
   | { readonly kind: 'faculty' }
@@ -96,9 +97,14 @@ export function resolveAppRoute(pathname: string): AppRoute {
   }
 
   if (/^\/super-admin\/?$/.test(pathname)) return { kind: 'super-admin' }
+  const signupMatch = pathname.match(/^\/signup\/(student|faculty|staff)\/?$/)
+  if (signupMatch !== null) {
+    return { kind: 'signup', registrationType: signupMatch[1] as RegistrationType }
+  }
   const loginMatch = pathname.match(/^\/login(?:\/(student|admin|staff|faculty))?\/?$/)
   if (loginMatch !== null) {
-    return { kind: 'login', audience: (loginMatch[1] as LoginAudience | undefined) ?? 'general' }
+    // Retired role paths are redirected to `/login` by the app; all share one form.
+    return { kind: 'login' }
   }
   return { kind: 'not-found' }
 }

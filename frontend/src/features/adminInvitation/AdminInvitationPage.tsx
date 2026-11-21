@@ -14,7 +14,7 @@ import { InvitationAcceptanceForm } from './InvitationAcceptanceForm.tsx'
  * - The password entered here goes straight to the backend, which forwards it
  *   to Supabase Auth. It is never persisted, never logged and never returned.
  * - No session is created. On success the person signs in through the ordinary
- *   admin login page with the password they just chose.
+ *   shared sign-in page with the password they just chose.
  * - Terminal failures (expired / cancelled / already used) say so plainly and
  *   offer no retry, because retrying could never succeed.
  */
@@ -47,10 +47,10 @@ export default function AdminInvitationPage(props: Parameters<typeof useInvitati
               Contact your administrator for help with this invitation.
             </p>
             <a
-              href="/login/admin"
+              href="/login"
               className="mt-6 inline-block rounded-lg bg-raised px-4 py-2 text-sm font-semibold text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
-              Go to admin login
+              Go to sign in
             </a>
           </>
         ) : null}
@@ -65,10 +65,10 @@ export default function AdminInvitationPage(props: Parameters<typeof useInvitati
               You were added as {phase.role === 'admin' ? 'a University Admin' : phase.role} of {phase.institutionName}.
             </p>
             <a
-              href={`/login/${phase.role}`}
+              href="/login"
               className="mt-6 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
-              Continue to {phase.role === 'admin' ? 'admin' : phase.role} login
+              Continue to sign in
             </a>
           </>
         ) : null}

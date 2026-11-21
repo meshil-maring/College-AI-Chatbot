@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
 import { queryClient } from '../../../lib/queryClient.ts'
+import { invalidateStudentDirectory } from '../students/directory/studentDirectoryQueries.ts'
 import type { StructureCatalogue } from '../../../types/academicStructure.ts'
 import type { StudentInvitationInput, StudentOnboardingBulkResult } from '../../../types/admin/students.ts'
 import {
@@ -68,6 +69,8 @@ export function useStudentOnboarding(
 
   function refresh() {
     void queryClient.invalidateQueries({ queryKey: invitationKey(identity) })
+    // New registrations appear in All Students.
+    void invalidateStudentDirectory()
   }
   function changeMode(next: 'single' | 'bulk') {
     setMode(next)

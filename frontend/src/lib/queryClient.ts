@@ -10,8 +10,9 @@ export const queryClient = new QueryClient({
     queries: {
       retry: false,
       staleTime: 0,
-      // Features opt into bounded navigation caching below. Other queries
-      // retain their existing lifetime within the mounted experience.
+      // Page reads use NAVIGATION_QUERY_POLICY below (the default for
+      // useApiQuery and student resources); anything else keeps this
+      // mount-only lifetime.
       gcTime: 0,
       refetchOnWindowFocus: false,
     },

@@ -29,12 +29,12 @@ def test_no_generic_role_editing_interface_exists() -> None:
 
 
 @pytest.mark.parametrize(
-    "field", ["institution_id", "requested_role", "user_id", "role", "organization_id"]
+    "field", ["institution_id", "requested_role", "user_id", "organization_id"]
 )
 def test_membership_decision_body_forbids_role_and_institution_input(
     field: str,
 ) -> None:
-    """A client can never name a role or an institution on a decision request."""
+    """A client can never name an institution, user or raw role column on a decision."""
     with _as(ADMIN_A_USER):
         response = client.post(
             "/api/v1/admin/memberships/requests/"
@@ -43,6 +43,21 @@ def test_membership_decision_body_forbids_role_and_institution_input(
             json={field: "staff"},
         )
     assert response.status_code == 422, field
+
+
+@pytest.mark.parametrize(
+    "role", ["admin", "super_admin", "university_admin", "student", "owner", ""]
+)
+def test_membership_decision_role_choice_is_limited_to_staff_or_faculty(role: str) -> None:
+    """The administrator may approve as Staff or Faculty only; never a privileged role."""
+    with _as(ADMIN_A_USER):
+        response = client.post(
+            "/api/v1/admin/memberships/requests/"
+            "00000000-0000-0000-0000-000000000001/approve",
+            headers=AUTH_HEADERS,
+            json={"role": role},
+        )
+    assert response.status_code == 422, role
 
 
 @pytest.mark.parametrize("principal,label", STAFF_AND_FACULTY_USERS)

@@ -64,6 +64,25 @@ export interface MembershipRosterEntry {
   status: string
   created_at: string | null
   updated_at: string | null
+  /** Department chosen by the administrator; null until one is set. */
+  department_id: string | null
+  department_code: string | null
+  department_name: string | null
+}
+
+export interface MemberRoleResult {
+  user_id: string
+  role: MembershipRole
+  already_applied: boolean
+  message: string
+}
+
+export interface MemberDepartmentResult {
+  user_id: string
+  department_id: string
+  department_code: string
+  department_name: string
+  message: string
 }
 
 export interface MembershipRoster {

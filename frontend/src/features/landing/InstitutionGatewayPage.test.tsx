@@ -11,7 +11,9 @@ vi.mock('../../services/registration/registration.ts', async (importOriginal) =>
 
 vi.mock('../auth/session/AuthProvider.tsx', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useAuth: () => { throw new Error('Public institution routes must not use authentication') },
+  useAuth: () => {
+    throw new Error('Public institution routes must not use authentication')
+  },
 }))
 
 describe('institution presentation gateway', () => {
@@ -35,8 +37,11 @@ describe('institution presentation gateway', () => {
     expect(await screen.findByRole('heading', { name: 'Greenfield Institute of Technology' })).toBeInTheDocument()
     expect(lookupInstitution).toHaveBeenCalledWith('GIT')
     expect(screen.getByRole('link', { name: /Open public AI/ })).toHaveAttribute('href', '/u/git/ai')
-    expect(screen.getByRole('link', { name: /Continue securely/ })).toHaveAttribute('href', '/login/student?institution=GIT')
-    expect(screen.getByRole('link', { name: 'Register as Student' })).toHaveAttribute('href', '/login/student?institution=GIT&register=1')
+    expect(screen.getByRole('link', { name: /Continue securely/ })).toHaveAttribute('href', '/login?institution=GIT')
+    expect(screen.getByRole('link', { name: 'Register as Student' })).toHaveAttribute(
+      'href',
+      '/signup/student?institution=GIT',
+    )
   })
 
   it('shows a safe error instead of backend diagnostics', async () => {
@@ -53,7 +58,11 @@ describe('institution presentation gateway', () => {
     window.history.replaceState({}, '', '/u/git')
     vi.mocked(lookupInstitution)
       .mockRejectedValueOnce(new RegistrationError('unavailable', 503, 'INSTITUTION_LOOKUP_UNAVAILABLE'))
-      .mockResolvedValueOnce({ institution_id: 'institution-1', code: 'GIT', name: 'Greenfield Institute of Technology' })
+      .mockResolvedValueOnce({
+        institution_id: 'institution-1',
+        code: 'GIT',
+        name: 'Greenfield Institute of Technology',
+      })
     render(<App />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Institution verification is temporarily unavailable')
@@ -62,4 +71,3 @@ describe('institution presentation gateway', () => {
     expect(lookupInstitution).toHaveBeenCalledTimes(2)
   })
 })
-

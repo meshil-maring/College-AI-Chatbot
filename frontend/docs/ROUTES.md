@@ -17,8 +17,8 @@ parser. They do not mount an academic screen or call its former endpoints.
 Administrator navigation uses validated URL query parameters and starts on Profile
 when no destination is supplied. Browser Back/Forward and refresh retain the
 selected view. Staff navigation continues to use local view state.
-Administrator views are Profile, Academic Setup, Staff & Faculty, Student registration and approvals, Notices,
-Learning Resources, FAQs, AI Assistant and Staff Permissions. Staff views are Profile,
+Administrator views are Profile, Academic Setup, Staff and Faculty Management, Student registration and approvals,
+Notices, Learning Resources, FAQs and AI Assistant. Old `view=permissions` links open Staff and Faculty Management. Staff views are Profile,
 Student Approvals, Learning Resources and AI Assistant. Student views are Profile, Notices, Learning
 Resources, Semester Registration and AI Assistant after account approval. Server permissions filter
 navigation, and backend endpoints enforce authorization and tenant isolation.
@@ -35,6 +35,33 @@ Important Dates and Overview Timeline. Active tabs stay visible on narrow screen
 links directly to enrollment; students complete Semester Registration in their portal.
 Its existing catalogue workflow is preserved separately.
 See the [Academic Setup design guide](ACADEMIC_SETUP_DESIGN.md).
+
+## Sign-in and signup routes
+
+Everyone signs in at one page, `/login`: students, faculty, staff and university
+admins. The form never asks for a role. The server resolves the account's role
+after sign-in and opens the matching workspace. `?institution=<CODE>` pre-fills
+the institution code for register or roll-number sign-in. Retired
+`/login/student`, `/login/faculty`, `/login/staff` and `/login/admin` links
+redirect to `/login` and keep their other query values. Protected workspace URLs
+such as `/super-admin` and `/faculty/*` show the same sign-in form in place.
+
+Each self-registering account type has its own public signup page:
+
+| URL               | Page                                                  |
+| ----------------- | ----------------------------------------------------- |
+| `/signup/student` | Student registration (register or roll number)        |
+| `/signup/faculty` | Faculty registration (designation and department)     |
+| `/signup/staff`   | Staff registration (designation and department)       |
+
+Each page accepts an optional `?institution=<CODE>` to pre-fill the institution.
+The path only selects the form. The server decides the role and creates a
+pending account that an institution reviewer must approve. A visitor who is
+already signed in is asked to sign out before continuing. Admin and Super Admin
+accounts have no public signup page; they use `/register/university`,
+`/register/super-admin` and invitation links. Old `/login/<type>?register=1`
+links redirect to the matching signup page. Paths are built in
+`features/auth/login/loginPaths.ts` and `features/auth/registration/signupPaths.ts`.
 
 The public `/student-setup#<single-use-token>` route verifies an admin-created
 student invitation and sets the student's password. The token stays in the URL

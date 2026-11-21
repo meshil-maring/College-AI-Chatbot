@@ -14,6 +14,8 @@ export {
 export {
   type AdminIdentity,
   type AuditLogEntry,
+  type MemberDepartmentResult,
+  type MemberRoleResult,
   type MembershipDecisionResult,
   type MembershipLifecycleResult,
   type MembershipRequest,

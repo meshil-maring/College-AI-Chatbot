@@ -92,8 +92,8 @@ export default function UniversityRegistrationPage() {
           </p>
           <p className="mt-2 text-sm text-muted">Your University Admin account is active. You can sign in now.</p>
           <div className="mt-7 flex gap-3">
-            <a href="/login/admin" className="rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-ink">
-              Admin login
+            <a href="/login" className="rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-ink">
+              Sign in
             </a>
             <a href="/" className="rounded-lg border border-control px-4 py-3 text-sm font-semibold text-content">
               Home

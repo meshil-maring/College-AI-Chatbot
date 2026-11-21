@@ -8,6 +8,7 @@ import {
 } from '../../services/admin/adminApi.ts'
 import type { PendingStudent } from '../../types/admin.ts'
 import { queryClient } from '../../lib/queryClient.ts'
+import { invalidateStudentDirectory } from '../admin/students/directory/studentDirectoryQueries.ts'
 
 export interface ApprovalQueueOptions {
   accessToken: string
@@ -73,6 +74,7 @@ export function useStudentApprovalQueue({
       )
       setDismissed((current) => new Set(current).add(student.student_id))
       void queryClient.invalidateQueries({ queryKey: ['admin', 'students', accessToken] })
+      void invalidateStudentDirectory()
       await queue.refetch()
     } catch (error) {
       if (error instanceof AdminApiError && error.status === 409 && error.code === 'STUDENT_NOT_PENDING') {

@@ -1,4 +1,4 @@
-export type GatewayRole = 'public' | 'student' | 'admin' | 'staff' | 'faculty' | 'super_admin'
+export type GatewayRole = 'public' | 'institution' | 'super_admin'
 
 export interface GatewayEntry {
   readonly role: GatewayRole
@@ -24,31 +24,11 @@ export const GATEWAY_ENTRIES: readonly GatewayEntry[] = [
     area: 'public',
   },
   {
-    role: 'student',
-    label: 'Student Login',
-    description: 'Access your profile, institution notices, resources and AI chat.',
-    href: '/login/student',
-    area: 'institution',
-  },
-  {
-    role: 'admin',
-    label: 'University Admin Login',
-    description: 'Manage institution accounts, knowledge and public information.',
-    href: '/login/admin',
-    area: 'institution',
-  },
-  {
-    role: 'staff',
-    label: 'Staff Login',
-    description: 'Review student account requests and access institution AI chat.',
-    href: '/login/staff',
-    area: 'institution',
-  },
-  {
-    role: 'faculty',
-    label: 'Teacher / Faculty Login',
-    description: 'Access your faculty profile and institution AI chat.',
-    href: '/login/faculty',
+    role: 'institution',
+    label: 'Sign In',
+    description:
+      'Students, faculty, staff and university admins sign in here. Your workspace opens automatically for your account.',
+    href: '/login',
     area: 'institution',
   },
   {

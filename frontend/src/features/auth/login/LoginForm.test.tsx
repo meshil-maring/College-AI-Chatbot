@@ -5,7 +5,6 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthError } from '../../../services/auth/auth.ts'
 import * as devAuth from '../../../services/auth/devAuth.ts'
-import * as registration from '../../../services/registration/registration.ts'
 import LoginForm from './LoginForm.tsx'
 describe('LoginForm — password recovery', () => {
   it('always offers the production recovery flow', async () => {
@@ -17,79 +16,38 @@ describe('LoginForm — password recovery', () => {
   })
 })
 
-describe('LoginForm — registration navigation', () => {
-  it('opens student registration directly from a university link and preserves its code', async () => {
-    window.history.replaceState({}, '', '/login/student?institution=QUEST123&register=1')
+describe('LoginForm — one sign-in for every account type', () => {
+  it('does not ask which role the person has', () => {
+    render(<LoginForm />)
+    expect(screen.getByText('Students · Faculty · Staff · Admins')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+  })
+
+  it('links to the signup page of each account type', () => {
+    render(<LoginForm />)
+    expect(screen.getByRole('link', { name: 'Register as Student' })).toHaveAttribute('href', '/signup/student')
+    expect(screen.getByRole('link', { name: 'Register as Faculty' })).toHaveAttribute('href', '/signup/faculty')
+    expect(screen.getByRole('link', { name: 'Register as Staff' })).toHaveAttribute('href', '/signup/staff')
+    expect(screen.queryByLabelText('Full Name')).not.toBeInTheDocument()
+  })
+
+  it('keeps the institution code from a university link in the signup links', () => {
+    window.history.replaceState({}, '', '/login?institution=QUEST123')
     try {
-      render(<LoginForm audience="student" />)
-      expect(screen.getByLabelText('Institution Code')).toHaveValue('QUEST123')
-      expect(screen.getByLabelText('Full Name')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
-      await userEvent.click(screen.getByRole('button', { name: /back to login/i }))
-      expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
+      render(<LoginForm />)
+      expect(screen.getByRole('link', { name: 'Register as Student' })).toHaveAttribute(
+        'href',
+        '/signup/student?institution=QUEST123',
+      )
+      expect(screen.getByRole('link', { name: 'Register as Staff' })).toHaveAttribute(
+        'href',
+        '/signup/staff?institution=QUEST123',
+      )
       expect(authState.login).not.toHaveBeenCalled()
     } finally {
       window.history.replaceState({}, '', '/')
     }
-  })
-
-  it('returns from successful student registration to login without signing in', async () => {
-    const user = userEvent.setup()
-    vi.mocked(registration.lookupInstitution).mockResolvedValue({
-      institution_id: 'fixture-institution',
-      code: 'TEST',
-      name: 'Synthetic College',
-    })
-    vi.mocked(registration.registerStudent).mockResolvedValue({
-      message: 'Registration submitted.',
-      user_id: 'fixture-user',
-      institution_id: 'fixture-institution',
-      institution_code: 'TEST',
-      registration_type: 'student',
-      approval_status: 'pending',
-      student_id: 'fixture-student',
-      request_id: null,
-    })
-    render(<LoginForm audience="student" />)
-    await user.click(screen.getByRole('button', { name: /register as student/i }))
-    await user.type(screen.getByLabelText('Full Name'), 'Synthetic Student')
-    await user.type(screen.getByLabelText('Email'), 'synthetic@example.com')
-    await user.type(screen.getByLabelText('Register Number'), 'TEST1001')
-    await user.type(screen.getByLabelText('Institution Code'), 'TEST')
-    await user.type(screen.getByLabelText('Password'), 'test-password')
-    await user.type(screen.getByLabelText('Confirm Password'), 'test-password')
-    await user.click(screen.getByRole('button', { name: /create account/i }))
-    expect(await screen.findByRole('status')).toHaveTextContent('Awaiting institutional approval')
-    expect(screen.getByText('Synthetic College')).toBeInTheDocument()
-    expect(authState.login).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: 'Back to Login' }))
-    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
-    expect(screen.getByText(/New student accounts need institutional approval/)).toBeInTheDocument()
-    expect(authState.login).not.toHaveBeenCalled()
-  })
-
-  it('shows the registration form when "Register as Student" is clicked', async () => {
-    const user = userEvent.setup()
-    render(<LoginForm />)
-
-    await user.click(await screen.findByRole('button', { name: /register as student/i }))
-    // The registration form is uniquely identifiable by its institution-code
-    // resolution UX, which the login form does not have.
-    expect(await screen.findByLabelText('Institution Code')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^sign in$/i })).not.toBeInTheDocument()
-  })
-
-  it('returns to the login form via "Back to Login" on the registration form', async () => {
-    const user = userEvent.setup()
-    vi.mocked(devAuth.fetchDevAuthStatus).mockResolvedValue({ dev_test_mode: false })
-    render(<LoginForm />)
-
-    await user.click(await screen.findByRole('button', { name: /register as student/i }))
-    await screen.findByLabelText('Institution Code')
-    await user.click(screen.getByRole('button', { name: /back to login/i }))
-
-    expect(await screen.findByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Institution Code')).not.toBeInTheDocument()
   })
 })
 

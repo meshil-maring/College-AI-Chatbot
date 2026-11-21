@@ -1,73 +1,117 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { NAVIGATION_QUERY_POLICY, queryClient } from '../../../lib/queryClient.ts'
 import {
   changeMembershipStatus,
   decideMembershipRequest,
   listMembershipRequests,
   listMembershipRoster,
+  setMemberDepartment,
+  setMemberRole,
 } from '../../../services/admin/adminApi.ts'
+import { getAcademicSetup } from '../../../services/admin/academics.ts'
 import type { MembershipRequest, MembershipRole, MembershipRosterEntry } from '../../../types/admin.ts'
+import { getDepartmentHeads } from '../../../services/students/transferApi.ts'
+import { useDepartmentHeadActions } from './useDepartmentHeadActions.ts'
+import { staffFacultyKeys, type RequestFilter } from './staffFacultyKeys.ts'
 
-type RequestFilter = 'all' | MembershipRole | 'pending'
+function message(cause: unknown, fallback: string) {
+  return cause instanceof Error ? cause.message : fallback
+}
 
 export function useStaffFacultyManagement(accessToken: string) {
   const [requestFilter, setRequestFilter] = useState<RequestFilter>('pending')
-  const [requests, setRequests] = useState<MembershipRequest[]>([])
-  const [members, setMembers] = useState<MembershipRosterEntry[]>([])
-  const [loading, setLoading] = useState(true)
   const [actionKey, setActionKey] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [actionError, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const identity = useRef(accessToken)
   identity.current = accessToken
-  const loadGeneration = useRef(0)
 
-  const load = useCallback(async () => {
-    const generation = ++loadGeneration.current
-    setLoading(true)
-    setError(null)
-    try {
-      const role = requestFilter === 'staff' || requestFilter === 'faculty' ? requestFilter : undefined
-      const status = requestFilter === 'pending' ? 'pending' : undefined
-      const [requestData, rosterData] = await Promise.all([
-        listMembershipRequests(accessToken, role, status),
-        listMembershipRoster(accessToken),
-      ])
-      if (generation !== loadGeneration.current || identity.current !== accessToken) return
-      setRequests(requestData.requests)
-      setMembers(rosterData.members)
-    } catch (cause) {
-      if (generation !== loadGeneration.current || identity.current !== accessToken) return
-      setError(cause instanceof Error ? cause.message : 'Could not load Staff & Faculty management.')
-    } finally {
-      if (generation === loadGeneration.current && identity.current === accessToken) setLoading(false)
-    }
-  }, [accessToken, requestFilter])
-  const latestLoad = useRef(load)
-  latestLoad.current = load
+  // Cached reads: returning to this page shows saved data at once and only
+  // refreshes it in the background when it is over a minute old.
+  const requestsQuery = useQuery(
+    {
+      queryKey: staffFacultyKeys.requests(accessToken, requestFilter),
+      queryFn: () =>
+        listMembershipRequests(
+          accessToken,
+          requestFilter === 'staff' || requestFilter === 'faculty' ? requestFilter : undefined,
+          requestFilter === 'pending' ? 'pending' : undefined,
+        ),
+      ...NAVIGATION_QUERY_POLICY,
+    },
+    queryClient,
+  )
+  const rosterQuery = useQuery(
+    {
+      queryKey: staffFacultyKeys.roster(accessToken),
+      queryFn: () => listMembershipRoster(accessToken),
+      ...NAVIGATION_QUERY_POLICY,
+    },
+    queryClient,
+  )
+  // Active departments from Academic Setup; the administrator assigns one to each member.
+  const departmentsQuery = useQuery(
+    {
+      queryKey: staffFacultyKeys.departments(accessToken),
+      queryFn: async () => {
+        const catalogue = await getAcademicSetup(accessToken)
+        const active = (catalogue.records.departments ?? []).filter((department) => department.is_active)
+        return [...active].sort((a, b) => a.name.localeCompare(b.name))
+      },
+      ...NAVIGATION_QUERY_POLICY,
+    },
+    queryClient,
+  )
+  // Current Heads of Department, so the roster can show and change HOD appointments.
+  const headsQuery = useQuery(
+    {
+      queryKey: staffFacultyKeys.heads(accessToken),
+      queryFn: () => getDepartmentHeads(accessToken),
+      ...NAVIGATION_QUERY_POLICY,
+    },
+    queryClient,
+  )
+
+  const requests = requestsQuery.data?.requests ?? []
+  const members = rosterQuery.data?.members ?? []
+  const departments = departmentsQuery.data ?? []
+  const heads = headsQuery.data?.heads ?? []
+  // Only a first load shows "Loading…"; background refreshes keep the saved lists.
+  const loading = requestsQuery.isPending || rosterQuery.isPending
+  const loadError =
+    requestsQuery.error || rosterQuery.error
+      ? message(requestsQuery.error ?? rosterQuery.error, 'Could not load Staff and Faculty management.')
+      : departmentsQuery.isError
+        ? 'Could not load departments. Add or check them in Academic Setup.'
+        : null
+  const error = actionError ?? loadError
+
+  /** Refresh every read on this page after a change, and wait for it. */
+  const latestLoad = useRef(() => queryClient.invalidateQueries({ queryKey: staffFacultyKeys.all(accessToken) }))
+  latestLoad.current = () => queryClient.invalidateQueries({ queryKey: staffFacultyKeys.all(accessToken) })
 
   useEffect(() => {
-    void load()
-    return () => {
-      ++loadGeneration.current
-    }
-  }, [load])
-
-  useEffect(() => {
-    setRequests([])
-    setMembers([])
     setActionKey(null)
     setSuccess(null)
+    setError(null)
   }, [accessToken])
 
-  async function decide(request: MembershipRequest, decision: 'approve' | 'reject') {
+  async function decide(
+    request: MembershipRequest,
+    decision: 'approve' | 'reject',
+    departmentId?: string,
+    role?: MembershipRole,
+  ) {
     const retry = decision === 'approve' && request.status === 'approved'
     const action = retry ? 'Retry sign-in setup for' : decision === 'approve' ? 'Approve' : 'Reject'
-    if (!window.confirm(`${action} ${request.full_name || request.email}?`)) return
+    const as = decision === 'approve' && !retry && role ? ` as ${role === 'staff' ? 'Staff' : 'Faculty'}` : ''
+    if (!window.confirm(`${action} ${request.full_name || request.email}${as}?`)) return
     setActionKey(`${decision}:${request.request_id}`)
     setError(null)
     setSuccess(null)
     try {
-      const result = await decideMembershipRequest(accessToken, request.request_id, decision)
+      const result = await decideMembershipRequest(accessToken, request.request_id, decision, departmentId, role)
       if (identity.current !== accessToken) return
       setSuccess(retry ? 'Sign-in setup completed. This account can now sign in.' : result.message)
       await latestLoad.current()
@@ -103,5 +147,62 @@ export function useStaffFacultyManagement(accessToken: string) {
     }
   }
 
-  return { requestFilter, setRequestFilter, requests, members, loading, actionKey, error, success, decide, lifecycle }
+  /** Run one roster action: show its result, reload, and ignore late replies from an old session. */
+  async function runAction(key: string, work: () => Promise<string>, failure: string) {
+    setActionKey(key)
+    setError(null)
+    setSuccess(null)
+    try {
+      const message = await work()
+      if (identity.current !== accessToken) return
+      setSuccess(message)
+      await latestLoad.current()
+    } catch (cause) {
+      if (identity.current !== accessToken) return
+      setError(cause instanceof Error ? cause.message : failure)
+    } finally {
+      if (identity.current === accessToken) setActionKey(null)
+    }
+  }
+
+  async function changeRole(member: MembershipRosterEntry, role: MembershipRole) {
+    if (!member.user_id || role === member.role) return
+    const label = role === 'staff' ? 'Staff' : 'Faculty'
+    if (!window.confirm(`Change ${member.name || member.email} to ${label}? They will need to sign in again.`)) return
+    await runAction(
+      `role:${member.user_id}`,
+      async () => (await setMemberRole(accessToken, member.user_id, role)).message,
+      'Could not change the role.',
+    )
+  }
+
+  async function changeDepartment(member: MembershipRosterEntry, departmentId: string) {
+    const department = departments.find((item) => item.department_id === departmentId)
+    if (!member.user_id || !department || departmentId === member.department_id) return
+    if (!window.confirm(`Move ${member.name || member.email} to ${department.name}?`)) return
+    await runAction(
+      `department:${member.user_id}`,
+      async () => (await setMemberDepartment(accessToken, member.user_id, departmentId)).message,
+      'Could not change the department.',
+    )
+  }
+
+  const hod = useDepartmentHeadActions({ accessToken, heads, departments, runAction })
+
+  return {
+    requestFilter,
+    setRequestFilter,
+    requests,
+    members,
+    departments,
+    loading,
+    actionKey,
+    error,
+    success,
+    decide,
+    lifecycle,
+    changeDepartment,
+    changeRole,
+    ...hod,
+  }
 }

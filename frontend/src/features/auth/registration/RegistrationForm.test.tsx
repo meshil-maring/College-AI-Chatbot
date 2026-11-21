@@ -28,7 +28,7 @@ describe('institution lookup races', () => {
   })
 
   it('keeps the institution selected at the gateway', () => {
-    window.history.replaceState(null, '', '/login/student?institution=IMPHAL')
+    window.history.replaceState(null, '', '/signup/student?institution=IMPHAL')
     try {
       render(<RegistrationForm onBackToLogin={vi.fn()} />)
       expect(screen.getByLabelText('Institution Code')).toHaveValue('IMPHAL')
@@ -49,7 +49,8 @@ describe('RegistrationForm — faculty registration', () => {
     await user.type(screen.getByLabelText('Full Name'), 'Ada Lovelace')
     await user.type(screen.getByLabelText('Email'), 'ada@example.com')
     await user.type(screen.getByLabelText(/Designation/), 'Professor')
-    await user.type(screen.getByLabelText(/Department/), 'Computer Science')
+    expect(screen.queryByLabelText(/Department/)).not.toBeInTheDocument()
+    expect(screen.getByText(/administrator assigns your department/)).toBeInTheDocument()
     await user.type(screen.getByLabelText('Institution Code'), 'IMPHAL')
     await user.type(screen.getByLabelText('Password'), 'secret123')
     await user.type(screen.getByLabelText('Confirm Password'), 'secret123')
@@ -64,7 +65,6 @@ describe('RegistrationForm — faculty registration', () => {
       first_name: 'Ada',
       last_name: 'Lovelace',
       designation: 'Professor',
-      department: 'Computer Science',
     })
     expect(await screen.findByText('Your faculty registration has been submitted.')).toBeInTheDocument()
   })
@@ -81,7 +81,7 @@ describe('RegistrationForm — staff registration', () => {
     await user.type(screen.getByLabelText('Full Name'), 'Grace Hopper')
     await user.type(screen.getByLabelText('Email'), 'grace@example.com')
     await user.type(screen.getByLabelText(/Designation/), 'Registrar')
-    await user.type(screen.getByLabelText(/Department/), 'Admissions')
+    expect(screen.queryByLabelText(/Department/)).not.toBeInTheDocument()
     await user.type(screen.getByLabelText('Institution Code'), 'IMPHAL')
     await user.type(screen.getByLabelText('Password'), 'secret123')
     await user.type(screen.getByLabelText('Confirm Password'), 'secret123')
@@ -96,7 +96,6 @@ describe('RegistrationForm — staff registration', () => {
       first_name: 'Grace',
       last_name: 'Hopper',
       designation: 'Registrar',
-      department: 'Admissions',
     })
     expect(await screen.findByText('Your staff registration has been submitted.')).toBeInTheDocument()
   })

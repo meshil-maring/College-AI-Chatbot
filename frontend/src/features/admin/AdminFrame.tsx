@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import type { AdminNavItem, AdminView, StudentWorkspacePage } from './adminNavigation.ts'
+import {
+  ADMIN_EXPANDABLE_VIEWS,
+  type AdminNavItem,
+  type AdminView,
+  type StudentWorkspacePage,
+} from './adminNavigation.ts'
 import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
 import AcademicSidebar from './academic-setup/overview/AcademicSidebar.tsx'
 import AcademicSearch from './academic-setup/overview/AcademicSearch.tsx'
@@ -31,6 +36,7 @@ export default function AdminFrame(props: Props) {
       navigationLabel="Admin navigation"
       identityRole="Administrator"
       collapsible
+      expandableViews={ADMIN_EXPANDABLE_VIEWS}
       workspaceClassName={academic ? 'academic-admin-workspace' : undefined}
       headerContent={
         academic ? <AcademicSearch value={props.academicSearch} onChange={props.onAcademicSearch} /> : undefined
@@ -39,16 +45,17 @@ export default function AdminFrame(props: Props) {
         if (view === 'approvals')
           return (
             <StudentWorkspaceNavigation
-              currentPage={props.studentPage}
+              // A sub-page is only "current" while the Students view is open.
+              currentPage={props.currentView === 'approvals' ? props.studentPage : null}
               onNavigate={(page) => {
                 props.onStudentNavigate(page)
                 close()
               }}
             />
           )
-        return academic && view === 'academic-setup' ? (
+        return view === 'academic-setup' ? (
           <AcademicSidebar
-            page={props.academicPage}
+            page={academic ? props.academicPage : null}
             onNavigate={(page) => {
               props.onAcademicNavigate(page)
               close()

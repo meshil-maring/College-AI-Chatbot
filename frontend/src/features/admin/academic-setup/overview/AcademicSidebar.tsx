@@ -3,7 +3,8 @@ import { useEffect, useRef } from 'react'
 import { getAcademicArea, type AcademicPage } from './academicOverviewModel.ts'
 
 interface Props {
-  page: AcademicPage
+  /** Null when Academic Setup is not the open view, so nothing appears selected. */
+  page: AcademicPage | null
   onNavigate: (page: AcademicPage) => void
 }
 
@@ -28,8 +29,10 @@ export default function AcademicSidebar({ page, onNavigate }: Props) {
     const area = getAcademicArea(destination)
     const Icon = area?.icon ?? GraduationCap
     const active =
-      page === destination ||
-      ((page === 'curriculum-options' || page === 'program-semesters') && destination === 'curriculum-subjects')
+      page === null
+        ? false
+        : page === destination ||
+          ((page === 'curriculum-options' || page === 'program-semesters') && destination === 'curriculum-subjects')
     return (
       <button
         key={destination}
@@ -48,7 +51,9 @@ export default function AcademicSidebar({ page, onNavigate }: Props) {
     <nav ref={ref} aria-label="Academic Setup navigation" className="academic-subnav">
       {item('overview')}
       {groups.map((group) => (
-        <details open key={group.id} className="academic-navigation-section">
+        // Only the section holding the current page opens (see the effect above), which
+        // keeps the rest of the admin sidebar in view.
+        <details key={group.id} className="academic-navigation-section">
           <summary>
             {group.title}
             <ChevronDown aria-hidden="true" />

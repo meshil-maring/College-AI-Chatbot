@@ -87,18 +87,8 @@ describe('role -> navigation isolation', () => {
   it('renders exactly its own navigation model for each role', async () => {
     const { rerender } = render(<App />)
 
-    const adminItems = ADMIN_NAV_ITEMS.map((item) => item.label)
-    const studentsIndex = adminItems.indexOf('Students')
-    expect(await navigationLabels('admin')).toEqual([
-      ...adminItems.slice(0, studentsIndex + 1),
-      'All Students',
-      'Add Student',
-      'Bulk Import',
-      'Registration Requests',
-      'Transfer Requests',
-      'New Transfer',
-      ...adminItems.slice(studentsIndex + 1),
-    ])
+    // Sub-menus stay closed until their own view is open.
+    expect(await navigationLabels('admin')).toEqual(ADMIN_NAV_ITEMS.map((item) => item.label))
 
     setIdentity(STAFF_A, 'staff')
     rerender(<App />)
@@ -108,7 +98,9 @@ describe('role -> navigation isolation', () => {
     rerender(<App />)
     // Transfer Approvals appears only after the server confirms a current HOD appointment.
     expect(await navigationLabels('faculty')).toEqual(
-      FACULTY_NAV_ITEMS.filter((item) => item.key !== 'transfers' && item.key !== 'transfer-new').map((item) => item.label),
+      FACULTY_NAV_ITEMS.filter((item) => item.key !== 'transfers' && item.key !== 'transfer-new').map(
+        (item) => item.label,
+      ),
     )
 
     setIdentity(STUDENT_B, 'student')
@@ -134,7 +126,7 @@ describe('role -> navigation isolation', () => {
     render(<App />)
     const labels = await navigationLabels('staff')
     expect(labels).toContain('Student Approvals')
-    for (const adminOnly of ['Academic Setup', 'Staff Permissions', 'FAQs']) {
+    for (const adminOnly of ['Academic Setup', 'Staff and Faculty Management', 'FAQs']) {
       expect(labels).not.toContain(adminOnly)
     }
   })

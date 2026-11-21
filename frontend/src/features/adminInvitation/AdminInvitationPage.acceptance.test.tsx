@@ -14,7 +14,7 @@ describe('Phase 7.14 invitation acceptance page', () => {
     expect(screen.getByText('This invitation has expired.')).toBeDefined()
     // There is no password form to retry with.
     expect(screen.queryByLabelText('Password')).toBeNull()
-    expect(screen.getByRole('link', { name: /Go to admin login/i })).toBeDefined()
+    expect(screen.getByRole('link', { name: /Go to sign in/i })).toBeDefined()
   })
 
   it('offers no retry for an already-consumed invitation', async () => {
@@ -53,8 +53,8 @@ describe('Phase 7.14 invitation acceptance page', () => {
     })
     expect(await screen.findByText(/Your University Admin account is ready/i)).toBeDefined()
     // The person signs in normally — this flow never mints a session.
-    const link = screen.getByRole('link', { name: /Continue to admin login/i })
-    expect(link.getAttribute('href')).toBe('/login/admin')
+    const link = screen.getByRole('link', { name: /Continue to sign in/i })
+    expect(link.getAttribute('href')).toBe('/login')
   })
 
   it('never sends a role, institution or scope alongside the password', async () => {

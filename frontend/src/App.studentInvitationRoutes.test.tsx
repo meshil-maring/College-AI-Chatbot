@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App.tsx'
 import { ACCESS_TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY } from './features/auth/session/AuthProvider.tsx'
@@ -7,7 +7,7 @@ import { authenticate, fetchCurrentUser, revokeSession } from './services/auth/a
 import type { AuthRole, CurrentUser } from './types/auth.ts'
 
 vi.mock('./services/auth/auth.ts', async (importOriginal) => ({
-  ...await importOriginal<typeof import('./services/auth/auth.ts')>(),
+  ...(await importOriginal<typeof import('./services/auth/auth.ts')>()),
   authenticate: vi.fn(),
   fetchCurrentUser: vi.fn(),
   revokeSession: vi.fn(),
@@ -17,11 +17,15 @@ vi.mock('./features/student/workspace/StudentShell.tsx', () => ({ default: () =>
 vi.mock('./features/faculty/workspace/FacultyShell.tsx', () => ({ default: () => <div>Faculty workspace</div> }))
 vi.mock('./features/staff/StaffShell.tsx', () => ({ default: () => <div>Staff workspace</div> }))
 
-const invitationPath = '/login/student?institution=QUEST123&register=1'
+const invitationPath = '/signup/student?institution=QUEST123'
 const savedToken = 'synthetic-existing-session'
 const currentUser = (role: AuthRole): CurrentUser => ({
-  authenticated: true, user_id: 'test-user', auth_user_id: 'test-auth-user',
-  email: 'test@example.edu', role, institution_id: 'test-institution',
+  authenticated: true,
+  user_id: 'test-user',
+  auth_user_id: 'test-auth-user',
+  email: 'test@example.edu',
+  role,
+  institution_id: 'test-institution',
 })
 
 function saveSession(role: AuthRole) {
@@ -74,16 +78,40 @@ describe('student invitation routes with existing sessions', () => {
     expect(window.location.pathname + window.location.search).toBe(invitationPath)
   })
 
-  it('opens student sign-in after switching accounts when registration was not requested', async () => {
-    window.history.replaceState(null, '', '/login/student?institution=QUEST123')
+  it.each([
+    ['/login/student?institution=QUEST123&register=1', '/signup/student?institution=QUEST123'],
+    ['/login/faculty?register=1', '/signup/faculty'],
+    ['/login/staff/?register=1', '/signup/staff'],
+  ])('moves the old registration link %s to %s', async (oldPath, newPath) => {
+    window.history.replaceState(null, '', oldPath)
+    render(<App />)
+    expect(await screen.findByLabelText('Full Name')).toBeInTheDocument()
+    expect(window.location.pathname + window.location.search).toBe(newPath)
+  })
+
+  it.each([
+    ['faculty', 'Faculty registration'],
+    ['staff', 'Staff registration'],
+  ] as const)('opens %s signup on its own page and asks a signed-in user to switch first', async (type, heading) => {
+    window.history.replaceState(null, '', `/signup/${type}`)
     saveSession('admin')
     const user = userEvent.setup()
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Student sign in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Sign out and continue' }))
-    expect(await screen.findByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
-    expect(screen.getByText('Student access')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Full Name')).not.toBeInTheDocument()
+    expect(await screen.findByText(new RegExp(`${heading}\. Submit your details`, 'i'))).toBeInTheDocument()
+    expect(screen.queryByLabelText('Register Number')).not.toBeInTheDocument()
+    expect(authenticate).not.toHaveBeenCalled()
+  })
+
+  it('sends a retired student sign-in link to the shared sign-in without signing anyone out', async () => {
+    window.history.replaceState(null, '', '/login/student?institution=QUEST123')
+    saveSession('admin')
+    render(<App />)
+    expect(window.location.pathname + window.location.search).toBe('/login?institution=QUEST123')
+    await waitFor(() => expect(fetchCurrentUser).toHaveBeenCalled())
+    expect(screen.queryByRole('button', { name: 'Sign out and continue' })).not.toBeInTheDocument()
+    expect(revokeSession).not.toHaveBeenCalled()
   })
 
   it('opens registration directly for a student without an existing session', async () => {

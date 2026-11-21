@@ -98,13 +98,13 @@ export default function LandingPage() {
                   Register your university
                 </a>
                 <a
-                  href="/login/faculty?register=1"
+                  href="/signup/faculty"
                   className="rounded-lg border border-accent bg-raised px-5 py-3 text-sm font-semibold text-accent hover:border-accent hover:bg-raised focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   Register as faculty
                 </a>
                 <a
-                  href="/login/staff?register=1"
+                  href="/signup/staff"
                   className="rounded-lg border border-warning bg-warning-bg px-5 py-3 text-sm font-semibold text-accent hover:border-accent hover:bg-warning-bg focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   Register as staff

@@ -15,7 +15,7 @@ vi.mock('./features/auth/session/AuthProvider.tsx', () => ({
 }))
 vi.mock('./features/faculty/workspace/FacultyShell.tsx', () => ({ default: () => <div>Faculty workspace</div> }))
 vi.mock('./features/auth/login/LoginForm.tsx', () => ({
-  default: ({ audience }: { audience: string }) => <div>{audience} sign in</div>,
+  default: () => <div>shared sign in</div>,
 }))
 
 beforeEach(() => {
@@ -43,7 +43,7 @@ describe('Faculty URL routes', () => {
   it('preserves the requested URL while showing faculty sign-in', () => {
     auth.status = 'unauthenticated'
     render(<App />)
-    expect(screen.getByText('faculty sign in')).toBeInTheDocument()
+    expect(screen.getByText('shared sign in')).toBeInTheDocument()
     expect(window.location.pathname + window.location.search).toBe('/faculty/profile')
     expect(screen.queryByText('Faculty workspace')).not.toBeInTheDocument()
   })

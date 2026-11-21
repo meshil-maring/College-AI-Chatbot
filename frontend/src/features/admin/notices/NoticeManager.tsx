@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
+import { queryClient } from '../../../lib/queryClient.ts'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import { deleteNotice, listNotices, updateNotice } from '../../../services/admin/adminApi.ts'
 import type { Notice } from '../../../types/admin.ts'
@@ -13,19 +14,27 @@ import NoticeForm from './NoticeForm.tsx'
 
 export default function NoticeManager() {
   const { accessToken } = useAuth()
-  const [notices, setNotices] = useState<Notice[]>([])
   const noticesQuery = useApiQuery<Notice[]>(
     ['admin', 'notices', accessToken],
     () => listNotices(accessToken as string),
     accessToken !== null,
   )
-  const [isLoading, setIsLoading] = useState(true)
+  // Start from cached notices when returning to the page, without a loading flash.
+  const [notices, setNotices] = useState<Notice[]>(() => noticesQuery.data ?? [])
+  const [isLoading, setIsLoading] = useState(() => noticesQuery.data === undefined)
+  // Saves update the cached list, which the effect below copies into the page,
+  // so returning to this page never shows an outdated list.
+  const updateNotices = useCallback(
+    (change: (prev: Notice[]) => Notice[]) =>
+      queryClient.setQueryData<Notice[]>(['admin', 'notices', accessToken], (prev) => change(prev ?? [])),
+    [accessToken],
+  )
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Notice | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
   useEffect(() => {
-    if (noticesQuery.isFetching) setIsLoading(true)
+    if (noticesQuery.isFetching && noticesQuery.data === undefined) setIsLoading(true)
     if (noticesQuery.data) {
       setNotices(noticesQuery.data)
       setIsLoading(false)
@@ -42,7 +51,7 @@ export default function NoticeManager() {
       if (!window.confirm('Delete this notice?')) return
       try {
         await deleteNotice(accessToken, id)
-        setNotices((prev) => prev.filter((n) => n.notice_id !== id))
+        updateNotices((prev) => prev.filter((n) => n.notice_id !== id))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to delete notice.')
       }
@@ -55,7 +64,7 @@ export default function NoticeManager() {
       if (accessToken === null) return
       try {
         const updated = await updateNotice(accessToken, notice.notice_id, { is_active: !notice.is_active })
-        setNotices((prev) => prev.map((n) => (n.notice_id === updated.notice_id ? updated : n)))
+        updateNotices((prev) => prev.map((n) => (n.notice_id === updated.notice_id ? updated : n)))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update notice.')
       }
@@ -90,7 +99,7 @@ export default function NoticeManager() {
           initial={editing}
           onClose={() => setIsFormOpen(false)}
           onSaved={(notice) => {
-            setNotices((prev) => {
+            updateNotices((prev) => {
               const exists = prev.some((n) => n.notice_id === notice.notice_id)
               return exists ? prev.map((n) => (n.notice_id === notice.notice_id ? notice : n)) : [...prev, notice]
             })

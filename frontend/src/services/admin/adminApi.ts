@@ -25,6 +25,8 @@ export {
   listMembershipRequests,
   listMembershipRoster,
   resendMembershipInvitation,
+  setMemberDepartment,
+  setMemberRole,
   type StaffPermissionEntry,
   type StaffPermissionState,
 } from './memberships.ts'

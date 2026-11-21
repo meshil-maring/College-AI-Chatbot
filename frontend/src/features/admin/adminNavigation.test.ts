@@ -4,17 +4,27 @@ import { ADMIN_NAV_ITEMS, ADMIN_VIEW_HEADINGS, buildAdminNavigation } from './ad
 describe('administrator navigation with approved Academic Setup', () => {
   it('contains account, knowledge and communication views', () => {
     expect(ADMIN_NAV_ITEMS.map((item) => item.key)).toEqual([
-      'profile',
       'academic-setup',
-      'staff-faculty',
       'approvals',
+      'staff-faculty',
       'notices',
       'documents',
       'faqs',
       'assistant',
-      'permissions',
+      'profile',
+    ])
+    expect([...new Set(ADMIN_NAV_ITEMS.map((item) => item.group))]).toEqual([
+      'Academics',
+      'People',
+      'Communication',
+      'Assistant',
+      'Account',
     ])
     for (const item of ADMIN_NAV_ITEMS) expect(ADMIN_VIEW_HEADINGS[item.key]).toBeTruthy()
+  })
+  it('names the merged page Staff and Faculty Management with no separate permissions page', () => {
+    expect(ADMIN_NAV_ITEMS.find((item) => item.key === 'staff-faculty')?.label).toBe('Staff and Faculty Management')
+    expect(ADMIN_NAV_ITEMS.some((item) => item.label === 'Staff Permissions')).toBe(false)
   })
   it.each(['student', 'staff', 'faculty', 'super_admin', 'unknown', null])('rejects role %s', (role) => {
     expect(buildAdminNavigation(role)).toEqual([])
@@ -28,9 +38,9 @@ describe('administrator navigation with approved Academic Setup', () => {
       buildAdminNavigation('admin', ['students.read', 'students.approve', 'students.reject']).map((item) => item.key),
     ).toEqual(['academic-setup', 'approvals'])
     expect(buildAdminNavigation('admin', ['ai.chat', 'profile.own.read']).map((item) => item.key)).toEqual([
-      'profile',
       'academic-setup',
       'assistant',
+      'profile',
     ])
     expect(buildAdminNavigation('admin', []).map((item) => item.key)).toEqual(['academic-setup'])
   })

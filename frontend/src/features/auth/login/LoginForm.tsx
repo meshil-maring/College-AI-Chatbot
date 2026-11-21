@@ -23,22 +23,24 @@
 import { useState } from 'react'
 import { useAuth } from '../session/AuthProvider.tsx'
 import ForgotPasswordForm from '../password/ForgotPasswordForm.tsx'
-import RegistrationForm from '../registration/RegistrationForm.tsx'
+import { signupPath } from '../registration/signupPaths.ts'
 import PasswordField from '../password/PasswordField.tsx'
 import { isEmailAddress } from '../../../services/auth/auth.ts'
+import type { RegistrationType } from '../../../types/registration.ts'
 
-export type LoginAudience = 'general' | 'student' | 'admin' | 'staff' | 'faculty' | 'super_admin'
+// Each account type registers on its own page; the shared sign-in only links there.
+const SIGNUP_LINKS: readonly { type: RegistrationType; label: string }[] = [
+  { type: 'student', label: 'Student' },
+  { type: 'faculty', label: 'Faculty' },
+  { type: 'staff', label: 'Staff' },
+]
 
-const AUDIENCE_LABELS: Record<LoginAudience, string> = {
-  general: 'Secure platform access',
-  student: 'Student access',
-  admin: 'University administrator access',
-  staff: 'Staff access',
-  faculty: 'Teacher / faculty access',
-  super_admin: 'Platform administrator access',
-}
-
-export default function LoginForm({ audience = 'general' }: { audience?: LoginAudience }) {
+/**
+ * The one sign-in form for every account type. It never asks which role the
+ * person has: the server resolves the role after sign-in and the app opens
+ * the matching workspace.
+ */
+export default function LoginForm() {
   const { status, error, login } = useAuth()
   const [identifier, setIdentifier] = useState('')
   const [institutionCode, setInstitutionCode] = useState(
@@ -47,11 +49,6 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   const [password, setPassword] = useState('')
   const [fieldError, setFieldError] = useState<string | null>(null)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [showRegistration, setShowRegistration] = useState(
-    () =>
-      (audience === 'student' || audience === 'faculty' || audience === 'staff') &&
-      new URLSearchParams(window.location.search).get('register') === '1',
-  )
 
   // An academic identifier (register number / university roll number) is
   // institution-scoped by the backend contract, so the institution code is
@@ -60,7 +57,6 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
   const requiresInstitutionCode = identifier.trim() !== '' && !isEmailAddress(identifier.trim())
 
   const busy = status === 'authenticating'
-  const showStudentApprovalHelp = audience === 'general' || audience === 'student'
 
   /**
    * Client-side validation is UX only (mirrors the backend rules: identifier
@@ -83,15 +79,6 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
     return null
   }
 
-  if (showRegistration) {
-    return (
-      <RegistrationForm
-        onBackToLogin={() => setShowRegistration(false)}
-        registrationType={audience === 'faculty' ? 'faculty' : audience === 'staff' ? 'staff' : 'student'}
-      />
-    )
-  }
-
   if (showForgotPassword) {
     return <ForgotPasswordForm onBackToLogin={() => setShowForgotPassword(false)} />
   }
@@ -110,15 +97,17 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
           >
             Back to platform gateway
           </a>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{AUDIENCE_LABELS[audience]}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+            Students · Faculty · Staff · Admins
+          </p>
           <h1 className="font-bold text-content tracking-tight text-page">College AI Chatbot</h1>
-          <p className="mt-2 text-sm text-muted leading-relaxed">Sign in with your account details to continue.</p>
-          {showStudentApprovalHelp && (
-            <p id="student-approval-help" className="mt-3 text-sm text-muted leading-relaxed">
-              New student accounts need institutional approval before signing in. For questions about your registration
-              or account access, contact your institution administrator.
-            </p>
-          )}
+          <p className="mt-2 text-sm text-muted leading-relaxed">
+            Sign in with your account details. Your workspace opens automatically for your account type.
+          </p>
+          <p id="account-approval-help" className="mt-3 text-sm text-muted leading-relaxed">
+            New student, faculty and staff accounts need institutional approval before signing in. For questions about
+            your registration or account access, contact your institution administrator.
+          </p>
 
           {displayedError !== null && (
             <div
@@ -152,7 +141,7 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
                 name="identifier"
                 required
                 autoComplete="username"
-                aria-describedby={showStudentApprovalHelp ? 'student-approval-help' : undefined}
+                aria-describedby="account-approval-help"
                 disabled={busy}
                 placeholder="student@college.edu or REG2026001"
                 className="rounded-lg border border-control bg-surface px-3 py-2 text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
@@ -220,19 +209,20 @@ export default function LoginForm({ audience = 'general' }: { audience?: LoginAu
           </form>
 
           <p className="mt-6 text-sm text-muted">
-            Don't have an account?{' '}
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => setShowRegistration(true)}
-              className="font-medium text-accent underline hover:text-accent-hover"
-            >
-              {audience === 'faculty'
-                ? 'Register as Faculty'
-                : audience === 'staff'
-                  ? 'Register as Staff'
-                  : 'Register as Student'}
-            </button>
+            Don't have an account? Register as{' '}
+            {SIGNUP_LINKS.map(({ type, label }, index) => (
+              <span key={type}>
+                {index > 0 ? (index === SIGNUP_LINKS.length - 1 ? ' or ' : ', ') : null}
+                <a
+                  href={signupPath(type, institutionCode)}
+                  aria-label={`Register as ${label}`}
+                  aria-disabled={busy || undefined}
+                  className="font-medium text-accent underline hover:text-accent-hover"
+                >
+                  {label}
+                </a>
+              </span>
+            ))}
           </p>
         </div>
       </main>

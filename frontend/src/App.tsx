@@ -1,4 +1,5 @@
-import { AuthGate, FacultyGate, RootGate, SuperAdminGate } from './app/RouteGates.tsx'
+import { AuthGate, FacultyGate, RootGate, SignupGate, SuperAdminGate } from './app/RouteGates.tsx'
+import { legacyAuthRedirect } from './features/auth/login/loginPaths.ts'
 import { resolveAppRoute } from './app/routes.ts'
 import AdminInvitationPage from './features/adminInvitation/AdminInvitationPage.tsx'
 import { AuthProvider } from './features/auth/session/AuthProvider.tsx'
@@ -29,8 +30,11 @@ function NotFoundPage() {
 }
 
 function App() {
-  const { pathname } = useBrowserLocation()
-  const route = resolveAppRoute(pathname)
+  const location = useBrowserLocation()
+  // Retired `/login/<type>` links now open `/login`, or `/signup/<type>` for `?register=1`.
+  const redirect = legacyAuthRedirect(location.pathname, location.search)
+  if (redirect !== null) window.history.replaceState(null, '', redirect)
+  const route = resolveAppRoute(redirect?.split('?')[0] ?? location.pathname)
   if (route.kind === 'public-chat') {
     return route.institutionCode === null ? (
       <PublicChatRouteError />
@@ -49,11 +53,12 @@ function App() {
         <AdminInvitationPage token={route.token} />
       </AuthProvider>
     )
-  if (route.kind === 'student-setup') return (
-    <AuthProvider>
-      <StudentSetupPage />
-    </AuthProvider>
-  )
+  if (route.kind === 'student-setup')
+    return (
+      <AuthProvider>
+        <StudentSetupPage />
+      </AuthProvider>
+    )
   if (route.kind === 'super-admin-register') return <SuperAdminRegisterEntryPage />
   if (route.kind === 'super-admin-invitation') {
     return <SuperAdminRegistrationPage token={route.token} />
@@ -67,7 +72,8 @@ function App() {
   return (
     <AuthProvider>
       {route.kind === 'home' ? <RootGate /> : null}
-      {route.kind === 'login' ? <AuthGate audience={route.audience} /> : null}
+      {route.kind === 'login' ? <AuthGate /> : null}
+      {route.kind === 'signup' ? <SignupGate registrationType={route.registrationType} /> : null}
       {route.kind === 'super-admin' ? <SuperAdminGate /> : null}
       {route.kind === 'faculty' ? <FacultyGate /> : null}
     </AuthProvider>

@@ -4,6 +4,7 @@ import { NAVIGATION_QUERY_POLICY, queryClient } from '../../../lib/queryClient.t
 import { decideTransfer, getTransferReviews } from '../../../services/students/transferApi.ts'
 import { AdminApiError } from '../../../services/admin/http.ts'
 import type { TransferDecisionAction } from '../../../types/transfer.ts'
+import { invalidateStudentDirectory } from '../../admin/students/directory/studentDirectoryQueries.ts'
 
 export type ReviewFilter = 'open' | 'all'
 
@@ -51,7 +52,10 @@ export function useTransferReviews(identity: string, institutionId: string, toke
     }
   }, [])
   const refresh = async () => {
-    if (alive.current) await queryClient.invalidateQueries({ queryKey: transferReviewsKey(identity) })
+    if (!alive.current) return
+    await queryClient.invalidateQueries({ queryKey: transferReviewsKey(identity) })
+    // An approved transfer changes the student's placement shown in All Students.
+    await invalidateStudentDirectory()
   }
   const decide = useMutation(
     {

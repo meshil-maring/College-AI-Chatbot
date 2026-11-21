@@ -1,10 +1,13 @@
 import { useAuth } from '../features/auth/session/AuthProvider.tsx'
-import LoginForm, { type LoginAudience } from '../features/auth/login/LoginForm.tsx'
+import LoginForm from '../features/auth/login/LoginForm.tsx'
+import { loginPath } from '../features/auth/login/loginPaths.ts'
 import LandingPage from '../features/landing/LandingPage.tsx'
 import SuperAdminShell from '../features/superAdmin/SuperAdminShell.tsx'
 import { AccountSecurityPanel } from './AccountSecurityPanel.tsx'
 import { AuthenticatedExperience, UnsupportedRoleShell } from './AuthenticatedExperience.tsx'
-import { StudentAccountSwitch } from './StudentAccountSwitch.tsx'
+import RegistrationForm from '../features/auth/registration/RegistrationForm.tsx'
+import type { RegistrationType } from '../types/registration.ts'
+import { AccountSwitch } from './AccountSwitch.tsx'
 export function RestoringShell() {
   return (
     <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
@@ -18,20 +21,39 @@ export function RestoringShell() {
   )
 }
 
-export function AuthGate({ audience = 'general' }: { audience?: LoginAudience }) {
-  const { status, role } = useAuth()
+/**
+ * The one sign-in page for every account type. Once signed in, the server's
+ * resolved role decides which workspace `/` opens.
+ */
+export function AuthGate() {
+  const { status } = useAuth()
   if (status === 'restoring') {
     return <RestoringShell />
   }
   if (status === 'authenticated') {
-    if (audience === 'student') {
-      const registering = new URLSearchParams(window.location.search).get('register') === '1'
-      if (role !== 'student' || registering) return <StudentAccountSwitch registering={registering} />
-    }
     window.location.replace('/')
     return <RestoringShell />
   }
-  return <LoginForm audience={audience} />
+  return <LoginForm />
+}
+
+/**
+ * Public registration for one account type (`/signup/student|faculty|staff`).
+ * A signed-in visitor must choose to sign out first, so an existing session is
+ * never mixed with a new registration. The type only selects the form; the
+ * server decides the role and keeps the new account pending until approved.
+ */
+export function SignupGate({ registrationType }: { registrationType: RegistrationType }) {
+  const { status } = useAuth()
+  if (status === 'restoring') return <RestoringShell />
+  if (status === 'authenticated') return <AccountSwitch audience={registrationType} />
+  const institutionCode = new URLSearchParams(window.location.search).get('institution')
+  return (
+    <RegistrationForm
+      registrationType={registrationType}
+      onBackToLogin={() => window.location.assign(loginPath(institutionCode))}
+    />
+  )
 }
 
 export function RootGate() {
@@ -54,7 +76,7 @@ export function RootGate() {
 export function SuperAdminGate() {
   const { status, role, logout } = useAuth()
   if (status === 'restoring') return <RestoringShell />
-  if (status !== 'authenticated') return <LoginForm audience="super_admin" />
+  if (status !== 'authenticated') return <LoginForm />
   if (role === 'super_admin') {
     return (
       <>
@@ -69,7 +91,7 @@ export function SuperAdminGate() {
 export function FacultyGate() {
   const { status, role, logout } = useAuth()
   if (status === 'restoring') return <RestoringShell />
-  if (status !== 'authenticated') return <LoginForm audience="faculty" />
+  if (status !== 'authenticated') return <LoginForm />
   if (role !== 'faculty')
     return (
       <UnsupportedRoleShell

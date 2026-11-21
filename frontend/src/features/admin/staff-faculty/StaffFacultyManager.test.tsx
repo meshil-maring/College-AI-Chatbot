@@ -1,32 +1,18 @@
+import './__tests__/StaffFacultyManager.support.ts'
+import { CSE, member, request } from './__tests__/StaffFacultyManager.support.ts'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import StaffFacultyManager from './StaffFacultyManager.tsx'
 import * as api from '../../../services/admin/adminApi.ts'
 
-vi.mock('../../../services/admin/adminApi.ts', () => ({
-  listMembershipRequests: vi.fn(),
-  listMembershipRoster: vi.fn(),
-  decideMembershipRequest: vi.fn(),
-  changeMembershipStatus: vi.fn(),
-}))
-
-const request = {
-  request_id: '10000000-0000-0000-0000-000000000001',
-  full_name: 'Ada Faculty',
-  email: 'ada@example.test',
-  requested_role: 'faculty' as const,
-  status: 'pending' as const,
-  created_at: '2026-10-04T00:00:00Z',
+/** Pending requests can only be approved after the administrator picks a department. */
+async function chooseDepartment() {
+  fireEvent.change(await screen.findByRole('combobox', { name: 'Department for Ada Faculty' }), {
+    target: { value: CSE.department_id },
+  })
 }
 
 describe('StaffFacultyManager', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    vi.mocked(api.listMembershipRequests).mockResolvedValue({ requests: [request], total: 1 })
-    vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [], total: 0 })
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
-  })
-
   it('shows tenant-safe requests and the empty roster state', async () => {
     render(<StaffFacultyManager accessToken="jwt" />)
     expect(await screen.findByText('Ada Faculty')).toBeDefined()
@@ -42,25 +28,24 @@ describe('StaffFacultyManager', () => {
       message: 'Membership request approved. The faculty account can now sign in.',
     })
     render(<StaffFacultyManager accessToken="jwt" />)
+    await chooseDepartment()
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
-    await waitFor(() => expect(api.decideMembershipRequest).toHaveBeenCalledWith('jwt', request.request_id, 'approve'))
+    await waitFor(() =>
+      expect(api.decideMembershipRequest).toHaveBeenCalledWith(
+        'jwt',
+        request.request_id,
+        'approve',
+        CSE.department_id,
+        'faculty',
+      ),
+    )
     expect(await screen.findByText('Membership request approved. The faculty account can now sign in.')).toBeDefined()
     expect(vi.mocked(api.listMembershipRequests).mock.calls.length).toBeGreaterThan(1)
   })
 
   it('does not show pending invitations in the roster', async () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({
-      members: [
-        {
-          user_id: '20000000-0000-0000-0000-000000000001',
-          name: '',
-          email: 'xy faculty@example.test',
-          role: 'faculty',
-          status: 'active',
-          created_at: null,
-          updated_at: null,
-        },
-      ],
+      members: [member({ name: '', email: 'xy faculty@example.test', role: 'faculty' })],
       total: 1,
     })
     render(<StaffFacultyManager accessToken="jwt" />)
@@ -83,7 +68,15 @@ describe('StaffFacultyManager', () => {
     })
     render(<StaffFacultyManager accessToken="jwt" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Retry sign-in setup' }))
-    await waitFor(() => expect(api.decideMembershipRequest).toHaveBeenCalledWith('jwt', request.request_id, 'approve'))
+    await waitFor(() =>
+      expect(api.decideMembershipRequest).toHaveBeenCalledWith(
+        'jwt',
+        request.request_id,
+        'approve',
+        undefined,
+        undefined,
+      ),
+    )
     expect(await screen.findByText('Sign-in setup completed. This account can now sign in.')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Reject' })).toBeNull()
   })
@@ -94,6 +87,7 @@ describe('StaffFacultyManager', () => {
       .mockResolvedValueOnce({ requests: [request], total: 1 })
       .mockResolvedValue({ requests: [{ ...request, status: 'approved' }], total: 1 })
     render(<StaffFacultyManager accessToken="jwt" />)
+    await chooseDepartment()
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Sign-in confirmation failed.')
     expect(await screen.findByRole('button', { name: 'Retry sign-in setup' })).toBeEnabled()
@@ -118,6 +112,7 @@ describe('StaffFacultyManager', () => {
       }),
     )
     const { rerender } = render(<StaffFacultyManager accessToken="old-session" />)
+    await chooseDepartment()
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
     vi.mocked(api.listMembershipRequests).mockResolvedValue({ requests: [], total: 0 })
     rerender(<StaffFacultyManager accessToken="new-session" />)
@@ -136,11 +131,44 @@ describe('StaffFacultyManager', () => {
       }),
     )
     render(<StaffFacultyManager accessToken="jwt" />)
+    await chooseDepartment()
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
     fireEvent.click(screen.getByRole('tab', { name: 'Staff' }))
     await act(async () => {
       finish({ request_id: request.request_id, status: 'approved', already_applied: false, message: 'Approved' })
     })
     expect(api.listMembershipRequests).toHaveBeenLastCalledWith('jwt', 'staff', undefined)
+  })
+
+  it('shows saved requests at once when returning to the page, without requesting again', async () => {
+    const first = render(<StaffFacultyManager accessToken="jwt" />)
+    expect(await screen.findByText('Ada Faculty')).toBeDefined()
+    await screen.findByText('No staff or faculty are on the roster yet.')
+    await waitFor(() => expect(api.getDelegableStaffPermissions).toHaveBeenCalled())
+    const calls = [api.listMembershipRequests, api.listMembershipRoster, api.getDelegableStaffPermissions].map(
+      (read) => vi.mocked(read).mock.calls.length,
+    )
+    first.unmount()
+    render(<StaffFacultyManager accessToken="jwt" />)
+    expect(screen.getByText('Ada Faculty')).toBeDefined()
+    expect(screen.queryByText('Loading membership requests…')).toBeNull()
+    // Returning to the page makes no new requests while the data is fresh.
+    expect(
+      [api.listMembershipRequests, api.listMembershipRoster, api.getDelegableStaffPermissions].map(
+        (read) => vi.mocked(read).mock.calls.length,
+      ),
+    ).toEqual(calls)
+  })
+
+  it('never reuses saved data for a different session', async () => {
+    const first = render(<StaffFacultyManager accessToken="jwt" />)
+    expect(await screen.findByText('Ada Faculty')).toBeDefined()
+    first.unmount()
+    vi.mocked(api.listMembershipRequests).mockResolvedValue({ requests: [], total: 0 })
+    render(<StaffFacultyManager accessToken="other-session" />)
+    expect(screen.queryByText('Ada Faculty')).toBeNull()
+    await waitFor(() =>
+      expect(api.listMembershipRequests).toHaveBeenLastCalledWith('other-session', undefined, 'pending'),
+    )
   })
 })

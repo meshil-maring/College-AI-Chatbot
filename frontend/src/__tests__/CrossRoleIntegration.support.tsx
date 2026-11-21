@@ -132,8 +132,10 @@ export function setIdentity(user: CurrentUser | null, role: string | null, statu
 
 export async function navigationLabels(role: string): Promise<string[]> {
   const nav = await screen.findByRole('navigation', { name: NAV_LANDMARKS[role] })
+  // Sub-menu show/hide chevrons are controls, not destinations.
   return within(nav)
     .getAllByRole('button')
+    .filter((button) => !button.classList.contains('workspace-nav-toggle'))
     .map((button) => button.textContent ?? '')
 }
 

@@ -1,7 +1,8 @@
 # Administration workspace
 
-`AdminShell.tsx` composes account profile, staff/faculty account management,
-student account approvals, notices, shared Learning Resources, FAQs, chat and staff permissions.
+`AdminShell.tsx` composes account profile, Staff and Faculty Management (requests,
+departments, roster and staff permissions on one page), student account approvals,
+notices, shared Learning Resources, FAQs and chat.
 `adminNavigation.ts` filters operational views using server-resolved grants.
 `navigation/useAdminWorkspaceNavigation.ts` keeps views, academic destinations
 and search in validated URL parameters for refresh and Back/Forward navigation.
@@ -15,7 +16,15 @@ academic grants; catalogue requests and record actions remain gated. Backend
 endpoints remain authoritative for authorization and tenant isolation.
 
 `staff-faculty/useStaffFacultyManagement.ts` owns request loading and account
-actions. Approved requests expose **Retry sign-in setup** through the existing
+actions. The administrator chooses each new member's department when approving
+(`MembershipRequests.tsx`) and can change it from `MembershipRosterTable.tsx`;
+applicants no longer pick a department. The administrator also confirms Staff or
+Faculty on approval and can switch it from the roster; the server refuses a switch
+while the member is a current Head of Department or holds extra Staff permissions.
+The roster also shows an HOD badge and offers Make HOD / Remove HOD for active
+Faculty (`useDepartmentHeadActions.ts`), using the same department-head endpoint
+as Academic Setup; HOD is an appointment on top of Faculty, not a separate role. The roster's Permissions button opens that
+Staff member in the embedded `permissions/StaffPermissionManager.tsx`. Approved requests expose **Retry sign-in setup** through the existing
 approval endpoint, so a provider confirmation failure can be retried without
 creating a new registration. Failed decisions refresh the recorded state before
 showing the error; late responses from a replaced session are discarded.
@@ -37,9 +46,9 @@ showing the error; late responses from a replaced session are discarded.
 | `academic-setup/curriculum/semester-plan/` | Semester subject cards, preset subject drawers and explicit publication review                                                                                                                                                                                                                                                                                                                                                   |
 | `documents/`                               | Retained former document manager; active navigation mounts shared `learning-resources/`                                                                                                                                                                                                                                                                                                                                          |
 | `faqs/`, `notices/`                        | Published institution information                                                                                                                                                                                                                                                                                                                                                                                                |
-| `permissions/`                             | Nonacademic staff permission management                                                                                                                                                                                                                                                                                                                                                                                          |
+| `permissions/`                             | Staff permission section embedded in Staff and Faculty Management |
 | `profile/`                                 | Administrator identity                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `staff-faculty/`                           | Staff and faculty account management                                                                                                                                                                                                                                                                                                                                                                                             |
+| `staff-faculty/`                           | Staff and Faculty Management: requests, departments, roster and the embedded staff permissions |
 | `students/`                                | `StudentManager.tsx` provides Register Students and the URL-backed All Students directory. The directory combines institution-scoped student profiles and pending invitations, with sign-in state, latest Course/Branch/Batch/Section placement, search, program filters and pagination. Row Actions support audited profile edits, access deactivation/reactivation, deletion only when no records are linked, and pending invitation edits/cancellation. Authenticated admins may correct a pending invitation email; this rotates the setup token and sends a fresh link. Registered student email remains read-only pending its separate verification flow. `student-onboarding/` guides single and CSV/XLSX registration through placement, duplicate-account/sign-in review, and delivery results |
 
 Academic Setup opens on the black-and-yellow overview described in

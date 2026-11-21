@@ -1,5 +1,7 @@
 import type {
   AuditLogEntry,
+  MemberDepartmentResult,
+  MemberRoleResult,
   MembershipDecisionResult,
   MembershipLifecycleResult,
   MembershipRequestList,
@@ -77,16 +79,55 @@ export async function listMembershipRequests(
   return requestJson<MembershipRequestList>('GET', `${ADMIN_BASE}/memberships/requests${query}`, accessToken)
 }
 
+/**
+ * Approve or reject a Staff/Faculty request. Approving a pending request needs
+ * the department the administrator chose, and may approve the applicant as the
+ * other member role.
+ */
 export async function decideMembershipRequest(
   accessToken: string,
   requestId: string,
   decision: 'approve' | 'reject',
+  departmentId?: string,
+  role?: MembershipRole,
 ): Promise<MembershipDecisionResult> {
+  const body =
+    decision === 'approve'
+      ? { ...(departmentId ? { department_id: departmentId } : {}), ...(role ? { role } : {}) }
+      : {}
   return requestJson<MembershipDecisionResult>(
     'POST',
     `${ADMIN_BASE}/memberships/requests/${encodeURIComponent(requestId)}/${decision}`,
     accessToken,
-    {},
+    body,
+  )
+}
+
+/** Switch an approved member between Staff and Faculty. */
+export async function setMemberRole(
+  accessToken: string,
+  userId: string,
+  role: MembershipRole,
+): Promise<MemberRoleResult> {
+  return requestJson<MemberRoleResult>(
+    'PUT',
+    `${ADMIN_BASE}/memberships/${encodeURIComponent(userId)}/role`,
+    accessToken,
+    { role },
+  )
+}
+
+/** Set or change the department of an existing Staff/Faculty member. */
+export async function setMemberDepartment(
+  accessToken: string,
+  userId: string,
+  departmentId: string,
+): Promise<MemberDepartmentResult> {
+  return requestJson<MemberDepartmentResult>(
+    'PUT',
+    `${ADMIN_BASE}/memberships/${encodeURIComponent(userId)}/department`,
+    accessToken,
+    { department_id: departmentId },
   )
 }
 

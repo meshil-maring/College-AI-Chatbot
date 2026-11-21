@@ -128,7 +128,7 @@ export default function SuperAdminRegistrationPage({ token }: { token: string })
             <p role="status" className="text-sm text-success">
               {phase.message}
             </p>
-            <a href="/login/admin" className="mt-4 inline-block text-sm text-accent underline">
+            <a href="/login" className="mt-4 inline-block text-sm text-accent underline">
               Go to sign in
             </a>
           </div>

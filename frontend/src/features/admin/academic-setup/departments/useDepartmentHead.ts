@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query'
-import { queryClient } from '../../../../lib/queryClient.ts'
+import { NAVIGATION_QUERY_POLICY, queryClient } from '../../../../lib/queryClient.ts'
 import { assignDepartmentHead, getDepartmentHeads } from '../../../../services/students/transferApi.ts'
 import { transferReviewsKey } from '../../../transfers/review/useTransferReviews.ts'
 
@@ -15,6 +15,7 @@ function departmentHeadsOptions(identity: string, institutionId: string, token: 
         throw new Error('Department heads are unavailable for this institution.')
       return result
     },
+    ...NAVIGATION_QUERY_POLICY,
   })
 }
 

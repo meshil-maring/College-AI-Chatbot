@@ -56,7 +56,7 @@ describe('transport failures', () => {
 
     const err = await login({ email: 'staff@example.com', password: 'secret123' }).catch((e) => e)
     expect(err.kind).toBe<AuthErrorKind>('email_confirmation_required')
-    expect(authErrorMessage(err)).toContain('retry sign-in setup in Staff & Faculty')
+    expect(authErrorMessage(err)).toContain('retry sign-in setup in Staff and Faculty Management')
     expect(authErrorMessage(err)).not.toContain('Invalid login credentials')
   })
 

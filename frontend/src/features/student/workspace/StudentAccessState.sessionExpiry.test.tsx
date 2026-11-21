@@ -97,7 +97,7 @@ describe('student account access through the real auth and API boundaries with o
     window.localStorage.clear()
     render(<App />)
     expect(await screen.findByRole('button', { name: 'Sign in', exact: true })).toBeInTheDocument()
-    expect(screen.getByText(/New student accounts need institutional approval/)).toBeInTheDocument()
+    expect(screen.getByText(/New student, faculty and staff accounts need institutional approval/)).toBeInTheDocument()
     expectNoStudentViews()
     expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/auth/me'))).toBe(false)
   })

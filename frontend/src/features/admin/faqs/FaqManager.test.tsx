@@ -31,7 +31,17 @@ describe('FaqManager', () => {
 
   it('lists FAQs after loading', async () => {
     vi.mocked(adminApi.listFaqs).mockResolvedValue([
-      { faq_id: 'f1', question: 'What is the deadline?', answer: 'June 30.', is_active: true, category: 'general', display_order: 0, institution_id: null, created_at: '', updated_at: '' },
+      {
+        faq_id: 'f1',
+        question: 'What is the deadline?',
+        answer: 'June 30.',
+        is_active: true,
+        category: 'general',
+        display_order: 0,
+        institution_id: null,
+        created_at: '',
+        updated_at: '',
+      },
     ])
     render(<FaqManager />)
     await waitFor(() => {
@@ -43,7 +53,9 @@ describe('FaqManager', () => {
     const user = userEvent.setup()
     vi.mocked(adminApi.listFaqs).mockResolvedValue([])
     render(<FaqManager />)
-    await waitFor(() => { expect(screen.getByText('Add FAQ')).toBeInTheDocument() })
+    await waitFor(() => {
+      expect(screen.getByText('Add FAQ')).toBeInTheDocument()
+    })
     await user.click(screen.getByText('Add FAQ'))
     expect(screen.getByText('New FAQ')).toBeInTheDocument()
   })
@@ -52,16 +64,30 @@ describe('FaqManager', () => {
     const user = userEvent.setup()
     vi.mocked(adminApi.listFaqs).mockResolvedValue([])
     vi.mocked(adminApi.createFaq).mockResolvedValue({
-      faq_id: 'f2', question: 'New question?', answer: 'New answer.', is_active: true, category: 'general', display_order: 0, institution_id: null, created_at: '', updated_at: '',
+      faq_id: 'f2',
+      question: 'New question?',
+      answer: 'New answer.',
+      is_active: true,
+      category: 'general',
+      display_order: 0,
+      institution_id: null,
+      created_at: '',
+      updated_at: '',
     })
     render(<FaqManager />)
-    await waitFor(() => { expect(screen.getByText('Add FAQ')).toBeInTheDocument() })
+    await waitFor(() => {
+      expect(screen.getByText('Add FAQ')).toBeInTheDocument()
+    })
     await user.click(screen.getByText('Add FAQ'))
     await user.type(screen.getByLabelText('Question'), 'New question?')
     await user.type(screen.getByLabelText('Answer'), 'New answer.')
     await user.click(screen.getByText('Save'))
     await waitFor(() => {
-      expect(adminApi.createFaq).toHaveBeenCalledWith('test-token', { question: 'New question?', answer: 'New answer.', category: 'general' })
+      expect(adminApi.createFaq).toHaveBeenCalledWith('test-token', {
+        question: 'New question?',
+        answer: 'New answer.',
+        category: 'general',
+      })
     })
   })
 
@@ -70,7 +96,9 @@ describe('FaqManager', () => {
     vi.mocked(adminApi.listFaqs).mockResolvedValue([])
     vi.mocked(adminApi.createFaq).mockRejectedValue(new Error('Server error'))
     render(<FaqManager />)
-    await waitFor(() => { expect(screen.getByText('Add FAQ')).toBeInTheDocument() })
+    await waitFor(() => {
+      expect(screen.getByText('Add FAQ')).toBeInTheDocument()
+    })
     await user.click(screen.getByText('Add FAQ'))
     await user.type(screen.getByLabelText('Question'), 'Q')
     await user.type(screen.getByLabelText('Answer'), 'A')
@@ -83,16 +111,74 @@ describe('FaqManager', () => {
   it('toggles FAQ active status', async () => {
     const user = userEvent.setup()
     vi.mocked(adminApi.listFaqs).mockResolvedValue([
-      { faq_id: 'f1', question: 'Q?', answer: 'A.', is_active: true, category: 'general', display_order: 0, institution_id: null, created_at: '', updated_at: '' },
+      {
+        faq_id: 'f1',
+        question: 'Q?',
+        answer: 'A.',
+        is_active: true,
+        category: 'general',
+        display_order: 0,
+        institution_id: null,
+        created_at: '',
+        updated_at: '',
+      },
     ])
     vi.mocked(adminApi.updateFaq).mockResolvedValue({
-      faq_id: 'f1', question: 'Q?', answer: 'A.', is_active: false, category: 'general', display_order: 0, institution_id: null, created_at: '', updated_at: '',
+      faq_id: 'f1',
+      question: 'Q?',
+      answer: 'A.',
+      is_active: false,
+      category: 'general',
+      display_order: 0,
+      institution_id: null,
+      created_at: '',
+      updated_at: '',
     })
     render(<FaqManager />)
-    await waitFor(() => { expect(screen.getByText('Unpublish')).toBeInTheDocument() })
+    await waitFor(() => {
+      expect(screen.getByText('Unpublish')).toBeInTheDocument()
+    })
     await user.click(screen.getByText('Unpublish'))
     await waitFor(() => {
       expect(adminApi.updateFaq).toHaveBeenCalledWith('test-token', 'f1', { is_active: false })
     })
+  })
+
+  it('returns to the saved list without reloading, including a change made before leaving', async () => {
+    const user = userEvent.setup()
+    vi.mocked(adminApi.listFaqs).mockResolvedValue([
+      {
+        faq_id: 'f1',
+        question: 'Q?',
+        answer: 'A.',
+        is_active: true,
+        category: 'general',
+        display_order: 0,
+        institution_id: null,
+        created_at: '',
+        updated_at: '',
+      },
+    ])
+    vi.mocked(adminApi.updateFaq).mockResolvedValue({
+      faq_id: 'f1',
+      question: 'Q?',
+      answer: 'A.',
+      is_active: false,
+      category: 'general',
+      display_order: 0,
+      institution_id: null,
+      created_at: '',
+      updated_at: '',
+    })
+    const first = render(<FaqManager />)
+    await user.click(await screen.findByText('Unpublish'))
+    await waitFor(() => expect(screen.getByText('Publish')).toBeInTheDocument())
+    first.unmount()
+
+    // Navigating back: no loading state, no second request, and the change is kept.
+    render(<FaqManager />)
+    expect(screen.queryByText('Loading FAQs…')).toBeNull()
+    expect(screen.getByText('Publish')).toBeInTheDocument()
+    expect(adminApi.listFaqs).toHaveBeenCalledTimes(1)
   })
 })

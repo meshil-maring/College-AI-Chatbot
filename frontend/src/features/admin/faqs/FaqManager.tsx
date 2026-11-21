@@ -6,25 +6,35 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
+import { queryClient } from '../../../lib/queryClient.ts'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
-import { createFaq, deleteFaq, listFaqs, updateFaq } from '../../../services/admin/adminApi.ts'
-import type { Faq, FaqCreate } from '../../../types/admin.ts'
+import { deleteFaq, listFaqs, updateFaq } from '../../../services/admin/adminApi.ts'
+import type { Faq } from '../../../types/admin.ts'
+import FaqForm from './FaqForm.tsx'
 
 export default function FaqManager() {
   const { accessToken } = useAuth()
-  const [faqs, setFaqs] = useState<Faq[]>([])
   const faqsQuery = useApiQuery<Faq[]>(
     ['admin', 'faqs', accessToken],
     () => listFaqs(accessToken as string),
     accessToken !== null,
   )
-  const [isLoading, setIsLoading] = useState(true)
+  // Start from cached FAQs when returning to the page, without a loading flash.
+  const [faqs, setFaqs] = useState<Faq[]>(() => faqsQuery.data ?? [])
+  const [isLoading, setIsLoading] = useState(() => faqsQuery.data === undefined)
+  // Saves update the cached list, which the effect below copies into the page,
+  // so returning to this page never shows an outdated list.
+  const updateFaqs = useCallback(
+    (change: (prev: Faq[]) => Faq[]) =>
+      queryClient.setQueryData<Faq[]>(['admin', 'faqs', accessToken], (prev) => change(prev ?? [])),
+    [accessToken],
+  )
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Faq | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
   useEffect(() => {
-    if (faqsQuery.isFetching) setIsLoading(true)
+    if (faqsQuery.isFetching && faqsQuery.data === undefined) setIsLoading(true)
     if (faqsQuery.data) {
       setFaqs(faqsQuery.data)
       setIsLoading(false)
@@ -41,7 +51,7 @@ export default function FaqManager() {
       if (!window.confirm('Delete this FAQ?')) return
       try {
         await deleteFaq(accessToken, id)
-        setFaqs((prev) => prev.filter((f) => f.faq_id !== id))
+        updateFaqs((prev) => prev.filter((f) => f.faq_id !== id))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to delete FAQ.')
       }
@@ -54,7 +64,7 @@ export default function FaqManager() {
       if (accessToken === null) return
       try {
         const updated = await updateFaq(accessToken, faq.faq_id, { is_active: !faq.is_active })
-        setFaqs((prev) => prev.map((f) => (f.faq_id === updated.faq_id ? updated : f)))
+        updateFaqs((prev) => prev.map((f) => (f.faq_id === updated.faq_id ? updated : f)))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update FAQ.')
       }
@@ -93,7 +103,7 @@ export default function FaqManager() {
           initial={editing}
           onClose={() => setIsFormOpen(false)}
           onSaved={(faq) => {
-            setFaqs((prev) => {
+            updateFaqs((prev) => {
               const exists = prev.some((f) => f.faq_id === faq.faq_id)
               return exists ? prev.map((f) => (f.faq_id === faq.faq_id ? faq : f)) : [...prev, faq]
             })
@@ -147,102 +157,6 @@ export default function FaqManager() {
           ))}
         </ul>
       )}
-    </div>
-  )
-}
-
-function FaqForm({
-  initial,
-  onClose,
-  onSaved,
-}: {
-  initial: Faq | null
-  onClose: () => void
-  onSaved: (faq: Faq) => void
-}) {
-  const { accessToken } = useAuth()
-  const [question, setQuestion] = useState(initial?.question ?? '')
-  const [answer, setAnswer] = useState(initial?.answer ?? '')
-  const [category, setCategory] = useState(initial?.category ?? 'general')
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = useCallback(async () => {
-    if (accessToken === null) return
-    if (question.trim().length === 0 || answer.trim().length === 0) {
-      setError('Question and answer are required.')
-      return
-    }
-    setIsSaving(true)
-    setError(null)
-    try {
-      const payload: FaqCreate = {
-        question: question.trim(),
-        answer: answer.trim(),
-        category: category.trim() || 'general',
-      }
-      const saved = initial
-        ? await updateFaq(accessToken, initial.faq_id, payload)
-        : await createFaq(accessToken, payload)
-      onSaved(saved)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save FAQ.')
-      setIsSaving(false)
-    }
-  }, [accessToken, question, answer, category, initial, onSaved])
-
-  return (
-    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
-      <h3 className="font-semibold text-content text-card">{initial ? 'Edit FAQ' : 'New FAQ'}</h3>
-      {error !== null && (
-        <div role="alert" className="rounded border border-danger bg-danger-bg px-3 py-2 text-xs text-danger">
-          {error}
-        </div>
-      )}
-      <label className="block">
-        <span className="text-xs text-muted">Question</span>
-        <input
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs text-muted">Answer</span>
-        <textarea
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          rows={3}
-          className="mt-1 w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs text-muted">Category</span>
-        <input
-          type="text"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-        />
-      </label>
-      <div className="flex items-center gap-2 pt-1">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isSaving}
-          className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-ink hover:bg-accent-hover disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent"
-        >
-          {isSaving ? 'Saving…' : 'Save'}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg border border-control bg-surface px-3 py-2 text-sm text-muted hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
-        >
-          Cancel
-        </button>
-      </div>
     </div>
   )
 }

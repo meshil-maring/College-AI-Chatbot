@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   PlatformInstitutionError,
   activateInstitution,
@@ -10,6 +10,8 @@ import {
 } from '../../services/platform/platformInstitutionsApi.ts'
 import type { InstitutionDetail, InstitutionSummary } from '../../types/platform.ts'
 import { useAuth } from '../auth/session/AuthProvider.tsx'
+import { useApiQuery } from '../../hooks/useApiQuery.ts'
+import { queryClient } from '../../lib/queryClient.ts'
 import InstitutionDetailPanel, { type BusyAction } from './InstitutionDetailPanel.tsx'
 import { CreateInstitutionForm } from './institutions/CreateInstitutionForm.tsx'
 import { InstitutionTable } from './institutions/InstitutionTable.tsx'
@@ -33,32 +35,30 @@ function errorMessage(error: unknown): string {
 
 export default function InstitutionManagement() {
   const { accessToken } = useAuth()
-  const [institutions, setInstitutions] = useState<InstitutionSummary[]>([])
   const [selected, setSelected] = useState<InstitutionDetail | null>(null)
   const [showDetail, setShowDetail] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [detailLoading, setLoading] = useState(false)
   const [busy, setBusy] = useState<BusyAction>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [actionError, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
 
   const token = accessToken ?? ''
 
+  // Cached: returning to Institutions shows the saved list at once.
+  const listQuery = useApiQuery<InstitutionSummary[]>(
+    ['platform', 'institutions', token],
+    () => listInstitutions(token),
+    token !== '',
+  )
+  const institutions = listQuery.data ?? []
+  const loading = detailLoading || (token !== '' && listQuery.isPending)
+  const error = actionError ?? (listQuery.isError ? errorMessage(listQuery.error) : null)
+
   const refreshList = useCallback(async (): Promise<void> => {
     if (token === '') return
-    setLoading(true)
-    try {
-      setInstitutions(await listInstitutions(token))
-    } catch (err) {
-      setError(errorMessage(err))
-    } finally {
-      setLoading(false)
-    }
+    await queryClient.invalidateQueries({ queryKey: ['platform', 'institutions', token] })
   }, [token])
-
-  useEffect(() => {
-    void refreshList()
-  }, [refreshList])
 
   const openDetail = useCallback(
     async (institutionId: string): Promise<void> => {

@@ -27,6 +27,37 @@ class MembershipRequestList(BaseModel):
 class MembershipDecisionBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     reason: str | None = None
+    # Required when approving a pending request: the administrator, not the
+    # applicant, decides which department the new member belongs to.
+    department_id: UUID | None = None
+    # Optional: approve the applicant as Staff or Faculty instead of the role
+    # they asked for. Administrator and platform roles are not accepted.
+    role: MembershipRole | None = None
+
+
+class MemberRoleWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    role: MembershipRole
+
+
+class MemberRoleResult(BaseModel):
+    user_id: UUID
+    role: MembershipRole
+    already_applied: bool
+    message: str
+
+
+class MemberDepartmentWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    department_id: UUID
+
+
+class MemberDepartmentResult(BaseModel):
+    user_id: UUID
+    department_id: UUID
+    department_code: str
+    department_name: str
+    message: str
 
 
 class MembershipDecisionResult(BaseModel):
@@ -44,6 +75,9 @@ class MembershipRosterEntry(BaseModel):
     status: str
     created_at: datetime | str | None = None
     updated_at: datetime | str | None = None
+    department_id: UUID | None = None
+    department_code: str | None = None
+    department_name: str | None = None
 
 
 class MembershipRoster(BaseModel):

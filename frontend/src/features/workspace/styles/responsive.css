@@ -1,10 +1,4 @@
 @media (min-width: 761px) {
-  .admin-workspace.navigation-toggled .admin-sidebar {
-    display: none;
-  }
-  .admin-workspace.navigation-toggled .admin-workspace-body {
-    margin-left: 0;
-  }
   .admin-sidebar-scrim {
     display: none;
   }

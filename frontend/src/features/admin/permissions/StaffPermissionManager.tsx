@@ -1,101 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
-import {
-  changeStaffPermissions,
-  getDelegableStaffPermissions,
-  getStaffPermissions,
-  listMembershipRoster,
-  type StaffPermissionState,
-} from '../../../services/admin/adminApi.ts'
+import { useStaffPermissions, type StaffPermissionFocus } from './useStaffPermissions.ts'
 
-export default function StaffPermissionManager({ accessToken }: { accessToken: string }) {
-  const [members, setMembers] = useState<Array<{ user_id: string; name: string; email: string }>>([])
-  const [selectedUserId, setSelectedUserId] = useState('')
-  const [state, setState] = useState<StaffPermissionState | null>(null)
-  const [catalogue, setCatalogue] = useState<string[]>([])
-  const [selectedCodes, setSelectedCodes] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
-  const selectedRequest = useRef(0)
-
-  async function refreshSelected(userId: string) {
-    const requestId = ++selectedRequest.current
-    setError(null)
-    setState(null)
-    if (!userId) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    try {
-      const result = await getStaffPermissions(accessToken, userId)
-      if (requestId === selectedRequest.current) setState(result)
-    } finally {
-      if (requestId === selectedRequest.current) setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    let current = true
-    async function load() {
-      setLoading(true)
-      setError(null)
-      try {
-        const [roster, permissions] = await Promise.all([
-          listMembershipRoster(accessToken, 'staff', 'active'),
-          getDelegableStaffPermissions(accessToken),
-        ])
-        if (!current) return
-        const activeMembers = roster.members.flatMap((member) =>
-          member.user_id === null
-            ? []
-            : [
-                {
-                  user_id: member.user_id,
-                  name: member.name,
-                  email: member.email,
-                },
-              ],
-        )
-        setMembers(activeMembers)
-        setCatalogue(permissions)
-        setSelectedUserId(activeMembers[0]?.user_id ?? '')
-        if (activeMembers[0]) {
-          const selectedState = await getStaffPermissions(accessToken, activeMembers[0].user_id)
-          if (!current) return
-          setState(selectedState)
-        }
-      } catch (cause) {
-        if (current) setError(cause instanceof Error ? cause.message : 'Could not load Staff permissions.')
-      } finally {
-        if (current) setLoading(false)
-      }
-    }
-    void load()
-    return () => {
-      current = false
-    }
-  }, [accessToken])
-
-  async function apply(action: 'grant' | 'revoke') {
-    if (!selectedUserId || selectedCodes.length === 0) return
-    const verb = action === 'grant' ? 'Grant' : 'Revoke'
-    if (!window.confirm(`${verb} ${selectedCodes.length} permission(s) for this Staff member?`)) return
-    setBusy(true)
-    setError(null)
-    setNotice(null)
-    try {
-      const result = await changeStaffPermissions(accessToken, selectedUserId, selectedCodes, action)
-      setState(result.permissions)
-      setSelectedCodes([])
-      setNotice(`${verb} completed. ${result.changed} permission grant(s) changed.`)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : `Could not ${verb.toLowerCase()} permissions.`)
-    } finally {
-      setBusy(false)
-    }
-  }
+export default function StaffPermissionManager({
+  accessToken,
+  focus = null,
+}: {
+  accessToken: string
+  focus?: StaffPermissionFocus | null
+}) {
+  const {
+    members,
+    selectedUserId,
+    setSelectedUserId,
+    state,
+    catalogue,
+    selectedCodes,
+    setSelectedCodes,
+    loading,
+    busy,
+    error,
+    setError,
+    notice,
+    apply,
+  } = useStaffPermissions(accessToken, focus)
 
   const permissionByCode = new Map((state?.permissions ?? []).map((item) => [item.code, item]))
   const selectable = catalogue.filter((code) => !permissionByCode.get(code)?.inherited)
@@ -106,7 +32,7 @@ export default function StaffPermissionManager({ accessToken }: { accessToken: s
       className="space-y-4 rounded-xl border border-line bg-surface p-4"
     >
       <h2 id="staff-permission-heading" className="font-semibold text-content text-section">
-        Scoped Staff permissions
+        Staff permissions
       </h2>
       <p className="text-sm text-muted">
         Direct grants apply only to this active Staff account in your institution. Inherited role grants are read-only.
@@ -138,9 +64,6 @@ export default function StaffPermissionManager({ accessToken }: { accessToken: s
                 setSelectedUserId(userId)
                 setSelectedCodes([])
                 setError(null)
-                void refreshSelected(userId).catch((cause: unknown) =>
-                  setError(cause instanceof Error ? cause.message : 'Could not load this Staff member.'),
-                )
               }}
             >
               {members.map((member) => (

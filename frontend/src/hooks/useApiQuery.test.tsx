@@ -6,7 +6,10 @@ import { clearNavigationQueryCache, NAVIGATION_QUERY_POLICY, queryClient } from 
 const key = ['admin', 'academic-setup', 'session-token']
 const cache = { cache: 'navigation' } as const
 
-afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+})
 
 describe('navigation query caching', () => {
   it('reuses fresh data on remount without another request', async () => {
@@ -23,7 +26,12 @@ describe('navigation query caching', () => {
 
   it('deduplicates concurrent reads using the same session key', async () => {
     let resolve!: (data: string) => void
-    const read = vi.fn(() => new Promise<string>((done) => { resolve = done }))
+    const read = vi.fn(
+      () =>
+        new Promise<string>((done) => {
+          resolve = done
+        }),
+    )
     const first = renderHook(() => useApiQuery(key, read, true, cache))
     const second = renderHook(() => useApiQuery(key, read, true, cache))
     expect(read).toHaveBeenCalledTimes(1)
@@ -34,7 +42,15 @@ describe('navigation query caching', () => {
 
   it('keeps stale data visible while refreshing after the freshness window', async () => {
     let resolve!: (data: string) => void
-    const read = vi.fn().mockResolvedValueOnce('cached catalogue').mockImplementationOnce(() => new Promise<string>((done) => { resolve = done }))
+    const read = vi
+      .fn()
+      .mockResolvedValueOnce('cached catalogue')
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((done) => {
+            resolve = done
+          }),
+      )
     const first = renderHook(() => useApiQuery(key, read, true, cache))
     await waitFor(() => expect(first.result.current.data).toBe('cached catalogue'))
     first.unmount()
@@ -63,8 +79,18 @@ describe('navigation query caching', () => {
 
   it('does not expose the previous session data when the token changes', async () => {
     let resolve!: (data: string) => void
-    const read = vi.fn().mockResolvedValueOnce('old session records').mockImplementationOnce(() => new Promise<string>((done) => { resolve = done }))
-    const view = renderHook(({ token }) => useApiQuery(['admin', 'academic-setup', token], read, true, cache), { initialProps: { token: 'old' } })
+    const read = vi
+      .fn()
+      .mockResolvedValueOnce('old session records')
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((done) => {
+            resolve = done
+          }),
+      )
+    const view = renderHook(({ token }) => useApiQuery(['admin', 'academic-setup', token], read, true, cache), {
+      initialProps: { token: 'old' },
+    })
     await waitFor(() => expect(view.result.current.data).toBe('old session records'))
     view.rerender({ token: 'new' })
     expect(view.result.current.data).toBeUndefined()
@@ -74,7 +100,12 @@ describe('navigation query caching', () => {
 
   it('discards a pending result when the session cache is cleared', async () => {
     let resolve!: (data: string) => void
-    const read = vi.fn(() => new Promise<string>((done) => { resolve = done }))
+    const read = vi.fn(
+      () =>
+        new Promise<string>((done) => {
+          resolve = done
+        }),
+    )
     const view = renderHook(() => useApiQuery(key, read, true, cache))
     view.unmount()
     clearNavigationQueryCache()
@@ -86,20 +117,36 @@ describe('navigation query caching', () => {
     vi.useFakeTimers()
     const read = vi.fn().mockResolvedValue('catalogue')
     const view = renderHook(() => useApiQuery(key, read, true, cache))
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1)
+    })
     expect(queryClient.getQueryData(key)).toBe('catalogue')
     view.unmount()
-    await act(async () => { await vi.advanceTimersByTimeAsync(NAVIGATION_QUERY_POLICY.gcTime + 1) })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(NAVIGATION_QUERY_POLICY.gcTime + 1)
+    })
     expect(queryClient.getQueryData(key)).toBeUndefined()
   })
 
-  it('preserves the existing mount-specific behavior for queries without caching', async () => {
+  it('caches by default, so returning to a page does not request again', async () => {
     const read = vi.fn().mockResolvedValue('data')
     const first = renderHook(() => useApiQuery(key, read))
     await waitFor(() => expect(first.result.current.data).toBe('data'))
     first.unmount()
     const second = renderHook(() => useApiQuery(key, read))
+    // Saved data is available on the very first render of the returning page.
+    expect(second.result.current.data).toBe('data')
+    expect(read).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps 'none' reads mount-specific so they are always fetched fresh", async () => {
+    const read = vi.fn().mockResolvedValue('data')
+    const first = renderHook(() => useApiQuery(key, read, true, { cache: 'none' }))
+    await waitFor(() => expect(first.result.current.data).toBe('data'))
+    first.unmount()
+    const second = renderHook(() => useApiQuery(key, read, true, { cache: 'none' }))
     await waitFor(() => expect(second.result.current.data).toBe('data'))
     expect(read).toHaveBeenCalledTimes(2)
+    expect(queryClient.getQueryData(key)).toBeUndefined()
   })
 })

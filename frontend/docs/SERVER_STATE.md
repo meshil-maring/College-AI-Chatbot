@@ -6,8 +6,13 @@ Apply this guide across public, admin, staff, faculty, student and platform scre
 Use [STRUCTURE.md](STRUCTURE.md) for ownership, [ROUTES.md](ROUTES.md) for routing,
 and [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) for presentation and accessibility.
 
-This document defines the implementation target; existing screens have not all
-adopted it. The [TypeScript recipes](server-state/RECIPES.md) illustrate the target
+Navigation caching is the default for page reads: `useApiQuery`, the student
+`useStudentResource` primitive and the feature query factories all use
+`NAVIGATION_QUERY_POLICY`, so returning to a page shows saved data at once and
+refreshes it in the background only after a minute. Writes must update or
+invalidate the cached reads they change (for example `invalidateStudentDirectory`
+after registration, approval or a transfer). This document defines the
+implementation target; existing screens have not all adopted it. The [TypeScript recipes](server-state/RECIPES.md) illustrate the target
 using existing academic contracts. This documentation change does not migrate runtime code.
 
 ## 1. Existing foundation and adoption boundaries
@@ -17,7 +22,7 @@ using existing academic contracts. This documentation change does not migrate ru
 | `src/lib/queryClient.ts`                          | One browser client; query/mutation retries disabled, `staleTime: 0`, `gcTime: 0`, window-focus refetch disabled.                        |
 | `src/providers/QueryProvider.tsx`, `src/main.tsx` | Provide that client once around the application.                                                                                        |
 | `NAVIGATION_QUERY_POLICY`                         | Opt-in freshness of 60 seconds, inactive retention of five minutes, refetch on stale remount and `meta.navigationCache`.                |
-| `src/hooks/useApiQuery.ts`                        | Existing adapter appends instance identifiers unless navigation caching is requested; ordinary calls do not share stable cache entries. |
+| `src/hooks/useApiQuery.ts`                        | Existing adapter; caches with `NAVIGATION_QUERY_POLICY` by default. `cache: 'none'` keeps a read mount-specific (authorization checks, one-time tokens). |
 | `src/features/auth/session/`                      | Owns credentials, canonical identity, generation guards, token-scoped expiry and navigation-cache cleanup.                              |
 | `src/services/`, `src/types/`                     | Domain transport/error handling and backend contracts.                                                                                  |
 

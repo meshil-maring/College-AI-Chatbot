@@ -36,7 +36,7 @@ export function messageFor(kind: AuthErrorKind): string {
     case 'registration_pending':
       return 'Your registration is pending. You can sign in after your institution approves it. Contact your institution administrator if you need help.'
     case 'email_confirmation_required':
-      return 'Confirm your email address before signing in. If your staff or faculty registration is already approved, ask your institution administrator to retry sign-in setup in Staff & Faculty.'
+      return 'Confirm your email address before signing in. If your staff or faculty registration is already approved, ask your institution administrator to retry sign-in setup in Staff and Faculty Management.'
     case 'account_inactive':
       return 'Your account is inactive. Contact your institution administrator for help with access.'
     case 'validation':

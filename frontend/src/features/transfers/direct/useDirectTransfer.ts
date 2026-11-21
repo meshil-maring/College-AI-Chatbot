@@ -8,6 +8,7 @@ import {
 } from '../../../services/students/transferApi.ts'
 import type { DirectTransferBody } from '../../../types/transfer.ts'
 import { transferReviewsKey } from '../review/useTransferReviews.ts'
+import { invalidateStudentDirectory } from '../../admin/students/directory/studentDirectoryQueries.ts'
 
 export const directTransferKey = (identity: string) => ['academics', identity, 'direct-transfer'] as const
 
@@ -66,6 +67,8 @@ export function useDirectTransfer(identity: string, institutionId: string, token
         if (!alive.current) return
         await queryClient.invalidateQueries({ queryKey: directTransferKey(identity) })
         await queryClient.invalidateQueries({ queryKey: transferReviewsKey(identity) })
+        // A transfer changes the student's placement shown in All Students.
+        await invalidateStudentDirectory()
       },
     },
     queryClient,

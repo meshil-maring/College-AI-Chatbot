@@ -6,27 +6,16 @@ import { describe, expect, it, vi } from 'vitest'
 import * as devAuth from '../../../services/auth/devAuth.ts'
 import { SESSION_EXPIRED_MESSAGE } from '../../../services/shared/sessionEvents.ts'
 import LoginForm from './LoginForm.tsx'
-describe('LoginForm — student approval guidance', () => {
-  it.each(['general', 'student'] as const)(
-    'explains approval on the %s login without inferring account status',
-    (audience) => {
-      render(<LoginForm audience={audience} />)
-      expect(screen.getByText(/New student accounts need institutional approval/)).toBeInTheDocument()
-      expect(screen.getByLabelText('Email, Register Number or University Roll Number')).toHaveAttribute(
-        'aria-describedby',
-        'student-approval-help',
-      )
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    },
-  )
-
-  it.each(['faculty', 'staff', 'admin', 'super_admin'] as const)(
-    'keeps student-specific guidance off the %s login',
-    (audience) => {
-      render(<LoginForm audience={audience} />)
-      expect(screen.queryByText(/New student accounts need institutional approval/)).not.toBeInTheDocument()
-    },
-  )
+describe('LoginForm — account approval guidance', () => {
+  it('explains approval for every account type without inferring account status', () => {
+    render(<LoginForm />)
+    expect(screen.getByText(/New student, faculty and staff accounts need institutional approval/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Email, Register Number or University Roll Number')).toHaveAttribute(
+      'aria-describedby',
+      'account-approval-help',
+    )
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })
 
 describe('LoginForm — password field (Phase 6.15.6)', () => {

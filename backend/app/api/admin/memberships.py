@@ -6,13 +6,17 @@ from fastapi import Depends, Request
 
 from app.schemas.invitations.admin_invitations import AdminInvitationResendResponse
 from app.schemas.admin.admin_memberships import (
+    MemberDepartmentResult,
+    MemberDepartmentWrite,
+    MemberRoleResult,
+    MemberRoleWrite,
     MembershipDecisionBody,
     MembershipDecisionResult,
     MembershipLifecycleResult,
     MembershipRequestList,
     MembershipRoster,
 )
-from app.services.admin import admin_memberships
+from app.services.admin import admin_memberships, member_departments, member_roles
 from app.api.admin import common
 from app.api.admin.dependencies import create_feature_router, _ADMIN
 
@@ -40,12 +44,14 @@ def approve_membership_request(
     body: MembershipDecisionBody | None = None,
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipDecisionResult:
-    return admin_memberships.decide_request(
+    # The administrator chooses the new member's department while approving.
+    return member_departments.approve_request(
         current_user,
         common.required_institution(current_user),
         request_id,
-        approve=True,
+        department_id=body.department_id if body else None,
         reason=body.reason if body else None,
+        role=body.role if body else None,
     )
 
 
@@ -73,8 +79,36 @@ def list_membership_roster(
     status: str | None = None,
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipRoster:
-    return admin_memberships.list_roster(
-        common.required_institution(current_user), role=role, status=status
+    institution_id = common.required_institution(current_user)
+    roster = admin_memberships.list_roster(institution_id, role=role, status=status)
+    return member_departments.with_departments(institution_id, roster)
+
+
+@router.put(
+    "/memberships/{user_id}/role",
+    response_model=MemberRoleResult,
+)
+def set_member_role(
+    user_id: UUID,
+    body: MemberRoleWrite,
+    current_user: dict = Depends(_ADMIN),
+) -> MemberRoleResult:
+    return member_roles.change_role(
+        current_user, common.required_institution(current_user), user_id, body.role
+    )
+
+
+@router.put(
+    "/memberships/{user_id}/department",
+    response_model=MemberDepartmentResult,
+)
+def set_member_department(
+    user_id: UUID,
+    body: MemberDepartmentWrite,
+    current_user: dict = Depends(_ADMIN),
+) -> MemberDepartmentResult:
+    return member_departments.assign(
+        current_user, common.required_institution(current_user), user_id, body.department_id
     )
 
 

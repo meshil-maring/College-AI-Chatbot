@@ -45,6 +45,8 @@ export default function SuperAdminShell() {
     ['platform', 'identity', accessToken],
     () => getPlatformIdentity(accessToken as string),
     accessToken !== null,
+    // Platform access needs a fresh server authorization check on every entry.
+    { cache: 'none' },
   )
   const authorization: 'checking' | 'allowed' | 'denied' =
     accessToken === null

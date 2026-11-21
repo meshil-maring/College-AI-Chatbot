@@ -50,9 +50,7 @@ export function InvitationAcceptanceForm({ model }: { model: AdminInvitationPage
           {membershipMode ? (
             <>
               <p>Your existing credentials will be preserved.</p>
-              {auth.status !== 'authenticated' ? (
-                <a href={`/login/${phase.invitation.role ?? 'admin'}`}>Sign in, then return to this invitation</a>
-              ) : null}
+              {auth.status !== 'authenticated' ? <a href="/login">Sign in, then return to this invitation</a> : null}
               <button type="submit" disabled={phase.kind === 'submitting' || auth.status !== 'authenticated'}>
                 Accept membership
               </button>

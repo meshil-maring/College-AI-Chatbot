@@ -5,6 +5,8 @@ import {
   registrationErrorMessage,
 } from '../../services/registration/registration.ts'
 import type { InstitutionLookupResponse } from '../../types/registration.ts'
+import { loginPath } from '../auth/login/loginPaths.ts'
+import { signupPath } from '../auth/registration/signupPaths.ts'
 import { createInstitutionBranding } from './institutionBranding.ts'
 
 export default function InstitutionGatewayPage({ institutionCode }: { institutionCode: string }) {
@@ -108,12 +110,12 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
               </p>
             </a>
             <a
-              href={`/login/student?institution=${encodeURIComponent(institution.code)}`}
+              href={loginPath(institution.code)}
               className="rounded-xl border border-accent bg-raised p-6 hover:bg-raised focus:outline-none focus:ring-2 focus:ring-accent"
             >
-              <h2 className="font-bold text-content text-section">Student Login</h2>
+              <h2 className="font-bold text-content text-section">Sign In</h2>
               <p className="mt-2 text-sm leading-6 text-muted">
-                Sign in for your profile, institution notices, learning resources, and AI chat.
+                Students, faculty, staff and admins sign in here for their workspace and AI chat.
               </p>
               <p className="mt-5 text-sm font-semibold text-accent">
                 Continue securely <span aria-hidden="true">→</span>
@@ -123,7 +125,7 @@ export default function InstitutionGatewayPage({ institutionCode }: { institutio
           <p className="mt-6 text-sm text-muted">
             New student?{' '}
             <a
-              href={`/login/student?institution=${encodeURIComponent(institution.code)}&register=1`}
+              href={signupPath('student', institution.code)}
               className="rounded-sm font-semibold text-accent underline focus:outline-none focus:ring-2 focus:ring-accent"
             >
               Register as Student

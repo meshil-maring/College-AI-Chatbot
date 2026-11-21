@@ -16,8 +16,6 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
     setUniversityRollNumber,
     designation,
     setDesignation,
-    department,
-    setDepartment,
     institutionCode,
     setInstitutionCode,
     institutionLookupGeneration,
@@ -115,18 +113,9 @@ export function RegistrationFields({ model }: { model: RegistrationFormModel }) 
               onChange={(event) => setDesignation(event.target.value)}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm text-muted">
-            Department <span className="text-xs text-muted">(optional)</span>
-            <input
-              type="text"
-              name="department"
-              disabled={submitting}
-              placeholder="e.g. Computer Science"
-              className={INPUT_CLASS}
-              value={department}
-              onChange={(event) => setDepartment(event.target.value)}
-            />
-          </label>
+          <p className="text-xs text-muted">
+            Your institution administrator assigns your department when approving your account.
+          </p>
         </>
       )}
       <label className="flex flex-col gap-1 text-sm text-muted">

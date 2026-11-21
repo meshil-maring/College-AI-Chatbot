@@ -2,31 +2,27 @@ import { hasPermission } from '../auth/access/permissions.ts'
 import { hasResourceNavigation } from '../learning-resources/data/resourceIdentity.ts'
 
 export type AdminView =
-  | 'staff-faculty'
-  | 'academic-setup'
-  | 'approvals'
-  | 'notices'
-  | 'documents'
-  | 'faqs'
-  | 'assistant'
-  | 'profile'
-  | 'permissions'
+  'staff-faculty' | 'academic-setup' | 'approvals' | 'notices' | 'documents' | 'faqs' | 'assistant' | 'profile'
 export type StudentWorkspacePage = 'register' | 'all' | 'bulk' | 'requests' | 'transfers' | 'new-transfer'
 export interface AdminNavItem {
   readonly key: AdminView
   readonly label: string
+  /** Sidebar section heading. */
+  readonly group: string
 }
+/** Sidebar order, grouped by task. Profile sits last, under Account. */
 export const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
-  { key: 'profile', label: 'Profile' },
-  { key: 'academic-setup', label: 'Academic Setup' },
-  { key: 'staff-faculty', label: 'Staff & Faculty' },
-  { key: 'approvals', label: 'Students' },
-  { key: 'notices', label: 'Notices' },
-  { key: 'documents', label: 'Learning Resources' },
-  { key: 'faqs', label: 'FAQs' },
-  { key: 'assistant', label: 'AI Assistant' },
-  { key: 'permissions', label: 'Staff Permissions' },
+  { key: 'academic-setup', label: 'Academic Setup', group: 'Academics' },
+  { key: 'approvals', label: 'Students', group: 'People' },
+  { key: 'staff-faculty', label: 'Staff and Faculty Management', group: 'People' },
+  { key: 'notices', label: 'Notices', group: 'Communication' },
+  { key: 'documents', label: 'Learning Resources', group: 'Communication' },
+  { key: 'faqs', label: 'FAQs', group: 'Communication' },
+  { key: 'assistant', label: 'AI Assistant', group: 'Assistant' },
+  { key: 'profile', label: 'Profile', group: 'Account' },
 ]
+/** Admin views with their own sub-pages in the sidebar. */
+export const ADMIN_EXPANDABLE_VIEWS: readonly AdminView[] = ['academic-setup', 'approvals']
 const VIEW_PERMISSIONS: Record<AdminView, readonly string[]> = {
   profile: ['profile.own.read'],
   // The design overview is available to admins; catalogue access is checked separately.
@@ -37,7 +33,6 @@ const VIEW_PERMISSIONS: Record<AdminView, readonly string[]> = {
   documents: ['documents.read'],
   faqs: ['ai.knowledge.read'],
   assistant: ['ai.chat'],
-  permissions: ['permissions.read'],
 }
 /** Navigation is presentation only. Endpoints enforce role, tenant and permissions. */
 export function buildAdminNavigation(role: string | null, permissions?: readonly string[]): readonly AdminNavItem[] {
@@ -53,11 +48,10 @@ export function buildAdminNavigation(role: string | null, permissions?: readonly
 export const ADMIN_VIEW_HEADINGS: Record<AdminView, string> = {
   profile: 'Profile',
   'academic-setup': 'Academic Setup',
-  'staff-faculty': 'Staff & Faculty',
+  'staff-faculty': 'Staff and Faculty Management',
   approvals: 'Students',
   notices: 'Notices',
   documents: 'Learning Resources',
   faqs: 'FAQs',
   assistant: 'AI Assistant',
-  permissions: 'Staff Permissions',
 }

@@ -31,6 +31,8 @@ _ADMIN_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("GET", "/admin/memberships"): ("users.read",),
     ("POST", "/admin/memberships/{user_id}/deactivate"): ("users.update",),
     ("POST", "/admin/memberships/{user_id}/reactivate"): ("users.update",),
+    ("PUT", "/admin/memberships/{user_id}/department"): ("users.update",),
+    ("PUT", "/admin/memberships/{user_id}/role"): ("users.update", "roles.manage"),
     ("POST", "/admin/memberships/invitations/{invitation_id}/resend"): (
         "users.update",
     ),

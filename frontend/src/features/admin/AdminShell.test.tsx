@@ -19,24 +19,24 @@ describe('administrator account workspace', () => {
     expect(
       within(nav)
         .getAllByRole('button')
+        .filter((item) => !item.classList.contains('workspace-nav-toggle'))
         .map((item) => item.textContent),
     ).toEqual([
-      'Profile',
       'Academic Setup',
-      'Staff & Faculty',
       'Students',
-      'All Students',
-      'Add Student',
-      'Bulk Import',
-      'Registration Requests',
-      'Transfer Requests',
-      'New Transfer',
+      'Staff and Faculty Management',
       'Notices',
       'Learning Resources',
       'FAQs',
       'AI Assistant',
-      'Staff Permissions',
+      'Profile',
     ])
+    expect(
+      within(nav)
+        .getAllByRole('group')
+        .map((group) => group.getAttribute('aria-labelledby')),
+    ).toHaveLength(5)
+    expect(within(nav).getByRole('group', { name: 'People' })).toBeInTheDocument()
     for (const value of ['u1', 'a1', 'inst-1', 'test-token']) {
       expect(screen.queryByText(value, { exact: true })).not.toBeInTheDocument()
     }
@@ -59,7 +59,14 @@ describe('administrator account workspace', () => {
       within(studentPages)
         .getAllByRole('button')
         .map((item) => item.textContent),
-    ).toEqual(['All Students', 'Add Student', 'Bulk Import', 'Registration Requests', 'Transfer Requests', 'New Transfer'])
+    ).toEqual([
+      'All Students',
+      'Add Student',
+      'Bulk Import',
+      'Registration Requests',
+      'Transfer Requests',
+      'New Transfer',
+    ])
     expect(within(studentPages).getByRole('button', { name: 'Add Student' })).toHaveAttribute('aria-current', 'page')
     await userEvent.click(within(studentPages).getByRole('button', { name: 'Bulk Import' }))
     expect(screen.getByRole('heading', { name: 'Bulk Student Import' })).toBeInTheDocument()
