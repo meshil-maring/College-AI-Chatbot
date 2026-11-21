@@ -56,6 +56,8 @@ describe('Staff and Faculty Management — invitations', () => {
     )
     expect(await screen.findByText(/Invitation sent to ada@example.com/)).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).toBeNull()
+    // After sending, the Pending invitations page opens so the new invitation is visible.
+    expect(screen.getByRole('region', { name: 'Pending invitations' })).toBeInTheDocument()
   })
 
   it('explains missing fields before sending anything', async () => {
@@ -94,7 +96,7 @@ describe('Staff and Faculty Management — invitations', () => {
       already_applied: false,
       message: 'Invitation cancelled. The link no longer works.',
     })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="invitations" />)
     const section = await screen.findByRole('region', { name: 'Pending invitations' })
     expect(await within(section).findByText('Ada Lovelace')).toBeInTheDocument()
     expect(within(section).getByText('Computer Science')).toBeInTheDocument()
@@ -113,7 +115,7 @@ describe('Staff and Faculty Management — invitations', () => {
       invitations: [invitation({ status: 'expired', role: 'staff' })],
       total: 1,
     })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="invitations" />)
     const section = await screen.findByRole('region', { name: 'Pending invitations' })
     expect(within(section).queryByRole('button', { name: /Resend/ })).toBeNull()
     fireEvent.click(await within(section).findByRole('button', { name: 'Invite Ada Lovelace again' }))

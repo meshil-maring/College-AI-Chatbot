@@ -16,6 +16,7 @@ import AdminProfile from './profile/AdminProfile.tsx'
 import AcademicWorkspace from './academic-setup/overview/AcademicWorkspace.tsx'
 import StudentManager from './students/StudentManager.tsx'
 import StaffFacultyManager from './staff-faculty/StaffFacultyManager.tsx'
+import { STAFF_FACULTY_PAGE_INFO } from './staff-faculty/StaffFacultyNavigation.tsx'
 import NoticeManager from './notices/NoticeManager.tsx'
 import LearningResourcesPage from '../learning-resources/LearningResourcesPage.tsx'
 import FaqManager from './faqs/FaqManager.tsx'
@@ -57,12 +58,18 @@ export default function AdminShell() {
     clearAcademicSearch,
     studentPage,
     navigateStudentPage,
+    staffPage: requestedStaffPage,
+    navigateStaffPage,
   } = useAdminWorkspaceNavigation(
     user ? JSON.stringify([user.auth_user_id ?? user.user_id, user.institution_id]) : undefined,
   )
   const navigation = buildAdminNavigation(role, user?.effective_permissions)
   const view = navigation.some((item) => item.key === selected) ? selected : navigation[0]?.key
   if (!user || role !== 'admin') return <main role="status">Administrator access is unavailable.</main>
+  // Presentation only; the permissions API enforces `permissions.read` either way.
+  const canManagePermissions =
+    user.effective_permissions === undefined || hasPermission(user.effective_permissions, 'permissions.read')
+  const staffPage = requestedStaffPage === 'permissions' && !canManagePermissions ? 'requests' : requestedStaffPage
   return (
     <AdminFrame
       navigation={navigation}
@@ -77,11 +84,20 @@ export default function AdminShell() {
       onAcademicSearch={searchAcademic}
       studentPage={studentPage}
       onStudentNavigate={navigateStudentPage}
+      staffPage={staffPage}
+      onStaffNavigate={navigateStaffPage}
+      canManagePermissions={canManagePermissions}
     >
       {view ? (
         <>
           {view !== 'assistant' && view !== 'academic-setup' && view !== 'documents' && view !== 'approvals' && (
-            <WorkspacePageHeader title={ADMIN_VIEW_HEADINGS[view]} description={descriptions[view]} />
+            <WorkspacePageHeader
+              title={view === 'staff-faculty' ? STAFF_FACULTY_PAGE_INFO[staffPage].label : ADMIN_VIEW_HEADINGS[view]}
+              eyebrow={view === 'staff-faculty' ? ADMIN_VIEW_HEADINGS[view] : undefined}
+              description={
+                view === 'staff-faculty' ? STAFF_FACULTY_PAGE_INFO[staffPage].description : descriptions[view]
+              }
+            />
           )}
           {view === 'profile' && <AdminProfile user={user} />}
           {view === 'academic-setup' && (
@@ -95,10 +111,9 @@ export default function AdminShell() {
           {view === 'staff-faculty' && accessToken && (
             <StaffFacultyManager
               accessToken={accessToken}
-              canManagePermissions={
-                user.effective_permissions === undefined ||
-                hasPermission(user.effective_permissions, 'permissions.read')
-              }
+              page={staffPage}
+              onNavigate={navigateStaffPage}
+              canManagePermissions={canManagePermissions}
             />
           )}
           {view === 'approvals' && <StudentManager page={studentPage} />}

@@ -1,5 +1,5 @@
 import './__tests__/StaffFacultyManager.support.ts'
-import { CSE, MECH, member } from './__tests__/StaffFacultyManager.support.ts'
+import { actionNames, chooseAction, CSE, MECH, member } from './__tests__/StaffFacultyManager.support.ts'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import StaffFacultyManager from './StaffFacultyManager.tsx'
@@ -34,7 +34,7 @@ function change(departmentId: string) {
 }
 
 async function openDialog() {
-  fireEvent.click(await screen.findByRole('button', { name: 'Manage HOD for Tina Teacher' }))
+  await chooseAction('Tina Teacher', 'Manage HOD')
   return screen.getByRole('dialog', { name: 'Head of Department' })
 }
 
@@ -42,7 +42,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
   it('appoints one faculty member as HOD of several departments', async () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [teacher], total: 1 })
     vi.mocked(transfers.addDepartmentHead).mockImplementation(async (_token, id) => change(id))
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const dialog = await openDialog()
     expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled()
     fireEvent.click(within(dialog).getByRole('checkbox', { name: /Computer Science/ }))
@@ -62,7 +62,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [teacher], total: 1 })
     withHeads([head('someone-else', 'Old Head')])
     vi.mocked(transfers.addDepartmentHead).mockImplementation(async (_token, id) => change(id))
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const dialog = await openDialog()
     const option = within(dialog).getByRole('checkbox', { name: /Computer Science/ })
     expect(option.closest('label')).toHaveTextContent('Also headed by Old Head')
@@ -78,7 +78,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [teacher], total: 1 })
     withHeads([head(teacher.user_id, 'Tina Teacher'), head(teacher.user_id, 'Tina Teacher', MECH.department_id)])
     vi.mocked(transfers.endDepartmentHead).mockImplementation(async (_token, id) => change(id))
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     expect(await screen.findByText('HOD · Computer Science')).toBeInTheDocument()
     expect(screen.getByText('HOD · Mechanical')).toBeInTheDocument()
     const dialog = await openDialog()
@@ -96,7 +96,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [teacher], total: 1 })
     withHeads([head(teacher.user_id, 'Tina Teacher', MECH.department_id)])
     vi.mocked(transfers.endDepartmentHead).mockImplementation(async (_token, id) => change(id))
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const dialog = await openDialog()
     fireEvent.click(within(dialog).getByRole('checkbox', { name: /Mechanical/ }))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
@@ -105,7 +105,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
 
   it('does not change anything when the dialog is cancelled', async () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [teacher], total: 1 })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const dialog = await openDialog()
     fireEvent.click(within(dialog).getByRole('checkbox', { name: /Mechanical/ }))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
@@ -118,9 +118,9 @@ describe('Staff and Faculty Management — Head of Department', () => {
       members: [member({ department_id: CSE.department_id }), { ...teacher, user_id: 't2', status: 'deactivated' }],
       total: 2,
     })
-    render(<StaffFacultyManager accessToken="jwt" />)
-    await screen.findByText('Sam Staff')
-    expect(screen.queryByRole('button', { name: /Manage HOD/ })).toBeNull()
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
+    expect(await actionNames('Sam Staff')).toEqual(['Permissions', 'Deactivate'])
+    expect(await actionNames('Tina Teacher')).toEqual(['Reactivate'])
   })
 
   it('reports partial progress when a later change is refused', async () => {
@@ -128,7 +128,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
     vi.mocked(transfers.addDepartmentHead)
       .mockImplementationOnce(async (_token, id) => change(id))
       .mockRejectedValueOnce(new Error('Choose an active faculty member for an active department.'))
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const dialog = await openDialog()
     fireEvent.click(within(dialog).getByRole('checkbox', { name: /Computer Science/ }))
     fireEvent.click(within(dialog).getByRole('checkbox', { name: /Mechanical/ }))
@@ -139,7 +139,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
   it('keeps the roster usable when HOD data cannot be loaded', async () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [teacher], total: 1 })
     vi.mocked(transfers.getDepartmentHeads).mockRejectedValue(new Error('down'))
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     expect(await screen.findByText('Tina Teacher')).toBeInTheDocument()
     expect(screen.queryByText(/HOD ·/)).toBeNull()
   })

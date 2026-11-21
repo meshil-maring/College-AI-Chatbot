@@ -2,7 +2,7 @@ import './__tests__/AdminShell.support.tsx'
 import { authState } from './__tests__/AdminShell.support.tsx'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as adminApi from '../../services/admin/adminApi.ts'
 import * as academicApi from '../../services/admin/academics.ts'
 import AdminShell from './AdminShell.tsx'
@@ -74,6 +74,38 @@ describe('administrator account workspace', () => {
     await userEvent.click(within(studentPages).getByRole('button', { name: 'Registration Requests' }))
     expect(screen.getByText('No students are awaiting approval right now.')).toBeInTheDocument()
     expect(window.location.search).toContain('student-page=requests')
+  })
+  it('gives each Staff and Faculty section its own page', async () => {
+    window.history.replaceState(null, '', '/login/admin')
+    vi.mocked(adminApi.listMembershipRequests).mockResolvedValue({ requests: [], total: 0 })
+    vi.mocked(adminApi.listMembershipRoster).mockResolvedValue({ members: [], total: 0 })
+    vi.mocked(adminApi.listMembershipInvitations).mockResolvedValue({ invitations: [], total: 0 })
+    render(<AdminShell />)
+    const nav = screen.getByRole('navigation', { name: 'Admin navigation' })
+    await userEvent.click(within(nav).getByRole('button', { name: 'Staff and Faculty Management', exact: true }))
+    const pages = screen.getByRole('list', { name: 'Staff and Faculty pages' })
+    expect(
+      within(pages)
+        .getAllByRole('button')
+        .map((item) => item.textContent),
+    ).toEqual(['Requests', 'Pending invitations', 'Roster', 'Staff permissions'])
+    expect(screen.getByRole('heading', { name: 'Requests', level: 1 })).toBeInTheDocument()
+    expect(within(pages).getByRole('button', { name: 'Requests' })).toHaveAttribute('aria-current', 'page')
+    await userEvent.click(within(pages).getByRole('button', { name: 'Roster' }))
+    expect(screen.getByRole('heading', { name: 'Roster', level: 1 })).toBeInTheDocument()
+    expect(window.location.search).toContain('staff-page=roster')
+    expect(await screen.findByText('No staff or faculty are on the roster yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('tablist', { name: 'Request filters' })).toBeNull()
+    await userEvent.click(within(pages).getByRole('button', { name: 'Pending invitations' }))
+    expect(await screen.findByText(/No invitations waiting/)).toBeInTheDocument()
+  })
+  it('hides the Staff permissions page from administrators without that grant', async () => {
+    window.history.replaceState(null, '', '/login/admin?view=staff-faculty&staff-page=permissions')
+    authState.user.effective_permissions = ['profile.own.read', 'users.read']
+    render(<AdminShell />)
+    const pages = screen.getByRole('list', { name: 'Staff and Faculty pages' })
+    expect(within(pages).queryByRole('button', { name: 'Staff permissions' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Requests', level: 1 })).toBeInTheDocument()
   })
   it('shows Students to readers and keeps student actions behind their required grants', async () => {
     authState.user.effective_permissions = ['profile.own.read', 'students.read', 'students.approve']

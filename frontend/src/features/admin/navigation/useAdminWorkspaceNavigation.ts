@@ -1,6 +1,12 @@
 import { useLayoutEffect } from 'react'
 import { navigateTo, useBrowserLocation } from '../../../lib/navigation.ts'
-import { ADMIN_NAV_ITEMS, type AdminView, type StudentWorkspacePage } from '../adminNavigation.ts'
+import {
+  ADMIN_NAV_ITEMS,
+  STAFF_FACULTY_PAGES,
+  type AdminView,
+  type StaffFacultyPage,
+  type StudentWorkspacePage,
+} from '../adminNavigation.ts'
 import { allAcademicAreas, type AcademicPage } from '../academic-setup/overview/academicOverviewModel.ts'
 
 export function resolveAdminLocation(search: string) {
@@ -26,7 +32,10 @@ export function resolveAdminLocation(search: string) {
     requestedStudentPage === 'new-transfer'
       ? requestedStudentPage
       : 'register'
-  return { view, page, search: params.get('academic-search') ?? '', studentPage }
+  // The old standalone Staff Permissions view opens the Staff permissions page.
+  const requestedStaffPage = params.get('view') === 'permissions' ? 'permissions' : params.get('staff-page')
+  const staffPage: StaffFacultyPage = STAFF_FACULTY_PAGES.find((item) => item === requestedStaffPage) ?? 'requests'
+  return { view, page, search: params.get('academic-search') ?? '', studentPage, staffPage }
 }
 
 export function useAdminWorkspaceNavigation(identity?: string) {
@@ -40,6 +49,7 @@ export function useAdminWorkspaceNavigation(identity?: string) {
     search = '',
     replace = false,
     studentPage: StudentWorkspacePage = 'register',
+    staffPage: StaffFacultyPage = 'requests',
   ) {
     const params = new URLSearchParams(window.location.search)
     if (view === 'profile') params.delete('view')
@@ -52,6 +62,8 @@ export function useAdminWorkspaceNavigation(identity?: string) {
     else params.delete('academic')
     if (view === 'approvals' && studentPage !== 'register') params.set('student-page', studentPage)
     else params.delete('student-page')
+    if (view === 'staff-faculty' && staffPage !== 'requests') params.set('staff-page', staffPage)
+    else params.delete('staff-page')
     if (search.trim()) params.set('academic-search', search)
     else params.delete('academic-search')
     const query = params.toString()
@@ -71,6 +83,9 @@ export function useAdminWorkspaceNavigation(identity?: string) {
     academicPage: current.page,
     academicSearch: current.search,
     studentPage: current.studentPage,
+    staffPage: current.staffPage,
+    navigateStaffPage: (staffPage: StaffFacultyPage) =>
+      open('staff-faculty', 'overview', '', false, 'register', staffPage),
     navigateView: (view: AdminView) => open(view),
     navigateStudentPage: (studentPage: StudentWorkspacePage) => open('approvals', 'overview', '', false, studentPage),
     navigateAcademic: (page: AcademicPage) => open('academic-setup', page),

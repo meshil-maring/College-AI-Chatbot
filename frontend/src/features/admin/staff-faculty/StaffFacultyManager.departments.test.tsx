@@ -1,5 +1,5 @@
 import './__tests__/StaffFacultyManager.support.ts'
-import { CSE, MECH, member, request } from './__tests__/StaffFacultyManager.support.ts'
+import { actionNames, chooseAction, CSE, MECH, member, request } from './__tests__/StaffFacultyManager.support.ts'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import StaffFacultyManager from './StaffFacultyManager.tsx'
@@ -52,7 +52,7 @@ describe('Staff and Faculty Management — departments', () => {
       department_name: 'Mechanical',
       message: 'Department set to Mechanical.',
     })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const select = await screen.findByRole('combobox', { name: 'Department for Sam Staff' })
     expect(select).toHaveValue(CSE.department_id)
     fireEvent.change(select, { target: { value: MECH.department_id } })
@@ -65,7 +65,7 @@ describe('Staff and Faculty Management — departments', () => {
   it('does not change the department when the administrator cancels', async () => {
     vi.mocked(window.confirm).mockReturnValue(false)
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [member()], total: 1 })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const select = await screen.findByRole('combobox', { name: 'Department for Sam Staff' })
     expect(select).toHaveValue('')
     fireEvent.change(select, { target: { value: CSE.department_id } })
@@ -77,10 +77,11 @@ describe('Staff and Faculty Management — permissions', () => {
   it('opens a Staff member permissions from the roster', async () => {
     const other = member({ user_id: '20000000-0000-0000-0000-000000000002', name: 'Pat Staff', email: 'pat@x.test' })
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [member(), other], total: 2 })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
+    expect(screen.queryByRole('heading', { name: 'Staff permissions' })).toBeNull()
+    await chooseAction('Pat Staff', 'Permissions')
+    // Permissions opens the Staff permissions page with that member selected.
     expect(await screen.findByRole('heading', { name: 'Staff permissions' })).toBeInTheDocument()
-    const row = (await screen.findByText('Pat Staff')).closest('tr') as HTMLElement
-    fireEvent.click(within(row).getByRole('button', { name: 'Permissions' }))
     await waitFor(() => expect(api.getStaffPermissions).toHaveBeenLastCalledWith('jwt', other.user_id))
     expect(screen.getByRole('combobox', { name: 'Staff member' })).toHaveValue(other.user_id)
   })
@@ -90,17 +91,16 @@ describe('Staff and Faculty Management — permissions', () => {
       members: [member({ role: 'faculty', name: 'Fay Faculty' }), member({ user_id: 's2', status: 'deactivated' })],
       total: 2,
     })
-    render(<StaffFacultyManager accessToken="jwt" />)
-    await screen.findByText('Fay Faculty')
-    expect(screen.queryByRole('button', { name: 'Permissions' })).toBeNull()
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
+    expect(await actionNames('Fay Faculty')).not.toContain('Permissions')
+    expect(await actionNames('Sam Staff')).toEqual(['Reactivate'])
   })
 
   it('hides permission management from an administrator without that grant', async () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [member()], total: 1 })
-    render(<StaffFacultyManager accessToken="jwt" canManagePermissions={false} />)
-    await screen.findByText('Sam Staff')
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" canManagePermissions={false} />)
+    expect(await actionNames('Sam Staff')).toEqual(['Deactivate'])
     expect(screen.queryByRole('heading', { name: 'Staff permissions' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Permissions' })).toBeNull()
     expect(api.getDelegableStaffPermissions).not.toHaveBeenCalled()
   })
 })

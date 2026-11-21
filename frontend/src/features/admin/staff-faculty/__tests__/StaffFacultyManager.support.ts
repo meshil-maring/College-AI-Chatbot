@@ -1,3 +1,4 @@
+import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, vi } from 'vitest'
 import * as academics from '../../../../services/admin/academics.ts'
 import * as api from '../../../../services/admin/adminApi.ts'
@@ -48,6 +49,26 @@ export function member(changes: Partial<MembershipRosterEntry> = {}): Membership
     department_name: null,
     ...changes,
   }
+}
+
+/** Open a roster member's Actions menu and return it. */
+export async function openActions(name: string) {
+  fireEvent.click(await screen.findByRole('button', { name: `Actions for ${name}` }))
+  return screen.getByRole('menu', { name: `Actions for ${name}` })
+}
+
+/** Choose one item from a roster member's Actions menu. */
+export async function chooseAction(name: string, item: string) {
+  await openActions(name)
+  fireEvent.click(screen.getByRole('menuitem', { name: item }))
+}
+
+/** The item names in a roster member's Actions menu; the menu is closed again. */
+export async function actionNames(name: string) {
+  const menu = await openActions(name)
+  const names = Array.from(menu.querySelectorAll('[role="menuitem"]')).map((item) => item.textContent)
+  fireEvent.keyDown(menu, { key: 'Escape' })
+  return names
 }
 
 beforeEach(() => {

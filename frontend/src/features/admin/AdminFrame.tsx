@@ -4,6 +4,7 @@ import {
   ADMIN_EXPANDABLE_VIEWS,
   type AdminNavItem,
   type AdminView,
+  type StaffFacultyPage,
   type StudentWorkspacePage,
 } from './adminNavigation.ts'
 import WorkspaceFrame from '../workspace/WorkspaceFrame.tsx'
@@ -11,6 +12,7 @@ import AcademicSidebar from './academic-setup/overview/AcademicSidebar.tsx'
 import AcademicSearch from './academic-setup/overview/AcademicSearch.tsx'
 import type { AcademicPage } from './academic-setup/overview/academicOverviewModel.ts'
 import StudentWorkspaceNavigation from './students/StudentWorkspaceNavigation.tsx'
+import StaffFacultyNavigation from './staff-faculty/StaffFacultyNavigation.tsx'
 
 interface Props {
   children: ReactNode
@@ -26,6 +28,9 @@ interface Props {
   onAcademicSearch: (value: string) => void
   studentPage: StudentWorkspacePage
   onStudentNavigate: (page: StudentWorkspacePage) => void
+  staffPage: StaffFacultyPage
+  onStaffNavigate: (page: StaffFacultyPage) => void
+  canManagePermissions: boolean
 }
 export default function AdminFrame(props: Props) {
   const academic = props.currentView === 'academic-setup'
@@ -49,6 +54,17 @@ export default function AdminFrame(props: Props) {
               currentPage={props.currentView === 'approvals' ? props.studentPage : null}
               onNavigate={(page) => {
                 props.onStudentNavigate(page)
+                close()
+              }}
+            />
+          )
+        if (view === 'staff-faculty')
+          return (
+            <StaffFacultyNavigation
+              currentPage={props.currentView === 'staff-faculty' ? props.staffPage : null}
+              canManagePermissions={props.canManagePermissions}
+              onNavigate={(page) => {
+                props.onStaffNavigate(page)
                 close()
               }}
             />

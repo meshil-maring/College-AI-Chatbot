@@ -58,7 +58,7 @@ export default function MembershipRequests({
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="membership-requests-heading" className="font-semibold text-content text-section">
+          <h2 id="membership-requests-heading" className="sr-only">
             Requests
           </h2>
           <p className="mt-1 max-w-[70ch] text-sm text-muted">

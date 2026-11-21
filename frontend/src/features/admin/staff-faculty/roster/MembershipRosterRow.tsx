@@ -1,16 +1,9 @@
-import { Crown, KeyRound } from 'lucide-react'
+import { Crown, KeyRound, UserCheck, UserX } from 'lucide-react'
 import type { Department } from '../../../../types/academicSetup.ts'
 import type { MembershipRole, MembershipRosterEntry } from '../../../../types/admin.ts'
-import {
-  Badge,
-  BUTTON_CLASS,
-  DANGER_BUTTON_CLASS,
-  Initials,
-  ROLE_OPTIONS,
-  SELECT_CLASS,
-  StatusBadge,
-} from '../StaffFacultyUI.tsx'
+import { Badge, Initials, ROLE_OPTIONS, SELECT_CLASS, StatusBadge } from '../StaffFacultyUI.tsx'
 import type { HeadAppointment } from '../useDepartmentHeadActions.ts'
+import RowActionsMenu, { type RowAction } from './RowActionsMenu.tsx'
 
 export interface RosterActions {
   actionKey: string | null
@@ -49,6 +42,43 @@ export default function MembershipRosterRow({
   // Active Faculty can be appointed; anyone still holding an appointment can have it ended.
   const canManageHod = (member.role === 'faculty' && isActive) || appointments.length > 0
   const inactive = member.status === 'inactive' || member.status === 'deactivated'
+
+  const menu: RowAction[] = []
+  if (canManageHod)
+    menu.push({
+      key: 'hod',
+      label: 'Manage HOD',
+      icon: <Crown aria-hidden="true" className="size-4" />,
+      onSelect: () => actions.openHod(member),
+    })
+  if (managePermissions && member.role === 'staff' && isActive)
+    menu.push({
+      key: 'permissions',
+      label: 'Permissions',
+      icon: <KeyRound aria-hidden="true" className="size-4" />,
+      onSelect: () => managePermissions(member),
+    })
+  if (member.user_id && isActive)
+    menu.push({
+      key: 'deactivate',
+      label: 'Deactivate',
+      icon: <UserX aria-hidden="true" className="size-4" />,
+      danger: true,
+      onSelect: () => void actions.lifecycle(member, 'deactivate'),
+    })
+  if (member.user_id && inactive)
+    menu.push({
+      key: 'reactivate',
+      label: 'Reactivate',
+      icon: <UserCheck aria-hidden="true" className="size-4" />,
+      onSelect: () => void actions.lifecycle(member, 'reactivate'),
+    })
+  // While one of this member's actions saves, the button says what is happening.
+  const busyText: Record<string, string> = {
+    [`hod:${member.user_id}`]: 'Saving HOD…',
+    [`deactivate:${member.user_id}`]: 'Deactivating…',
+    [`reactivate:${member.user_id}`]: 'Reactivating…',
+  }
 
   return (
     <tr className={`border-t border-line align-top hover:bg-hover/40 ${inactive ? 'text-muted' : ''}`}>
@@ -111,45 +141,8 @@ export default function MembershipRosterRow({
         <StatusBadge status={member.status} />
       </td>
       <td className="px-4 py-3">
-        <div className="flex flex-wrap justify-end gap-2">
-          {canManageHod ? (
-            <button
-              type="button"
-              disabled={busy}
-              aria-label={`Manage HOD for ${label}`}
-              onClick={() => actions.openHod(member)}
-              className={BUTTON_CLASS}
-            >
-              <Crown aria-hidden="true" className="size-4" />
-              {actionKey === `hod:${member.user_id}` ? 'Saving…' : 'Manage HOD'}
-            </button>
-          ) : null}
-          {managePermissions && member.role === 'staff' && isActive ? (
-            <button type="button" disabled={busy} onClick={() => managePermissions(member)} className={BUTTON_CLASS}>
-              <KeyRound aria-hidden="true" className="size-4" />
-              Permissions
-            </button>
-          ) : null}
-          {member.user_id && isActive ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void actions.lifecycle(member, 'deactivate')}
-              className={DANGER_BUTTON_CLASS}
-            >
-              {actionKey === `deactivate:${member.user_id}` ? 'Deactivating…' : 'Deactivate'}
-            </button>
-          ) : null}
-          {member.user_id && inactive ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void actions.lifecycle(member, 'reactivate')}
-              className={BUTTON_CLASS}
-            >
-              {actionKey === `reactivate:${member.user_id}` ? 'Reactivating…' : 'Reactivate'}
-            </button>
-          ) : null}
+        <div className="flex justify-end">
+          <RowActionsMenu label={label} actions={menu} disabled={busy} busyText={busyText[actionKey ?? ''] ?? null} />
         </div>
       </td>
     </tr>

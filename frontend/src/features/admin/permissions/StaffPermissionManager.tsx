@@ -44,12 +44,7 @@ export default function StaffPermissionManager({
       className="space-y-4 rounded-xl border border-line bg-surface p-4"
     >
       <div>
-        <h2
-          id="staff-permission-heading"
-          ref={headingRef}
-          tabIndex={-1}
-          className="font-semibold text-content text-section focus:outline-none"
-        >
+        <h2 id="staff-permission-heading" ref={headingRef} tabIndex={-1} className="sr-only">
           Staff permissions
         </h2>
         <p className="mt-1 max-w-[70ch] text-sm text-muted">

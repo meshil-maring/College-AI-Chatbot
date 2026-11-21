@@ -18,7 +18,27 @@ describe('administrator browser navigation', () => {
       page: 'overview',
       search: '',
       studentPage: 'register',
+      staffPage: 'requests',
     })
+  })
+
+  it('restores Staff and Faculty pages and keeps the old Staff Permissions link working', () => {
+    expect(resolveAdminLocation('?view=staff-faculty&staff-page=roster')).toMatchObject({
+      view: 'staff-faculty',
+      staffPage: 'roster',
+    })
+    expect(resolveAdminLocation('?view=staff-faculty&staff-page=unknown').staffPage).toBe('requests')
+    expect(resolveAdminLocation('?view=permissions')).toMatchObject({ view: 'staff-faculty', staffPage: 'permissions' })
+    window.history.replaceState(null, '', '/login/admin')
+    const hook = renderHook(useAdminWorkspaceNavigation)
+    act(() => hook.result.current.navigateStaffPage('invitations'))
+    expect(window.location.search).toContain('view=staff-faculty')
+    expect(window.location.search).toContain('staff-page=invitations')
+    expect(hook.result.current.staffPage).toBe('invitations')
+    act(() => hook.result.current.navigateStaffPage('requests'))
+    expect(window.location.search).not.toContain('staff-page')
+    act(() => hook.result.current.navigateView('notices'))
+    expect(window.location.search).not.toContain('staff-page')
   })
 
   it('restores student subpages and writes the selected page to the URL', () => {

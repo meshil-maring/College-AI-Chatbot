@@ -18,7 +18,7 @@ Administrator navigation uses validated URL query parameters and starts on Profi
 when no destination is supplied. Browser Back/Forward and refresh retain the
 selected view. Staff navigation continues to use local view state.
 Administrator views are Profile, Academic Setup, Staff and Faculty Management, Student registration and approvals,
-Notices, Learning Resources, FAQs and AI Assistant. Old `view=permissions` links open Staff and Faculty Management. Staff views are Profile,
+Notices, Learning Resources, FAQs and AI Assistant. Old `view=permissions` links open its Staff permissions page. Staff views are Profile,
 Student Approvals, Learning Resources and AI Assistant. Student views are Profile, Notices, Learning
 Resources, Semester Registration and AI Assistant after account approval. Server permissions filter
 navigation, and backend endpoints enforce authorization and tenant isolation.
@@ -68,7 +68,7 @@ student invitation and sets the student's password. The token stays in the URL
 fragment until the client submits it to the backend.
 
 Administrator links retain the current application entry path and use `view`,
-`academic`, `academic-search` and `student-page` query parameters. For example,
+`academic`, `academic-search`, `student-page` and `staff-page` query parameters. For example,
 `/?view=academic-setup&academic=curriculum-subjects` opens compulsory subjects and
 student choice groups together after authentication. Existing `curriculum-options`
 links resolve to this combined destination. Unknown destinations fall back safely. Search replaces the current
@@ -76,6 +76,10 @@ overview entry while typing; choosing another page clears the search. URL values
 select presentation only and never authorize catalogue reads or mutations.
 The Students workspace uses `student-page=all`, `student-page=bulk`, and
 `student-page=requests`; Add Student is the default when no student page is set.
+Staff and Faculty Management uses `staff-page=invitations`, `staff-page=roster` and
+`staff-page=permissions`; Requests is the default. Old `view=permissions` links open
+the Staff permissions page, which is hidden (and falls back to Requests) without
+`permissions.read`.
 
 Legacy roster hash-navigation helpers and old dashboard navigation remain as
 disconnected source at the owner's request. See the

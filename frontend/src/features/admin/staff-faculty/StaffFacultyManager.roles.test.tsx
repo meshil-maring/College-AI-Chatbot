@@ -52,7 +52,7 @@ describe('Staff and Faculty Management — roles', () => {
       already_applied: false,
       message: 'Role changed to Staff. They will see the new workspace after signing in again.',
     })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     const role = await screen.findByRole('combobox', { name: 'Role for Sam Staff' })
     expect(role).toHaveValue('faculty')
     fireEvent.change(role, { target: { value: 'staff' } })
@@ -65,7 +65,7 @@ describe('Staff and Faculty Management — roles', () => {
     vi.mocked(api.setMemberRole).mockRejectedValue(
       new Error('This member is a Head of Department. End that appointment before making them Staff.'),
     )
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     fireEvent.change(await screen.findByRole('combobox', { name: 'Role for Sam Staff' }), {
       target: { value: 'staff' },
     })
@@ -75,7 +75,7 @@ describe('Staff and Faculty Management — roles', () => {
   it('does not change the role when the administrator cancels', async () => {
     vi.mocked(window.confirm).mockReturnValue(false)
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [member()], total: 1 })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     fireEvent.change(await screen.findByRole('combobox', { name: 'Role for Sam Staff' }), {
       target: { value: 'faculty' },
     })

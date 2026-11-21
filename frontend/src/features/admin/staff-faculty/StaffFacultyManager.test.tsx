@@ -16,7 +16,10 @@ describe('StaffFacultyManager', () => {
   it('shows tenant-safe requests and the empty roster state', async () => {
     render(<StaffFacultyManager accessToken="jwt" />)
     expect(await screen.findByText('Ada Faculty')).toBeDefined()
-    expect(screen.getByText('No staff or faculty are on the roster yet.')).toBeDefined()
+    // The roster is its own page.
+    expect(screen.queryByText('No staff or faculty are on the roster yet.')).toBeNull()
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
+    expect(await screen.findByText('No staff or faculty are on the roster yet.')).toBeDefined()
     expect(api.listMembershipRequests).toHaveBeenCalledWith('jwt', undefined, 'pending')
   })
 
@@ -48,7 +51,7 @@ describe('StaffFacultyManager', () => {
       members: [member({ name: '', email: 'xy faculty@example.test', role: 'faculty' })],
       total: 1,
     })
-    render(<StaffFacultyManager accessToken="jwt" />)
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     expect(await screen.findByText('xy faculty@example.test')).toBeDefined()
     expect(screen.queryByText('Invitation')).toBeNull()
     expect(screen.queryByRole('cell', { name: 'Pending' })).toBeNull()
@@ -147,9 +150,9 @@ describe('StaffFacultyManager', () => {
   it('shows saved requests at once when returning to the page, without requesting again', async () => {
     const first = render(<StaffFacultyManager accessToken="jwt" />)
     expect(await screen.findByText('Ada Faculty')).toBeDefined()
-    await screen.findByText('No staff or faculty are on the roster yet.')
-    await waitFor(() => expect(api.getDelegableStaffPermissions).toHaveBeenCalled())
-    const calls = [api.listMembershipRequests, api.listMembershipRoster, api.getDelegableStaffPermissions].map(
+    await waitFor(() => expect(api.listMembershipRoster).toHaveBeenCalled())
+    await waitFor(() => expect(api.listMembershipInvitations).toHaveBeenCalled())
+    const calls = [api.listMembershipRequests, api.listMembershipRoster, api.listMembershipInvitations].map(
       (read) => vi.mocked(read).mock.calls.length,
     )
     first.unmount()
@@ -158,7 +161,7 @@ describe('StaffFacultyManager', () => {
     expect(screen.queryByText('Loading membership requests…')).toBeNull()
     // Returning to the page makes no new requests while the data is fresh.
     expect(
-      [api.listMembershipRequests, api.listMembershipRoster, api.getDelegableStaffPermissions].map(
+      [api.listMembershipRequests, api.listMembershipRoster, api.listMembershipInvitations].map(
         (read) => vi.mocked(read).mock.calls.length,
       ),
     ).toEqual(calls)

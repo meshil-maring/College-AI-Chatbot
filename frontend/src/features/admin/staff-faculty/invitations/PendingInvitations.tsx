@@ -39,7 +39,7 @@ export default function PendingInvitations({
       className="space-y-4 rounded-xl border border-line bg-surface p-4"
     >
       <div>
-        <h2 id="member-invitations-heading" className="font-semibold text-content text-section">
+        <h2 id="member-invitations-heading" className="sr-only">
           Pending invitations
         </h2>
         <p className="mt-1 max-w-[70ch] text-sm text-muted">

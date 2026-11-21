@@ -21,6 +21,11 @@ actions. The administrator chooses each new member's department when approving
 applicants no longer pick a department. The administrator also confirms Staff or
 Faculty on approval and can switch it from the roster; the server refuses a switch
 while the member is a current Head of Department or holds extra Staff permissions.
+Staff and Faculty Management has four sidebar pages (`StaffFacultyNavigation.tsx`,
+`staff-page` in the URL): Requests, Pending invitations, Roster and Staff permissions.
+`StaffFacultyManager.tsx` renders the chosen page; reads stay cached across pages.
+Each roster row keeps its actions (Manage HOD, Permissions, Deactivate/Reactivate) in one
+**Actions** menu (`roster/RowActionsMenu.tsx`), portalled so the table scroll never clips it.
 The roster shows one HOD badge per department a member heads, and **Manage HOD**
 (`roster/HodDialog.tsx`, `useDepartmentHeadActions.ts`) lets the administrator tick
 every department an active Faculty member heads. A department may have several

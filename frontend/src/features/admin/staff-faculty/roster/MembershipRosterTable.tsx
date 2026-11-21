@@ -40,7 +40,7 @@ export default function MembershipRosterTable({
       className="space-y-4 rounded-xl border border-line bg-surface p-4"
     >
       <div>
-        <h2 id="membership-roster-heading" className="font-semibold text-content text-section">
+        <h2 id="membership-roster-heading" className="sr-only">
           Roster
         </h2>
         <p className="mt-1 max-w-[70ch] text-sm text-muted">
@@ -75,7 +75,7 @@ export default function MembershipRosterTable({
               tabIndex={0}
               className="overflow-x-auto rounded-lg border border-line"
             >
-              <table className="w-full min-w-[880px] text-left text-sm">
+              <table className="w-full min-w-[800px] text-left text-sm">
                 <thead className="bg-raised text-xs text-muted">
                   <tr>
                     <th scope="col" className="px-4 py-3 font-medium">
