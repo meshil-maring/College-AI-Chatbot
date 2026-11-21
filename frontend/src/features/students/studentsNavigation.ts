@@ -6,6 +6,7 @@ export const STUDENT_PAGES = [
   { key: 'history', label: 'Record history', path: 'record-history' },
   { key: 'waiting-approval', label: 'Waiting approval', path: 'waiting-approval' },
   { key: 'register', label: 'Register', path: 'register' },
+  { key: 'transfer-requests', label: 'Transfer Requests', path: 'transfer-requests' },
 ] as const
 
 export type StudentPage = (typeof STUDENT_PAGES)[number]['key']

@@ -1,7 +1,7 @@
 /** Authenticated identity and institution information workspace. */
 
 import { useState } from 'react'
-import { Bell, BookOpen, Bot, ClipboardList, UserCircle, type LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, Bell, BookOpen, Bot, ClipboardList, UserCircle, type LucideIcon } from 'lucide-react'
 import WorkspaceFrame from '../../workspace/WorkspaceFrame.tsx'
 import WorkspacePageHeader from '../../workspace/WorkspacePageHeader.tsx'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
@@ -11,6 +11,7 @@ import { NoticesPage } from '../notices/NoticesPage.tsx'
 import { ResourcesPage } from '../resources/ResourcesPage.tsx'
 import { ProfilePage } from '../profile/ProfilePage.tsx'
 import SemesterRegistrationPage from '../registration/SemesterRegistrationPage.tsx'
+import TransferRequestsPage from '../transfer/TransferRequestsPage.tsx'
 import { getMyProfile } from '../../../services/students/studentApi.ts'
 import { StudentAccessContext, useStudentResource, type StudentAccessDenial } from '../shared/useStudentResource.ts'
 import { ErrorBlock, LoadingBlock } from '../shared/SectionState.tsx'
@@ -21,6 +22,7 @@ const icons: Record<StudentView, LucideIcon> = {
   notices: Bell,
   resources: BookOpen,
   assistant: Bot,
+  'transfer-requests': ArrowLeftRight,
 }
 
 export default function StudentShell() {
@@ -137,6 +139,7 @@ export default function StudentShell() {
             {view === 'resources' && <ResourcesPage />}
             {view === 'profile' && <ProfilePage profile={profile} />}
             {view === 'registration' && <SemesterRegistrationPage />}
+            {view === 'transfer-requests' && <TransferRequestsPage />}
             {view === 'assistant' && (
               <section aria-label="AI Assistant">
                 <ChatShell />

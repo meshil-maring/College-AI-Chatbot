@@ -84,6 +84,11 @@ PERMISSIONS: tuple[str, ...] = (
     "platform.settings.manage",
     "platform.audit.read",
     "audit.read",
+    "transfers.request",
+    "transfers.read",
+    "transfers.review",
+    "transfers.approve",
+    "transfers.complete",
 )
 
 def permission_matches(granted: Iterable[str], required: str) -> bool:

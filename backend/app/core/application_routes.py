@@ -28,6 +28,7 @@ from app.api.auth.identity import router as identity_router
 from app.api.academics.academic_setup import router as academic_setup_router
 from app.api.academics.academic_structure import router as academic_structure_router
 from app.api.academics.semester_registration import router as semester_registration_router
+from app.api.students.transfers import router as transfers_router
 
 
 def register_feature_routes(app: FastAPI) -> None:
@@ -48,6 +49,7 @@ def register_feature_routes(app: FastAPI) -> None:
     app.include_router(semester_registration_router, prefix="/api/v1")
     app.include_router(students_router, prefix="/api/v1")
     app.include_router(student_notifications_router, prefix="/api/v1")
+    app.include_router(transfers_router, prefix="/api/v1")
     app.include_router(dev_auth_router, prefix="/api/v1")  # DEVELOPMENT / TESTING ONLY
     app.include_router(platform_router, prefix="/api/v1")
     # Phase 7.14: the invitation boundary is token-authorized, not session-
