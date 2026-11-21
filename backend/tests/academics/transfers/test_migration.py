@@ -16,21 +16,41 @@ def generator():
 
 
 def rendered():
-    [(target, sql)] = generator().render()
-    return target, sql
+    return generator().render()[0]
 
 
-def test_generated_migration_matches_sources_and_owns_its_version():
-    target, sql = rendered()
-    assert target.read_text(encoding="utf-8") == sql
-    assert list(target.parent.glob(f"{target.name.split('_', 1)[0]}_*.sql")) == [target]
+def test_generated_migrations_match_sources_and_own_their_versions():
+    migrations = generator().render()
+    assert [target.name for target, _ in migrations] == [
+        "20261121000000_student_transfer_workflow.sql",
+        "20261122000000_student_transfer_direct.sql",
+    ]
+    for target, sql in migrations:
+        assert target.read_text(encoding="utf-8") == sql
+        assert list(target.parent.glob(f"{target.name.split('_', 1)[0]}_*.sql")) == [target]
 
 
 def test_sources_stay_within_maintenance_limits():
-    files = [path for path in SOURCE.iterdir() if path.is_file()]
-    assert len(files) <= 15
-    for path in files:
-        assert len(path.read_text(encoding="utf-8").splitlines()) <= 250, path.name
+    for folder in (SOURCE, SOURCE / "direct"):
+        files = [path for path in folder.iterdir() if path.is_file()]
+        assert len(files) <= 15
+        for path in files:
+            assert len(path.read_text(encoding="utf-8").splitlines()) <= 250, path.name
+
+
+def test_direct_transfer_commands_are_backend_only_and_scoped():
+    _, sql = generator().render()[1]
+    security = (SOURCE / "direct/security.sql").read_text(encoding="utf-8")
+    revoke, grant = security.split("GRANT EXECUTE", 1)
+    assert set(re.findall(r"CREATE FUNCTION public\.(\w+)", sql)) <= set(re.findall(r"public\.(\w+)\(", revoke))
+    assert set(re.findall(r"public\.(\w+)\(", grant)) == {
+        "read_direct_transfer_students", "read_direct_transfer_options", "direct_transfer_student",
+    }
+    direct = sql.split("CREATE FUNCTION public.direct_transfer_student(", 1)[1].split("$$;", 1)[0]
+    for guard in ("assert_transfer_backend()", "transfer_direct_role(", "transfer_apply(",
+                  "'P1111'", "Head of Department can transfer only within their department"):
+        assert guard in direct
+    assert direct.index("'P1111'") < direct.index("INSERT INTO public.student_transfer_requests")
 
 
 def test_every_function_is_revoked_and_only_commands_reach_service_role():

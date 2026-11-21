@@ -1,5 +1,9 @@
 import type {
   DepartmentHeads,
+  DirectTransferBody,
+  DirectTransferOptions,
+  DirectTransferResult,
+  DirectTransferStudents,
   StudentTransfers,
   TransferCommandResult,
   TransferDecisionAction,
@@ -10,6 +14,7 @@ import { ADMIN_BASE, API_BASE_URL, STUDENT_BASE, requestJson } from '../admin/ht
 
 const OWN = `${STUDENT_BASE}/me/transfer-requests`
 const REVIEWS = `${API_BASE_URL}/v1/transfer-reviews`
+const DIRECT = `${API_BASE_URL}/v1/transfer-direct`
 
 export function getMyTransfers(token: string, signal?: AbortSignal): Promise<StudentTransfers> {
   return requestJson('GET', OWN, token, undefined, signal)
@@ -52,4 +57,20 @@ export function assignDepartmentHead(
   return requestJson('PUT', `${ADMIN_BASE}/department-heads/${encodeURIComponent(departmentId)}`, token, {
     faculty_user_id: facultyUserId,
   })
+}
+
+export function getDirectTransferStudents(token: string, signal?: AbortSignal): Promise<DirectTransferStudents> {
+  return requestJson('GET', `${DIRECT}/students`, token, undefined, signal)
+}
+
+export function getDirectTransferOptions(
+  token: string,
+  studentId: string,
+  signal?: AbortSignal,
+): Promise<DirectTransferOptions> {
+  return requestJson('GET', `${DIRECT}/students/${encodeURIComponent(studentId)}`, token, undefined, signal)
+}
+
+export function directTransfer(token: string, body: DirectTransferBody): Promise<DirectTransferResult> {
+  return requestJson('POST', DIRECT, token, body)
 }

@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react'
 import type { TransferRequest } from '../../types/transfer.ts'
 import {
   TRANSFER_EVENT_LABEL,
+  TRANSFER_INITIATOR_LABEL,
   TRANSFER_STATUS_LABEL,
   TRANSFER_STATUS_TONE,
   TRANSFER_TYPE_LABEL,
@@ -24,6 +25,9 @@ export default function TransferSummary({ request }: { request: TransferRequest 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted">
           {TRANSFER_TYPE_LABEL[request.transfer_type]}
+          {request.initiated_by && request.initiated_by !== 'student'
+            ? ` · ${TRANSFER_INITIATOR_LABEL[request.initiated_by]}`
+            : ''}
         </span>
         <TransferStatusBadge status={request.status} />
       </div>

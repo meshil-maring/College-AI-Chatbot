@@ -96,6 +96,7 @@ describe('role -> navigation isolation', () => {
       'Bulk Import',
       'Registration Requests',
       'Transfer Requests',
+      'New Transfer',
       ...adminItems.slice(studentsIndex + 1),
     ])
 
@@ -107,7 +108,7 @@ describe('role -> navigation isolation', () => {
     rerender(<App />)
     // Transfer Approvals appears only after the server confirms a current HOD appointment.
     expect(await navigationLabels('faculty')).toEqual(
-      FACULTY_NAV_ITEMS.filter((item) => item.key !== 'transfers').map((item) => item.label),
+      FACULTY_NAV_ITEMS.filter((item) => item.key !== 'transfers' && item.key !== 'transfer-new').map((item) => item.label),
     )
 
     setIdentity(STUDENT_B, 'student')

@@ -11,7 +11,7 @@ export type AdminView =
   | 'assistant'
   | 'profile'
   | 'permissions'
-export type StudentWorkspacePage = 'register' | 'all' | 'bulk' | 'requests' | 'transfers'
+export type StudentWorkspacePage = 'register' | 'all' | 'bulk' | 'requests' | 'transfers' | 'new-transfer'
 export interface AdminNavItem {
   readonly key: AdminView
   readonly label: string

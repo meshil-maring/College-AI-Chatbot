@@ -13,6 +13,7 @@ describe('faculty navigation after academic retirement', () => {
       'notices',
       'resources',
       'transfers',
+      'transfer-new',
       'assistant',
     ])
     for (const item of FACULTY_NAV_ITEMS) expect(FACULTY_VIEW_HEADINGS[item.key]).toBeTruthy()
@@ -32,6 +33,7 @@ describe('faculty navigation after academic retirement', () => {
     expect(buildFacultyNavigation('faculty', ['ai.chat'], true).map((item) => item.key)).toEqual([
       'notices',
       'transfers',
+      'transfer-new',
       'assistant',
     ])
     expect(buildFacultyNavigation('student', ['ai.chat'], true)).toEqual([])

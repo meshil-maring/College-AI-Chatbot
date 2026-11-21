@@ -57,6 +57,7 @@ export function requestFixture(overrides: Partial<TransferRequest> = {}): Transf
     transfer_type: 'section_transfer',
     status: 'submitted',
     reason: 'My section timetable clashes with my lab work.',
+    initiated_by: 'student',
     from_section: sectionFixture(),
     to_section: sectionFixture({ academic_section_id: 'section-b', section_name: 'B' }),
     submitted_at: '2026-11-20T10:00:00Z',

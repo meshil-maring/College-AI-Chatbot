@@ -129,6 +129,8 @@ def test_department_head_assignment_revalidates_scope_and_calls_writer():
     ("P1106", 409, "TRANSFER_ALREADY_OPEN"),
     ("23505", 409, "TRANSFER_ALREADY_OPEN"),
     ("P1110", 422, "DEPARTMENT_HEAD_INVALID"),
+    ("P1111", 409, "STUDENT_HAS_OPEN_TRANSFER"),
+    ("P1112", 422, "STUDENT_NO_PLACEMENT"),
     ("42501", 403, "FORBIDDEN"),
 ])
 def test_database_failures_map_to_actionable_errors(code, status, public):
@@ -138,3 +140,14 @@ def test_database_failures_map_to_actionable_errors(code, status, public):
         service._call(lambda: (_ for _ in ()).throw(failure))
     assert (caught.value.status_code, caught.value.code) == (status, public)
     assert "private" not in caught.value.message
+
+
+def test_direct_transfer_forwards_actor_tenant_and_chosen_student():
+    user, client = principal([]), MagicMock()
+    student, section = str(uuid4()), str(uuid4())
+    with (
+        patch.object(service, "get_admin_client", return_value=client),
+        patch.object(service.repository, "direct_transfer", return_value={"status": "approved"}) as writer,
+    ):
+        service.direct_transfer(user, {"student_id": student, "to_section_id": section, "reason": "Balance sizes"})
+    writer.assert_called_once_with(client, user["user_id"], TENANT, student, section, "Balance sizes")

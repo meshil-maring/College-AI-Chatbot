@@ -5,6 +5,7 @@ import AdminApprovals from './AdminApprovals.tsx'
 import StudentDirectoryPage from './directory/StudentDirectoryPage.tsx'
 import StudentOnboardingPage from '../student-onboarding/StudentOnboardingPage.tsx'
 import TransferReviewPage from '../../transfers/review/TransferReviewPage.tsx'
+import DirectTransferPage from '../../transfers/direct/DirectTransferPage.tsx'
 import './studentWorkspace.css'
 
 /** Keep account approval distinct while presenting it beside admin onboarding. */
@@ -41,6 +42,12 @@ export default function StudentManager({ page = 'register' }: { page?: StudentWo
         canResendInvitations={canResendStudentInvitations}
       />
     )
+  }
+  if (page === 'new-transfer') {
+    if (!canAll('transfers.approve')) {
+      return <p role="status">Your account does not have permission to transfer students.</p>
+    }
+    return <DirectTransferPage key={identity} />
   }
   if (page === 'transfers') {
     if (!canAll('transfers.read')) {

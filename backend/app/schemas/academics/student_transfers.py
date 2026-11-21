@@ -25,6 +25,12 @@ class TransferSubmit(AcademicModel):
         return value
 
 
+class DirectTransfer(TransferSubmit):
+    # An administrator or HOD names the student; the database checks tenant,
+    # department scope and the student's current placement.
+    student_id: UUID
+
+
 class TransferDecision(AcademicModel):
     action: Literal["start_review", "approve", "reject"]
     comment: str | None = Field(default=None, max_length=2000)

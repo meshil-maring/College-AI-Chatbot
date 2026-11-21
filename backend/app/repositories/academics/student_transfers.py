@@ -37,6 +37,25 @@ def decide(client, actor_id, tenant, request_id, action, comment):
     }).execute().data
 
 
+def direct_students(client, actor_id, tenant):
+    return client.rpc("read_direct_transfer_students", {
+        "p_actor": actor_id, "p_tenant": tenant,
+    }).execute().data
+
+
+def direct_options(client, actor_id, tenant, student_id):
+    return client.rpc("read_direct_transfer_options", {
+        "p_actor": actor_id, "p_tenant": tenant, "p_student": student_id,
+    }).execute().data
+
+
+def direct_transfer(client, actor_id, tenant, student_id, to_section_id, reason):
+    return client.rpc("direct_transfer_student", {
+        "p_actor": actor_id, "p_tenant": tenant, "p_student": student_id,
+        "p_to_section": to_section_id, "p_reason": reason,
+    }).execute().data
+
+
 def department_heads(client, actor_id, tenant):
     return client.rpc("read_department_heads", {
         "p_actor": actor_id, "p_tenant": tenant,

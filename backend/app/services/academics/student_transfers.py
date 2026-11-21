@@ -38,6 +38,11 @@ TRANSFER_ERRORS = {
         422, "DEPARTMENT_HEAD_INVALID",
         "Choose an active faculty member of this institution for an active department.",
     ),
+    "P1111": (
+        409, "STUDENT_HAS_OPEN_TRANSFER",
+        "This student has an open transfer request. Approve or reject it under Transfer Requests first.",
+    ),
+    "P1112": (422, "STUDENT_NO_PLACEMENT", "This student is not assigned to a section in an open term."),
     "23505": (409, "TRANSFER_ALREADY_OPEN", "You already have an open transfer request."),
     "42501": (403, "FORBIDDEN", "You do not have permission to perform this action."),
 }
@@ -128,6 +133,30 @@ def decide(user, request_id, payload):
         client, tenant = _reviewer(user)
         return repository.decide(
             client, str(user["user_id"]), tenant, request_id, payload["action"], comment
+        )
+    return _call(write)
+
+
+def direct_students(user):
+    def read():
+        client, tenant = _reviewer(user)
+        return repository.direct_students(client, str(user["user_id"]), tenant)
+    return _call(read)
+
+
+def direct_options(user, student_id):
+    def read():
+        client, tenant = _reviewer(user)
+        return repository.direct_options(client, str(user["user_id"]), tenant, student_id)
+    return _call(read)
+
+
+def direct_transfer(user, payload):
+    def write():
+        client, tenant = _reviewer(user)
+        return repository.direct_transfer(
+            client, str(user["user_id"]), tenant,
+            payload["student_id"], payload["to_section_id"], payload["reason"],
         )
     return _call(write)
 

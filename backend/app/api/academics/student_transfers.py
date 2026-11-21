@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.security import get_current_user, require_institution_roles
 from app.schemas.academics.student_transfers import (
-    DepartmentHeadWrite, TransferDecision, TransferSubmit,
+    DepartmentHeadWrite, DirectTransfer, TransferDecision, TransferSubmit,
 )
 from app.services.academics import student_transfers as service
 
@@ -43,6 +43,21 @@ def transfer_reviews(
 @router.post("/transfer-reviews/{request_id}/decision")
 def decide_transfer(request_id: UUID, body: TransferDecision, user: dict = Depends(_REVIEWER)):
     return service.decide(user, str(request_id), body.model_dump(mode="json"))
+
+
+@router.get("/transfer-direct/students")
+def direct_transfer_students(user: dict = Depends(_REVIEWER)):
+    return service.direct_students(user)
+
+
+@router.get("/transfer-direct/students/{student_id}")
+def direct_transfer_options(student_id: UUID, user: dict = Depends(_REVIEWER)):
+    return service.direct_options(user, str(student_id))
+
+
+@router.post("/transfer-direct", status_code=201)
+def direct_transfer(body: DirectTransfer, user: dict = Depends(_REVIEWER)):
+    return service.direct_transfer(user, body.model_dump(mode="json"))
 
 
 @router.get("/admin/department-heads")

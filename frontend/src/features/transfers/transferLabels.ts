@@ -1,4 +1,10 @@
-import type { TransferEventAction, TransferSection, TransferStatus, TransferType } from '../../types/transfer.ts'
+import type {
+  TransferEventAction,
+  TransferInitiator,
+  TransferSection,
+  TransferStatus,
+  TransferType,
+} from '../../types/transfer.ts'
 
 export const TRANSFER_STATUS_LABEL: Record<TransferStatus, string> = {
   submitted: 'Submitted',
@@ -27,6 +33,7 @@ export const TRANSFER_EVENT_LABEL: Record<TransferEventAction, string> = {
   approved: 'Approved — section changed',
   rejected: 'Rejected',
   cancelled: 'Cancelled by student',
+  transferred: 'Transferred directly',
 }
 
 export function isOpenTransfer(status: TransferStatus) {
@@ -51,4 +58,10 @@ export function formatTransferDate(value: string | null) {
   return Number.isNaN(date.getTime())
     ? value
     : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+export const TRANSFER_INITIATOR_LABEL: Record<TransferInitiator, string> = {
+  student: 'Requested by student',
+  admin: 'Transferred by administrator',
+  hod: 'Transferred by Head of Department',
 }

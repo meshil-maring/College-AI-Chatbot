@@ -21,7 +21,8 @@ export function resolveAdminLocation(search: string) {
     requestedStudentPage === 'all' ||
     requestedStudentPage === 'bulk' ||
     requestedStudentPage === 'requests' ||
-    requestedStudentPage === 'transfers'
+    requestedStudentPage === 'transfers' ||
+    requestedStudentPage === 'new-transfer'
       ? requestedStudentPage
       : 'register'
   return { view, page, search: params.get('academic-search') ?? '', studentPage }

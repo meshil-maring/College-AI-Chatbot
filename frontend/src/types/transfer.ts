@@ -8,7 +8,8 @@
 
 export type TransferType = 'section_transfer' | 'program_transfer'
 export type TransferStatus = 'submitted' | 'under_review' | 'approved' | 'rejected' | 'cancelled'
-export type TransferEventAction = 'submitted' | 'review_started' | 'approved' | 'rejected' | 'cancelled'
+export type TransferEventAction = 'submitted' | 'review_started' | 'approved' | 'rejected' | 'cancelled' | 'transferred'
+export type TransferInitiator = 'student' | 'admin' | 'hod'
 export type TransferDecisionAction = 'start_review' | 'approve' | 'reject'
 
 export interface TransferSection {
@@ -61,6 +62,7 @@ export interface TransferRequest {
   transfer_type: TransferType
   status: TransferStatus
   reason: string
+  initiated_by: TransferInitiator
   from_section: TransferSection | null
   to_section: TransferSection | null
   submitted_at: string
@@ -119,4 +121,38 @@ export interface DepartmentHeads {
   institution_id: string
   heads: DepartmentHead[]
   faculty: FacultyCandidate[]
+}
+
+/** A student an administrator or HOD may move directly (open term, in scope). */
+export interface DirectTransferStudent {
+  student_id: string
+  student_name: string | null
+  register_number: string | null
+  current_section: TransferSection
+  registration_status: 'assigned' | 'registered'
+  has_open_request: boolean
+}
+
+export interface DirectTransferStudents {
+  institution_id: string
+  can_transfer: boolean
+  actor_role: 'admin' | 'hod' | null
+  students: DirectTransferStudent[]
+}
+
+export interface DirectTransferOptions {
+  institution_id: string
+  student_id: string
+  actor_role: 'admin' | 'hod'
+  current: TransferSection & { semester_registration_id: string; registration_status: 'assigned' | 'registered' }
+  has_open_request: boolean
+  options: TransferOption[]
+}
+
+export interface DirectTransferBody extends TransferSubmit {
+  student_id: string
+}
+
+export interface DirectTransferResult extends TransferCommandResult {
+  student_id: string
 }
