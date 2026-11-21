@@ -2,6 +2,7 @@ import { BookOpen } from 'lucide-react'
 import type { AcademicCatalogue, Department } from '../../../../types/academicSetup.ts'
 import { departmentPrograms } from './departmentModel.ts'
 import { DepartmentBadge } from './DepartmentTable.tsx'
+import DepartmentHeadPanel from './DepartmentHeadPanel.tsx'
 
 export default function DepartmentDetails({
   record,
@@ -26,6 +27,12 @@ export default function DepartmentDetails({
         <dt>Description</dt>
         <dd>{record.description || 'No description provided.'}</dd>
       </dl>
+      {catalogue && (
+        <DepartmentHeadPanel
+          record={record}
+          canManage={catalogue.institution_id === record.institution_id && catalogue.manageable.includes('departments')}
+        />
+      )}
       <section aria-labelledby="department-programs-title">
         <h3 id="department-programs-title">Associated programs</h3>
         {programs === undefined ? (

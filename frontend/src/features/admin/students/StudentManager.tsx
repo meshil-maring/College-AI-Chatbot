@@ -4,6 +4,7 @@ import type { StudentWorkspacePage } from '../adminNavigation.ts'
 import AdminApprovals from './AdminApprovals.tsx'
 import StudentDirectoryPage from './directory/StudentDirectoryPage.tsx'
 import StudentOnboardingPage from '../student-onboarding/StudentOnboardingPage.tsx'
+import TransferReviewPage from '../../transfers/review/TransferReviewPage.tsx'
 import './studentWorkspace.css'
 
 /** Keep account approval distinct while presenting it beside admin onboarding. */
@@ -40,6 +41,12 @@ export default function StudentManager({ page = 'register' }: { page?: StudentWo
         canResendInvitations={canResendStudentInvitations}
       />
     )
+  }
+  if (page === 'transfers') {
+    if (!canAll('transfers.read')) {
+      return <p role="status">Your account does not have permission to review transfer requests.</p>
+    }
+    return <TransferReviewPage key={identity} />
   }
   if (page === 'requests') {
     if (!canReview) return <p role="status">Your account does not have permission to review student requests.</p>

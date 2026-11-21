@@ -66,3 +66,7 @@ worker fencing and atomic answer/retrieval/citation receipts. Generate it with
 [history_citations/](history_citations/README.md) restores persisted citation cards
 after owner, current-policy and retrieval-provenance checks. Generate it with
 `scripts/maintenance/migrations/build_history_citations.py` after chat turns.
+
+[student_transfers/](student_transfers/README.md) adds Head of Department appointments
+and student section/program transfer requests decided by administrators or HODs.
+Generate it with `scripts/maintenance/student_transfers/build_migration.py`.

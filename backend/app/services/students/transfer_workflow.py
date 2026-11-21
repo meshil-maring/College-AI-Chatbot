@@ -38,7 +38,7 @@ def _record(
         comments=comments,
     )
 
-actor: dict[str, Any], request_id: UUID, review: dict[str, Any]) -> dict[str, Any]:
+def review_transfer(actor: dict[str, Any], request_id: UUID, review: dict[str, Any]) -> dict[str, Any]:
     """Review a transfer request and update its eligibility status.
 
     Validates the request is in a reviewable state, runs eligibility assessment,

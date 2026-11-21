@@ -29,6 +29,7 @@ describe('administrator account workspace', () => {
       'Add Student',
       'Bulk Import',
       'Registration Requests',
+      'Transfer Requests',
       'Notices',
       'Learning Resources',
       'FAQs',
@@ -57,7 +58,7 @@ describe('administrator account workspace', () => {
       within(studentPages)
         .getAllByRole('button')
         .map((item) => item.textContent),
-    ).toEqual(['All Students', 'Add Student', 'Bulk Import', 'Registration Requests'])
+    ).toEqual(['All Students', 'Add Student', 'Bulk Import', 'Registration Requests', 'Transfer Requests'])
     expect(within(studentPages).getByRole('button', { name: 'Add Student' })).toHaveAttribute('aria-current', 'page')
     await userEvent.click(within(studentPages).getByRole('button', { name: 'Bulk Import' }))
     expect(screen.getByRole('heading', { name: 'Bulk Student Import' })).toBeInTheDocument()

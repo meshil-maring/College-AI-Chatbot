@@ -1,0 +1,16 @@
+{
+  "version": "20261121000000",
+  "name": "student_transfer_workflow",
+  "files": [
+    "replace_draft.sql",
+    "tables.sql",
+    "permissions.sql",
+    "authorization.sql",
+    "placement.sql",
+    "student.sql",
+    "review.sql",
+    "department_heads.sql",
+    "assignment_guard.sql",
+    "security.sql"
+  ]
+}

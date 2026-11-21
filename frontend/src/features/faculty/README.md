@@ -1,5 +1,9 @@
 # Faculty workspace
 
+A faculty member appointed Head of Department also sees `/faculty/transfers`, the
+shared `features/transfers/review/` queue for transfers into their department. The
+menu item appears only after the server confirms a current appointment.
+
 `workspace/FacultyShell.tsx` composes the identity profile, existing notices
 placeholder, shared Learning Resources and shared chatbot. `facultyRoutes.ts` owns direct
 links and browser navigation; `facultyNavigation.ts` applies server identity and

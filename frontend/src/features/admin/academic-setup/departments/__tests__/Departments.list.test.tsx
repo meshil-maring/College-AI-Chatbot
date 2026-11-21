@@ -23,7 +23,9 @@ describe('Departments list', () => {
     const drawer = screen.getByRole('dialog', { name: 'Department details' })
     expect(within(drawer).getByText(program.name)).toBeInTheDocument()
     expect(within(drawer).getAllByRole('listitem')).toHaveLength(1)
-    expect(screen.queryByLabelText(/Campus|Head of Department/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Campus/)).not.toBeInTheDocument()
+    // HOD is appointed from the details drawer, never typed into the department form.
+    expect(within(drawer).getByRole('region', { name: 'Head of Department' })).toBeInTheDocument()
   })
 
   it('distinguishes unavailable program data from a confirmed empty program list', async () => {

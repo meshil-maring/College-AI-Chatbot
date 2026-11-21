@@ -1,4 +1,4 @@
-import { ClipboardCheck, FileSpreadsheet, UserPlus, UsersRound } from 'lucide-react'
+import { ArrowLeftRight, ClipboardCheck, FileSpreadsheet, UserPlus, UsersRound } from 'lucide-react'
 import type { StudentWorkspacePage } from '../adminNavigation.ts'
 
 const pages: { id: StudentWorkspacePage; label: string; Icon: typeof UserPlus }[] = [
@@ -6,6 +6,7 @@ const pages: { id: StudentWorkspacePage; label: string; Icon: typeof UserPlus }[
   { id: 'register', label: 'Add Student', Icon: UserPlus },
   { id: 'bulk', label: 'Bulk Import', Icon: FileSpreadsheet },
   { id: 'requests', label: 'Registration Requests', Icon: ClipboardCheck },
+  { id: 'transfers', label: 'Transfer Requests', Icon: ArrowLeftRight },
 ]
 
 export default function StudentWorkspaceNavigation({

@@ -62,7 +62,8 @@ afterEach(() => {
 
 describe('faculty identity workspace', () => {
   it('starts on profile without academic navigation or data calls', () => {
-    const fetch = vi.fn()
+    // A pending HOD check keeps Transfer Approvals hidden until the server confirms it.
+    const fetch = vi.fn(() => new Promise<Response>(() => {}))
     vi.stubGlobal('fetch', fetch)
     render(<FacultyShell />)
     expect(screen.getByRole('heading', { name: 'Profile', level: 1 })).toBeInTheDocument()
@@ -72,7 +73,10 @@ describe('faculty identity workspace', () => {
         .getAllByRole('button')
         .map((item) => item.textContent),
     ).toEqual(['Profile', 'Notices', 'Learning Resources', 'AI Assistant'])
-    expect(fetch).not.toHaveBeenCalled()
+    // The only request is the transfer-review access check; no academic data is read.
+    for (const [url] of fetch.mock.calls as unknown as [string][]) {
+      expect(String(url)).toMatch(/\/v1\/transfer-reviews\?status=open$/)
+    }
   })
   it('opens the assistant from its URL and supports browser navigation', async () => {
     window.history.replaceState({}, '', '/faculty/assistant')

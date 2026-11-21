@@ -10,10 +10,10 @@ export interface StudentNavItem {
 export const STUDENT_NAV_ITEMS: readonly StudentNavItem[] = [
   { key: 'profile', label: 'Profile' },
   { key: 'registration', label: 'Semester Registration' },
+  { key: 'transfer-requests', label: 'Transfer Requests' },
   { key: 'notices', label: 'Notices' },
   { key: 'resources', label: 'Learning Resources' },
   { key: 'assistant', label: 'AI Assistant' },
-  { key: 'transfer-requests', label: 'Transfer Requests' },
 ] as const
 
 const PERMISSIONS: Record<StudentView, string> = {
@@ -22,7 +22,7 @@ const PERMISSIONS: Record<StudentView, string> = {
   notices: 'notices.read',
   resources: 'documents.read',
   assistant: 'ai.chat',
-  'transfer-requests': 'transfers.request',
+  'transfer-requests': 'transfers.read',
 }
 
 export function buildStudentNavigation(
@@ -32,7 +32,7 @@ export function buildStudentNavigation(
   if (!['student', 'staff', 'faculty'].includes(role ?? '')) return []
   return STUDENT_NAV_ITEMS.filter(
     (item) =>
-      (item.key !== 'registration' || role === 'student') &&
+      ((item.key !== 'registration' && item.key !== 'transfer-requests') || role === 'student') &&
       (permissions === undefined || hasPermission(permissions, PERMISSIONS[item.key])),
   )
 }

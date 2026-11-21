@@ -1,7 +1,7 @@
 import { hasPermission } from '../../auth/access/permissions.ts'
 import { hasResourceNavigation } from '../../learning-resources/data/resourceIdentity.ts'
 
-export type FacultyView = 'profile' | 'notices' | 'resources' | 'assistant'
+export type FacultyView = 'profile' | 'notices' | 'resources' | 'transfers' | 'assistant'
 export interface FacultyNavItem {
   readonly key: FacultyView
   readonly label: string
@@ -10,18 +10,26 @@ export const FACULTY_NAV_ITEMS: readonly FacultyNavItem[] = [
   { key: 'profile', label: 'Profile' },
   { key: 'notices', label: 'Notices' },
   { key: 'resources', label: 'Learning Resources' },
+  { key: 'transfers', label: 'Transfer Approvals' },
   { key: 'assistant', label: 'AI Assistant' },
 ]
 export const FACULTY_COMING_SOON_VIEWS: readonly FacultyView[] = ['notices']
+/**
+ * HOD is an appointment, not a permission grant, so transfer approvals appear
+ * only when the server reports that this faculty member may review transfers.
+ */
 export function buildFacultyNavigation(
   role: string | null,
   permissions?: readonly string[],
+  canReviewTransfers = false,
 ): readonly FacultyNavItem[] {
   if (role !== 'faculty') return []
-  if (permissions === undefined) return FACULTY_NAV_ITEMS
-  return FACULTY_NAV_ITEMS.filter(
+  const items = FACULTY_NAV_ITEMS.filter((item) => item.key !== 'transfers' || canReviewTransfers)
+  if (permissions === undefined) return items
+  return items.filter(
     (item) =>
       FACULTY_COMING_SOON_VIEWS.includes(item.key) ||
+      item.key === 'transfers' ||
       (item.key === 'resources'
         ? hasResourceNavigation(role, permissions)
         : hasPermission(permissions, item.key === 'assistant' ? 'ai.chat' : 'profile.own.read')),
@@ -31,6 +39,7 @@ export const FACULTY_VIEW_HEADINGS: Record<FacultyView, string> = {
   profile: 'Profile',
   notices: 'Notices',
   resources: 'Learning Resources',
+  transfers: 'Transfer Approvals',
   assistant: 'AI Assistant',
 }
 export type WorkspaceSurfaceStatus = 'available' | 'not-available'

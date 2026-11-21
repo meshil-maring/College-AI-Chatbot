@@ -7,6 +7,11 @@ section assignment and student whole-option registration. It preserves exact
 institution grants, account approval and ownership; SQL commands atomically
 enroll required and selected subjects and check offerings and capacity.
 
+`academics/student_transfers.py` authorizes student section/program transfer
+requests, administrator and Head of Department decisions, and HOD appointments.
+Students act only on their own placement; SQL re-derives reviewer scope and
+atomically reassigns the current-term registration on approval.
+
 Services are grouped by feature. API routers call these modules; repositories
 continue to own database access and schemas continue to own request/response types.
 

@@ -6,6 +6,7 @@ describe('student navigation', () => {
     expect(STUDENT_NAV_ITEMS.map((item) => item.key)).toEqual([
       'profile',
       'registration',
+      'transfer-requests',
       'notices',
       'resources',
       'assistant',
@@ -26,5 +27,12 @@ describe('student navigation', () => {
     ])
     expect(buildStudentNavigation('staff', ['registration.own.read'])).toEqual([])
     expect(buildStudentNavigation('faculty', ['registration.own.read'])).toEqual([])
+  })
+  it('shows transfer requests to students who can read their own transfers', () => {
+    expect(buildStudentNavigation('student', ['transfers.read']).map((item) => item.key)).toEqual([
+      'transfer-requests',
+    ])
+    expect(buildStudentNavigation('student', ['transfers.request'])).toEqual([])
+    expect(buildStudentNavigation('faculty', ['transfers.read'])).toEqual([])
   })
 })

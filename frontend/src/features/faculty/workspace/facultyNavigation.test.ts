@@ -8,7 +8,13 @@ import {
 
 describe('faculty navigation after academic retirement', () => {
   it('keeps profile, chat and existing information placeholders', () => {
-    expect(FACULTY_NAV_ITEMS.map((item) => item.key)).toEqual(['profile', 'notices', 'resources', 'assistant'])
+    expect(FACULTY_NAV_ITEMS.map((item) => item.key)).toEqual([
+      'profile',
+      'notices',
+      'resources',
+      'transfers',
+      'assistant',
+    ])
     for (const item of FACULTY_NAV_ITEMS) expect(FACULTY_VIEW_HEADINGS[item.key]).toBeTruthy()
     expect(FACULTY_COMING_SOON_VIEWS).toEqual(['notices'])
   })
@@ -20,6 +26,15 @@ describe('faculty navigation after academic retirement', () => {
       buildFacultyNavigation('faculty', ['attendance.read', 'faculty.assignments.manage']).map((item) => item.key),
     ).toEqual(['notices'])
     expect(buildFacultyNavigation('faculty', ['ai.chat']).map((item) => item.key)).toEqual(['notices', 'assistant'])
+  })
+  it('shows transfer approvals only when the server confirms a current HOD appointment', () => {
+    expect(buildFacultyNavigation('faculty', ['ai.chat']).map((item) => item.key)).not.toContain('transfers')
+    expect(buildFacultyNavigation('faculty', ['ai.chat'], true).map((item) => item.key)).toEqual([
+      'notices',
+      'transfers',
+      'assistant',
+    ])
+    expect(buildFacultyNavigation('student', ['ai.chat'], true)).toEqual([])
   })
   it('opens resources for resolved reader or draft grants', () => {
     expect(buildFacultyNavigation('faculty', ['documents.read']).map((item) => item.key)).toEqual([

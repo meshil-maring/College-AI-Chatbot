@@ -56,7 +56,7 @@ export function formatErrorMessage(status: number, details: unknown, code: strin
 }
 
 export async function requestJson<T>(
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   endpoint: string,
   accessToken: string,
   body?: unknown,

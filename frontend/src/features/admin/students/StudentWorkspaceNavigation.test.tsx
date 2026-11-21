@@ -16,6 +16,7 @@ describe('student workspace navigation', () => {
       'Add Student',
       'Bulk Import',
       'Registration Requests',
+      'Transfer Requests',
     ])
     expect(within(navigation).getByRole('button', { name: 'Add Student' })).toHaveAttribute('aria-current', 'page')
 

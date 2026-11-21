@@ -58,11 +58,8 @@ _UNIVERSITY_ADMIN = frozenset(
         "ai.knowledge.update",
         "ai.knowledge.delete",
         "audit.read",
-        "transfers.request",
         "transfers.read",
-        "transfers.review",
         "transfers.approve",
-        "transfers.complete",
     }
 )
 
@@ -129,10 +126,6 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "notices.read",
             "notices.create",
             "notices.update",
-            "transfers.request",
-            "transfers.read",
-            "transfers.review",
-            "transfers.complete",
         }
     ),
     "student": frozenset(

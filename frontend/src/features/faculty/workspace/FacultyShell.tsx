@@ -1,7 +1,9 @@
-import { Bell, BookOpen, Bot, UserCircle, type LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, Bell, BookOpen, Bot, UserCircle, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import ChatShell from '../../chat/ChatShell.tsx'
 import LearningResourcesPage from '../../learning-resources/LearningResourcesPage.tsx'
+import TransferReviewPage, { transferReviewIdentity } from '../../transfers/review/TransferReviewPage.tsx'
+import { useTransferReviewAccess } from '../../transfers/review/useTransferReviews.ts'
 import WorkspaceFrame from '../../workspace/WorkspaceFrame.tsx'
 import WorkspacePageHeader from '../../workspace/WorkspacePageHeader.tsx'
 import FacultyProfile from '../profile/FacultyProfile.tsx'
@@ -19,12 +21,18 @@ const icons: Record<FacultyView, LucideIcon> = {
   profile: UserCircle,
   notices: Bell,
   resources: BookOpen,
+  transfers: ArrowLeftRight,
   assistant: Bot,
 }
 export default function FacultyShell() {
-  const { user, role, logout } = useAuth()
+  const { user, role, logout, accessToken, sessionGeneration } = useAuth()
   const { pathname } = useBrowserLocation()
-  const navigation = buildFacultyNavigation(role, user?.effective_permissions)
+  const canReviewTransfers = useTransferReviewAccess(
+    transferReviewIdentity(sessionGeneration, user?.user_id ?? '', user?.institution_id ?? '', role),
+    role === 'faculty' ? (user?.institution_id ?? null) : null,
+    accessToken,
+  )
+  const navigation = buildFacultyNavigation(role, user?.effective_permissions, canReviewTransfers)
   const route = resolveFacultyRoute(pathname)
   const view = route && navigation.some((item) => item.key === route.view) ? route.view : navigation[0]?.key
   const navigate = (next: FacultyView) => navigateTo(FACULTY_PATHS[next])
@@ -52,6 +60,7 @@ export default function FacultyShell() {
           )}
           {view === 'profile' && <FacultyProfile user={user} />}
           {view === 'resources' && <LearningResourcesPage />}
+          {view === 'transfers' && <TransferReviewPage />}
           {FACULTY_COMING_SOON_VIEWS.includes(view) && <FacultyComingSoon view={view} />}
           {view === 'assistant' && (
             <section aria-label="AI Assistant">

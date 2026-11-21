@@ -9,7 +9,8 @@ final suite REGRESSION-PINS the invariants the integrated experience depends
 on, at the route layer:
 
 * every ``/students/me/*`` route is ``GET``-only except the student's own
-  registration completion and notification read-receipt actions;
+  registration completion, notification read-receipt and own transfer
+  request submission/cancellation actions;
 * every student surface route takes NO client-suppliable identity parameter
   (server-authoritative identity; nothing for a caller to forge);
 * privileged management routes (admin surfaces) remain OUTSIDE the student
@@ -26,6 +27,9 @@ from app.main import app
 STUDENT_ME_METHOD_EXCEPTIONS = {
     "/api/v1/students/me/notifications/{notification_id}/read": {"patch"},
     "/api/v1/students/me/semester-registrations/{registration_id}/complete": {"post"},
+    # The student's own transfer request; the server derives student and section.
+    "/api/v1/students/me/transfer-requests": {"get", "post"},
+    "/api/v1/students/me/transfer-requests/{request_id}/cancel": {"post"},
 }
 
 

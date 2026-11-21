@@ -1,211 +1,122 @@
 /**
- * Student Academic Transfer System — TypeScript contracts.
+ * Student transfer and Head of Department contracts.
  *
- * Mirrors the backend contracts defined in
- * backend/app/schemas/students/transfer_request.py.
- *
- * The backend is authoritative; only fields actually returned are declared.
+ * Mirrors backend/app/api/academics/student_transfers.py. The server derives
+ * the student, institution and current section; the browser only chooses a
+ * target section and writes a reason.
  */
 
-export type TransferType = 'program_transfer' | 'section_transfer' | 'semester_placement';
-export type TransferStatus =
-  | 'submitted'
-  | 'under_review'
-  | 'eligible'
-  | 'not_eligible'
-  | 'approved'
-  | 'rejected'
-  | 'completed'
-  | 'cancelled';
-export type EligibilityStatus = 'eligible' | 'not_eligible' | 'manual_review' | 'pending';
-export type TransferAction = 'submitted' | 'reviewed' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+export type TransferType = 'section_transfer' | 'program_transfer'
+export type TransferStatus = 'submitted' | 'under_review' | 'approved' | 'rejected' | 'cancelled'
+export type TransferEventAction = 'submitted' | 'review_started' | 'approved' | 'rejected' | 'cancelled'
+export type TransferDecisionAction = 'start_review' | 'approve' | 'reject'
 
-export interface TransferDocument {
-  file_name: string;
-  file_url: string | null;
-  file_type: string | null;
-  size_bytes: number | null;
-  uploaded_at: string | null;
+export interface TransferSection {
+  academic_section_id: string
+  section_name: string
+  section_code: string
+  admission_cohort_id: string
+  batch_name: string
+  program_id: string
+  program_name: string
+  program_code: string
+  department_id: string
+  department_name: string
+  program_semester_name: string
+  semester_id: string
+  term_name: string
+  capacity: number | null
+  seats_taken: number
 }
 
-export interface AcademicPlacement {
-  program_id: string | null;
-  program_name: string | null;
-  program_code: string | null;
-  batch_id: string | null;
-  batch_name: string | null;
-  batch_code: string | null;
-  section_id: string | null;
-  section_name: string | null;
-  section_code: string | null;
-  semester_id: string | null;
-  semester_name: string | null;
-  curriculum_version_id: string | null;
-  curriculum_version: string | null;
-  effective_from: string | null;
-  effective_to: string | null;
-  is_active: boolean | null;
+export interface CurrentPlacement extends TransferSection {
+  semester_registration_id: string
+  registration_status: 'assigned' | 'registered'
+  term_end_date: string
+  term_open: boolean
 }
 
-export interface TransferActionRecord {
-  action_id: string;
-  action: TransferAction;
-  actor_user_id: string;
-  comments: string | null;
-  from_status: string | null;
-  to_status: string | null;
-  created_at: string;
+export interface TransferOption extends TransferSection {
+  transfer_type: TransferType
+  has_seat: boolean
 }
 
-export interface TransferRequestView {
-  request_id: string;
-  student_id: string;
-  institution_id: string;
-  transfer_type: TransferType;
-  status: TransferStatus;
-  eligibility_status: EligibilityStatus | null;
-  current_placement: AcademicPlacement;
-  target_placement: AcademicPlacement;
-  reason: string;
-  supporting_documents: TransferDocument[];
-  eligibility_notes: string | null;
-  suggested_target_semester_id: string | null;
-  reviewed_by: string | null;
-  reviewed_at: string | null;
-  review_comments: string | null;
-  approved_by: string | null;
-  approved_at: string | null;
-  approved_reason: string | null;
-  rejected_by: string | null;
-  rejected_at: string | null;
-  rejection_reason: string | null;
-  effective_date: string | null;
-  completed_at: string | null;
-  completed_by: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
+export interface TransferEvent {
+  action: TransferEventAction
+  comment: string | null
+  created_at: string
 }
 
-export interface TransferRequestListItem {
-  request_id: string;
-  student_id: string;
-  student_number: string | null;
-  student_name: string | null;
-  transfer_type: TransferType;
-  status: TransferStatus;
-  eligibility_status: EligibilityStatus | null;
-  current_program_name: string | null;
-  target_program_name: string | null;
-  submitted_at: string;
-  reviewed_at: string | null;
+export interface EnrolledSubjectSnapshot {
+  name?: string
+  code?: string
+  credits?: number
 }
 
-export interface TransferRequestList {
-  items: TransferRequestListItem[];
-  total: number;
-  limit: number;
-  offset: number;
+export interface TransferRequest {
+  transfer_request_id: string
+  student_id: string
+  student_name: string | null
+  register_number: string | null
+  transfer_type: TransferType
+  status: TransferStatus
+  reason: string
+  from_section: TransferSection | null
+  to_section: TransferSection | null
+  submitted_at: string
+  review_started_at: string | null
+  decided_at: string | null
+  decided_as: 'admin' | 'hod' | null
+  decision_comment: string | null
+  cancelled_at: string | null
+  previous_enrollments: EnrolledSubjectSnapshot[]
+  events: TransferEvent[]
 }
 
-export interface TransferRequestResponse {
-  request: TransferRequestView;
-  actions: TransferActionRecord[];
+export interface StudentTransfers {
+  institution_id: string
+  current: CurrentPlacement | null
+  options: TransferOption[]
+  requests: TransferRequest[]
 }
 
-export interface TransferRequestCreate {
-  student_id: string;
-  transfer_type: TransferType;
-  target_program_id: string;
-  target_batch_id: string | null;
-  target_section_id: string | null;
-  target_semester_id: string | null;
-  target_curriculum_version_id: string | null;
-  reason: string;
-  supporting_documents: TransferDocument[];
-  effective_date: string | null;
+export interface TransferSubmit {
+  to_section_id: string
+  reason: string
 }
 
-export interface TransferReview {
-  action: TransferAction;
-  eligibility_status: EligibilityStatus | null;
-  eligibility_notes: string | null;
-  suggested_target_semester_id: string | null;
-  review_comments: string | null;
-  approved_reason: string | null;
-  rejection_reason: string | null;
-  effective_date: string | null;
+export interface TransferCommandResult {
+  transfer_request_id: string
+  institution_id: string
+  status: TransferStatus
 }
 
-export interface TransferComplete {
-  effective_date: string;
-  rejection_reason?: string | null;
+export interface TransferReviews {
+  institution_id: string
+  can_review: boolean
+  can_decide: boolean
+  reviewer_role: 'admin' | 'hod' | null
+  departments: { department_id: string; name: string }[]
+  requests: TransferRequest[]
 }
 
-export interface SubjectEquivalency {
-  equivalency_id: string;
-  source_subject_id: string;
-  source_subject_name: string | null;
-  source_subject_code: string | null;
-  target_subject_id: string;
-  target_subject_name: string | null;
-  target_subject_code: string | null;
-  program_id: string;
-  program_name: string | null;
-  equivalence_type: 'same' | 'approved_equivalent' | 'repeat_required' | 'additional_required';
-  source_credits: number | null;
-  target_credits: number | null;
-  credit_comparison: 'equal' | 'less' | 'greater' | null;
-  is_active: boolean;
-  created_at: string;
+export interface DepartmentHead {
+  department_id: string
+  faculty_user_id: string
+  name: string
+  email: string | null
+  assigned_at: string
+  is_active_faculty: boolean
 }
 
-export interface InstitutionTransferSettings {
-  institution_id: string;
-  allow_student_transfer_requests: boolean;
-  allow_staff_created_transfers: boolean;
-  max_active_requests_per_student: number;
-  updated_at: string | null;
+export interface FacultyCandidate {
+  user_id: string
+  name: string
+  email: string | null
 }
 
-export interface InstitutionTransferSettingsUpdate {
-  allow_student_transfer_requests?: boolean;
-  allow_staff_created_transfers?: boolean;
-  max_active_requests_per_student?: number;
-}
-
-export interface TransferEquivalencyCreate {
-  source_subject_id: string;
-  target_subject_id: string;
-  program_id: string;
-  equivalence_type: 'same' | 'approved_equivalent' | 'repeat_required' | 'additional_required';
-  source_credits: number | null;
-  target_credits: number | null;
-  notes: string | null;
-}
-
-export interface TransferEquivalencyList {
-  items: SubjectEquivalency[];
-}
-
-export interface TransferTargetOption {
-  id: string;
-  name: string;
-  code: string | null;
-}
-
-export interface CurrentPlacement {
-  program_id: string | null;
-  program_name: string | null;
-  program_code: string | null;
-  batch_id: string | null;
-  batch_name: string | null;
-  batch_code: string | null;
-  section_id: string | null;
-  section_name: string | null;
-  section_code: string | null;
-  semester_id: string | null;
-  semester_name: string | null;
-  curriculum_version_id: string | null;
-  curriculum_version: string | null;
+export interface DepartmentHeads {
+  institution_id: string
+  heads: DepartmentHead[]
+  faculty: FacultyCandidate[]
 }

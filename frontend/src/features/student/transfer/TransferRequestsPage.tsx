@@ -1,199 +1,143 @@
-import { useState } from 'react';
-import { ArrowLeftRight, Plus, X } from 'lucide-react';
-import { useAuth } from '../../auth/session/AuthProvider.tsx';
-import { useMyTransferRequests, useMyTransferRequest, useInstitutionTransferSettings } from '../transfer/useStudentTransfers.ts';
-import TransferForm from '../transfer/TransferForm.tsx';
-import TransferTimeline from '../transfer/TransferTimeline.tsx';
-import type { TransferStatus, TransferAction } from '../../../types/transfer.ts';
-
-const STATUS_BADGE: Record<TransferStatus, string> = {
-  submitted: 'bg-warning/10 text-warning border-warning/30',
-  under_review: 'bg-warning/10 text-warning border-warning/30',
-  eligible: 'bg-success/10 text-success border-success/30',
-  not_eligible: 'bg-danger/10 text-danger border-danger/30',
-  approved: 'bg-success/10 text-success border-success/30',
-  rejected: 'bg-danger/10 text-danger border-danger/30',
-  completed: 'bg-success/10 text-success border-success/30',
-  cancelled: 'bg-muted/10 text-muted border-line',
-};
-
-const STATUS_LABEL: Record<TransferStatus, string> = {
-  submitted: 'Submitted',
-  under_review: 'Under Review',
-  eligible: 'Eligible',
-  not_eligible: 'Not Eligible',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
-
-function TransferDetail({ requestId, onBack }: { requestId: string; onBack: () => void }) {
-  const { accessToken } = useAuth();
-  const { data, isLoading, isError } = useMyTransferRequest(accessToken as string, requestId);
-
-  if (isLoading) {
-    return <p className="text-sm text-muted py-8 text-center">Loading transfer details…</p>;
-  }
-  if (isError || !data) {
-    return <p className="text-sm text-danger py-8 text-center">Could not load transfer request.</p>;
-  }
-
-  const { request, actions } = data;
-  const actionHistory = (actions ?? []) as { action: TransferAction; created_at: string }[];
-
-  return (
-    <div className="space-y-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-1.5 text-sm text-muted hover:text-content transition-colors"
-      >
-        <X size={14} /> Back to list
-      </button>
-
-      <div className="rounded-xl border border-line bg-surface p-4 sm:p-5 space-y-3">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="font-semibold text-content text-section">
-              {request.transfer_type === 'section_transfer' ? 'Section Transfer' : 'Program Transfer'}
-            </h2>
-            <p className="text-xs text-muted mt-0.5">ID: {request.request_id}</p>
-          </div>
-          <span className={`rounded-lg border px-2 py-1 text-xs font-medium ${STATUS_BADGE[request.status]}`}>
-            {STATUS_LABEL[request.status]}
-          </span>
-        </div>
-        <p className="text-sm text-content">{request.reason}</p>
-        {request.eligibility_notes && (
-          <p className="text-xs text-muted border-t border-line pt-3">{request.eligibility_notes}</p>
-        )}
-        {request.rejection_reason && (
-          <p className="text-xs text-danger border-t border-line pt-3">
-            Rejection reason: {request.rejection_reason}
-          </p>
-        )}
-      </div>
-
-      <TransferTimeline
-        status={request.status}
-        actions={actionHistory}
-        submittedAt={request.created_at ? new Date(request.created_at).toLocaleDateString() : null}
-      />
-    </div>
-  );
-}
+import { useState } from 'react'
+import { useAuth } from '../../auth/session/AuthProvider.tsx'
+import { hasPermission } from '../../auth/access/permissions.ts'
+import type { StudentTransfers } from '../../../types/transfer.ts'
+import { describeSection, formatTransferDate, isOpenTransfer } from '../../transfers/transferLabels.ts'
+import TransferForm from './TransferForm.tsx'
+import TransferTimeline from './TransferTimeline.tsx'
+import { useStudentTransfers } from './useStudentTransfers.ts'
 
 export default function TransferRequestsPage() {
-  const { accessToken } = useAuth();
-  const [showForm, setShowForm] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const { data: settings } = useInstitutionTransferSettings(accessToken as string);
-  const { data: list, isLoading, isError, refetch } = useMyTransferRequests(accessToken as string);
-
-  const canSubmit = settings?.allow_student_transfer_requests ?? false;
-  const items = list?.items ?? [];
-
-  if (selectedId) {
-    return <TransferDetail requestId={selectedId} onBack={() => setSelectedId(null)} />;
-  }
-
-  if (showForm) {
-    return (
-      <div className="space-y-4">
-        <button
-          type="button"
-          onClick={() => setShowForm(false)}
-          className="flex items-center gap-1.5 text-sm text-muted hover:text-content transition-colors"
-        >
-          <X size={14} /> Cancel
-        </button>
-        <TransferForm
-          currentPlacement={null}
-          targetPrograms={[]}
-          targetSemesters={[]}
-          targetSections={[]}
-          onSuccess={() => {
-            setShowForm(false);
-            void refetch();
-          }}
-        />
-      </div>
-    );
-  }
-
+  const { accessToken, user, role, sessionGeneration } = useAuth()
+  const permissions = user?.effective_permissions
+  if (!accessToken || !user?.institution_id || role !== 'student' || !hasPermission(permissions, 'transfers.read'))
+    return <p role="status">Transfer requests are unavailable for this account.</p>
+  const identity = JSON.stringify([
+    sessionGeneration ?? 0,
+    user.user_id,
+    user.institution_id,
+    role,
+    [...(permissions ?? [])].sort(),
+  ])
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">
-          {canSubmit
-            ? 'Submit and track your academic transfer requests.'
-            : 'Transfer requests are managed by your institution. Contact your administrator.'}
-        </p>
-        {canSubmit && (
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent shrink-0"
-          >
-            <Plus size={15} /> New Request
-          </button>
-        )}
-      </div>
+    <TransferSession
+      key={identity}
+      identity={identity}
+      institutionId={user.institution_id}
+      token={accessToken}
+      canRequest={hasPermission(permissions, 'transfers.request')}
+    />
+  )
+}
 
-      {isLoading && (
-        <p className="text-sm text-muted text-center py-10">Loading transfer requests…</p>
-      )}
-
-      {isError && (
-        <p className="text-sm text-danger text-center py-10">
-          Could not load transfer requests. Please try again.
-        </p>
-      )}
-
-      {!isLoading && !isError && items.length === 0 && (
-        <div className="rounded-xl border border-line bg-surface p-8 text-center">
-          <ArrowLeftRight size={32} className="mx-auto text-muted mb-3" />
-          <p className="text-sm text-muted">No transfer requests yet.</p>
+function TransferSession({
+  identity,
+  institutionId,
+  token,
+  canRequest,
+}: {
+  identity: string
+  institutionId: string
+  token: string
+  canRequest: boolean
+}) {
+  const { query, submit, cancel } = useStudentTransfers(identity, institutionId, token)
+  const [showForm, setShowForm] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  const busy = submit.isPending || cancel.isPending
+  const error = query.error ?? submit.error ?? cancel.error
+  const data = query.data
+  return (
+    <section className="space-y-5" aria-label="Transfer Requests">
+      <p className="text-muted">
+        Ask to move to another section of your batch, or to a section of another program. Your Head of Department or an
+        administrator reviews each request.
+      </p>
+      {query.isPending && <p role="status">Loading your placement…</p>}
+      {error instanceof Error && (
+        <div role="alert" className="ui-panel p-4">
+          <p>{error.message}</p>
         </div>
       )}
-
-      {items.length > 0 && (
-        <ul className="space-y-3">
-          {items.map((item) => (
-            <li key={item.request_id}>
-              <button
-                type="button"
-                onClick={() => setSelectedId(item.request_id)}
-                className="w-full text-left rounded-xl border border-line bg-surface p-4 hover:bg-surface-hover transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
-              >
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="min-w-0">
-                    <p className="font-medium text-content text-sm">
-                      {item.transfer_type === 'section_transfer' ? 'Section Transfer' : 'Program Transfer'}
-                    </p>
-                    {item.current_program_name && (
-                      <p className="text-xs text-muted mt-0.5 truncate">
-                        {item.current_program_name}
-                        {item.target_program_name && item.target_program_name !== item.current_program_name
-                          ? ` → ${item.target_program_name}`
-                          : ''}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted mt-1">
-                      {new Date(item.submitted_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className={`rounded-lg border px-2 py-1 text-xs font-medium shrink-0 ${STATUS_BADGE[item.status]}`}>
-                    {STATUS_LABEL[item.status]}
-                  </span>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
+      {notice && <p role="status">{notice}</p>}
+      {data && (
+        <>
+          <CurrentPlacement data={data} />
+          {showForm ? (
+            <TransferForm
+              options={data.options}
+              registered={data.current?.registration_status === 'registered'}
+              busy={busy}
+              onCancel={() => setShowForm(false)}
+              onSubmit={(body) =>
+                submit.mutate(body, {
+                  onSuccess: () => {
+                    setShowForm(false)
+                    setNotice('Your transfer request was submitted.')
+                  },
+                })
+              }
+            />
+          ) : (
+            <RequestAction data={data} canRequest={canRequest} onStart={() => setShowForm(true)} />
+          )}
+          <h2 className="text-section font-semibold text-content">My requests</h2>
+          <TransferTimeline
+            requests={data.requests}
+            canCancel={canRequest}
+            busy={busy}
+            onCancel={(requestId) =>
+              cancel.mutate(requestId, { onSuccess: () => setNotice('Your transfer request was cancelled.') })
+            }
+          />
+        </>
       )}
+    </section>
+  )
+}
+
+function CurrentPlacement({ data }: { data: StudentTransfers }) {
+  if (!data.current)
+    return (
+      <p role="status" className="ui-panel p-4">
+        You are not assigned to a section yet. Contact your administrator before requesting a transfer.
+      </p>
+    )
+  return (
+    <div className="ui-panel p-4 sm:p-5">
+      <h2 className="text-section font-semibold text-content">Current placement</h2>
+      <p className="text-content">{describeSection(data.current)}</p>
+      <p className="text-sm text-muted">
+        {data.current.department_name} · {data.current.term_name} (ends {formatTransferDate(data.current.term_end_date)}
+        )
+      </p>
     </div>
-  );
+  )
+}
+
+function RequestAction({
+  data,
+  canRequest,
+  onStart,
+}: {
+  data: StudentTransfers
+  canRequest: boolean
+  onStart: () => void
+}) {
+  if (!canRequest || !data.current) return null
+  if (data.requests.some((request) => isOpenTransfer(request.status)))
+    return <p className="text-sm text-muted">You have an open request. Cancel it to request a different section.</p>
+  if (!data.current.term_open)
+    return <p className="text-sm text-muted">Transfers are closed because your current term has ended.</p>
+  if (!data.options.length)
+    return <p className="text-sm text-muted">No other sections are open for transfer in your current term.</p>
+  return (
+    <button
+      type="button"
+      onClick={onStart}
+      className="min-h-11 rounded-lg bg-accent px-4 py-2 font-medium text-ink hover:bg-accent-hover"
+    >
+      Request a transfer
+    </button>
+  )
 }

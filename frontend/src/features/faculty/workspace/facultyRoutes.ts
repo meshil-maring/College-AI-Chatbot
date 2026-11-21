@@ -4,6 +4,7 @@ export const FACULTY_PATHS: Readonly<Record<FacultyView, string>> = {
   profile: '/faculty/profile',
   notices: '/faculty/notices',
   resources: '/faculty/resources',
+  transfers: '/faculty/transfers',
   assistant: '/faculty/assistant',
 }
 export function resolveFacultyRoute(pathname: string): { view: FacultyView } | null {

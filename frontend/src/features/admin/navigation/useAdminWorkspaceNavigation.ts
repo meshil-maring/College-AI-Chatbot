@@ -18,7 +18,10 @@ export function resolveAdminLocation(search: string) {
     (requestedPage && page !== 'overview' ? 'academic-setup' : 'profile')
   const requestedStudentPage = params.get('student-page')
   const studentPage: StudentWorkspacePage =
-    requestedStudentPage === 'all' || requestedStudentPage === 'bulk' || requestedStudentPage === 'requests'
+    requestedStudentPage === 'all' ||
+    requestedStudentPage === 'bulk' ||
+    requestedStudentPage === 'requests' ||
+    requestedStudentPage === 'transfers'
       ? requestedStudentPage
       : 'register'
   return { view, page, search: params.get('academic-search') ?? '', studentPage }

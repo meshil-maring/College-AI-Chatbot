@@ -71,9 +71,7 @@ export const PERMISSION_CODES = [
   "audit.read",
   "transfers.request",
   "transfers.read",
-  "transfers.review",
   "transfers.approve",
-  "transfers.complete",
 ] as const
 
 export type PermissionCode = typeof PERMISSION_CODES[number]
@@ -153,11 +151,8 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     "organizations.manage",
     "platform.manage",
     "audit.read",
-    "transfers.request",
     "transfers.read",
-    "transfers.review",
     "transfers.approve",
-    "transfers.complete",
   ],
   staff: [
     "profile.own.read",
@@ -176,10 +171,6 @@ export const ROLE_DEFAULT_PERMISSIONS = {
     "notices.update",
     "ai.chat",
     "ai.knowledge.create",
-    "transfers.request",
-    "transfers.read",
-    "transfers.review",
-    "transfers.complete",
   ],
   faculty: [
     "profile.own.read",

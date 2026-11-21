@@ -5,6 +5,7 @@
 | `workspace/`                 | Shell, navigation, approval/inactive-account gates and session lifecycle |
 | `profile/`                   | Read-only identity profile using `GET /students/me/profile`              |
 | `registration/`              | Assigned semesters, complete subject options and atomic course registration |
+| `transfer/`                  | Current placement, section/program transfer requests, cancellation and history |
 | `notices/`, `resources/`     | Published institution information                                        |
 | `shared/`                    | Resource loading, access-denial context, section UI and formatting       |
 | `integration/`, `__tests__/` | Information journeys, navigation and fixture support                     |
