@@ -9,8 +9,9 @@ CREATE TABLE public.department_heads (
     assigned_at timestamptz NOT NULL DEFAULT now(),
     ended_by uuid REFERENCES public.users(id),
     ended_at timestamptz,
-    FOREIGN KEY (department_id, institution_id)
-        REFERENCES public.departments(department_id, institution_id),
+    -- Deployed departments/programs expose only a primary key; tenant ownership
+    -- is checked by assign_department_head and the transfer commands.
+    FOREIGN KEY (department_id) REFERENCES public.departments(department_id),
     CONSTRAINT department_heads_end_pair CHECK ((ended_at IS NULL) = (ended_by IS NULL))
 );
 CREATE UNIQUE INDEX department_heads_one_current
@@ -55,10 +56,10 @@ CREATE TABLE public.student_transfer_requests (
         REFERENCES public.academic_sections(academic_section_id, institution_id),
     FOREIGN KEY (to_section_id, institution_id)
         REFERENCES public.academic_sections(academic_section_id, institution_id),
-    FOREIGN KEY (from_program_id, institution_id) REFERENCES public.programs(program_id, institution_id),
-    FOREIGN KEY (to_program_id, institution_id) REFERENCES public.programs(program_id, institution_id),
-    FOREIGN KEY (to_department_id, institution_id)
-        REFERENCES public.departments(department_id, institution_id),
+    -- Program and department are copied from tenant-filtered sections.
+    FOREIGN KEY (from_program_id) REFERENCES public.programs(program_id),
+    FOREIGN KEY (to_program_id) REFERENCES public.programs(program_id),
+    FOREIGN KEY (to_department_id) REFERENCES public.departments(department_id),
     CONSTRAINT student_transfer_distinct_section CHECK (from_section_id <> to_section_id),
     CONSTRAINT student_transfer_decision CHECK (
         (status IN ('approved', 'rejected'))

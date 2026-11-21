@@ -23,7 +23,7 @@ BEGIN
 END;
 $$;
 
--- SOURCE tables.sql sha256=0399e88633797efc125d71f467d8c52e3830da8cd1cf5417aeaa3b2ac84f84f2
+-- SOURCE tables.sql sha256=13e08d358fe1e83b9d4350c3ce11e096c6de00b95fc5510dd5cec4b87c5fdd0a
 -- One current Head of Department per department. Ended appointments are kept
 -- as history; a new appointment never rewrites an earlier row.
 CREATE TABLE public.department_heads (
@@ -35,8 +35,9 @@ CREATE TABLE public.department_heads (
     assigned_at timestamptz NOT NULL DEFAULT now(),
     ended_by uuid REFERENCES public.users(id),
     ended_at timestamptz,
-    FOREIGN KEY (department_id, institution_id)
-        REFERENCES public.departments(department_id, institution_id),
+    -- Deployed departments/programs expose only a primary key; tenant ownership
+    -- is checked by assign_department_head and the transfer commands.
+    FOREIGN KEY (department_id) REFERENCES public.departments(department_id),
     CONSTRAINT department_heads_end_pair CHECK ((ended_at IS NULL) = (ended_by IS NULL))
 );
 CREATE UNIQUE INDEX department_heads_one_current
@@ -81,10 +82,10 @@ CREATE TABLE public.student_transfer_requests (
         REFERENCES public.academic_sections(academic_section_id, institution_id),
     FOREIGN KEY (to_section_id, institution_id)
         REFERENCES public.academic_sections(academic_section_id, institution_id),
-    FOREIGN KEY (from_program_id, institution_id) REFERENCES public.programs(program_id, institution_id),
-    FOREIGN KEY (to_program_id, institution_id) REFERENCES public.programs(program_id, institution_id),
-    FOREIGN KEY (to_department_id, institution_id)
-        REFERENCES public.departments(department_id, institution_id),
+    -- Program and department are copied from tenant-filtered sections.
+    FOREIGN KEY (from_program_id) REFERENCES public.programs(program_id),
+    FOREIGN KEY (to_program_id) REFERENCES public.programs(program_id),
+    FOREIGN KEY (to_department_id) REFERENCES public.departments(department_id),
     CONSTRAINT student_transfer_distinct_section CHECK (from_section_id <> to_section_id),
     CONSTRAINT student_transfer_decision CHECK (
         (status IN ('approved', 'rejected'))
