@@ -35,3 +35,26 @@ export interface StudentResourceList {
   items: StudentResource[]
   total: number
 }
+
+/** Own notification from GET /students/me/notifications. */
+export interface StudentNotification {
+  notification_id: string
+  student_id: string
+  institution_id: string
+  notification_type: 'attendance_alert' | 'result_published' | 'academic_status' | 'academic_admin'
+  title: string
+  message: string
+  is_read: boolean
+  source_type: string
+  source_record_id: string | null
+  created_at: string
+  read_at: string | null
+}
+
+export interface StudentNotificationList {
+  items: StudentNotification[]
+  total: number
+  page: number
+  page_size: number
+  has_more: boolean
+}

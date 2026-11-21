@@ -1,6 +1,7 @@
 import { hasPermission } from '../../auth/access/permissions.ts'
 
-export type StudentView = 'profile' | 'registration' | 'notices' | 'resources' | 'assistant' | 'transfer-requests'
+export type StudentView =
+  'profile' | 'registration' | 'notices' | 'resources' | 'assistant' | 'transfer-requests' | 'notifications'
 
 export interface StudentNavItem {
   readonly key: StudentView
@@ -11,6 +12,7 @@ export const STUDENT_NAV_ITEMS: readonly StudentNavItem[] = [
   { key: 'profile', label: 'Profile' },
   { key: 'registration', label: 'Semester Registration' },
   { key: 'transfer-requests', label: 'Transfer Requests' },
+  { key: 'notifications', label: 'Notifications' },
   { key: 'notices', label: 'Notices' },
   { key: 'resources', label: 'Learning Resources' },
   { key: 'assistant', label: 'AI Assistant' },
@@ -23,6 +25,7 @@ const PERMISSIONS: Record<StudentView, string> = {
   resources: 'documents.read',
   assistant: 'ai.chat',
   'transfer-requests': 'transfers.read',
+  notifications: 'notifications.own.read',
 }
 
 export function buildStudentNavigation(
@@ -32,7 +35,7 @@ export function buildStudentNavigation(
   if (!['student', 'staff', 'faculty'].includes(role ?? '')) return []
   return STUDENT_NAV_ITEMS.filter(
     (item) =>
-      ((item.key !== 'registration' && item.key !== 'transfer-requests') || role === 'student') &&
+      (!['registration', 'transfer-requests', 'notifications'].includes(item.key) || role === 'student') &&
       (permissions === undefined || hasPermission(permissions, PERMISSIONS[item.key])),
   )
 }
@@ -44,4 +47,5 @@ export const STUDENT_VIEW_HEADINGS: Record<StudentView, string> = {
   resources: 'Learning Resources',
   assistant: 'AI Assistant',
   'transfer-requests': 'Transfer Requests',
+  notifications: 'Notifications',
 }

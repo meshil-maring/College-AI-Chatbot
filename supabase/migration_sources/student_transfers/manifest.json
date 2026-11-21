@@ -35,6 +35,13 @@
         "semester/direct.sql",
         "semester/security.sql"
       ]
+    },
+    {
+      "version": "20261124000000",
+      "name": "student_transfer_notifications",
+      "files": [
+        "notifications/notify.sql"
+      ]
     }
   ]
 }

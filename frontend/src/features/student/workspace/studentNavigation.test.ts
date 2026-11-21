@@ -7,6 +7,7 @@ describe('student navigation', () => {
       'profile',
       'registration',
       'transfer-requests',
+      'notifications',
       'notices',
       'resources',
       'assistant',

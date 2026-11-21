@@ -12,7 +12,7 @@ it('mounts only the reduced student navigation after account approval', async ()
     within(navigation)
       .getAllByRole('button')
       .map((item) => item.textContent),
-  ).toEqual(['Profile', 'Semester Registration', 'Transfer Requests', 'Notices', 'Learning Resources', 'AI Assistant'])
+  ).toEqual(['Profile', 'Semester Registration', 'Transfer Requests', 'Notifications', 'Notices', 'Learning Resources', 'AI Assistant'])
   expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Academic context' })).not.toBeInTheDocument()
 })

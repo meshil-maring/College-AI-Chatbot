@@ -1,0 +1,53 @@
+-- Tell the student when a reviewer starts on their request, and when any
+-- transfer (requested or direct) is approved or rejected. A student's own
+-- cancellation sends nothing. The existing unique index on
+-- (student_id, source_record_id, notification_type) keeps each message single:
+-- review start uses 'academic_admin', the final outcome 'academic_status'.
+CREATE FUNCTION public.notify_student_transfer()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_to jsonb; v_destination text; v_by text; v_type text; v_title text; v_message text;
+BEGIN
+    IF NEW.status IS NOT DISTINCT FROM OLD.status
+       OR NEW.status NOT IN ('under_review', 'approved', 'rejected') THEN
+        RETURN NEW;
+    END IF;
+    v_to := public.transfer_section_json(NEW.to_section_id, NEW.institution_id);
+    v_destination := format('%s · Section %s (%s)', v_to->>'program_name', v_to->>'section_name',
+        v_to->>'program_semester_name');
+    v_by := CASE WHEN NEW.decided_as = 'hod' THEN 'your Head of Department' ELSE 'the administrator' END;
+    IF NEW.status = 'under_review' THEN
+        v_type := 'academic_admin';
+        v_title := 'Transfer request under review';
+        v_message := format('Your request to move to %s is now being reviewed.', v_destination);
+    ELSIF NEW.status = 'rejected' THEN
+        v_type := 'academic_status';
+        v_title := 'Transfer request rejected';
+        v_message := format('Your request to move to %s was rejected by %s. Reason: %s',
+            v_destination, v_by, COALESCE(NEW.decision_comment, 'not given'));
+    ELSIF NEW.initiated_by = 'student' THEN
+        v_type := 'academic_status';
+        v_title := 'Transfer request approved';
+        v_message := format('Your transfer was approved by %s. You are now in %s.%s', v_by, v_destination,
+            ' Open Semester Registration to choose your subjects in the new section.');
+    ELSE
+        v_type := 'academic_status';
+        v_title := 'You have been transferred';
+        v_message := format('%s moved you to %s. Reason: %s%s',
+            CASE WHEN NEW.initiated_by = 'hod' THEN 'Your Head of Department' ELSE 'The administrator' END,
+            v_destination, NEW.reason,
+            ' Open Semester Registration to choose your subjects in the new section.');
+    END IF;
+    INSERT INTO public.student_notifications (
+        student_id, institution_id, notification_type, title, message, source_type, source_record_id)
+    VALUES (NEW.student_id, NEW.institution_id, v_type, left(v_title, 255), v_message,
+        'student_transfer', NEW.transfer_request_id)
+    ON CONFLICT DO NOTHING;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER student_transfer_notify
+    AFTER UPDATE OF status ON public.student_transfer_requests
+    FOR EACH ROW EXECUTE FUNCTION public.notify_student_transfer();
+
+REVOKE ALL ON FUNCTION public.notify_student_transfer() FROM PUBLIC, anon, authenticated, service_role;

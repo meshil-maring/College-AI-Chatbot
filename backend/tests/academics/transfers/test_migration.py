@@ -25,6 +25,7 @@ def test_generated_migrations_match_sources_and_own_their_versions():
         "20261121000000_student_transfer_workflow.sql",
         "20261122000000_student_transfer_direct.sql",
         "20261123000000_student_transfer_same_semester.sql",
+        "20261124000000_student_transfer_notifications.sql",
     ]
     for target, sql in migrations:
         assert target.read_text(encoding="utf-8") == sql
@@ -32,7 +33,7 @@ def test_generated_migrations_match_sources_and_own_their_versions():
 
 
 def test_sources_stay_within_maintenance_limits():
-    for folder in (SOURCE, SOURCE / "direct", SOURCE / "semester"):
+    for folder in (SOURCE, SOURCE / "direct", SOURCE / "semester", SOURCE / "notifications"):
         files = [path for path in folder.iterdir() if path.is_file()]
         assert len(files) <= 15
         for path in files:
@@ -118,3 +119,12 @@ def test_same_semester_rule_is_enforced_on_every_path():
     assert "DROP FUNCTION public.direct_transfer_student(uuid, uuid, uuid, uuid, text);" in sql
     security = (SOURCE / "semester/security.sql").read_text(encoding="utf-8")
     assert "direct_transfer_student(uuid, uuid, uuid, uuid, text, boolean)" in security.split("GRANT EXECUTE")[1]
+
+
+def test_transfer_outcomes_notify_the_student_once():
+    _, sql = generator().render()[3]
+    assert "AFTER UPDATE OF status ON public.student_transfer_requests" in sql
+    assert "NEW.status NOT IN ('under_review', 'approved', 'rejected')" in sql
+    assert "'student_transfer', NEW.transfer_request_id" in sql
+    assert "ON CONFLICT DO NOTHING" in sql
+    assert "REVOKE ALL ON FUNCTION public.notify_student_transfer()" in sql
