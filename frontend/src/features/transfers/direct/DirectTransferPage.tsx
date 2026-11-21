@@ -119,10 +119,15 @@ function DirectSession({ identity, institutionId, token }: { identity: string; i
                   studentName={name}
                   data={options.data}
                   busy={transfer.isPending}
-                  onSubmit={(toSectionId, reason) => {
+                  onSubmit={(toSectionId, reason, allowOtherSemester) => {
                     const target = options.data?.options.find((item) => item.academic_section_id === toSectionId)
                     transfer.mutate(
-                      { student_id: selected.student_id, to_section_id: toSectionId, reason },
+                      {
+                        student_id: selected.student_id,
+                        to_section_id: toSectionId,
+                        reason,
+                        allow_other_semester: allowOtherSemester,
+                      },
                       {
                         onSuccess: () => {
                           setNotice(`${name} was moved to ${target ? describeSection(target) : 'the new section'}.`)

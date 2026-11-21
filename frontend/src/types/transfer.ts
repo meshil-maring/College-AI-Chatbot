@@ -24,6 +24,7 @@ export interface TransferSection {
   department_id: string
   department_name: string
   program_semester_name: string
+  semester_number?: number
   semester_id: string
   term_name: string
   capacity: number | null
@@ -40,6 +41,8 @@ export interface CurrentPlacement extends TransferSection {
 export interface TransferOption extends TransferSection {
   transfer_type: TransferType
   has_seat: boolean
+  /** Present on admin/HOD options; false only when an administrator may override. */
+  same_semester?: boolean
 }
 
 export interface TransferEvent {
@@ -63,6 +66,7 @@ export interface TransferRequest {
   status: TransferStatus
   reason: string
   initiated_by: TransferInitiator
+  semester_override?: boolean
   from_section: TransferSection | null
   to_section: TransferSection | null
   submitted_at: string
@@ -144,6 +148,7 @@ export interface DirectTransferOptions {
   institution_id: string
   student_id: string
   actor_role: 'admin' | 'hod'
+  can_override_semester: boolean
   current: TransferSection & { semester_registration_id: string; registration_status: 'assigned' | 'registered' }
   has_open_request: boolean
   options: TransferOption[]
@@ -151,6 +156,7 @@ export interface DirectTransferOptions {
 
 export interface DirectTransferBody extends TransferSubmit {
   student_id: string
+  allow_other_semester: boolean
 }
 
 export interface DirectTransferResult extends TransferCommandResult {

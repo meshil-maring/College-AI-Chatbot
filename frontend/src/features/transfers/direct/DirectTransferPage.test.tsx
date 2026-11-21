@@ -47,9 +47,20 @@ function optionsFixture(overrides: Partial<DirectTransferOptions> = {}): DirectT
     institution_id: 'tenant-1',
     student_id: 'student-1',
     actor_role: 'admin',
+    can_override_semester: true,
     current: currentFixture(),
     has_open_request: false,
-    options: [optionFixture()],
+    options: [
+      optionFixture({ same_semester: true }),
+      optionFixture({
+        academic_section_id: 'section-bsc-7',
+        section_name: 'S7',
+        program_name: 'B.Sc Physics',
+        program_semester_name: 'Semester 7',
+        transfer_type: 'program_transfer',
+        same_semester: false,
+      }),
+    ],
     ...overrides,
   }
 }
@@ -84,6 +95,7 @@ it('transfers the chosen student immediately with a reason', async () => {
       student_id: 'student-1',
       to_section_id: 'section-b',
       reason: 'Balancing section sizes',
+      allow_other_semester: false,
     }),
   )
   expect(await screen.findByText(/Asha Rao was moved to/)).toBeInTheDocument()
@@ -111,5 +123,47 @@ it('explains the department limit to an HOD and refuses non-reviewers', async ()
   )
   render(<DirectTransferPage />)
   expect(await screen.findByText(/Only administrators and current Heads of Department/)).toBeInTheDocument()
+  auth.role = 'admin'
+})
+
+it('hides other semesters until an administrator overrides with a second confirmation', async () => {
+  vi.mocked(api.directTransfer).mockResolvedValue({
+    transfer_request_id: 'request-10',
+    institution_id: 'tenant-1',
+    student_id: 'student-1',
+    status: 'approved',
+  })
+  render(<DirectTransferPage />)
+  fireEvent.click(await screen.findByRole('button', { name: /Asha Rao/ }))
+  await screen.findByRole('radio', { name: /Section B/ })
+  expect(screen.queryByRole('radio', { name: /B.Sc Physics/ })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('checkbox', { name: /Show other semesters/ }))
+  fireEvent.click(screen.getByRole('radio', { name: /B.Sc Physics/ }))
+  fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Lateral entry approved by board' } })
+  fireEvent.click(screen.getByRole('checkbox', { name: /register again/ }))
+  const submit = screen.getByRole('button', { name: 'Transfer student' })
+  expect(submit).toBeDisabled()
+  fireEvent.click(screen.getByRole('checkbox', { name: /from Semester 3 to Semester 7/ }))
+  fireEvent.click(submit)
+  await waitFor(() =>
+    expect(api.directTransfer).toHaveBeenCalledExactlyOnceWith('token-1', {
+      student_id: 'student-1',
+      to_section_id: 'section-bsc-7',
+      reason: 'Lateral entry approved by board',
+      allow_other_semester: true,
+    }),
+  )
+})
+
+it('never offers the override to a Head of Department', async () => {
+  auth.role = 'faculty'
+  vi.mocked(api.getDirectTransferStudents).mockResolvedValue(studentsFixture({ actor_role: 'hod' }))
+  vi.mocked(api.getDirectTransferOptions).mockResolvedValue(
+    optionsFixture({ actor_role: 'hod', can_override_semester: false }),
+  )
+  render(<DirectTransferPage />)
+  fireEvent.click(await screen.findByRole('button', { name: /Asha Rao/ }))
+  await screen.findByRole('radio', { name: /Section B/ })
+  expect(screen.queryByRole('checkbox', { name: /Show other semesters/ })).not.toBeInTheDocument()
   auth.role = 'admin'
 })

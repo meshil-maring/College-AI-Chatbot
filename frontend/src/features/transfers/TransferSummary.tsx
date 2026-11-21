@@ -28,6 +28,7 @@ export default function TransferSummary({ request }: { request: TransferRequest 
           {request.initiated_by && request.initiated_by !== 'student'
             ? ` · ${TRANSFER_INITIATOR_LABEL[request.initiated_by]}`
             : ''}
+          {request.semester_override ? ' · Semester override' : ''}
         </span>
         <TransferStatusBadge status={request.status} />
       </div>

@@ -43,6 +43,10 @@ TRANSFER_ERRORS = {
         "This student has an open transfer request. Approve or reject it under Transfer Requests first.",
     ),
     "P1112": (422, "STUDENT_NO_PLACEMENT", "This student is not assigned to a section in an open term."),
+    "P1113": (
+        422, "TRANSFER_SEMESTER_MISMATCH",
+        "Transfers must keep the same semester number. Only an administrator can override this.",
+    ),
     "23505": (409, "TRANSFER_ALREADY_OPEN", "You already have an open transfer request."),
     "42501": (403, "FORBIDDEN", "You do not have permission to perform this action."),
 }
@@ -157,6 +161,7 @@ def direct_transfer(user, payload):
         return repository.direct_transfer(
             client, str(user["user_id"]), tenant,
             payload["student_id"], payload["to_section_id"], payload["reason"],
+            bool(payload.get("allow_other_semester")),
         )
     return _call(write)
 

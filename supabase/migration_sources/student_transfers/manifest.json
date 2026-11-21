@@ -13,15 +13,28 @@
     "assignment_guard.sql",
     "security.sql"
   ],
-  "follow_up": {
-    "version": "20261122000000",
-    "name": "student_transfer_direct",
-    "files": [
-      "direct/tables.sql",
-      "direct/apply.sql",
-      "direct/reads.sql",
-      "direct/direct.sql",
-      "direct/security.sql"
-    ]
-  }
+  "follow_ups": [
+    {
+      "version": "20261122000000",
+      "name": "student_transfer_direct",
+      "files": [
+        "direct/tables.sql",
+        "direct/apply.sql",
+        "direct/reads.sql",
+        "direct/direct.sql",
+        "direct/security.sql"
+      ]
+    },
+    {
+      "version": "20261123000000",
+      "name": "student_transfer_same_semester",
+      "files": [
+        "semester/rules.sql",
+        "semester/student.sql",
+        "semester/apply.sql",
+        "semester/direct.sql",
+        "semester/security.sql"
+      ]
+    }
+  ]
 }

@@ -24,6 +24,7 @@ def test_generated_migrations_match_sources_and_own_their_versions():
     assert [target.name for target, _ in migrations] == [
         "20261121000000_student_transfer_workflow.sql",
         "20261122000000_student_transfer_direct.sql",
+        "20261123000000_student_transfer_same_semester.sql",
     ]
     for target, sql in migrations:
         assert target.read_text(encoding="utf-8") == sql
@@ -31,7 +32,7 @@ def test_generated_migrations_match_sources_and_own_their_versions():
 
 
 def test_sources_stay_within_maintenance_limits():
-    for folder in (SOURCE, SOURCE / "direct"):
+    for folder in (SOURCE, SOURCE / "direct", SOURCE / "semester"):
         files = [path for path in folder.iterdir() if path.is_file()]
         assert len(files) <= 15
         for path in files:
@@ -97,3 +98,23 @@ def test_assignment_guard_only_changes_the_batch_check():
     normalized_before = before.replace(
         removed, added + "\n          AND sec.admission_cohort_id")
     assert normalized_before == after
+
+
+def test_same_semester_rule_is_enforced_on_every_path():
+    _, sql = generator().render()[2]
+
+    def body(name):
+        return sql.split(f"FUNCTION public.{name}(", 1)[1].split("$$;", 1)[0]
+
+    assert "transfer_stage_matches(" in body("read_student_transfers")
+    assert "'P1113'" in body("submit_student_transfer")
+    apply = body("transfer_apply")
+    assert "NOT v_request.semester_override" in apply and "'P1113'" in apply
+    options = body("read_direct_transfer_options")
+    assert "v_role = 'admin' OR (option_row->>'same_semester')::boolean" in options
+    direct = body("direct_transfer_student")
+    assert "NOT (v_role = 'admin' AND COALESCE(p_allow_other_semester, false))" in direct
+    assert direct.index("'P1113'") < direct.index("INSERT INTO public.student_transfer_requests")
+    assert "DROP FUNCTION public.direct_transfer_student(uuid, uuid, uuid, uuid, text);" in sql
+    security = (SOURCE / "semester/security.sql").read_text(encoding="utf-8")
+    assert "direct_transfer_student(uuid, uuid, uuid, uuid, text, boolean)" in security.split("GRANT EXECUTE")[1]

@@ -29,6 +29,9 @@ class DirectTransfer(TransferSubmit):
     # An administrator or HOD names the student; the database checks tenant,
     # department scope and the student's current placement.
     student_id: UUID
+    # Only an administrator may move a student to a different semester number;
+    # the database refuses the flag for anyone else.
+    allow_other_semester: bool = False
 
 
 class TransferDecision(AcademicModel):

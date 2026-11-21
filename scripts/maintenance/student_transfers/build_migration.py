@@ -53,8 +53,8 @@ def render() -> list[tuple[Path, str]]:
     migrations = [
         render_migration(manifest["version"], manifest["name"], manifest["files"])
     ]
-    follow_up = manifest.get("follow_up")
-    if follow_up:
+    # Applied migrations never change; later behaviour ships as ordered follow-ups.
+    for follow_up in manifest.get("follow_ups", []):
         migrations.append(
             render_migration(
                 follow_up["version"], follow_up["name"], follow_up["files"]

@@ -76,6 +76,16 @@ def test_direct_transfer_names_student_but_never_tenant_or_source():
         for field in ("institution_id", "from_section_id", "initiated_by", "status"):
             assert client.post("/api/v1/transfer-direct", json={**body, field: str(uuid4())}).status_code == 422
         assert client.post("/api/v1/transfer-direct", json={**body, "reason": "short"}).status_code == 422
+    writer.assert_called_once_with(user, {**body, "allow_other_semester": False})
+
+
+def test_direct_transfer_forwards_explicit_semester_override():
+    user = {"user_id": str(uuid4())}
+    body = {"student_id": str(uuid4()), "to_section_id": str(uuid4()),
+            "reason": "Lateral entry approved by the board", "allow_other_semester": True}
+    with client_for(user) as client, patch.object(service, "direct_transfer", return_value={}) as writer:
+        assert client.post("/api/v1/transfer-direct", json=body).status_code == 201
+        assert client.post("/api/v1/transfer-direct", json={**body, "allow_other_semester": "maybe"}).status_code == 422
     writer.assert_called_once_with(user, body)
 
 

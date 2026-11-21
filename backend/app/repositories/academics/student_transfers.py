@@ -49,10 +49,11 @@ def direct_options(client, actor_id, tenant, student_id):
     }).execute().data
 
 
-def direct_transfer(client, actor_id, tenant, student_id, to_section_id, reason):
+def direct_transfer(client, actor_id, tenant, student_id, to_section_id, reason, allow_other_semester):
     return client.rpc("direct_transfer_student", {
         "p_actor": actor_id, "p_tenant": tenant, "p_student": student_id,
         "p_to_section": to_section_id, "p_reason": reason,
+        "p_allow_other_semester": allow_other_semester,
     }).execute().data
 
 
