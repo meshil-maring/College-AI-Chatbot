@@ -43,6 +43,11 @@ class EmailSettings(BaseSettings):
     email_worker_batch_size: int = Field(default=20, gt=0, le=200)
     email_worker_lock_seconds: int = Field(default=120, ge=30, le=3600)
     email_outbox_retry_limit: int = Field(default=3, gt=0, le=20)
+    # Development only: let the backend process send queued invitation emails
+    # itself (refused outside local/test environments; deployments schedule
+    # EmailOutboxWorker.process_once separately).
+    email_outbox_worker_inline: bool = False
+    email_outbox_worker_interval_seconds: float = Field(default=10.0, ge=1, le=300)
     # STARTTLS is mandatory for SMTP; credentials never leave the backend.
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = Field(default=587, ge=1, le=65535)

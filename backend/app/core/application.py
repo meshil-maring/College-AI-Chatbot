@@ -1,5 +1,7 @@
 """Application middleware, configuration validation, and safe HTTP errors."""
+
 import logging
+import sys
 from typing import cast
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -13,6 +15,7 @@ from app.middleware.public_body_limit import PublicChatBodyLimitMiddleware
 from app.middleware.request_limits import RequestSizeLimitMiddleware
 from app.middleware.api_rate_limit import ApiRateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.services.email.inline_outbox_worker import attach_inline_worker
 
 logger = logging.getLogger(__name__)
 
@@ -106,5 +109,8 @@ def create_application(settings):
     app.add_exception_handler(AppError, cast(ExceptionHandler, app_error_handler))
     app.add_exception_handler(Exception, unhandled_error_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
+    # Never inside automated tests: they must not send real queued email.
+    if "pytest" not in sys.modules:
+        attach_inline_worker(app, settings)
     return app
 0

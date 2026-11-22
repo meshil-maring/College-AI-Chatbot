@@ -104,6 +104,11 @@ their existing encrypted outbox still requires a deployment
 `EMAIL_OUTBOX_TOKEN_ENCRYPTION_KEY` and worker scheduler. Student setup remains
 inline with its existing invitation/status records.
 
+For local development, `EMAIL_OUTBOX_WORKER_INLINE=true` makes the backend send
+queued invitation emails itself every `EMAIL_OUTBOX_WORKER_INTERVAL_SECONDS`
+(default 10) through `app/services/email/inline_outbox_worker.py`. It is ignored
+outside local/test environments, so deployments still need their own scheduler.
+
 Shared HTML rendering escapes content and preserves plain text. Templates cover
 verification, registration receipt, invitation codes, recovery, approval,
 rejection and staff notifications. Student setup and admin/staff/faculty invites
