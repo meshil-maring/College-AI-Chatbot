@@ -131,7 +131,7 @@ BEGIN
     IF has_function_privilege('authenticated', 'public.revoke_institution_admin(uuid,uuid,uuid)', 'EXECUTE')
        OR has_function_privilege('service_role', 'public.institution_owner_assert(uuid,uuid)', 'EXECUTE')
        OR NOT has_function_privilege('service_role',
-           'public.create_admin_invitation(uuid,uuid,text,text,text,timestamptz,text)', 'EXECUTE') THEN
+           'public.create_admin_invitation(uuid,uuid,text,text,text,timestamptz,text,text[])', 'EXECUTE') THEN
         RAISE EXCEPTION 'Unexpected owner function privileges';
     END IF;
     RAISE NOTICE 'owner contracts passed';

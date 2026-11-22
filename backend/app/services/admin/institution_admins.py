@@ -1,8 +1,9 @@
 """Institution administrators and the protected Owner (User Management U2).
 
-Every administrator has the full admin permission set; per-administrator
-scoping is a later phase. The Owner alone invites and removes administrators
-and transfers ownership. The database enforces this on every command, and an
+An administrator has the admin permission set, limited to the access areas the
+Owner chose (none chosen means full access); the account loader applies the
+limit. The Owner always has full access, and alone invites, limits and removes
+administrators and transfers ownership. The database enforces this on every command, and an
 Owner's invitation stops working if its sender is no longer the Owner.
 """
 
@@ -15,6 +16,7 @@ from app.db.supabase import get_admin_client
 from app.repositories.admin import institution_admins as repo
 from app.repositories.invitations import platform_admin_invitations as invite_repo
 from app.schemas.admin.institution_admins import (
+    AdminAccessUpdate,
     AdminInvitationCreate,
     InstitutionAdminList,
     InstitutionAdminResult,
@@ -26,6 +28,7 @@ DATABASE_ERRORS = {
     "P1401": (403, "OWNER_REQUIRED", "Only the institution Owner can manage administrators."),
     "P1402": (422, "NOT_AN_ADMINISTRATOR", "Choose an active administrator of your institution."),
     "P1403": (409, "OWNER_CANNOT_BE_REMOVED", "Transfer ownership to another administrator before leaving."),
+    "P1404": (409, "OWNER_ALWAYS_FULL_ACCESS", "The Owner always has full access."),
     "P1202": (409, "MEMBER_ALREADY_EXISTS", "This email already belongs to someone in your institution."),
     "P1203": (409, "INVITATION_ALREADY_PENDING", "An invitation is already pending for this email."),
     "P0002": (404, "INVITATION_NOT_FOUND", "Invitation not found."),
@@ -58,6 +61,7 @@ def list_admins(actor: dict[str, Any], institution_id: UUID) -> InstitutionAdmin
         viewer_is_owner=owner is not None and str(owner) == str(actor["user_id"]),
         administrators=admins,
         invitations=data.get("invitations") or [],
+        access_area_options=data.get("access_areas") or [],
     )
 
 
@@ -66,7 +70,7 @@ def invite(actor: dict[str, Any], institution_id: UUID, body: AdminInvitationCre
     expires_at = datetime.now(timezone.utc) + timedelta(hours=invitations.INVITATION_TTL_HOURS)
     _call(lambda: repo.create_invitation(
         get_admin_client(), actor_id=actor["user_id"], institution_id=institution_id,
-        email=body.email, full_name=body.full_name,
+        email=body.email, full_name=body.full_name, access_areas=body.access_areas,
         token_hash=invite_repo.hash_invitation_token(raw_token), expires_at=expires_at,
         protected_token=email_outbox_crypto.protect_invitation_token(raw_token),
     ), "The invitation could not be created. Try again.")
@@ -101,3 +105,16 @@ def transfer_ownership(actor: dict[str, Any], institution_id: UUID, user_id: UUI
         else "Ownership transferred. You remain an administrator.",
         already_applied=already,
     )
+
+
+def set_access(
+    actor: dict[str, Any], institution_id: UUID, user_id: UUID, body: AdminAccessUpdate,
+) -> InstitutionAdminResult:
+    """Limit an administrator to some access areas, or give full access again."""
+    result = _call(lambda: repo.set_access(get_admin_client(), actor["user_id"], institution_id, user_id,
+                                           body.access_areas),
+                   "Access could not be changed. Try again.")
+    full = bool(result.get("full_access"))
+    return InstitutionAdminResult(
+        message="Full access given. Changes apply on their next request." if full
+        else "Access updated. Changes apply on their next request.")

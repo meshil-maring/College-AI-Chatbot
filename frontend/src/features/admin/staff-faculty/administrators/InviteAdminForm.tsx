@@ -1,5 +1,8 @@
 import { useId, useState, type FormEvent } from 'react'
+import type { AdminAccessArea } from '../../../../types/admin/administrators.ts'
 import { PRIMARY_BUTTON_CLASS, SELECT_CLASS } from '../StaffFacultyUI.tsx'
+import AccessAreasField from './AccessAreasField.tsx'
+import { ALL_AREAS, toAccess } from './accessAreas.ts'
 import type { InstitutionAdminsModel } from './useInstitutionAdmins.ts'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -10,6 +13,7 @@ export default function InviteAdminForm({ model }: { model: InstitutionAdminsMod
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [touched, setTouched] = useState(false)
+  const [areas, setAreas] = useState<AdminAccessArea[]>(ALL_AREAS)
   const invalid = !EMAIL.test(email.trim())
   const sending = model.actionKey === 'invite'
 
@@ -17,10 +21,11 @@ export default function InviteAdminForm({ model }: { model: InstitutionAdminsMod
     event.preventDefault()
     setTouched(true)
     if (invalid) return
-    const failure = await model.invite(email, fullName)
+    const failure = await model.invite(email, fullName, toAccess(areas))
     if (!failure) {
       setEmail('')
       setFullName('')
+      setAreas(ALL_AREAS)
       setTouched(false)
     }
   }
@@ -36,7 +41,8 @@ export default function InviteAdminForm({ model }: { model: InstitutionAdminsMod
         Invite an administrator
       </h3>
       <p className="text-sm text-muted">
-        Administrators manage the whole institution: users, academics, knowledge and settings.
+        Administrators manage the institution. Untick areas to limit what this administrator can do; you can change it
+        later.
       </p>
       <div className="grid gap-3 md:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm font-medium text-content">
@@ -70,6 +76,7 @@ export default function InviteAdminForm({ model }: { model: InstitutionAdminsMod
           />
         </label>
       </div>
+      <AccessAreasField legend="Access" value={areas} disabled={sending} onChange={setAreas} />
       <div className="flex justify-end">
         <button type="submit" disabled={sending} className={PRIMARY_BUTTON_CLASS}>
           {sending ? 'Sending…' : 'Send invitation'}

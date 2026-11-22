@@ -103,7 +103,7 @@ def test_staff_permission_api_requires_staff_target_in_same_institution() -> Non
     ):
         with pytest.raises(AppError) as error:
             phase81_rbac.change_staff_permissions(
-                _resolved_user("admin", ["permissions.manage"]),
+                _resolved_user("admin", ["permissions.manage", "documents.create"]),
                 UUID(TENANT_A),
                 UUID(TARGET),
                 ["documents.create"],
@@ -133,7 +133,7 @@ def test_staff_grant_mutation_uses_atomic_rpc_and_returns_effective_sources() ->
         ),
     ):
         result = phase81_rbac.change_staff_permissions(
-            _resolved_user("admin", ["permissions.manage"]),
+            _resolved_user("admin", ["permissions.manage", "documents.create"]),
             UUID(TENANT_A),
             UUID(TARGET),
             ["documents.create"],
@@ -151,6 +151,21 @@ def test_staff_grant_mutation_uses_atomic_rpc_and_returns_effective_sources() ->
     )
     assert result["changed"] == 1
     assert result["permissions"] == expected
+
+
+def test_limited_administrator_cannot_grant_beyond_own_access() -> None:
+    # The Owner limited this administrator: documents.create is not theirs to give.
+    with patch("app.services.auth.phase81_rbac.get_admin_client") as get_client:
+        with pytest.raises(AppError) as error:
+            phase81_rbac.change_staff_permissions(
+                _resolved_user("admin", ["permissions.manage", "notices.read"]),
+                UUID(TENANT_A),
+                UUID(TARGET),
+                ["documents.create"],
+                grant=True,
+            )
+    assert (error.value.status_code, error.value.code) == (403, "PERMISSION_OUTSIDE_ACCESS")
+    get_client.assert_not_called()
 
 
 def test_staff_permission_catalogue_is_narrow_and_never_platform_administrative() -> (

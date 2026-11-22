@@ -70,9 +70,15 @@ switches that rule and manages Class In-Charge (a class section) and Subject Coo
 (a catalogue course) through `useMemberResponsibilities.ts`; each section or course has
 one current holder, and history is kept (`20261129000000`/`20261129010000` migrations).
 **Administrators** (`administrators/`) lists everyone who administers the institution.
-Every administrator has full access; the Owner alone invites (`InviteAdminForm.tsx`),
+The Owner always has full access and alone invites (`InviteAdminForm.tsx`), limits,
 removes administrators and transfers ownership, and the server enforces that
 (`useInstitutionAdmins.ts`, `20261130000000` to `20261130020000` migrations).
+The Owner can limit another administrator to access areas (`accessAreas.ts`,
+`AccessAreasField.tsx`, `AdminAccessEditor.tsx`): Staff and Faculty, Students, Academic
+setup, Content, Staff permissions, and Settings and audit. Everything ticked means full
+access. The server cuts the administrator's permissions when it loads the account, so
+routes, the sidebar and pages follow; a limited administrator can grant Staff only what
+their own access includes (`20261202000000` to `20261202020000` migrations).
 **Teaching** mounts the shared `features/teaching/TeachingAssignmentsPage.tsx`, also used by
 Heads of Department in the faculty workspace. A teacher is assigned to a subject offering
 (one subject for one class section); teaching outside the teacher's primary and additional

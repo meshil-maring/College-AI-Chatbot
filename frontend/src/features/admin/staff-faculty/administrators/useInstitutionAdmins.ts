@@ -6,9 +6,10 @@ import {
   inviteInstitutionAdmin,
   listInstitutionAdmins,
   revokeInstitutionAdmin,
+  setInstitutionAdminAccess,
   transferInstitutionOwnership,
 } from '../../../../services/admin/adminApi.ts'
-import type { AdminInvitation, InstitutionAdmin } from '../../../../types/admin/administrators.ts'
+import type { AdminAccessArea, AdminInvitation, InstitutionAdmin } from '../../../../types/admin/administrators.ts'
 import { staffFacultyKeys } from '../staffFacultyKeys.ts'
 
 function message(cause: unknown, fallback: string) {
@@ -64,12 +65,23 @@ export function useInstitutionAdmins(accessToken: string) {
     }
   }
 
-  const invite = (email: string, fullName: string) =>
+  const invite = (email: string, fullName: string, accessAreas: AdminAccessArea[] | null) =>
     run(
       'invite',
       () =>
-        inviteInstitutionAdmin(accessToken, { email: email.trim().toLowerCase(), full_name: fullName.trim() || null }),
+        inviteInstitutionAdmin(accessToken, {
+          email: email.trim().toLowerCase(),
+          full_name: fullName.trim() || null,
+          access_areas: accessAreas,
+        }),
       'The invitation could not be sent.',
+    )
+
+  const setAccess = (admin: InstitutionAdmin, accessAreas: AdminAccessArea[] | null) =>
+    run(
+      `access:${admin.user_id}`,
+      () => setInstitutionAdminAccess(accessToken, admin.user_id, accessAreas),
+      'Access could not be changed.',
     )
 
   const cancel = (invitation: AdminInvitation) =>
@@ -115,6 +127,7 @@ export function useInstitutionAdmins(accessToken: string) {
       setError(null)
     },
     invite,
+    setAccess,
     cancel,
     revoke,
     transfer,

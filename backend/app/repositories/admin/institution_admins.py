@@ -24,12 +24,13 @@ def read(client: Client, actor_id: UUID | str, institution_id: UUID | str) -> di
 
 def create_invitation(
     client: Client, *, actor_id: UUID | str, institution_id: UUID | str, email: str, full_name: str | None,
-    token_hash: str, expires_at: datetime, protected_token: str,
+    token_hash: str, expires_at: datetime, protected_token: str, access_areas: list[str] | None = None,
 ) -> dict[str, Any]:
     return _call(client, "create_admin_invitation", {
         "p_actor": str(actor_id), "p_tenant": str(institution_id), "p_email": email,
         "p_full_name": full_name, "p_token_hash": token_hash,
         "p_expires_at": expires_at.isoformat(), "p_protected_token": protected_token,
+        "p_access_areas": access_areas,
     })
 
 
@@ -48,4 +49,12 @@ def revoke(client: Client, actor_id: UUID | str, institution_id: UUID | str, use
 def transfer_ownership(client: Client, actor_id: UUID | str, institution_id: UUID | str, user_id: UUID) -> dict:
     return _call(client, "transfer_institution_ownership", {
         "p_actor": str(actor_id), "p_tenant": str(institution_id), "p_new_owner": str(user_id),
+    })
+
+
+def set_access(
+    client: Client, actor_id: UUID | str, institution_id: UUID | str, user_id: UUID, areas: list[str] | None,
+) -> dict[str, Any]:
+    return _call(client, "set_institution_admin_access", {
+        "p_actor": str(actor_id), "p_tenant": str(institution_id), "p_user": str(user_id), "p_areas": areas,
     })

@@ -38,6 +38,7 @@ export {
   inviteInstitutionAdmin,
   listInstitutionAdmins,
   revokeInstitutionAdmin,
+  setInstitutionAdminAccess,
   transferInstitutionOwnership,
 } from './administrators.ts'
 export { assignMemberResponsibility, endMemberResponsibility, listMemberResponsibilities } from './responsibilities.ts'

@@ -17,6 +17,7 @@ function listing(viewerIsOwner: boolean, changes: Partial<InstitutionAdminList> 
         status: 'active',
         assigned_at: null,
         is_owner: true,
+        access_areas: null,
       },
       {
         user_id: 'admin-2',
@@ -25,9 +26,18 @@ function listing(viewerIsOwner: boolean, changes: Partial<InstitutionAdminList> 
         status: 'active',
         assigned_at: null,
         is_owner: false,
+        access_areas: ['students', 'content'],
       },
     ],
     invitations: [],
+    access_area_options: [
+      'staff_faculty',
+      'students',
+      'academic_setup',
+      'content',
+      'staff_permissions',
+      'settings_audit',
+    ],
     ...changes,
   }
 }
@@ -65,6 +75,7 @@ describe('Staff and Faculty — Administrators', () => {
       expect(api.inviteInstitutionAdmin).toHaveBeenCalledWith('jwt', {
         email: 'new@example.com',
         full_name: 'Nia New',
+        access_areas: null,
       }),
     )
     expect(await screen.findByText(/They become an administrator once they accept/)).toBeInTheDocument()
@@ -104,6 +115,7 @@ describe('Staff and Faculty — Administrators', () => {
             expires_at: null,
             created_at: null,
             email_delivery_status: 'sent',
+            access_areas: ['content'],
           },
         ],
       }),

@@ -60,6 +60,13 @@
         "hod_terms/commands.sql",
         "hod_terms/security.sql"
       ]
+    },
+    {
+      "version": "20261202020000",
+      "name": "transfer_admin_access",
+      "files": [
+        "admin_access/authorization.sql"
+      ]
     }
   ]
 }

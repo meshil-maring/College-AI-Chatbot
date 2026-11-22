@@ -3,6 +3,7 @@ import threading
 from supabase import Client, create_client
 
 from app.config import settings
+from app.core.security.admin_access import ACCESS_RELATION, admin_access_limits, limit_grant_permissions
 
 
 def create_supabase_client() -> Client:
@@ -56,7 +57,7 @@ async def get_user_by_auth_id(
         "role_permissions(permissions(code, is_active, scope)))), "
         "user_permission_grants!user_permission_grants_user_id_fkey("
         "institution_id, revoked_at, "
-        "permissions(code, is_active))"
+        f"permissions(code, is_active)), {ACCESS_RELATION}"
         if include_permissions
         else "user_roles(scope_type, scope_id, scope_organization_id, "
         "roles(name, is_active))"
@@ -78,6 +79,7 @@ async def get_user_by_auth_id(
     role_assignments = []
     effective_permissions: set[str] = set()
     direct_permission_grants: list[dict] = []
+    limits = admin_access_limits(row) if include_permissions else {}
     for grant in row.get("user_roles") or []:
         role = grant.get("roles")
         if not isinstance(role, dict) or not role.get("is_active", True):
@@ -108,8 +110,11 @@ async def get_user_by_auth_id(
                     and isinstance(permission.get("code"), str)
                     and permission_scope_matches
                 ):
-                    effective_permissions.add(permission["code"])
                     grant_permissions.add(permission["code"])
+        grant_permissions = limit_grant_permissions(
+            role_name, grant.get("scope_type"), grant.get("scope_id"), grant_permissions, limits
+        )
+        effective_permissions |= grant_permissions
         role_assignments.append(
             {
                 "role": role_name,

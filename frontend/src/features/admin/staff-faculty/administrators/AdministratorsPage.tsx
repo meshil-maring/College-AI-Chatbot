@@ -1,14 +1,18 @@
+import { useState } from 'react'
 import { Badge, BUTTON_CLASS, DANGER_BUTTON_CLASS, Feedback } from '../StaffFacultyUI.tsx'
+import AdminAccessEditor from './AdminAccessEditor.tsx'
+import { accessSummary } from './accessAreas.ts'
 import InviteAdminForm from './InviteAdminForm.tsx'
 import { useInstitutionAdmins } from './useInstitutionAdmins.ts'
 
 /**
- * Institution administrators. Every administrator has full access; the Owner
- * alone invites or removes administrators and can hand ownership to another.
+ * Institution administrators. The Owner always has full access and alone
+ * invites, limits or removes administrators and can hand ownership to another.
  */
 export default function AdministratorsPage({ accessToken }: { accessToken: string }) {
   const model = useInstitutionAdmins(accessToken)
   const busy = model.actionKey !== null
+  const [editing, setEditing] = useState<string | null>(null)
 
   return (
     <div className="space-y-4">
@@ -43,9 +47,22 @@ export default function AdministratorsPage({ accessToken }: { accessToken: strin
                   {admin.status === 'active' ? null : <Badge tone="warning">{admin.status}</Badge>}
                 </span>
                 <span className="break-all text-sm text-muted">{admin.email}</span>
+                <span className="text-xs text-muted">
+                  {admin.is_owner ? 'Full access (Owner)' : accessSummary(admin.access_areas)}
+                </span>
               </div>
               {model.viewerIsOwner && !admin.is_owner ? (
                 <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={busy || admin.status !== 'active'}
+                    aria-expanded={editing === admin.user_id}
+                    aria-label={`Edit access for ${admin.name}`}
+                    onClick={() => setEditing(editing === admin.user_id ? null : admin.user_id)}
+                    className={BUTTON_CLASS}
+                  >
+                    Edit access
+                  </button>
                   <button
                     type="button"
                     disabled={busy || admin.status !== 'active'}
@@ -66,6 +83,9 @@ export default function AdministratorsPage({ accessToken }: { accessToken: strin
                   </button>
                 </div>
               ) : null}
+              {editing === admin.user_id && model.viewerIsOwner && !admin.is_owner ? (
+                <AdminAccessEditor admin={admin} model={model} onDone={() => setEditing(null)} />
+              ) : null}
             </li>
           ))}
         </ul>
@@ -85,6 +105,7 @@ export default function AdministratorsPage({ accessToken }: { accessToken: strin
                 <span className="mr-auto flex min-w-0 flex-col text-sm">
                   <span className="font-medium text-content">{invitation.full_name || invitation.email}</span>
                   {invitation.full_name ? <span className="break-all text-muted">{invitation.email}</span> : null}
+                  <span className="text-xs text-muted">{accessSummary(invitation.access_areas)}</span>
                 </span>
                 <button
                   type="button"

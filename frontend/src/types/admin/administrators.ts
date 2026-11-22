@@ -1,4 +1,9 @@
 /** Institution administrators and the Owner, who alone manages them. */
+
+/** Areas the Owner can allow an administrator. `null` means full access. */
+export type AdminAccessArea =
+  'staff_faculty' | 'students' | 'academic_setup' | 'content' | 'staff_permissions' | 'settings_audit'
+
 export interface InstitutionAdmin {
   user_id: string
   name: string
@@ -6,6 +11,7 @@ export interface InstitutionAdmin {
   status: string
   assigned_at: string | null
   is_owner: boolean
+  access_areas: AdminAccessArea[] | null
 }
 
 export interface AdminInvitation {
@@ -15,6 +21,7 @@ export interface AdminInvitation {
   expires_at: string | null
   created_at: string | null
   email_delivery_status: string | null
+  access_areas: AdminAccessArea[] | null
 }
 
 export interface InstitutionAdminList {
@@ -23,6 +30,8 @@ export interface InstitutionAdminList {
   viewer_is_owner: boolean
   administrators: InstitutionAdmin[]
   invitations: AdminInvitation[]
+  /** Every area, in display order. */
+  access_area_options: AdminAccessArea[]
 }
 
 export interface InstitutionAdminResult {

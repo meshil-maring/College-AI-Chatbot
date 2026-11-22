@@ -1,4 +1,4 @@
-import type { InstitutionAdminList, InstitutionAdminResult } from '../../types/admin/administrators.ts'
+import type { AdminAccessArea, InstitutionAdminList, InstitutionAdminResult } from '../../types/admin/administrators.ts'
 import { ADMIN_BASE, requestJson } from './http.ts'
 
 const BASE = `${ADMIN_BASE}/institution-admins`
@@ -11,7 +11,7 @@ export function listInstitutionAdmins(accessToken: string): Promise<InstitutionA
 /** Owner only: invite a new administrator by email. */
 export function inviteInstitutionAdmin(
   accessToken: string,
-  body: { email: string; full_name?: string | null },
+  body: { email: string; full_name?: string | null; access_areas?: AdminAccessArea[] | null },
 ): Promise<InstitutionAdminResult> {
   return requestJson<InstitutionAdminResult>('POST', `${BASE}/invitations`, accessToken, body)
 }
@@ -36,4 +36,15 @@ export function revokeInstitutionAdmin(accessToken: string, userId: string): Pro
 /** Owner only: hand ownership to another active administrator. */
 export function transferInstitutionOwnership(accessToken: string, userId: string): Promise<InstitutionAdminResult> {
   return requestJson<InstitutionAdminResult>('PUT', `${BASE}/owner`, accessToken, { user_id: userId })
+}
+
+/** Owner only: limit another administrator to some areas, or `null` for full access. */
+export function setInstitutionAdminAccess(
+  accessToken: string,
+  userId: string,
+  accessAreas: AdminAccessArea[] | null,
+): Promise<InstitutionAdminResult> {
+  return requestJson<InstitutionAdminResult>('PUT', `${BASE}/${encodeURIComponent(userId)}/access`, accessToken, {
+    access_areas: accessAreas,
+  })
 }

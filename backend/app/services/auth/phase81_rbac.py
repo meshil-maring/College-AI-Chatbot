@@ -118,6 +118,15 @@ def change_staff_permissions(
             422,
             "PERMISSION_NOT_DELEGABLE",
         )
+    # A limited administrator may pass on only what their own access includes
+    # (the database repeats this check on every new grant).
+    held = set(actor.get("effective_permissions") or ())
+    if grant and not set(codes) <= held:
+        raise AppError(
+            "You can grant only permissions your own access includes",
+            403,
+            "PERMISSION_OUTSIDE_ACCESS",
+        )
     _staff_member(target_user_id, institution_id)
     response = (
         get_admin_client()

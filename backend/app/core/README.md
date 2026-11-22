@@ -25,6 +25,7 @@ Follow the shared [backend structure rules](../../STRUCTURE.md).
 | `security/tenancy.py` | Tenant UUID resolution, scope selection and row guards |
 | `security/permissions.py` | Resolved permission checks and permission dependencies |
 | `security/scoped_permissions.py` | Permission provenance for the selected role and scope |
+| `security/admin_access.py` | Cuts a limited administrator's admin grant down to the access areas the Owner chose (`institution_admin_access`); applied by the account loader |
 | `security/dependencies.py` | Role, institution and platform Super Admin dependencies |
 
 Existing imports remain valid, for example:

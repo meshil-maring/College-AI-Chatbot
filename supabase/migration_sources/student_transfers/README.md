@@ -17,6 +17,7 @@ Moving to another batch of the same program is not handled here.
 | `20261124000000` | `student_transfer_notifications` | Student notifications for transfer outcomes |
 | `20261126000000` | `department_co_heads` | Several equal HODs per department; one HOD may head several departments |
 | `20261129000000` | `department_head_terms` | HOD start and planned end dates; the institution's one-department rule |
+| `20261202020000` | `transfer_admin_access` | Transfer authority respects administrator access areas |
 
 Applied migrations never change; new behaviour is a new entry in `follow_ups`
 (`manifest.json`) with its SQL in a subfolder. Generate everything with
