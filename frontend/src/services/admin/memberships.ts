@@ -5,6 +5,7 @@ import type {
   MemberInvitationCreate,
   MemberInvitationCreated,
   MemberInvitationList,
+  MemberInvitationResent,
   MemberRoleResult,
   MembershipDecisionResult,
   MembershipLifecycleResult,
@@ -160,8 +161,11 @@ export async function changeMembershipStatus(
   )
 }
 
-export async function resendMembershipInvitation(accessToken: string, invitationId: string): Promise<unknown> {
-  return requestJson<unknown>(
+export async function resendMembershipInvitation(
+  accessToken: string,
+  invitationId: string,
+): Promise<MemberInvitationResent> {
+  return requestJson<MemberInvitationResent>(
     'POST',
     `${ADMIN_BASE}/memberships/invitations/${encodeURIComponent(invitationId)}/resend`,
     accessToken,

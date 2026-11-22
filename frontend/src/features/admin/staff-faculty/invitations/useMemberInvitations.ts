@@ -86,7 +86,9 @@ export function useMemberInvitations(accessToken: string) {
     await run(
       `resend:${invitation.invitation_id}`,
       async () => {
-        await resendMembershipInvitation(accessToken, invitation.invitation_id)
+        const result = await resendMembershipInvitation(accessToken, invitation.invitation_id)
+        // A failed email is reported as the server describes it, never as sent.
+        if (result?.email_delivery?.status === 'failed') return result.message
         return `A new invitation link was sent to ${invitation.email}. The previous link no longer works.`
       },
       'The invitation could not be resent.',

@@ -89,3 +89,13 @@ class MemberInvitationCancelled(BaseModel):
     invitation_id: UUID
     already_applied: bool
     message: str
+
+
+class MemberInvitationResent(BaseModel):
+    """A resent invitation. Like a new one, the link goes only by email: the new
+    token is never returned, and the previous link has stopped working."""
+
+    invitation_id: UUID
+    email_delivery: EmailDeliveryOutcome
+    expires_in_hours: int
+    message: str

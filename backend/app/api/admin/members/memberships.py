@@ -4,7 +4,6 @@ from uuid import UUID
 
 from fastapi import Depends, Request
 
-from app.schemas.invitations.admin_invitations import AdminInvitationResendResponse
 from app.schemas.admin.admin_memberships import (
     MemberDepartmentResult,
     MemberDepartmentWrite,
@@ -21,6 +20,7 @@ from app.schemas.admin.member_invitations import (
     MemberInvitationCreate,
     MemberInvitationCreated,
     MemberInvitationList,
+    MemberInvitationResent,
 )
 from app.services.admin import (
     admin_memberships,
@@ -168,13 +168,13 @@ def suspend_membership(
 
 @router.post(
     "/memberships/invitations/{invitation_id}/resend",
-    response_model=AdminInvitationResendResponse,
+    response_model=MemberInvitationResent,
 )
 def resend_membership_invitation(
     invitation_id: UUID,
     request: Request,
     current_user: dict = Depends(_ADMIN),
-) -> AdminInvitationResendResponse:
+) -> MemberInvitationResent:
     peer = request.client.host if request.client else "unknown"
     return member_invitations.resend(
         current_user, common.required_institution(current_user), invitation_id, peer

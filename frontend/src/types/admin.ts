@@ -23,6 +23,7 @@ export {
   type MemberInvitationCreate,
   type MemberInvitationCreated,
   type MemberInvitationList,
+  type MemberInvitationResent,
   type MemberProfileWrite,
   type MemberRoleResult,
   type MemberStaffProfile,

@@ -28,6 +28,7 @@ from app.schemas.admin.member_invitations import (
     MemberInvitationCreate,
     MemberInvitationCreated,
     MemberInvitationList,
+    MemberInvitationResent,
     MemberInvitationView,
 )
 from app.schemas.invitations.admin_invitations import EmailDeliveryOutcome
@@ -165,7 +166,9 @@ def cancel(actor: dict[str, Any], institution_id: UUID, invitation_id: UUID) -> 
     )
 
 
-def resend(actor: dict[str, Any], institution_id: UUID, invitation_id: UUID, peer: str | None):
+def resend(
+    actor: dict[str, Any], institution_id: UUID, invitation_id: UUID, peer: str | None,
+) -> MemberInvitationResent:
     """Send a Staff/Faculty invitation again, only within the administrator's institution."""
     invitation = invite_repo.get_invitation_by_id(get_admin_client(), invitation_id)
     if (
@@ -178,4 +181,8 @@ def resend(actor: dict[str, Any], institution_id: UUID, invitation_id: UUID, pee
     _audit(actor, institution_id, "membership_invitation_resent", str(invitation_id),
            {"role": invitation["role_name"], "email": invitation["email"]},
            table_name="institution_membership_requests")
-    return result
+    # The new link goes only by email; the token from the shared resend is not passed on.
+    return MemberInvitationResent(
+        invitation_id=invitation_id, email_delivery=result.email_delivery,
+        expires_in_hours=result.expires_in_hours, message=result.message,
+    )

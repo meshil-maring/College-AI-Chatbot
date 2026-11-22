@@ -116,6 +116,14 @@ describe('Staff and Faculty Management — invitations', () => {
     fireEvent.click(within(section).getByRole('button', { name: 'Resend invitation to Ada Lovelace' }))
     await waitFor(() => expect(api.resendMembershipInvitation).toHaveBeenCalledWith('jwt', invitation().invitation_id))
     expect(await within(section).findByText(/A new invitation link was sent/)).toBeInTheDocument()
+    vi.mocked(api.resendMembershipInvitation).mockResolvedValueOnce({
+      invitation_id: invitation().invitation_id,
+      email_delivery: { status: 'failed', provider: 'test' },
+      expires_in_hours: 72,
+      message: 'A new invitation link was issued, but the email could not be sent. Try resending again.',
+    })
+    fireEvent.click(within(section).getByRole('button', { name: 'Resend invitation to Ada Lovelace' }))
+    expect(await within(section).findByText(/the email could not be sent/)).toBeInTheDocument()
     fireEvent.click(within(section).getByRole('button', { name: 'Cancel invitation for Ada Lovelace' }))
     expect(window.confirm).toHaveBeenCalledWith('Cancel the invitation for Ada Lovelace?')
     await waitFor(() => expect(api.cancelMembershipInvitation).toHaveBeenCalledWith('jwt', invitation().invitation_id))

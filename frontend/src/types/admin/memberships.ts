@@ -191,6 +191,14 @@ export interface MemberInvitationCreated {
   message: string
 }
 
+/** A resent invitation; the new link goes only by email and is never returned. */
+export interface MemberInvitationResent {
+  invitation_id: string
+  email_delivery: { status: 'pending' | 'sent' | 'failed'; provider: string; detail?: string | null }
+  expires_in_hours: number
+  message: string
+}
+
 export interface MemberInvitationCancelled {
   invitation_id: string
   already_applied: boolean
