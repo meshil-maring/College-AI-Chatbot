@@ -90,11 +90,18 @@ describe('Staff and Faculty Management — roster search and summary', () => {
     fireEvent.keyDown(button, { key: 'ArrowDown' })
     const menu = screen.getByRole('menu', { name: 'Actions for Amy Faculty' })
     const items = within(menu).getAllByRole('menuitem')
-    expect(items.map((item) => item.textContent)).toEqual(['Manage HOD', 'Deactivate'])
+    expect(items.map((item) => item.textContent)).toEqual([
+      'Edit profile',
+      'History',
+      'Manage HOD',
+      'Suspend',
+      'Deactivate',
+    ])
     expect(items[0]).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(items[1]).toHaveFocus()
-    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    // Moving past the last item wraps to the first.
+    for (let step = 0; step < 4; step += 1) fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(items[0]).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'Escape' })
     expect(screen.queryByRole('menu')).toBeNull()

@@ -1,14 +1,14 @@
+import type { DraftFieldsModel } from './memberDraft.ts'
 import { X } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
 import { BUTTON_CLASS } from '../../StaffFacultyUI.tsx'
 import { FieldError, INPUT_CLASS } from './FormFields.tsx'
-import type { AddMemberDraftModel } from './useAddMemberDraft.ts'
 
 const SUGGESTIONS = ['Admissions desk', 'Fee collection', 'Records management', 'Student support']
 const MAX = 20
 
 /** Institution-defined job responsibilities for a Staff member (at least one). */
-export default function ResponsibilitiesField({ model, idPrefix }: { model: AddMemberDraftModel; idPrefix: string }) {
+export default function ResponsibilitiesField({ model, idPrefix }: { model: DraftFieldsModel; idPrefix: string }) {
   const [text, setText] = useState('')
   const items = model.draft.responsibilities
   const inputId = `${idPrefix}-responsibility`

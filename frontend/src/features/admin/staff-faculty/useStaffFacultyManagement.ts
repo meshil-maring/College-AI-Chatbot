@@ -20,6 +20,13 @@ function message(cause: unknown, fallback: string) {
   return cause instanceof Error ? cause.message : fallback
 }
 
+// Confirmation text for each account status change.
+const LIFECYCLE_PROMPTS = {
+  deactivate: (name: string) => `Deactivate ${name}? They lose access; their records are kept.`,
+  reactivate: (name: string) => `Reactivate ${name}?`,
+  suspend: (name: string) => `Suspend ${name}? They cannot sign in until reactivated.`,
+}
+
 export function useStaffFacultyManagement(accessToken: string) {
   const [requestFilter, setRequestFilter] = useState<RequestFilter>('pending')
   const [actionKey, setActionKey] = useState<string | null>(null)
@@ -144,10 +151,9 @@ export function useStaffFacultyManagement(accessToken: string) {
     }
   }
 
-  async function lifecycle(member: MembershipRosterEntry, action: 'deactivate' | 'reactivate') {
+  async function lifecycle(member: MembershipRosterEntry, action: 'deactivate' | 'reactivate' | 'suspend') {
     if (!member.user_id) return
-    if (!window.confirm(`${action === 'deactivate' ? 'Deactivate' : 'Reactivate'} ${member.name || member.email}?`))
-      return
+    if (!window.confirm(LIFECYCLE_PROMPTS[action](member.name || member.email))) return
     setActionKey(`${action}:${member.user_id}`)
     setError(null)
     setSuccess(null)
@@ -223,6 +229,7 @@ export function useStaffFacultyManagement(accessToken: string) {
     headCount: new Set(heads.map((head) => head.faculty_user_id)).size,
     decide,
     lifecycle,
+    notify: setSuccess,
     changeDepartment,
     changeRole,
     ...hod,

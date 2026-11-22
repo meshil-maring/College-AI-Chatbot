@@ -14,11 +14,12 @@ from app.api.admin.dependencies import _ADMIN, create_feature_router
 from app.schemas.admin.member_profiles import (
     MemberAdditionalDepartmentsResult,
     MemberAdditionalDepartmentsWrite,
+    MemberHistory,
     MemberProfileSaved,
     MemberProfileView,
     MemberProfileWrite,
 )
-from app.services.admin import member_profiles
+from app.services.admin import member_history, member_profiles
 
 router = create_feature_router()
 
@@ -29,6 +30,15 @@ def get_member_profile(
     current_user: dict = Depends(_ADMIN),
 ) -> MemberProfileView:
     return member_profiles.get_profile(common.required_institution(current_user), user_id)
+
+
+@router.get("/memberships/{user_id}/history", response_model=MemberHistory)
+def get_member_history(
+    user_id: UUID,
+    current_user: dict = Depends(_ADMIN),
+) -> MemberHistory:
+    # Audit entries about this person in the administrator's own institution.
+    return member_history.history(common.required_institution(current_user), user_id)
 
 
 @router.put("/memberships/{user_id}/profile", response_model=MemberProfileSaved)

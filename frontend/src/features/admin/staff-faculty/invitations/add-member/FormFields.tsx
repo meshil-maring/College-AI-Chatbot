@@ -1,11 +1,10 @@
 import { SELECT_CLASS } from '../../StaffFacultyUI.tsx'
-import type { AddMemberDraftModel } from './useAddMemberDraft.ts'
-import type { DraftField, MemberDraft } from './memberDraft.ts'
+import type { DraftField, MemberDraft, DraftFieldsModel } from './memberDraft.ts'
 
 type StringField = { [K in DraftField]: MemberDraft[K] extends string ? K : never }[DraftField]
 
 interface FieldProps {
-  model: AddMemberDraftModel
+  model: DraftFieldsModel
   /** Prefix for element ids so errors are announced with their field. */
   idPrefix: string
   name: StringField

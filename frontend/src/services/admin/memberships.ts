@@ -150,7 +150,7 @@ export async function listMembershipRoster(
 export async function changeMembershipStatus(
   accessToken: string,
   userId: string,
-  action: 'deactivate' | 'reactivate',
+  action: 'deactivate' | 'reactivate' | 'suspend',
 ): Promise<MembershipLifecycleResult> {
   return requestJson<MembershipLifecycleResult>(
     'POST',

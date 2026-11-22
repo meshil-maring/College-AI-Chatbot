@@ -129,8 +129,8 @@ describe('Staff and Faculty Management — Head of Department', () => {
       total: 2,
     })
     render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
-    expect(await actionNames('Sam Staff')).toEqual(['Permissions', 'Deactivate'])
-    expect(await actionNames('Tina Teacher')).toEqual(['Reactivate'])
+    expect(await actionNames('Sam Staff')).toEqual(['Edit profile', 'History', 'Permissions', 'Suspend', 'Deactivate'])
+    expect(await actionNames('Tina Teacher')).toEqual(['Edit profile', 'History', 'Reactivate'])
   })
 
   it('reports partial progress when a later change is refused', async () => {

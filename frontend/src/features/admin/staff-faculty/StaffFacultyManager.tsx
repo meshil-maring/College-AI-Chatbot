@@ -9,6 +9,7 @@ import { useMemberInvitations } from './invitations/useMemberInvitations.ts'
 import MembershipRequests from './requests/MembershipRequests.tsx'
 import AdministratorsPage from './administrators/AdministratorsPage.tsx'
 import ResponsibilitiesPage from './responsibilities/ResponsibilitiesPage.tsx'
+import { useDirectoryAdmins } from './roster/useDirectoryAdmins.ts'
 import MembershipRosterTable from './roster/MembershipRosterTable.tsx'
 import StaffFacultySummary from './StaffFacultySummary.tsx'
 import { Feedback, PRIMARY_BUTTON_CLASS } from './StaffFacultyUI.tsx'
@@ -38,6 +39,8 @@ export default function StaffFacultyManager({
 }) {
   const management = useStaffFacultyManagement(accessToken)
   const invitations = useMemberInvitations(accessToken)
+  // Administrators appear in the Roster directory too (shared with the Administrators page).
+  const directoryAdmins = useDirectoryAdmins(accessToken)
   const [localPage, setLocalPage] = useState<StaffFacultyPage>(defaultPage)
   const requested = page ?? localPage
   const current = requested === 'permissions' && !canManagePermissions ? 'requests' : requested
@@ -111,7 +114,12 @@ export default function StaffFacultyManager({
 
       {current === 'roster' ? (
         <MembershipRosterTable
+          accessToken={accessToken}
           members={management.members}
+          admins={directoryAdmins}
+          invitations={invitations.invitations}
+          onOpenPage={navigate}
+          notify={management.notify}
           departments={management.departments}
           loading={management.loading}
           actionKey={management.actionKey}

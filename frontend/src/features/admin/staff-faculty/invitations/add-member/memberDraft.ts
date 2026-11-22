@@ -34,6 +34,13 @@ export interface MemberDraft {
 export type DraftField = keyof MemberDraft
 export type DraftErrors = Partial<Record<DraftField, string>>
 
+/** What the shared form fields need: the draft, its errors and a setter. */
+export interface DraftFieldsModel {
+  draft: MemberDraft
+  errors: DraftErrors
+  update: <K extends DraftField>(field: K, value: MemberDraft[K]) => void
+}
+
 export const FACULTY_EMPLOYMENT: Record<FacultyEmploymentType, string> = {
   permanent: 'Permanent',
   temporary: 'Temporary',

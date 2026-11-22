@@ -19,7 +19,7 @@ continue to own database access and schemas continue to own request/response typ
 | Package | Related services |
 | --- | --- |
 | `academics/` | Export-aligned foundation, dated-semester, course, curriculum-link, offering and section setup |
-| `admin/` | Student account approvals, dashboard, documents, FAQs, memberships, Staff/Faculty invitations and resends (`member_invitations.py`), employee profiles and additional departments (`member_profiles.py`), account status including suspension (`member_status.py`), Class In-Charge and Subject Coordinator (`member_responsibilities.py`), administrators and the Owner (`institution_admins.py`) and notices |
+| `admin/` | Student account approvals, dashboard, documents, FAQs, memberships, Staff/Faculty invitations and resends (`member_invitations.py`), employee profiles and additional departments (`member_profiles.py`), account status including suspension (`member_status.py`), Class In-Charge and Subject Coordinator (`member_responsibilities.py`), administrators and the Owner (`institution_admins.py`), per-member account history from the audit log (`member_history.py`) and notices |
 | `ai/` | Authenticated/public chat, conversation history and intent, context, generation, privacy safeguards and query rewriting |
 | `auth/` | Sign-in, sessions, account registration, authorization, RBAC and shared request-abuse controls |
 | `email/` | SMTP/Mailgun delivery, templates, encrypted outbox, worker and Mailgun webhooks |

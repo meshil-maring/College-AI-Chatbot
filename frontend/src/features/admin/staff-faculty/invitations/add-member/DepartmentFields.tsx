@@ -1,9 +1,9 @@
+import type { DraftFieldsModel } from './memberDraft.ts'
 import type { Department } from '../../../../../types/academicSetup.ts'
 import { FieldError, INPUT_CLASS, LABEL_CLASS } from './FormFields.tsx'
-import type { AddMemberDraftModel } from './useAddMemberDraft.ts'
 
 interface Props {
-  model: AddMemberDraftModel
+  model: DraftFieldsModel
   idPrefix: string
   departments: Department[]
 }

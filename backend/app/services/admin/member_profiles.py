@@ -84,6 +84,13 @@ def _employment_status(detail: FacultyProfile | StaffProfile | None) -> str:
     return "contract_ended" if end is not None and end < date.today() else "active"
 
 
+def _roster_employment_status(row: dict[str, Any] | None) -> str:
+    if not row:
+        return "not_set"
+    end = row.get("contract_end_date")
+    return "contract_ended" if end and date.fromisoformat(str(end)[:10]) < date.today() else "active"
+
+
 def get_profile(institution_id: UUID, user_id: UUID) -> MemberProfileView:
     client = get_admin_client()
     role = _member_role(client, institution_id, user_id)
@@ -152,7 +159,7 @@ def with_profiles(institution_id: UUID, roster: MembershipRoster) -> MembershipR
     common = {str(row["user_id"]): row for row in repo.list_common(client, institution_id)}
     # A member whose role changed keeps the old role's row; show the current role's.
     employment = {
-        role: {str(row["user_id"]): row.get("employment_type") for row in rows}
+        role: {str(row["user_id"]): row for row in rows}
         for role, rows in (("staff", repo.list_staff(client, institution_id)),
                            ("faculty", repo.list_faculty(client, institution_id)))
     }
@@ -166,7 +173,8 @@ def with_profiles(institution_id: UUID, roster: MembershipRoster) -> MembershipR
         members.append(member.model_copy(update={
             "employee_id": profile.get("employee_id"),
             "designation": profile.get("designation"),
-            "employment_type": employment.get(member.role, {}).get(key),
+            "employment_type": (employment.get(member.role, {}).get(key) or {}).get("employment_type"),
+            "employment_status": _roster_employment_status(employment.get(member.role, {}).get(key)),
             "additional_department_names": sorted(additional.get(key, [])),
         }))
     return roster.model_copy(update={"members": members})

@@ -95,6 +95,12 @@ beforeEach(() => {
     faculty: [],
   })
   vi.mocked(api.listMemberResponsibilities).mockResolvedValue({ responsibilities: [], total: 0 })
+  vi.mocked(api.listInstitutionAdmins).mockResolvedValue({
+    owner_user_id: null,
+    viewer_is_owner: false,
+    administrators: [],
+    invitations: [],
+  })
   vi.mocked(structure.getAcademicStructure).mockResolvedValue({
     institution_id: 'institution-1',
     records: { academic_sections: [] },

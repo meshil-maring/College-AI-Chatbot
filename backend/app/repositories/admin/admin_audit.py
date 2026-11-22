@@ -69,3 +69,24 @@ def list_audit_entries(
         query = query.eq("status", status)
     response = query.order("performed_at", desc=True).limit(limit).execute()
     return response.data
+
+def list_member_history(
+    client: Client, institution_id: UUID | str, user_id: UUID | str, limit: int = 100
+) -> list[dict]:
+    """Entries of one institution about one person, most recent first.
+
+    Matches the person as the record (role, status, department, profile) or as
+    the faculty member named in the entry (Head of Department, responsibilities).
+    Only the institution's own entries are returned.
+    """
+    person = str(UUID(str(user_id)))
+    response = (
+        client.table("admin_audit_log")
+        .select("audit_id, actor_user_id, action, table_name, record_data, status, performed_at")
+        .eq("institution_id", str(institution_id))
+        .or_(f"record_id.eq.{person},record_data->>faculty_user_id.eq.{person}")
+        .order("performed_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return [row for row in (response.data or []) if isinstance(row, dict)]

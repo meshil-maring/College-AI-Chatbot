@@ -9,7 +9,7 @@ permission dependency; it contains no endpoint handlers.
 | `common.py` | Institution/row/student guards, database client access and audit recording |
 | `overview.py` | Admin identity and dashboard |
 | `members/memberships.py` | Staff/faculty onboarding decisions, roster, role, primary department, activate/suspend/deactivate and invitations |
-| `members/profiles.py` | Staff/faculty employee profiles and additional departments |
+| `members/profiles.py` | Staff/faculty employee profiles, additional departments and account history (`users.read` + `audit.read`) |
 | `members/administrators.py` | Institution administrators under `/admin/institution-admins`: list, Owner invitations, removal, ownership transfer. Not `/admin/administrators`: the policy lookup keeps the path from its last `/admin` |
 | `members/responsibilities.py` | Class In-Charge and Subject Coordinator appointments (HOD stays under `/admin/department-heads`) |
 | `knowledge_sources.py` | Knowledge source creation, listing and updates |

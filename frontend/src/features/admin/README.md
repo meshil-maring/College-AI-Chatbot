@@ -21,11 +21,20 @@ actions. The administrator chooses each new member's department when approving
 applicants no longer pick a department. The administrator also confirms Staff or
 Faculty on approval and can switch it from the roster; the server refuses a switch
 while the member is a current Head of Department or holds extra Staff permissions.
-Staff and Faculty Management has four sidebar pages (`StaffFacultyNavigation.tsx`,
+Staff and Faculty Management has six sidebar pages (`StaffFacultyNavigation.tsx`,
 `staff-page` in the URL): Requests, Pending invitations, Roster, Responsibilities,
 Administrators and Staff permissions.
 `StaffFacultyManager.tsx` renders the chosen page; reads stay cached across pages.
-Each roster row keeps its actions (Manage HOD, Permissions, Deactivate/Reactivate) in one
+The roster is the user directory: `roster/directoryItems.ts` merges members, administrators
+(`roster/useDirectoryAdmins.ts`) and pending invitations, which show read-only
+(`roster/DirectoryReadOnlyRow.tsx`) and link to the page that manages them. Filters cover
+user type, status (active, invitation pending, suspended, inactive), department, employment
+type and employment status; search also matches employee ID and designation.
+**Edit profile** (`profile/EditProfileDialog.tsx`, `profile/useEditProfile.ts`) reuses the Add
+member fields to change the employee profile and departments; **History**
+(`history/MemberHistoryDialog.tsx`) lists who changed what from the audit log.
+Each roster row keeps its actions (Edit profile, History, Manage HOD, Permissions,
+Suspend, Deactivate/Reactivate) in one
 **Actions** menu (`roster/RowActionsMenu.tsx`), portalled so the table scroll never clips it.
 The roster shows one HOD badge per department a member heads, and **Manage HOD**
 (`roster/HodDialog.tsx`, `useDepartmentHeadActions.ts`) lets the administrator tick

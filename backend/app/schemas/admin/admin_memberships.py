@@ -82,6 +82,8 @@ class MembershipRosterEntry(BaseModel):
     employee_id: str | None = None
     designation: str | None = None
     employment_type: str | None = None
+    # active, contract_ended or not_set; derived from the contract end date.
+    employment_status: str = "not_set"
     additional_department_names: list[str] = []
 
 

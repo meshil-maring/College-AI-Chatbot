@@ -7,7 +7,7 @@ before any write. The database repeats every rule.
 """
 
 import re
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -182,3 +182,17 @@ class MemberAdditionalDepartmentsResult(BaseModel):
     user_id: UUID
     additional_departments: list[DepartmentRef]
     message: str
+
+
+class MemberHistoryEntry(BaseModel):
+    audit_id: UUID
+    action: str
+    label: str
+    actor_name: str
+    performed_at: datetime | str
+    details: dict = Field(default_factory=dict)
+
+
+class MemberHistory(BaseModel):
+    user_id: UUID
+    entries: list[MemberHistoryEntry]

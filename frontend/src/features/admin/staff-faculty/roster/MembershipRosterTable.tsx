@@ -1,16 +1,29 @@
 import { Users } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Department } from '../../../../types/academicSetup.ts'
-import type { MembershipRosterEntry } from '../../../../types/admin.ts'
+import type { MemberInvitation, MembershipRosterEntry } from '../../../../types/admin.ts'
+import type { InstitutionAdmin } from '../../../../types/admin/administrators.ts'
+import type { StaffFacultyPage } from '../../adminNavigation.ts'
+import MemberHistoryDialog from '../history/MemberHistoryDialog.tsx'
+import EditProfileDialog from '../profile/EditProfileDialog.tsx'
 import { BUTTON_CLASS } from '../StaffFacultyUI.tsx'
 import type { HeadSelection } from '../useDepartmentHeadActions.ts'
 import HodDialog from './HodDialog.tsx'
+import { buildDirectory } from './directoryItems.ts'
+import DirectoryReadOnlyRow from './DirectoryReadOnlyRow.tsx'
 import MembershipRosterRow, { type RosterActions } from './MembershipRosterRow.tsx'
 import RosterToolbar from './RosterToolbar.tsx'
 import { useRosterFilters } from './useRosterFilters.ts'
 
 interface Props extends RosterActions {
+  accessToken: string
   members: MembershipRosterEntry[]
+  /** Administrators and waiting invitations, listed read-only beside members. */
+  admins: InstitutionAdmin[]
+  invitations: MemberInvitation[]
+  onOpenPage: (page: StaffFacultyPage) => void
+  /** Show a result message on the page. */
+  notify: (message: string) => void
   departments: Department[]
   loading: boolean
   coHeadsOf: (departmentId: string, exceptUserId: string) => string[]
@@ -20,11 +33,18 @@ interface Props extends RosterActions {
 }
 
 /**
- * Approved Staff and Faculty with the role and department the administrator
- * assigned. Faculty can also be made Head of Department of their department.
+ * The institution's user directory: Staff and Faculty with their role,
+ * departments, employee details and status, plus administrators and pending
+ * invitations (managed on their own pages). Members' profiles, status and
+ * history are managed from each row's actions.
  */
 export default function MembershipRosterTable({
+  accessToken,
   members,
+  admins,
+  invitations,
+  onOpenPage,
+  notify,
   departments,
   loading,
   coHeadsOf,
@@ -32,11 +52,19 @@ export default function MembershipRosterTable({
   allowMultiHod,
   ...actions
 }: Props) {
-  const filters = useRosterFilters(members)
-  const [hodUserId, setHodUserId] = useState<string | null>(null)
+  const items = useMemo(
+    () => buildDirectory(members, admins, invitations, departments),
+    [members, admins, invitations, departments],
+  )
+  const filters = useRosterFilters(items)
+  const [open, setOpen] = useState<{ dialog: 'hod' | 'profile' | 'history'; userId: string } | null>(null)
   // Read the member from the latest roster so a refresh never shows stale data.
-  const hodMember = members.find((member) => member.user_id === hodUserId) ?? null
-  const rowActions = { ...actions, openHod: (member: MembershipRosterEntry) => setHodUserId(member.user_id) }
+  const openMember = members.find((member) => member.user_id === open?.userId) ?? null
+  const hodMember = open?.dialog === 'hod' ? openMember : null
+  const show = (dialog: 'hod' | 'profile' | 'history') => (member: MembershipRosterEntry) =>
+    setOpen({ dialog, userId: member.user_id })
+  const rowActions = { ...actions, openHod: show('hod'), openProfile: show('profile'), openHistory: show('history') }
+  const close = () => setOpen(null)
 
   return (
     <section
@@ -48,15 +76,16 @@ export default function MembershipRosterTable({
           Roster
         </h2>
         <p className="mt-1 max-w-[70ch] text-sm text-muted">
-          Change a member&apos;s role or department here. Make HOD appoints a Faculty member as Head of their
-          department. Use Permissions to give a Staff member extra duties.
+          Everyone in your institution: Staff, Faculty, administrators and pending invitations. Change a member&apos;s
+          role or department here; use each row&apos;s actions to edit their profile, appoint HODs, suspend or
+          deactivate them, or see their history.
         </p>
       </div>
       {loading ? (
         <p role="status" className="text-sm text-muted">
           Loading roster…
         </p>
-      ) : members.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-12 text-center">
           <Users aria-hidden="true" className="size-8 text-muted" />
           <p className="text-sm text-muted">No staff or faculty are on the roster yet.</p>
@@ -64,7 +93,7 @@ export default function MembershipRosterTable({
         </div>
       ) : (
         <>
-          <RosterToolbar filters={filters} departments={departments} total={members.length} />
+          <RosterToolbar filters={filters} departments={departments} total={items.length} />
           {filters.visible.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-12 text-center">
               <p className="text-sm text-muted">No members match these filters.</p>
@@ -79,11 +108,14 @@ export default function MembershipRosterTable({
               tabIndex={0}
               className="ui-card-table-region overflow-x-auto rounded-lg border border-line"
             >
-              <table className="ui-card-table w-full min-w-[800px] text-left text-sm">
+              <table className="ui-card-table w-full min-w-[960px] text-left text-sm">
                 <thead className="bg-raised text-xs text-muted">
                   <tr>
                     <th scope="col" className="px-4 py-3 font-medium">
                       Member
+                    </th>
+                    <th scope="col" className="px-4 py-3 font-medium">
+                      Employee
                     </th>
                     <th scope="col" className="px-4 py-3 font-medium">
                       Role
@@ -100,14 +132,18 @@ export default function MembershipRosterTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {filters.visible.map((member) => (
-                    <MembershipRosterRow
-                      key={member.user_id}
-                      member={member}
-                      departments={departments}
-                      actions={rowActions}
-                    />
-                  ))}
+                  {filters.visible.map((item) =>
+                    item.member ? (
+                      <MembershipRosterRow
+                        key={item.key}
+                        member={item.member}
+                        departments={departments}
+                        actions={rowActions}
+                      />
+                    ) : (
+                      <DirectoryReadOnlyRow key={item.key} item={item} onOpenPage={onOpenPage} />
+                    ),
+                  )}
                 </tbody>
               </table>
             </div>
@@ -124,10 +160,25 @@ export default function MembershipRosterTable({
           allowMulti={allowMultiHod}
           saving={actions.actionKey === `hod:${hodMember.user_id}`}
           onSave={(selections) => {
-            void saveHodDepartments(hodMember, selections).then(() => setHodUserId(null))
+            void saveHodDepartments(hodMember, selections).then(close)
           }}
-          onClose={() => setHodUserId(null)}
+          onClose={close}
         />
+      ) : null}
+      {open?.dialog === 'profile' && openMember ? (
+        <EditProfileDialog
+          accessToken={accessToken}
+          member={openMember}
+          departments={departments}
+          onSaved={(message) => {
+            notify(message)
+            close()
+          }}
+          onClose={close}
+        />
+      ) : null}
+      {open?.dialog === 'history' && openMember ? (
+        <MemberHistoryDialog accessToken={accessToken} member={openMember} onClose={close} />
       ) : null}
     </section>
   )

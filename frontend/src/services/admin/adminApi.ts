@@ -41,6 +41,12 @@ export {
   transferInstitutionOwnership,
 } from './administrators.ts'
 export { assignMemberResponsibility, endMemberResponsibility, listMemberResponsibilities } from './responsibilities.ts'
+export {
+  getMemberHistory,
+  getMemberProfile,
+  saveMemberProfile,
+  setMemberAdditionalDepartments,
+} from './memberProfiles.ts'
 export { AdminApiError } from './http.ts'
 export { getAdminIdentity } from './identity.ts'
 export { listPendingStudents, approvePendingStudent, rejectPendingStudent } from './students.ts'

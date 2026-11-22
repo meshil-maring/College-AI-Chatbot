@@ -40,13 +40,15 @@ export function Badge({ tone, children }: { tone: BadgeTone; children: ReactNode
 /** Account and request statuses use the design system's status colors, always with written text. */
 export function statusTone(status: string): BadgeTone {
   if (status === 'active' || status === 'approved') return 'success'
-  if (status === 'pending') return 'warning'
+  if (status === 'pending' || status === 'suspended') return 'warning'
+  if (status === 'invited') return 'info'
   if (status === 'rejected') return 'danger'
   return 'neutral'
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  const text = status ? status[0].toUpperCase() + status.slice(1) : 'Unknown'
+  const text =
+    status === 'invited' ? 'Invitation pending' : status ? status[0].toUpperCase() + status.slice(1) : 'Unknown'
   return <Badge tone={statusTone(status)}>{text}</Badge>
 }
 

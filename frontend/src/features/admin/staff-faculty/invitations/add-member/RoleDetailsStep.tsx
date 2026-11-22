@@ -2,11 +2,10 @@ import type { Department } from '../../../../../types/academicSetup.ts'
 import DepartmentFields from './DepartmentFields.tsx'
 import { SelectField, TextField } from './FormFields.tsx'
 import ResponsibilitiesField from './ResponsibilitiesField.tsx'
-import { STAFF_CATEGORIES, employmentTypes } from './memberDraft.ts'
-import type { AddMemberDraftModel } from './useAddMemberDraft.ts'
+import { STAFF_CATEGORIES, employmentTypes, type DraftFieldsModel } from './memberDraft.ts'
 
 interface Props {
-  model: AddMemberDraftModel
+  model: DraftFieldsModel
   idPrefix: string
   departments: Department[]
 }

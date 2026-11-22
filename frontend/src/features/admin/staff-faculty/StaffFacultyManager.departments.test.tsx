@@ -93,13 +93,13 @@ describe('Staff and Faculty Management — permissions', () => {
     })
     render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     expect(await actionNames('Fay Faculty')).not.toContain('Permissions')
-    expect(await actionNames('Sam Staff')).toEqual(['Reactivate'])
+    expect(await actionNames('Sam Staff')).toEqual(['Edit profile', 'History', 'Reactivate'])
   })
 
   it('hides permission management from an administrator without that grant', async () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [member()], total: 1 })
     render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" canManagePermissions={false} />)
-    expect(await actionNames('Sam Staff')).toEqual(['Deactivate'])
+    expect(await actionNames('Sam Staff')).toEqual(['Edit profile', 'History', 'Suspend', 'Deactivate'])
     expect(screen.queryByRole('heading', { name: 'Staff permissions' })).toBeNull()
     expect(api.getDelegableStaffPermissions).not.toHaveBeenCalled()
   })

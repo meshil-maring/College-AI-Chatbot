@@ -1,9 +1,10 @@
 import { Search } from 'lucide-react'
 import type { Department } from '../../../../types/academicSetup.ts'
+import { FACULTY_EMPLOYMENT } from '../invitations/add-member/memberDraft.ts'
 import { BUTTON_CLASS, SELECT_CLASS } from '../StaffFacultyUI.tsx'
 import { NO_DEPARTMENT, type RoleFilter, type RosterFilters, type StatusFilter } from './useRosterFilters.ts'
 
-/** Search and filters for the roster. Results update as the administrator types. */
+/** Search and filters for the user directory. Results update as the administrator types. */
 export default function RosterToolbar({
   filters,
   departments,
@@ -26,7 +27,7 @@ export default function RosterToolbar({
             type="search"
             value={filters.search}
             onChange={(event) => filters.setSearch(event.target.value)}
-            placeholder="Search by name, email or department"
+            placeholder="Search by name, email, employee ID, designation or department"
             className={`${SELECT_CLASS} w-full pl-9`}
           />
         </label>
@@ -39,6 +40,7 @@ export default function RosterToolbar({
           <option value="all">All roles</option>
           <option value="faculty">Faculty (Teacher) only</option>
           <option value="staff">Staff only</option>
+          <option value="admin">Administrators only</option>
         </select>
         <select
           aria-label="Filter by status"
@@ -48,6 +50,8 @@ export default function RosterToolbar({
         >
           <option value="all">Any status</option>
           <option value="active">Active</option>
+          <option value="pending">Invitation pending</option>
+          <option value="suspended">Suspended</option>
           <option value="inactive">Deactivated</option>
         </select>
         <select
@@ -64,6 +68,30 @@ export default function RosterToolbar({
             </option>
           ))}
         </select>
+        <select
+          aria-label="Filter by employment type"
+          value={filters.employmentType}
+          onChange={(event) => filters.setEmploymentType(event.target.value)}
+          className={SELECT_CLASS}
+        >
+          <option value="all">Any employment type</option>
+          {Object.entries(FACULTY_EMPLOYMENT).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filter by employment status"
+          value={filters.employmentStatus}
+          onChange={(event) => filters.setEmploymentStatus(event.target.value)}
+          className={SELECT_CLASS}
+        >
+          <option value="all">Any employment status</option>
+          <option value="active">Employed</option>
+          <option value="contract_ended">Contract ended</option>
+          <option value="not_set">Profile not completed</option>
+        </select>
         {filters.filtered ? (
           <button type="button" onClick={filters.clear} className={BUTTON_CLASS}>
             Clear filters
@@ -72,7 +100,7 @@ export default function RosterToolbar({
       </div>
       <p className="text-xs text-muted" aria-live="polite">
         {filters.filtered ? `Showing ${filters.visible.length} of ` : null}
-        {total} {total === 1 ? 'member' : 'members'}
+        {total} {total === 1 ? 'person' : 'people'}
       </p>
     </div>
   )

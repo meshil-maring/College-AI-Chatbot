@@ -72,6 +72,8 @@ export interface MembershipRosterEntry {
   employee_id?: string | null
   designation?: string | null
   employment_type?: string | null
+  /** active, contract_ended or not_set (derived from the contract end date). */
+  employment_status?: string
   additional_department_names?: string[]
 }
 
