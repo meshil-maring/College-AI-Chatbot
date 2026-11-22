@@ -6,11 +6,16 @@
 
 import { BarChart3, CalendarDays, Clock } from 'lucide-react'
 import type { StudentSemester } from '../../../types/semesterRegistration.ts'
-import { ComingSoon, ComingSoonBadge, DashboardPanel } from './DashboardPanel.tsx'
+import { ComingSoon, ComingSoonBadge, DashboardPanel, ViewAllButton } from './DashboardPanel.tsx'
 
 export function TodaySchedule() {
   return (
-    <DashboardPanel icon={CalendarDays} title="Today's Schedule" headingId="dashboard-schedule">
+    <DashboardPanel
+      icon={CalendarDays}
+      title="Today's Schedule"
+      headingId="dashboard-schedule"
+      action={<ViewAllButton label="View full schedule" />}
+    >
       <ComingSoon message="Your class timetable will appear here once schedules are published." />
     </DashboardPanel>
   )
@@ -18,7 +23,7 @@ export function TodaySchedule() {
 
 export function UpcomingDeadlines() {
   return (
-    <DashboardPanel icon={Clock} title="Upcoming Deadlines" headingId="dashboard-deadlines">
+    <DashboardPanel icon={Clock} title="Upcoming Deadlines" headingId="dashboard-deadlines" action={<ViewAllButton />}>
       <ComingSoon message="Assignment and lab submission deadlines will appear here." />
     </DashboardPanel>
   )

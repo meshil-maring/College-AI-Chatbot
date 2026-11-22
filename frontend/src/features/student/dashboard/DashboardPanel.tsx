@@ -32,8 +32,24 @@ export function DashboardPanel({
   )
 }
 
-/** Link-styled button that opens the full page behind a panel. */
-export function ViewAllButton({ label = 'View all', onClick }: { label?: string; onClick: () => void }) {
+/**
+ * Link-styled button that opens the full page behind a panel. Without
+ * `onClick` the page does not exist yet: it renders muted and disabled,
+ * with a "Coming soon" hint, so panel headers still line up.
+ */
+export function ViewAllButton({ label = 'View all', onClick }: { label?: string; onClick?: () => void }) {
+  if (!onClick)
+    return (
+      <button
+        type="button"
+        disabled
+        title="Coming soon"
+        className="inline-flex cursor-not-allowed items-center gap-1 text-sm font-medium text-muted opacity-70"
+      >
+        {label}
+        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+      </button>
+    )
   return (
     <button
       type="button"

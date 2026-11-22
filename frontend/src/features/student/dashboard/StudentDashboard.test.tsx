@@ -108,6 +108,16 @@ describe('StudentDashboard', () => {
       expect(within(screen.getByRole('region', { name })).getByText('Coming soon')).toBeInTheDocument()
     for (const name of ["Today's Schedule", 'Upcoming Deadlines'])
       expect(within(screen.getByRole('region', { name })).getByText('Coming soon')).toBeInTheDocument()
+    const deadlinesLink = within(screen.getByRole('region', { name: 'Upcoming Deadlines' })).getByRole('button', {
+      name: 'View all',
+    })
+    expect(deadlinesLink).toBeDisabled()
+    expect(deadlinesLink).toHaveAttribute('title', 'Coming soon')
+    const scheduleLink = within(screen.getByRole('region', { name: "Today's Schedule" })).getByRole('button', {
+      name: 'View full schedule',
+    })
+    expect(scheduleLink).toBeDisabled()
+    expect(scheduleLink).toHaveAttribute('title', 'Coming soon')
     const attendance = screen.getByRole('region', { name: 'Subject Attendance' })
     expect(await within(attendance).findByText('Machine Learning')).toBeInTheDocument()
     expect(within(attendance).getByText('Coming soon')).toBeInTheDocument()
