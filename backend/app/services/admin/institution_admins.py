@@ -15,6 +15,7 @@ from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories.admin import institution_admins as repo
 from app.repositories.invitations import platform_admin_invitations as invite_repo
+from app.schemas.admin.member_profiles import CommonProfile
 from app.schemas.admin.institution_admins import (
     AdminAccessUpdate,
     AdminInvitationCreate,
@@ -29,6 +30,7 @@ DATABASE_ERRORS = {
     "P1402": (422, "NOT_AN_ADMINISTRATOR", "Choose an active administrator of your institution."),
     "P1403": (409, "OWNER_CANNOT_BE_REMOVED", "Transfer ownership to another administrator before leaving."),
     "P1404": (409, "OWNER_ALWAYS_FULL_ACCESS", "The Owner always has full access."),
+    "P1204": (409, "EMPLOYEE_ID_IN_USE", "This employee ID is already used in your institution."),
     "P1202": (409, "MEMBER_ALREADY_EXISTS", "This email already belongs to someone in your institution."),
     "P1203": (409, "INVITATION_ALREADY_PENDING", "An invitation is already pending for this email."),
     "P0002": (404, "INVITATION_NOT_FOUND", "Invitation not found."),
@@ -59,6 +61,7 @@ def list_admins(actor: dict[str, Any], institution_id: UUID) -> InstitutionAdmin
     return InstitutionAdminList(
         owner_user_id=owner,
         viewer_is_owner=owner is not None and str(owner) == str(actor["user_id"]),
+        viewer_user_id=actor["user_id"],
         administrators=admins,
         invitations=data.get("invitations") or [],
         access_area_options=data.get("access_areas") or [],
@@ -71,6 +74,7 @@ def invite(actor: dict[str, Any], institution_id: UUID, body: AdminInvitationCre
     _call(lambda: repo.create_invitation(
         get_admin_client(), actor_id=actor["user_id"], institution_id=institution_id,
         email=body.email, full_name=body.full_name, access_areas=body.access_areas,
+        profile=body.profile.model_dump(mode="json") if body.profile else None,
         token_hash=invite_repo.hash_invitation_token(raw_token), expires_at=expires_at,
         protected_token=email_outbox_crypto.protect_invitation_token(raw_token),
     ), "The invitation could not be created. Try again.")
@@ -118,3 +122,39 @@ def set_access(
     return InstitutionAdminResult(
         message="Full access given. Changes apply on their next request." if full
         else "Access updated. Changes apply on their next request.")
+
+
+def save_profile(
+    actor: dict[str, Any], institution_id: UUID, user_id: UUID, body: CommonProfile,
+) -> InstitutionAdminResult:
+    """The Owner edits any administrator's profile; an administrator edits their own."""
+    _call(lambda: repo.save_profile(get_admin_client(), actor["user_id"], institution_id, user_id,
+                                    body.model_dump(mode="json")),
+          "The profile could not be saved. Try again.")
+    return InstitutionAdminResult(message="Profile saved.")
+
+
+def resend_invitation(
+    actor: dict[str, Any], institution_id: UUID, invitation_id: UUID, peer: str | None,
+) -> InstitutionAdminResult:
+    """Owner only: email a pending administrator invitation again with a new link.
+
+    Acceptance requires the sender to still be the Owner, so an invitation sent
+    by a previous Owner cannot be revived; it must be cancelled and sent again.
+    Like a new invitation, the new link goes only by email and is never returned.
+    """
+    client = get_admin_client()
+    owner = _call(lambda: repo.read(client, actor["user_id"], institution_id),
+                  "The invitation could not be sent again. Try again.").get("owner_user_id")
+    if owner is None or str(owner) != str(actor["user_id"]):
+        raise AppError(DATABASE_ERRORS["P1401"][2], 403, "OWNER_REQUIRED")
+    invitation = invite_repo.get_invitation_by_id(client, invitation_id)
+    if (invitation is None or str(invitation.get("institution_id")) != str(institution_id)
+            or invitation.get("role_name") != "admin"):
+        raise AppError("Invitation not found.", 404, "INVITATION_NOT_FOUND")
+    if str(invitation.get("created_by")) != str(actor["user_id"]):
+        raise AppError(
+            "A previous Owner sent this invitation, so it can no longer be accepted. "
+            "Cancel it and send a new one.", 409, "INVITATION_FROM_PREVIOUS_OWNER")
+    result = invitations.resend_invitation(actor, institution_id, invitation_id, peer=peer)
+    return InstitutionAdminResult(message=result.message)

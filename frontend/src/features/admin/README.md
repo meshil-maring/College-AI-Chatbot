@@ -79,6 +79,11 @@ setup, Content, Staff permissions, and Settings and audit. Everything ticked mea
 access. The server cuts the administrator's permissions when it loads the account, so
 routes, the sidebar and pages follow; a limited administrator can grant Staff only what
 their own access includes (`20261202000000` to `20261202020000` migrations).
+Administrators have an employee profile (employee ID, designation, joining date, phone;
+`adminProfile.ts`, `AdminProfileFields.tsx`, `AdminProfileEditor.tsx`). The Owner edits
+anyone's and each administrator edits their own; it is optional when inviting, and a
+missing profile shows **Profile incomplete**. The Owner can **Resend** a pending
+invitation; the new link goes only by email (`20261203000000`/`20261203010000` migrations).
 **Teaching** mounts the shared `features/teaching/TeachingAssignmentsPage.tsx`, also used by
 Heads of Department in the faculty workspace. A teacher is assigned to a subject offering
 (one subject for one class section); teaching outside the teacher's primary and additional

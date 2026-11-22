@@ -76,6 +76,7 @@ describe('Staff and Faculty — Administrators', () => {
         email: 'new@example.com',
         full_name: 'Nia New',
         access_areas: null,
+        profile: null,
       }),
     )
     expect(await screen.findByText(/They become an administrator once they accept/)).toBeInTheDocument()

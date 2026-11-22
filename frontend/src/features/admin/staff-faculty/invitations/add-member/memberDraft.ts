@@ -96,9 +96,9 @@ export function employmentTypes(role: MembershipRole): Record<string, string> {
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const EMPLOYEE_ID = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,39}$/
-const PHONE = /^\+?[0-9][0-9 ()-]{4,30}$/
-const clean = (value: string) => value.split(/\s+/).filter(Boolean).join(' ')
+export const EMPLOYEE_ID = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,39}$/
+export const PHONE = /^\+?[0-9][0-9 ()-]{4,30}$/
+export const clean = (value: string) => value.split(/\s+/).filter(Boolean).join(' ')
 
 /** Field errors for one step; the same rules the server applies. */
 export function validateStep(step: Step, draft: MemberDraft): DraftErrors {

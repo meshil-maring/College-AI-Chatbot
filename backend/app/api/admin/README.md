@@ -10,7 +10,7 @@ permission dependency; it contains no endpoint handlers.
 | `overview.py` | Admin identity and dashboard |
 | `members/memberships.py` | Staff/faculty onboarding decisions, roster, role, primary department, activate/suspend/deactivate and invitations |
 | `members/profiles.py` | Staff/faculty employee profiles, additional departments and account history (`users.read` + `audit.read`) |
-| `members/administrators.py` | Institution administrators under `/admin/institution-admins`: list, Owner invitations (with access areas), per-administrator access (`PUT …/{user_id}/access`), removal, ownership transfer. Not `/admin/administrators`: the policy lookup keeps the path from its last `/admin` |
+| `members/administrators.py` | Institution administrators under `/admin/institution-admins`: list, Owner invitations (with access areas), per-administrator access (`PUT …/{user_id}/access`), employee profile (`PUT …/{user_id}/profile`: the Owner for anyone, an administrator for themselves), Owner-only invitation resend, removal, ownership transfer. Not `/admin/administrators`: the policy lookup keeps the path from its last `/admin` |
 | `members/responsibilities.py` | Class In-Charge and Subject Coordinator appointments (HOD stays under `/admin/department-heads`) |
 | `knowledge_sources.py` | Knowledge source creation, listing and updates |
 | `documents.py` | Document listing, upload, versions and deletion |

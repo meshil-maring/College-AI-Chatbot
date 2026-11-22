@@ -37,7 +37,9 @@ export {
   cancelInstitutionAdminInvitation,
   inviteInstitutionAdmin,
   listInstitutionAdmins,
+  resendInstitutionAdminInvitation,
   revokeInstitutionAdmin,
+  saveInstitutionAdminProfile,
   setInstitutionAdminAccess,
   transferInstitutionOwnership,
 } from './administrators.ts'

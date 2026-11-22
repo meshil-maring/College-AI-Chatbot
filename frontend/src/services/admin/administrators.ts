@@ -1,4 +1,9 @@
-import type { AdminAccessArea, InstitutionAdminList, InstitutionAdminResult } from '../../types/admin/administrators.ts'
+import type {
+  AdminAccessArea,
+  AdminProfile,
+  InstitutionAdminList,
+  InstitutionAdminResult,
+} from '../../types/admin/administrators.ts'
 import { ADMIN_BASE, requestJson } from './http.ts'
 
 const BASE = `${ADMIN_BASE}/institution-admins`
@@ -11,7 +16,12 @@ export function listInstitutionAdmins(accessToken: string): Promise<InstitutionA
 /** Owner only: invite a new administrator by email. */
 export function inviteInstitutionAdmin(
   accessToken: string,
-  body: { email: string; full_name?: string | null; access_areas?: AdminAccessArea[] | null },
+  body: {
+    email: string
+    full_name?: string | null
+    access_areas?: AdminAccessArea[] | null
+    profile?: AdminProfile | null
+  },
 ): Promise<InstitutionAdminResult> {
   return requestJson<InstitutionAdminResult>('POST', `${BASE}/invitations`, accessToken, body)
 }
@@ -47,4 +57,30 @@ export function setInstitutionAdminAccess(
   return requestJson<InstitutionAdminResult>('PUT', `${BASE}/${encodeURIComponent(userId)}/access`, accessToken, {
     access_areas: accessAreas,
   })
+}
+
+/** The Owner edits any administrator's profile; an administrator edits their own. */
+export function saveInstitutionAdminProfile(
+  accessToken: string,
+  userId: string,
+  profile: AdminProfile,
+): Promise<InstitutionAdminResult> {
+  return requestJson<InstitutionAdminResult>(
+    'PUT',
+    `${BASE}/${encodeURIComponent(userId)}/profile`,
+    accessToken,
+    profile,
+  )
+}
+
+/** Owner only: email a pending administrator invitation again; the old link stops working. */
+export function resendInstitutionAdminInvitation(
+  accessToken: string,
+  invitationId: string,
+): Promise<InstitutionAdminResult> {
+  return requestJson<InstitutionAdminResult>(
+    'POST',
+    `${BASE}/invitations/${encodeURIComponent(invitationId)}/resend`,
+    accessToken,
+  )
 }

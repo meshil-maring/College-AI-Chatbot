@@ -11,6 +11,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.schemas.admin.member_profiles import CommonProfile
+
 
 # Areas the Owner can allow an administrator; the database maps them to
 # permission codes. None means full access (every area, and future permissions).
@@ -33,6 +35,8 @@ class InstitutionAdmin(BaseModel):
     assigned_at: datetime | str | None = None
     is_owner: bool = False
     access_areas: list[str] | None = None
+    # Shared employee fields; None until the Owner or the administrator fills them.
+    profile: dict | None = None
 
 
 class AdminInvitationView(BaseModel):
@@ -43,12 +47,15 @@ class AdminInvitationView(BaseModel):
     created_at: datetime | str | None = None
     email_delivery_status: str | None = None
     access_areas: list[str] | None = None
+    profile: dict | None = None
 
 
 class InstitutionAdminList(BaseModel):
     owner_user_id: UUID | None
     # Whether the signed-in administrator is the Owner (and may manage administrators).
     viewer_is_owner: bool
+    # The signed-in administrator, who may edit their own profile.
+    viewer_user_id: UUID | None = None
     administrators: list[InstitutionAdmin]
     invitations: list[AdminInvitationView]
     access_area_options: list[str] = []
@@ -60,6 +67,8 @@ class AdminInvitationCreate(BaseModel):
     email: EmailStr = Field(max_length=320)
     full_name: str | None = Field(default=None, max_length=200)
     access_areas: list[AccessArea] | None = None
+    # Optional; applied when the invitation is accepted.
+    profile: CommonProfile | None = None
 
     @field_validator("access_areas")
     @classmethod

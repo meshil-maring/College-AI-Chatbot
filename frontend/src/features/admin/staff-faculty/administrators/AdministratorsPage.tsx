@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Badge, BUTTON_CLASS, DANGER_BUTTON_CLASS, Feedback } from '../StaffFacultyUI.tsx'
 import AdminAccessEditor from './AdminAccessEditor.tsx'
+import AdminProfileEditor from './AdminProfileEditor.tsx'
+import { profileSummary } from './adminProfile.ts'
 import { accessSummary } from './accessAreas.ts'
 import InviteAdminForm from './InviteAdminForm.tsx'
 import { useInstitutionAdmins } from './useInstitutionAdmins.ts'
@@ -8,11 +10,14 @@ import { useInstitutionAdmins } from './useInstitutionAdmins.ts'
 /**
  * Institution administrators. The Owner always has full access and alone
  * invites, limits or removes administrators and can hand ownership to another.
+ * The Owner edits anyone's employee profile; an administrator edits their own.
  */
 export default function AdministratorsPage({ accessToken }: { accessToken: string }) {
   const model = useInstitutionAdmins(accessToken)
   const busy = model.actionKey !== null
+  // One open editor at a time: which administrator, and access or profile.
   const [editing, setEditing] = useState<string | null>(null)
+  const toggle = (key: string) => setEditing(editing === key ? null : key)
 
   return (
     <div className="space-y-4">
@@ -47,18 +52,31 @@ export default function AdministratorsPage({ accessToken }: { accessToken: strin
                   {admin.status === 'active' ? null : <Badge tone="warning">{admin.status}</Badge>}
                 </span>
                 <span className="break-all text-sm text-muted">{admin.email}</span>
-                <span className="text-xs text-muted">
-                  {admin.is_owner ? 'Full access (Owner)' : accessSummary(admin.access_areas)}
+                <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                  {profileSummary(admin.profile) ?? <Badge tone="warning">Profile incomplete</Badge>}
+                  <span>{admin.is_owner ? 'Full access (Owner)' : accessSummary(admin.access_areas)}</span>
                 </span>
               </div>
+              {model.viewerIsOwner || admin.user_id === model.viewerId ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-expanded={editing === `profile:${admin.user_id}`}
+                  aria-label={`Edit profile of ${admin.name}`}
+                  onClick={() => toggle(`profile:${admin.user_id}`)}
+                  className={BUTTON_CLASS}
+                >
+                  Edit profile
+                </button>
+              ) : null}
               {model.viewerIsOwner && !admin.is_owner ? (
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     disabled={busy || admin.status !== 'active'}
-                    aria-expanded={editing === admin.user_id}
+                    aria-expanded={editing === `access:${admin.user_id}`}
                     aria-label={`Edit access for ${admin.name}`}
-                    onClick={() => setEditing(editing === admin.user_id ? null : admin.user_id)}
+                    onClick={() => toggle(`access:${admin.user_id}`)}
                     className={BUTTON_CLASS}
                   >
                     Edit access
@@ -83,8 +101,11 @@ export default function AdministratorsPage({ accessToken }: { accessToken: strin
                   </button>
                 </div>
               ) : null}
-              {editing === admin.user_id && model.viewerIsOwner && !admin.is_owner ? (
+              {editing === `access:${admin.user_id}` && model.viewerIsOwner && !admin.is_owner ? (
                 <AdminAccessEditor admin={admin} model={model} onDone={() => setEditing(null)} />
+              ) : null}
+              {editing === `profile:${admin.user_id}` ? (
+                <AdminProfileEditor admin={admin} model={model} onDone={() => setEditing(null)} />
               ) : null}
             </li>
           ))}
@@ -107,6 +128,15 @@ export default function AdministratorsPage({ accessToken }: { accessToken: strin
                   {invitation.full_name ? <span className="break-all text-muted">{invitation.email}</span> : null}
                   <span className="text-xs text-muted">{accessSummary(invitation.access_areas)}</span>
                 </span>
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-label={`Resend the invitation to ${invitation.email}`}
+                  onClick={() => void model.resend(invitation)}
+                  className={BUTTON_CLASS}
+                >
+                  {model.actionKey === `resend:${invitation.invitation_id}` ? 'Sending…' : 'Resend'}
+                </button>
                 <button
                   type="button"
                   disabled={busy}

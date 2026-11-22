@@ -2,6 +2,8 @@ import { useId, useState, type FormEvent } from 'react'
 import type { AdminAccessArea } from '../../../../types/admin/administrators.ts'
 import { PRIMARY_BUTTON_CLASS, SELECT_CLASS } from '../StaffFacultyUI.tsx'
 import AccessAreasField from './AccessAreasField.tsx'
+import AdminProfileFields from './AdminProfileFields.tsx'
+import { profileDraft, toProfile, validateProfile, type AdminProfileErrors } from './adminProfile.ts'
 import { ALL_AREAS, toAccess } from './accessAreas.ts'
 import type { InstitutionAdminsModel } from './useInstitutionAdmins.ts'
 
@@ -14,18 +16,25 @@ export default function InviteAdminForm({ model }: { model: InstitutionAdminsMod
   const [fullName, setFullName] = useState('')
   const [touched, setTouched] = useState(false)
   const [areas, setAreas] = useState<AdminAccessArea[]>(ALL_AREAS)
+  const [withProfile, setWithProfile] = useState(false)
+  const [profile, setProfile] = useState(profileDraft(null))
+  const [profileErrors, setProfileErrors] = useState<AdminProfileErrors>({})
   const invalid = !EMAIL.test(email.trim())
   const sending = model.actionKey === 'invite'
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     setTouched(true)
-    if (invalid) return
-    const failure = await model.invite(email, fullName, toAccess(areas))
+    const found = withProfile ? validateProfile(profile) : {}
+    setProfileErrors(found)
+    if (invalid || Object.keys(found).length) return
+    const failure = await model.invite(email, fullName, toAccess(areas), withProfile ? toProfile(profile) : null)
     if (!failure) {
       setEmail('')
       setFullName('')
       setAreas(ALL_AREAS)
+      setWithProfile(false)
+      setProfile(profileDraft(null))
       setTouched(false)
     }
   }
@@ -77,6 +86,25 @@ export default function InviteAdminForm({ model }: { model: InstitutionAdminsMod
         </label>
       </div>
       <AccessAreasField legend="Access" value={areas} disabled={sending} onChange={setAreas} />
+      <label className="flex cursor-pointer items-center gap-3 text-sm text-content">
+        <input
+          type="checkbox"
+          checked={withProfile}
+          disabled={sending}
+          onChange={(event) => setWithProfile(event.target.checked)}
+          className="size-5 accent-[var(--ui-accent)]"
+        />
+        Add employee details now (they or you can add them later)
+      </label>
+      {withProfile ? (
+        <AdminProfileFields
+          idPrefix={`${id}-profile`}
+          draft={profile}
+          errors={profileErrors}
+          disabled={sending}
+          onChange={setProfile}
+        />
+      ) : null}
       <div className="flex justify-end">
         <button type="submit" disabled={sending} className={PRIMARY_BUTTON_CLASS}>
           {sending ? 'Sending…' : 'Send invitation'}

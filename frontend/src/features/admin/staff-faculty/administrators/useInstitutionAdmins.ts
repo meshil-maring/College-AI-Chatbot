@@ -5,11 +5,18 @@ import {
   cancelInstitutionAdminInvitation,
   inviteInstitutionAdmin,
   listInstitutionAdmins,
+  resendInstitutionAdminInvitation,
   revokeInstitutionAdmin,
+  saveInstitutionAdminProfile,
   setInstitutionAdminAccess,
   transferInstitutionOwnership,
 } from '../../../../services/admin/adminApi.ts'
-import type { AdminAccessArea, AdminInvitation, InstitutionAdmin } from '../../../../types/admin/administrators.ts'
+import type {
+  AdminAccessArea,
+  AdminInvitation,
+  AdminProfile,
+  InstitutionAdmin,
+} from '../../../../types/admin/administrators.ts'
 import { staffFacultyKeys } from '../staffFacultyKeys.ts'
 
 function message(cause: unknown, fallback: string) {
@@ -65,7 +72,12 @@ export function useInstitutionAdmins(accessToken: string) {
     }
   }
 
-  const invite = (email: string, fullName: string, accessAreas: AdminAccessArea[] | null) =>
+  const invite = (
+    email: string,
+    fullName: string,
+    accessAreas: AdminAccessArea[] | null,
+    profile: AdminProfile | null,
+  ) =>
     run(
       'invite',
       () =>
@@ -73,6 +85,7 @@ export function useInstitutionAdmins(accessToken: string) {
           email: email.trim().toLowerCase(),
           full_name: fullName.trim() || null,
           access_areas: accessAreas,
+          profile,
         }),
       'The invitation could not be sent.',
     )
@@ -82,6 +95,20 @@ export function useInstitutionAdmins(accessToken: string) {
       `access:${admin.user_id}`,
       () => setInstitutionAdminAccess(accessToken, admin.user_id, accessAreas),
       'Access could not be changed.',
+    )
+
+  const saveProfile = (admin: InstitutionAdmin, profile: AdminProfile) =>
+    run(
+      `profile:${admin.user_id}`,
+      () => saveInstitutionAdminProfile(accessToken, admin.user_id, profile),
+      'The profile could not be saved.',
+    )
+
+  const resend = (invitation: AdminInvitation) =>
+    run(
+      `resend:${invitation.invitation_id}`,
+      () => resendInstitutionAdminInvitation(accessToken, invitation.invitation_id),
+      'The invitation could not be sent again.',
     )
 
   const cancel = (invitation: AdminInvitation) =>
@@ -117,6 +144,7 @@ export function useInstitutionAdmins(accessToken: string) {
     administrators: query.data?.administrators ?? [],
     invitations: query.data?.invitations ?? [],
     viewerIsOwner: query.data?.viewer_is_owner ?? false,
+    viewerId: query.data?.viewer_user_id ?? null,
     loading: query.isPending,
     loadError: query.error ? message(query.error, 'Could not load administrators.') : null,
     actionKey,
@@ -128,6 +156,8 @@ export function useInstitutionAdmins(accessToken: string) {
     },
     invite,
     setAccess,
+    saveProfile,
+    resend,
     cancel,
     revoke,
     transfer,

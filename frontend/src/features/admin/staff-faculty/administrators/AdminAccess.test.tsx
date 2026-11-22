@@ -105,6 +105,7 @@ describe('Administrator access areas', () => {
         email: 'lim@example.com',
         full_name: null,
         access_areas: ['content'],
+        profile: null,
       }),
     )
   })
