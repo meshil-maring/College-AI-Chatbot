@@ -13,6 +13,12 @@ requests, administrator and Head of Department decisions, and HOD appointments
 Students act only on their own placement; SQL re-derives reviewer scope and
 atomically reassigns the current-term registration on approval.
 
+`academics/teaching_assignments.py` serves administrators and Heads of Department
+from one set of routes. The SQL functions decide who is acting: administrators
+manage all teaching, a current HOD assigns within the departments they head, and
+teaching outside a teacher's departments waits for the subject department's Head
+(or an administrator when that department has no other head).
+
 Services are grouped by feature. API routers call these modules; repositories
 continue to own database access and schemas continue to own request/response types.
 

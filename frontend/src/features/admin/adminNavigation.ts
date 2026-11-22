@@ -10,6 +10,7 @@ export const STAFF_FACULTY_PAGES = [
   'invitations',
   'roster',
   'responsibilities',
+  'teaching',
   'administrators',
   'permissions',
 ] as const

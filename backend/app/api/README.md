@@ -8,7 +8,7 @@ URL prefix, permissions or request/response models.
 
 | Package | Router modules |
 | --- | --- |
-| `academics/` | `academic_setup.py`: existing eight-entity API; `academic_structure.py`: versioned curricula, program semesters, cohorts, class sections and offerings |
+| `academics/` | `academic_setup.py`: existing eight-entity API; `academic_structure.py`: versioned curricula, program semesters, cohorts, class sections and offerings; `teaching_assignments.py`: `/teaching-assignments` for administrators and Heads of Department |
 | `admin/` | `admin.py` assembles feature routers; see the [Admin API guide](admin/README.md). `student_onboarding.py` provisions students, sends setup links, exposes the directory, and routes permission-checked profile management |
 | `ai/` | `conversations.py`, `chat_turns.py` (authenticated read-only recovery status) |
 | `auth/` | Core auth feature routers, student login, registration and development tools; see the [Auth API guide](auth/README.md) |

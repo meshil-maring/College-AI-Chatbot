@@ -14,6 +14,7 @@ describe('faculty navigation after academic retirement', () => {
       'resources',
       'transfers',
       'transfer-new',
+      'teaching',
       'assistant',
     ])
     for (const item of FACULTY_NAV_ITEMS) expect(FACULTY_VIEW_HEADINGS[item.key]).toBeTruthy()
@@ -28,12 +29,15 @@ describe('faculty navigation after academic retirement', () => {
     ).toEqual(['notices'])
     expect(buildFacultyNavigation('faculty', ['ai.chat']).map((item) => item.key)).toEqual(['notices', 'assistant'])
   })
-  it('shows transfer approvals only when the server confirms a current HOD appointment', () => {
-    expect(buildFacultyNavigation('faculty', ['ai.chat']).map((item) => item.key)).not.toContain('transfers')
+  it('shows transfer approvals and teaching only when the server confirms a current HOD appointment', () => {
+    const plain = buildFacultyNavigation('faculty', ['ai.chat']).map((item) => item.key)
+    expect(plain).not.toContain('transfers')
+    expect(plain).not.toContain('teaching')
     expect(buildFacultyNavigation('faculty', ['ai.chat'], true).map((item) => item.key)).toEqual([
       'notices',
       'transfers',
       'transfer-new',
+      'teaching',
       'assistant',
     ])
     expect(buildFacultyNavigation('student', ['ai.chat'], true)).toEqual([])

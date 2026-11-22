@@ -9,6 +9,7 @@ import { useMemberInvitations } from './invitations/useMemberInvitations.ts'
 import MembershipRequests from './requests/MembershipRequests.tsx'
 import AdministratorsPage from './administrators/AdministratorsPage.tsx'
 import ResponsibilitiesPage from './responsibilities/ResponsibilitiesPage.tsx'
+import TeachingAssignmentsPage from '../../teaching/TeachingAssignmentsPage.tsx'
 import { useDirectoryAdmins } from './roster/useDirectoryAdmins.ts'
 import MembershipRosterTable from './roster/MembershipRosterTable.tsx'
 import StaffFacultySummary from './StaffFacultySummary.tsx'
@@ -74,7 +75,7 @@ export default function StaffFacultyManager({
 
       <Feedback error={management.error} success={management.success} onDismiss={management.dismiss} />
 
-      {current !== 'permissions' && current !== 'administrators' ? (
+      {current !== 'permissions' && current !== 'administrators' && current !== 'teaching' ? (
         <StaffFacultySummary
           pendingCount={management.pendingCount}
           members={management.members}
@@ -150,6 +151,8 @@ export default function StaffFacultyManager({
           onOpenRoster={() => navigate('roster')}
         />
       ) : null}
+
+      {current === 'teaching' ? <TeachingAssignmentsPage accessToken={accessToken} /> : null}
 
       {current === 'administrators' ? <AdministratorsPage accessToken={accessToken} /> : null}
 

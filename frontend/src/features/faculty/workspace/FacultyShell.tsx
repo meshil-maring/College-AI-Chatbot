@@ -1,10 +1,11 @@
-import { ArrowLeftRight, Bell, BookOpen, Bot, Shuffle, UserCircle, type LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, Bell, BookOpen, BookOpenCheck, Bot, Shuffle, UserCircle, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import ChatShell from '../../chat/ChatShell.tsx'
 import LearningResourcesPage from '../../learning-resources/LearningResourcesPage.tsx'
 import TransferReviewPage, { transferReviewIdentity } from '../../transfers/review/TransferReviewPage.tsx'
 import { useTransferReviewAccess } from '../../transfers/review/useTransferReviews.ts'
 import DirectTransferPage from '../../transfers/direct/DirectTransferPage.tsx'
+import TeachingAssignmentsPage from '../../teaching/TeachingAssignmentsPage.tsx'
 import WorkspaceFrame from '../../workspace/WorkspaceFrame.tsx'
 import WorkspacePageHeader from '../../workspace/WorkspacePageHeader.tsx'
 import FacultyProfile from '../profile/FacultyProfile.tsx'
@@ -24,6 +25,7 @@ const icons: Record<FacultyView, LucideIcon> = {
   resources: BookOpen,
   transfers: ArrowLeftRight,
   'transfer-new': Shuffle,
+  teaching: BookOpenCheck,
   assistant: Bot,
 }
 export default function FacultyShell() {
@@ -64,6 +66,7 @@ export default function FacultyShell() {
           {view === 'resources' && <LearningResourcesPage />}
           {view === 'transfers' && <TransferReviewPage />}
           {view === 'transfer-new' && <DirectTransferPage />}
+          {view === 'teaching' && accessToken && <TeachingAssignmentsPage accessToken={accessToken} />}
           {FACULTY_COMING_SOON_VIEWS.includes(view) && <FacultyComingSoon view={view} />}
           {view === 'assistant' && (
             <section aria-label="AI Assistant">

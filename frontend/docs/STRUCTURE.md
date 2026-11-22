@@ -25,6 +25,7 @@ It includes TypeScript recipes and an adoption checklist for new and migrated pa
 | `src/features/workspace/`                  | Common role workspace frame, page header and responsive shell styles        |
 | `src/features/learning-resources/`         | Shared admin/faculty/staff library, audience/upload drafts and admin review |
 | `src/features/transfers/`                  | Shared transfer labels/summary and the admin + HOD transfer review queue    |
+| `src/features/teaching/`                   | Shared admin + HOD teaching assignments and cross-department approvals      |
 | `src/features/auth/`                       | Session, sign-in, password, registration and server-grant helpers           |
 | `src/features/admin/`                      | Institution account administration, approvals and knowledge management      |
 | `src/features/staff/`                      | Staff identity, student account approvals and chat                          |

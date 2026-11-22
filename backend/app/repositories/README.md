@@ -7,6 +7,8 @@ calls audited option-group, section-assignment and student-registration RPCs.
 Student identity is always resolved from the authenticated actor by the database.
 `academics/student_transfers.py` calls the audited transfer and department-head
 RPCs with only the actor and tenant; the database derives student and scope.
+`academics/teaching_assignments.py` calls the audited teaching assignment RPCs the
+same way; the database derives the receiving department and the actor's authority.
 
 Database access modules are grouped by feature, following the API, service and
 schema layout. Existing queries, tenant filters, RPC calls and return values

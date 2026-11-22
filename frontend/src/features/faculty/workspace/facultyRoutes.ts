@@ -6,6 +6,7 @@ export const FACULTY_PATHS: Readonly<Record<FacultyView, string>> = {
   resources: '/faculty/resources',
   transfers: '/faculty/transfers',
   'transfer-new': '/faculty/transfers/new',
+  teaching: '/faculty/teaching',
   assistant: '/faculty/assistant',
 }
 export function resolveFacultyRoute(pathname: string): { view: FacultyView } | null {

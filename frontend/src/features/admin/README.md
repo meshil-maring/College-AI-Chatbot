@@ -21,9 +21,9 @@ actions. The administrator chooses each new member's department when approving
 applicants no longer pick a department. The administrator also confirms Staff or
 Faculty on approval and can switch it from the roster; the server refuses a switch
 while the member is a current Head of Department or holds extra Staff permissions.
-Staff and Faculty Management has six sidebar pages (`StaffFacultyNavigation.tsx`,
+Staff and Faculty Management has seven sidebar pages (`StaffFacultyNavigation.tsx`,
 `staff-page` in the URL): Requests, Pending invitations, Roster, Responsibilities,
-Administrators and Staff permissions.
+Teaching, Administrators and Staff permissions.
 `StaffFacultyManager.tsx` renders the chosen page; reads stay cached across pages.
 The roster is the user directory: `roster/directoryItems.ts` merges members, administrators
 (`roster/useDirectoryAdmins.ts`) and pending invitations, which show read-only
@@ -73,6 +73,11 @@ one current holder, and history is kept (`20261129000000`/`20261129010000` migra
 Every administrator has full access; the Owner alone invites (`InviteAdminForm.tsx`),
 removes administrators and transfers ownership, and the server enforces that
 (`useInstitutionAdmins.ts`, `20261130000000` to `20261130020000` migrations).
+**Teaching** mounts the shared `features/teaching/TeachingAssignmentsPage.tsx`, also used by
+Heads of Department in the faculty workspace. A teacher is assigned to a subject offering
+(one subject for one class section); teaching outside the teacher's primary and additional
+departments waits for the Head of the subject's department, and an administrator approves
+only when that department has no other head (`20261201000000`/`20261201010000` migrations).
 The embedded permission list (`permissions/StaffPermissionList.tsx`) shows role grants
 read-only beside delegable permissions with readable labels.
 

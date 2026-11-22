@@ -9,10 +9,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import FacultyComingSoon from './FacultyComingSoon.tsx'
-import {
-  FACULTY_COMING_SOON_VIEWS,
-  FACULTY_VIEW_HEADINGS,
-} from './facultyNavigation.ts'
+import { FACULTY_COMING_SOON_VIEWS, FACULTY_VIEW_HEADINGS } from './facultyNavigation.ts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -22,13 +19,9 @@ describe('FacultyComingSoon', () => {
   it('labels the section Coming Soon and states plainly that no information exists', () => {
     render(<FacultyComingSoon view="notices" />)
     expect(screen.getByText('Coming Soon')).toBeInTheDocument()
-    expect(
-      screen.getByText('No information is available for this section yet.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('No information is available for this section yet.')).toBeInTheDocument()
     // Honest wording, not a delivery promise.
-    expect(
-      screen.getByText(/Nothing on this page is loaded or simulated\./),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/Nothing on this page is loaded or simulated\./)).toBeInTheDocument()
   })
 
   it('performs zero requests for every Coming Soon view', () => {

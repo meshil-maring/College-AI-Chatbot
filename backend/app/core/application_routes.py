@@ -29,6 +29,7 @@ from app.api.academics.academic_setup import router as academic_setup_router
 from app.api.academics.academic_structure import router as academic_structure_router
 from app.api.academics.semester_registration import router as semester_registration_router
 from app.api.academics.student_transfers import router as student_transfers_router
+from app.api.academics.teaching_assignments import router as teaching_assignments_router
 
 
 def register_feature_routes(app: FastAPI) -> None:
@@ -48,6 +49,7 @@ def register_feature_routes(app: FastAPI) -> None:
     app.include_router(academic_structure_router, prefix="/api/v1")
     app.include_router(semester_registration_router, prefix="/api/v1")
     app.include_router(student_transfers_router, prefix="/api/v1")
+    app.include_router(teaching_assignments_router, prefix="/api/v1")
     app.include_router(students_router, prefix="/api/v1")
     app.include_router(student_notifications_router, prefix="/api/v1")
     app.include_router(dev_auth_router, prefix="/api/v1")  # DEVELOPMENT / TESTING ONLY

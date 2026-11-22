@@ -96,11 +96,10 @@ describe('role -> navigation isolation', () => {
 
     setIdentity(FACULTY_A, 'faculty')
     rerender(<App />)
-    // Transfer Approvals appears only after the server confirms a current HOD appointment.
+    // Transfer Approvals and Teaching appear only after the server confirms a current HOD appointment.
+    const hodOnly = ['transfers', 'transfer-new', 'teaching']
     expect(await navigationLabels('faculty')).toEqual(
-      FACULTY_NAV_ITEMS.filter((item) => item.key !== 'transfers' && item.key !== 'transfer-new').map(
-        (item) => item.label,
-      ),
+      FACULTY_NAV_ITEMS.filter((item) => !hodOnly.includes(item.key)).map((item) => item.label),
     )
 
     setIdentity(STUDENT_B, 'student')

@@ -36,6 +36,11 @@ LABELS = {
     "member.responsibility.end": "Responsibility ended",
     "institution.admin.revoke": "Administrator access removed",
     "institution.owner.transfer": "Ownership transferred",
+    "teaching.assignment.request": "Teaching assigned",
+    "teaching.assignment.approve": "Teaching request approved",
+    "teaching.assignment.reject": "Teaching request rejected",
+    "teaching.assignment.cancel": "Teaching request withdrawn",
+    "teaching.assignment.end": "Teaching ended",
 }
 
 

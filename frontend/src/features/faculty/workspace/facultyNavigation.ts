@@ -1,7 +1,7 @@
 import { hasPermission } from '../../auth/access/permissions.ts'
 import { hasResourceNavigation } from '../../learning-resources/data/resourceIdentity.ts'
 
-export type FacultyView = 'profile' | 'notices' | 'resources' | 'transfers' | 'transfer-new' | 'assistant'
+export type FacultyView = 'profile' | 'notices' | 'resources' | 'transfers' | 'transfer-new' | 'teaching' | 'assistant'
 export interface FacultyNavItem {
   readonly key: FacultyView
   readonly label: string
@@ -12,12 +12,14 @@ export const FACULTY_NAV_ITEMS: readonly FacultyNavItem[] = [
   { key: 'resources', label: 'Learning Resources' },
   { key: 'transfers', label: 'Transfer Approvals' },
   { key: 'transfer-new', label: 'New Transfer' },
+  { key: 'teaching', label: 'Teaching' },
   { key: 'assistant', label: 'AI Assistant' },
 ]
 export const FACULTY_COMING_SOON_VIEWS: readonly FacultyView[] = ['notices']
 /**
- * HOD is an appointment, not a permission grant, so transfer approvals appear
- * only when the server reports that this faculty member may review transfers.
+ * HOD is an appointment, not a permission grant, so transfer approvals and
+ * teaching assignments appear only when the server reports that this faculty
+ * member may review transfers, which means they currently head a department.
  */
 export function buildFacultyNavigation(
   role: string | null,
@@ -25,7 +27,7 @@ export function buildFacultyNavigation(
   canReviewTransfers = false,
 ): readonly FacultyNavItem[] {
   if (role !== 'faculty') return []
-  const hodOnly = (key: FacultyView) => key === 'transfers' || key === 'transfer-new'
+  const hodOnly = (key: FacultyView) => key === 'transfers' || key === 'transfer-new' || key === 'teaching'
   const items = FACULTY_NAV_ITEMS.filter((item) => !hodOnly(item.key) || canReviewTransfers)
   if (permissions === undefined) return items
   return items.filter(
@@ -43,6 +45,7 @@ export const FACULTY_VIEW_HEADINGS: Record<FacultyView, string> = {
   resources: 'Learning Resources',
   transfers: 'Transfer Approvals',
   'transfer-new': 'New Transfer',
+  teaching: 'Teaching',
   assistant: 'AI Assistant',
 }
 export type WorkspaceSurfaceStatus = 'available' | 'not-available'

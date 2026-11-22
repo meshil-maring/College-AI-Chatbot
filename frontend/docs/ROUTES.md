@@ -8,6 +8,9 @@ resolve the same view after the faculty identity has been restored.
 | `/faculty`, `/faculty/profile` | Faculty identity profile                          |
 | `/faculty/notices`             | Existing notices availability placeholder         |
 | `/faculty/resources`           | Shared Learning Resources library and submissions |
+| `/faculty/transfers`           | Transfer approvals (current Heads of Department)  |
+| `/faculty/transfers/new`       | Direct transfer (current Heads of Department)     |
+| `/faculty/teaching`            | Teaching assignments (current Heads of Department) |
 | `/faculty/assistant`           | AI Assistant                                      |
 
 Removed faculty routes for assignments, rosters, attendance, results, departments,
