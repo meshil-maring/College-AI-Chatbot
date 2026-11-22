@@ -9,6 +9,8 @@ that the person is not already a member and that no invitation is pending.
 Acceptance uses the existing invitation link and account setup. When the person
 accepts, the database records an approved membership request decided by the
 inviting administrator, grants the role and assigns the department together.
+An invitation may also carry the employee profile and additional departments;
+the database applies them in the same acceptance transaction.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -44,19 +46,23 @@ DATABASE_ERRORS = {
         409, "INVITATION_ALREADY_PENDING",
         "An invitation is already pending for this email. Resend it from Pending invitations.",
     ),
+    "P1204": (409, "EMPLOYEE_ID_IN_USE", "This employee ID is already used in your institution."),
     "22023": (422, "INVITATION_INVALID", "Check the email, role and department, then try again."),
     "42501": (403, "FORBIDDEN", "You do not have permission to perform this action."),
 }
 
 
-def _audit(actor: dict[str, Any], institution_id: UUID, action: str, record_id: str, data: dict) -> None:
+def _audit(
+    actor: dict[str, Any], institution_id: UUID, action: str, record_id: str, data: dict,
+    *, table_name: str = "platform_admin_invitations",
+) -> None:
     record_admin_action(
         get_admin_client(),
         AdminAuditLogCreate(
             actor_user_id=UUID(str(actor["user_id"])),
             institution_id=institution_id,
             action=action,
-            table_name="platform_admin_invitations",
+            table_name=table_name,
             record_id=record_id,
             record_data=data,
         ),
@@ -80,12 +86,17 @@ def _status(row: dict[str, Any]) -> str:
 
 def _view(row: dict[str, Any]) -> MemberInvitationView:
     department = row.get("invited_department_id")
+    profile = row.get("invited_profile") or {}
+    common = profile.get("common") if isinstance(profile, dict) else None
+    common = common if isinstance(common, dict) else {}
     return MemberInvitationView(
         invitation_id=UUID(str(row["invitation_id"])),
         email=str(row["email"]),
         full_name=row.get("invited_full_name"),
         role=row["role_name"],
         department_id=UUID(str(department)) if department else None,
+        employee_id=common.get("employee_id"),
+        designation=common.get("designation"),
         status=_status(row),
         expires_at=row.get("expires_at"),
         created_at=row.get("created_at"),
@@ -110,6 +121,7 @@ def create(actor: dict[str, Any], institution_id: UUID, body: MemberInvitationCr
             token_hash=invite_repo.hash_invitation_token(raw_token),
             expires_at=expires_at,
             protected_token=email_outbox_crypto.protect_invitation_token(raw_token),
+            profile=body.database_profile(),
         )
     except AppError:
         raise
@@ -151,3 +163,19 @@ def cancel(actor: dict[str, Any], institution_id: UUID, invitation_id: UUID) -> 
         already_applied=result.already_applied,
         message="Invitation cancelled. The link no longer works.",
     )
+
+
+def resend(actor: dict[str, Any], institution_id: UUID, invitation_id: UUID, peer: str | None):
+    """Send a Staff/Faculty invitation again, only within the administrator's institution."""
+    invitation = invite_repo.get_invitation_by_id(get_admin_client(), invitation_id)
+    if (
+        invitation is None
+        or str(invitation.get("institution_id")) != str(institution_id)
+        or invitation.get("role_name") not in ("staff", "faculty")
+    ):
+        raise AppError("Invitation not found", 404, "INVITATION_NOT_FOUND")
+    result = invitations.resend_invitation(actor, institution_id, invitation_id, peer=peer)
+    _audit(actor, institution_id, "membership_invitation_resent", str(invitation_id),
+           {"role": invitation["role_name"], "email": invitation["email"]},
+           table_name="institution_membership_requests")
+    return result

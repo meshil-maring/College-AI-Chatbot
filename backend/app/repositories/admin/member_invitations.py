@@ -10,7 +10,7 @@ TABLE = "platform_admin_invitations"
 COLUMNS = (
     "invitation_id, institution_id, email, role_name, status, expires_at, created_at, "
     "email_delivery_status, resend_count, last_sent_at, admin_invited, "
-    "invited_department_id, invited_full_name"
+    "invited_department_id, invited_full_name, invited_profile"
 )
 
 
@@ -33,8 +33,12 @@ def create(
     token_hash: str,
     expires_at: datetime,
     protected_token: str,
+    profile: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Insert the invitation and its email job in one database transaction."""
+    """Insert the invitation and its email job in one database transaction.
+
+    ``profile`` is the employee profile applied when the person accepts.
+    """
     data = client.rpc("create_member_invitation", {
         "p_actor": str(actor_id),
         "p_tenant": str(institution_id),
@@ -45,6 +49,7 @@ def create(
         "p_token_hash": token_hash,
         "p_expires_at": expires_at.isoformat(),
         "p_protected_token": protected_token,
+        "p_profile": profile,
     }).execute().data
     if not isinstance(data, dict):
         raise RuntimeError("Invitation creation returned no row")

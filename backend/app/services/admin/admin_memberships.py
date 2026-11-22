@@ -1,4 +1,8 @@
-"""Phase 7.23 institution-scoped Staff/Faculty lifecycle orchestration."""
+"""Phase 7.23 institution-scoped Staff/Faculty lifecycle orchestration.
+
+Account status changes live in ``member_status`` and invitation resends in
+``member_invitations``.
+"""
 
 from datetime import datetime, timezone
 from typing import Any
@@ -7,23 +11,20 @@ from uuid import UUID
 from app.core.errors import AppError
 from app.db.supabase import get_admin_client
 from app.repositories.admin import admin_memberships as repo
-from app.repositories.invitations import platform_admin_invitations as invitation_repo
 from app.repositories.admin.admin_audit import record_admin_action
 from app.schemas.admin.admin import AdminAuditLogCreate
 from app.schemas.admin.admin_memberships import (
     MembershipDecisionResult,
-    MembershipLifecycleResult,
     MembershipRequestList,
     MembershipRequestView,
     MembershipRoster,
     MembershipRosterEntry,
 )
-from app.services.invitations import platform_admin_invitations as invitations
 
 ALLOWED_ROLES = frozenset({"staff", "faculty"})
 REQUEST_STATUSES = frozenset({"pending", "approved", "rejected"})
 ROSTER_STATUSES = frozenset(
-    {"active", "inactive", "deactivated"}
+    {"active", "inactive", "suspended", "deactivated"}
 )
 
 
@@ -235,81 +236,3 @@ def list_roster(
         )
     entries.sort(key=lambda item: (item.role, item.email.lower()))
     return MembershipRoster(members=entries, total=len(entries))
-
-
-def set_active(
-    actor: dict[str, Any], institution_id: UUID, user_id: UUID, *, active: bool
-) -> MembershipLifecycleResult:
-    client = get_admin_client()
-    user = repo.get_user(client, user_id)
-    grants = repo.list_user_grants(client, user_id)
-    scoped_roles: set[str] = set()
-    has_target_scope = False
-    for grant in grants:
-        role_row = grant.get("roles") or {}
-        role_name = role_row.get("name") if isinstance(role_row, dict) else None
-        if role_name:
-            scoped_roles.add(str(role_name))
-        if (
-            role_name in ALLOWED_ROLES
-            and grant.get("scope_type") == "institution"
-            and str(grant.get("scope_id")) == str(institution_id)
-        ):
-            has_target_scope = True
-    if user is None or not has_target_scope:
-        raise AppError("Staff or faculty member not found", 404, "MEMBERSHIP_NOT_FOUND")
-    if scoped_roles - ALLOWED_ROLES:
-        raise AppError(
-            "Accounts with other roles cannot be changed through this roster",
-            409,
-            "PROTECTED_ROLE",
-        )
-    desired = "active" if active else "deactivated"
-    current = str(user.get("status"))
-    if current == desired:
-        return MembershipLifecycleResult(
-            user_id=user_id,
-            status=desired,
-            already_applied=True,
-            message=f"Member is already {desired}.",
-        )
-    expected = ("inactive", "deactivated") if active else ("active", "inactive")
-    if not repo.set_user_status(client, user_id, expected=expected, status=desired):
-        raise AppError("Member status changed concurrently", 409, "MEMBERSHIP_STATUS_CONFLICT")
-    role_label = "faculty" if "faculty" in scoped_roles else "staff"
-    _audit(
-        actor,
-        institution_id,
-        f"{role_label}_{'reactivated' if active else 'deactivated'}",
-        str(user_id),
-        {"role": role_label, "status": desired},
-    )
-    return MembershipLifecycleResult(
-        user_id=user_id,
-        status=desired,
-        already_applied=False,
-        message=f"Member {desired}.",
-    )
-
-
-def resend(
-    actor: dict[str, Any], institution_id: UUID, invitation_id: UUID, peer: str | None
-):
-    invitation = invitation_repo.get_invitation_by_id(get_admin_client(), invitation_id)
-    if (
-        invitation is None
-        or str(invitation.get("institution_id")) != str(institution_id)
-        or invitation.get("role_name") not in ALLOWED_ROLES
-    ):
-        raise AppError("Invitation not found", 404, "INVITATION_NOT_FOUND")
-    result = invitations.resend_invitation(
-        actor, institution_id, invitation_id, peer=peer
-    )
-    _audit(
-        actor,
-        institution_id,
-        "membership_invitation_resent",
-        str(invitation_id),
-        {"role": invitation["role_name"], "email": invitation["email"]},
-    )
-    return result

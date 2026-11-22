@@ -8,7 +8,8 @@ permission dependency; it contains no endpoint handlers.
 | `dependencies.py` | Permission policy map, fail-closed authorization, Admin/Staff role dependencies and feature router factory |
 | `common.py` | Institution/row/student guards, database client access and audit recording |
 | `overview.py` | Admin identity and dashboard |
-| `memberships.py` | Staff/faculty onboarding decisions, roster, activation and invitation resend |
+| `members/memberships.py` | Staff/faculty onboarding decisions, roster, role, primary department, activate/suspend/deactivate and invitations |
+| `members/profiles.py` | Staff/faculty employee profiles and additional departments |
 | `knowledge_sources.py` | Knowledge source creation, listing and updates |
 | `documents.py` | Document listing, upload, versions and deletion |
 | `faqs.py` | FAQ management and publication |

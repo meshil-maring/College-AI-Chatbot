@@ -78,6 +78,11 @@ class MembershipRosterEntry(BaseModel):
     department_id: UUID | None = None
     department_code: str | None = None
     department_name: str | None = None
+    # Employee profile summary; empty until the administrator completes it.
+    employee_id: str | None = None
+    designation: str | None = None
+    employment_type: str | None = None
+    additional_department_names: list[str] = []
 
 
 class MembershipRoster(BaseModel):
@@ -87,6 +92,6 @@ class MembershipRoster(BaseModel):
 
 class MembershipLifecycleResult(BaseModel):
     user_id: UUID
-    status: Literal["active", "deactivated"]
+    status: Literal["active", "suspended", "deactivated"]
     already_applied: bool
     message: str

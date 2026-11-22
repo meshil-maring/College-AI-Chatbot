@@ -52,7 +52,7 @@ async def refresh_session(body: RefreshRequest, request: Request) -> dict:
         # inactive-account convention as /auth/me without exposing status on
         # password login or changing the approval/institution guards above.
         if account is not None and (
-            account.get("status") in {"inactive", "deactivated"}
+            account.get("status") in {"inactive", "suspended", "deactivated"}
             or account.get("student_is_active") is False
         ):
             raise AppError(

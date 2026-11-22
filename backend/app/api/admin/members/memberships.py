@@ -1,4 +1,4 @@
-"""Admin memberships endpoints."""
+"""Admin memberships endpoints: requests, roster, role, department, status, invitations."""
 
 from uuid import UUID
 
@@ -22,7 +22,14 @@ from app.schemas.admin.member_invitations import (
     MemberInvitationCreated,
     MemberInvitationList,
 )
-from app.services.admin import admin_memberships, member_departments, member_invitations, member_roles
+from app.services.admin import (
+    admin_memberships,
+    member_departments,
+    member_invitations,
+    member_profiles,
+    member_roles,
+    member_status,
+)
 from app.api.admin import common
 from app.api.admin.dependencies import create_feature_router, _ADMIN
 
@@ -87,7 +94,8 @@ def list_membership_roster(
 ) -> MembershipRoster:
     institution_id = common.required_institution(current_user)
     roster = admin_memberships.list_roster(institution_id, role=role, status=status)
-    return member_departments.with_departments(institution_id, roster)
+    roster = member_departments.with_departments(institution_id, roster)
+    return member_profiles.with_profiles(institution_id, roster)
 
 
 @router.put(
@@ -126,8 +134,8 @@ def deactivate_membership(
     user_id: UUID,
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipLifecycleResult:
-    return admin_memberships.set_active(
-        current_user, common.required_institution(current_user), user_id, active=False
+    return member_status.set_status(
+        current_user, common.required_institution(current_user), user_id, "deactivated"
     )
 
 
@@ -139,8 +147,22 @@ def reactivate_membership(
     user_id: UUID,
     current_user: dict = Depends(_ADMIN),
 ) -> MembershipLifecycleResult:
-    return admin_memberships.set_active(
-        current_user, common.required_institution(current_user), user_id, active=True
+    return member_status.set_status(
+        current_user, common.required_institution(current_user), user_id, "active"
+    )
+
+
+@router.post(
+    "/memberships/{user_id}/suspend",
+    response_model=MembershipLifecycleResult,
+)
+def suspend_membership(
+    user_id: UUID,
+    current_user: dict = Depends(_ADMIN),
+) -> MembershipLifecycleResult:
+    # Pauses access until reactivated; the account and its records are kept.
+    return member_status.set_status(
+        current_user, common.required_institution(current_user), user_id, "suspended"
     )
 
 
@@ -154,7 +176,7 @@ def resend_membership_invitation(
     current_user: dict = Depends(_ADMIN),
 ) -> AdminInvitationResendResponse:
     peer = request.client.host if request.client else "unknown"
-    return admin_memberships.resend(
+    return member_invitations.resend(
         current_user, common.required_institution(current_user), invitation_id, peer
     )
 

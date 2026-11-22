@@ -24,7 +24,10 @@ verifies parity. Generation never deploys SQL.
 
 The superseded `20261107000000_student_academic_transfers` draft created tables
 no code could write to. `20261121000000` drops them only while empty, and the
-draft is recorded as applied on hosted projects so it never runs again.
+draft is recorded as applied on hosted projects so it never runs again. The
+draft file is now an empty, documented no-op: its tables referenced
+`public.subjects` and `public.academic_batches`, which no longer exist after
+`20261026000000`, so it blocked every fresh local replay.
 
 ## Source of truth
 

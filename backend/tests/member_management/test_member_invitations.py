@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from app.api.admin import memberships as routes
+from app.api.admin.members import memberships as routes
 from app.api.admin.dependencies import _ADMIN_ROUTE_PERMISSIONS
 from app.core.errors import AppError
 from app.core.security import get_current_user

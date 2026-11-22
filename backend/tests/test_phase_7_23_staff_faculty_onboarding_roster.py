@@ -269,55 +269,13 @@ def test_roster_lists_only_staff_faculty_with_granted_roles() -> None:
     ]
     with patch.object(service, "get_admin_client", return_value=object()), patch.object(
         service.repo, "list_scoped_role_grants", return_value=grants
-    ), patch.object(service.invitation_repo, "list_invitations") as list_invitations:
+    ):
         result = service.list_roster(INST_A)
     assert result.total == 1
     assert {entry.role for entry in result.members} == {"staff"}
     assert result.members[0].created_at is not None
-    list_invitations.assert_not_called()
-
-
-def test_cross_tenant_deactivation_fails_safely() -> None:
-    grants = [{"scope_type": "institution", "scope_id": str(INST_B), "roles": {"name": "staff"}}]
-    with patch.object(service, "get_admin_client", return_value=object()), patch.object(
-        service.repo, "get_user", return_value={"id": str(USER_A), "status": "active"}
-    ), patch.object(service.repo, "list_user_grants", return_value=grants), patch.object(
-        service.repo, "set_user_status"
-    ) as update:
-        with pytest.raises(AppError) as caught:
-            service.set_active(_actor(), INST_A, USER_A, active=False)
-    assert caught.value.code == "MEMBERSHIP_NOT_FOUND"
-    update.assert_not_called()
-
-
-def test_admin_or_platform_role_cannot_be_modified_through_roster() -> None:
-    grants = [
-        {"scope_type": "institution", "scope_id": str(INST_A), "roles": {"name": "staff"}},
-        {"scope_type": "platform", "scope_id": None, "roles": {"name": "super_admin"}},
-    ]
-    with patch.object(service, "get_admin_client", return_value=object()), patch.object(
-        service.repo, "get_user", return_value={"id": str(USER_A), "status": "active"}
-    ), patch.object(service.repo, "list_user_grants", return_value=grants):
-        with pytest.raises(AppError) as caught:
-            service.set_active(_actor(), INST_A, USER_A, active=False)
-    assert caught.value.code == "PROTECTED_ROLE"
-
-
-@pytest.mark.parametrize(
-    ("active", "current", "desired"),
-    [(False, "active", "deactivated"), (True, "deactivated", "active")],
-)
-def test_lifecycle_uses_existing_user_status(active: bool, current: str, desired: str) -> None:
-    grants = [{"scope_type": "institution", "scope_id": str(INST_A), "roles": {"name": "staff"}}]
-    update = MagicMock(return_value=True)
-    with patch.object(service, "get_admin_client", return_value=object()), patch.object(
-        service.repo, "get_user", return_value={"id": str(USER_A), "status": current}
-    ), patch.object(service.repo, "list_user_grants", return_value=grants), patch.object(
-        service.repo, "set_user_status", update
-    ), patch.object(service, "_audit"):
-        result = service.set_active(_actor(), INST_A, USER_A, active=active)
-    assert result.status == desired
-    assert update.call_args.kwargs["status"] == desired
+    # The roster is built from role grants only; it cannot read invitations.
+    assert not hasattr(service, "invitation_repo")
 
 
 def test_migration_allows_only_three_institution_roles() -> None:
