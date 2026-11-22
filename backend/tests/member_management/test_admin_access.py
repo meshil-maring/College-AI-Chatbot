@@ -33,51 +33,80 @@ def grant(role, tenant):
                 {"permissions": {"code": code, "scope": "global", "is_active": True}} for code in ADMIN_CODES]}}
 
 
-def load(row_extra):
+class Query:
+    def __init__(self, data=None, failure=None):
+        self.data, self.failure, self.projection = data, failure, None
+
+    def select(self, projection):
+        self.projection = projection
+        return self
+
+    def eq(self, *_args):
+        return self
+
+    def maybe_single(self):
+        return self
+
+    def execute(self):
+        if self.failure:
+            raise self.failure
+        return SimpleNamespace(data=self.data)
+
+
+def load(access_rows=None, failure=None, roles=("admin", "admin")):
     row = {"user_id": OWNER, "auth_user_id": "auth", "email": "a@x.test", "status": "active",
-           "user_roles": [grant("admin", INST_A), grant("admin", INST_B)], "user_permission_grants": [],
-           "students": [], **row_extra}
+           "user_roles": [grant(roles[0], INST_A), grant(roles[1], INST_B)], "user_permission_grants": [],
+           "students": []}
+    tables = {"users": Query(row), "institution_admin_access": Query(access_rows or [], failure)}
+    client = SimpleNamespace(table=lambda name: tables[name])
+    with patch("app.db.supabase.get_admin_client", return_value=client):
+        user = asyncio.run(supabase.get_user_by_auth_id("auth", include_permissions=True))
+    return user, tables
 
-    class Query:
-        def select(self, projection):
-            self.projection = projection
-            return self
 
-        def eq(self, *_args):
-            return self
-
-        def maybe_single(self):
-            return self
-
-        def execute(self):
-            return SimpleNamespace(data=row)
-
-    query = Query()
-    with patch("app.db.supabase.get_admin_client", return_value=SimpleNamespace(table=lambda _name: query)):
-        return asyncio.run(supabase.get_user_by_auth_id("auth", include_permissions=True)), query.projection
+def coded(code):
+    failure = Exception("database said no")
+    failure.code = code
+    return failure
 
 
 def test_a_limited_admin_grant_keeps_only_the_allowed_codes_of_that_institution():
-    user, projection = load({"institution_admin_access": [
-        {"institution_id": INST_A, "allowed_codes": ["notices.read", "profile.own.read"]}]})
+    user, tables = load([{"institution_id": INST_A, "allowed_codes": ["notices.read", "profile.own.read"]}])
     by_tenant = {item["scope_id"]: item["permissions"] for item in user["role_assignments"]}
     assert by_tenant[INST_A] == ["notices.read"]
     assert by_tenant[INST_B] == sorted(ADMIN_CODES)  # another institution's grant is untouched
-    assert "institution_admin_access!institution_admin_access_user_id_fkey(" in projection
+    # Sign-in never embeds the limit table in the account query.
+    assert "institution_admin_access" not in tables["users"].projection
 
 
 def test_no_limit_means_full_access_and_future_codes_are_kept():
-    user, _ = load({"institution_admin_access": []})
+    user, _ = load([])
     assert user["role_assignments"][0]["permissions"] == sorted(ADMIN_CODES)
     assert "brand.new" in user["effective_permissions"]
 
 
+@pytest.mark.parametrize("code", ["PGRST205", "42P01"])
+def test_sign_in_works_before_the_access_migration_is_applied(code):
+    user, _ = load(failure=coded(code))
+    assert user["role_assignments"][0]["permissions"] == sorted(ADMIN_CODES)
+
+
+def test_other_limit_read_failures_refuse_rather_than_grant_full_access():
+    with pytest.raises(Exception, match="database said no"):
+        load(failure=coded("08006"))
+
+
+def test_accounts_without_an_admin_grant_never_read_the_limit_table():
+    user, tables = load(failure=coded("08006"), roles=("staff", "faculty"))
+    assert user is not None and tables["institution_admin_access"].projection is None
+
+
 def test_limits_apply_only_to_institution_admin_grants():
-    limits = admin_access_limits({"institution_admin_access": {"institution_id": INST_A, "allowed_codes": []}})
+    limits = admin_access_limits({"institution_id": INST_A, "allowed_codes": []})
     assert limit_grant_permissions("admin", "institution", INST_A, {"users.read"}, limits) == set()
     assert limit_grant_permissions("staff", "institution", INST_A, {"users.read"}, limits) == {"users.read"}
     assert limit_grant_permissions("admin", "platform", INST_A, {"users.read"}, limits) == {"users.read"}
-    assert admin_access_limits({"institution_admin_access": "unexpected"}) == {}
+    assert admin_access_limits("unexpected") == {}
 
 
 def test_access_body_accepts_known_areas_once_or_null_for_full_access():

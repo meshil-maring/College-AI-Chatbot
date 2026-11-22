@@ -67,7 +67,8 @@ def test_database_permission_projection_enforces_permission_scope(
 
     class Query:
         def select(self, projection):
-            self.projection = projection
+            # Keep the account projection; an admin's separate access-limit read follows it.
+            self.projection = getattr(self, "projection", None) or projection
             return self
 
         def eq(self, *_args):
