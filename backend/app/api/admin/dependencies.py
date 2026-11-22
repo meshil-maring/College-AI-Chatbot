@@ -38,6 +38,12 @@ _ADMIN_ROUTE_PERMISSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("GET", "/admin/memberships/responsibilities"): ("users.read",),
     ("POST", "/admin/memberships/responsibilities"): ("users.update",),
     ("POST", "/admin/memberships/responsibilities/{responsibility_id}/end"): ("users.update",),
+    # Administrators: any admin reads; the database lets only the Owner change them.
+    ("GET", "/admin/institution-admins"): ("users.read",),
+    ("POST", "/admin/institution-admins/invitations"): ("users.create", "roles.manage"),
+    ("POST", "/admin/institution-admins/invitations/{invitation_id}/cancel"): ("roles.manage",),
+    ("DELETE", "/admin/institution-admins/{user_id}"): ("roles.manage",),
+    ("PUT", "/admin/institution-admins/owner"): ("roles.manage",),
     ("PUT", "/admin/memberships/{user_id}/department"): ("users.update",),
     ("PUT", "/admin/memberships/{user_id}/role"): ("users.update", "roles.manage"),
     ("POST", "/admin/memberships/invitations/{invitation_id}/resend"): (

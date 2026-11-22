@@ -78,7 +78,7 @@ select presentation only and never authorize catalogue reads or mutations.
 The Students workspace uses `student-page=all`, `student-page=bulk`, and
 `student-page=requests`; Add Student is the default when no student page is set.
 Staff and Faculty Management uses `staff-page=invitations`, `staff-page=roster`,
-`staff-page=responsibilities` and `staff-page=permissions`; Requests is the default. Old `view=permissions` links open
+`staff-page=responsibilities`, `staff-page=administrators` and `staff-page=permissions`; Requests is the default. Old `view=permissions` links open
 the Staff permissions page, which is hidden (and falls back to Requests) without
 `permissions.read`.
 

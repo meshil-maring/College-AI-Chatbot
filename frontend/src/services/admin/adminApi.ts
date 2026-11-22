@@ -33,6 +33,13 @@ export {
   type StaffPermissionEntry,
   type StaffPermissionState,
 } from './memberships.ts'
+export {
+  cancelInstitutionAdminInvitation,
+  inviteInstitutionAdmin,
+  listInstitutionAdmins,
+  revokeInstitutionAdmin,
+  transferInstitutionOwnership,
+} from './administrators.ts'
 export { assignMemberResponsibility, endMemberResponsibility, listMemberResponsibilities } from './responsibilities.ts'
 export { AdminApiError } from './http.ts'
 export { getAdminIdentity } from './identity.ts'

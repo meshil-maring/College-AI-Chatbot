@@ -1,0 +1,56 @@
+"""Institution administrator endpoints: list, Owner invitations, removal and ownership.
+
+The institution is always the signed-in administrator's own. Any administrator
+may read the list; the database lets only the Owner change it.
+"""
+
+from uuid import UUID
+
+from fastapi import Depends
+
+from app.api.admin import common
+from app.api.admin.dependencies import _ADMIN, create_feature_router
+from app.schemas.admin.institution_admins import (
+    AdminInvitationCreate,
+    InstitutionAdminList,
+    InstitutionAdminResult,
+    OwnershipTransfer,
+)
+from app.services.admin import institution_admins
+
+router = create_feature_router()
+
+
+@router.get("/institution-admins", response_model=InstitutionAdminList)
+def list_administrators(current_user: dict = Depends(_ADMIN)) -> InstitutionAdminList:
+    return institution_admins.list_admins(current_user, common.required_institution(current_user))
+
+
+@router.post("/institution-admins/invitations", response_model=InstitutionAdminResult, status_code=201)
+def invite_administrator(
+    body: AdminInvitationCreate, current_user: dict = Depends(_ADMIN),
+) -> InstitutionAdminResult:
+    return institution_admins.invite(current_user, common.required_institution(current_user), body)
+
+
+@router.post("/institution-admins/invitations/{invitation_id}/cancel", response_model=InstitutionAdminResult)
+def cancel_administrator_invitation(
+    invitation_id: UUID, current_user: dict = Depends(_ADMIN),
+) -> InstitutionAdminResult:
+    return institution_admins.cancel_invitation(
+        current_user, common.required_institution(current_user), invitation_id
+    )
+
+
+@router.delete("/institution-admins/{user_id}", response_model=InstitutionAdminResult)
+def revoke_administrator(user_id: UUID, current_user: dict = Depends(_ADMIN)) -> InstitutionAdminResult:
+    return institution_admins.revoke(current_user, common.required_institution(current_user), user_id)
+
+
+@router.put("/institution-admins/owner", response_model=InstitutionAdminResult)
+def transfer_institution_ownership(
+    body: OwnershipTransfer, current_user: dict = Depends(_ADMIN),
+) -> InstitutionAdminResult:
+    return institution_admins.transfer_ownership(
+        current_user, common.required_institution(current_user), body.user_id
+    )
