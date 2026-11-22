@@ -516,8 +516,9 @@ END;
 $$;
 
 
-ALTER TABLE public.admin_audit_log ADD COLUMN decision_key text;
-CREATE UNIQUE INDEX b05_decision_audit_key ON public.admin_audit_log(decision_key);
+-- IF NOT EXISTS: the 20261019 deployment repair may have added these already.
+ALTER TABLE public.admin_audit_log ADD COLUMN IF NOT EXISTS decision_key text;
+CREATE UNIQUE INDEX IF NOT EXISTS b05_decision_audit_key ON public.admin_audit_log(decision_key);
 
 -- Approval/grant commits before provider confirmation, including repeat decisions.
 CREATE OR REPLACE FUNCTION "public"."phase723_approve_membership_and_grant_role"(
@@ -687,6 +688,12 @@ GRANT EXECUTE ON FUNCTION public.b05_advance_invitation_operation(uuid,text,text
 
 -- Separate student command. Existing API contract: live institution admin/staff,
 -- verified Auth linkage, active tenant. No student role added to invite allowlists.
+-- Created only where it is missing: 20261019 and 20261023 redefine this later,
+-- and projects that ran them without this migration already hold that version.
+DO $b05_approve$
+BEGIN
+    IF to_regprocedure('public.b05_approve_student(uuid,uuid,uuid,uuid)') IS NULL THEN
+        EXECUTE $ddl$
 CREATE FUNCTION public.b05_approve_student(
     p_student_id uuid, p_institution_id uuid, p_actor_user_id uuid, p_actor_auth_user_id uuid
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
@@ -734,11 +741,16 @@ BEGIN
         ON CONFLICT (decision_key) DO NOTHING;
     RETURN jsonb_build_object('student',to_jsonb(v_student),'role_granted',true,'audit_persisted',true);
 END;
-$$;
+$$
+$ddl$;
+    END IF;
+END
+$b05_approve$;
 REVOKE ALL ON FUNCTION public.b05_approve_student(uuid,uuid,uuid,uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.b05_approve_student(uuid,uuid,uuid,uuid) TO service_role;
 
-CREATE FUNCTION public.b05_reject_membership(
+-- OR REPLACE: projects that ran 20261028 without B05 hold its fallback version.
+CREATE OR REPLACE FUNCTION public.b05_reject_membership(
     p_request_id uuid, p_institution_id uuid, p_decided_by uuid, p_reason text
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE

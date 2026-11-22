@@ -588,7 +588,7 @@ ORIGINAL_TOKEN_RESOLVER = svc._resolve_live_invitation
 
 def test_sql_decision_audit_and_recovery_contracts_are_present_not_runtime_proof():
     source = SQL.read_text(encoding="utf-8")
-    assert "CREATE UNIQUE INDEX b05_decision_audit_key" in source
+    assert "CREATE UNIQUE INDEX IF NOT EXISTS b05_decision_audit_key" in source
     approval = source.split('CREATE OR REPLACE FUNCTION "public"."phase723_approve_membership_and_grant_role"',1)[1].split('$$;',1)[0]
     repeated = approval.split('IF "v_request"."status" = \'approved\'',1)[1].split('END IF;',2)[2]
     assert "INSERT INTO public.admin_audit_log" in repeated
