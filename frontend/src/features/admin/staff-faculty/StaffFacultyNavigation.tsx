@@ -1,4 +1,4 @@
-import { ClipboardCheck, KeyRound, MailPlus, UsersRound, type LucideIcon } from 'lucide-react'
+import { BadgeCheck, ClipboardCheck, KeyRound, MailPlus, UsersRound, type LucideIcon } from 'lucide-react'
 import type { StaffFacultyPage } from '../adminNavigation.ts'
 import '../students/studentWorkspace.css'
 
@@ -23,6 +23,12 @@ export const STAFF_FACULTY_PAGE_INFO: Record<
       'Everyone on staff: change roles and departments, appoint Heads of Department and deactivate accounts.',
     Icon: UsersRound,
   },
+  responsibilities: {
+    label: 'Responsibilities',
+    description:
+      'Extra duties of Faculty: the Head of Department rule, Class In-Charge of a section and Subject Coordinator of a course.',
+    Icon: BadgeCheck,
+  },
   permissions: {
     label: 'Staff permissions',
     description: 'Give active Staff members extra duties beyond their role.',
@@ -31,7 +37,7 @@ export const STAFF_FACULTY_PAGE_INFO: Record<
 }
 
 export function staffFacultyPages(canManagePermissions: boolean): StaffFacultyPage[] {
-  const pages: StaffFacultyPage[] = ['requests', 'invitations', 'roster']
+  const pages: StaffFacultyPage[] = ['requests', 'invitations', 'roster', 'responsibilities']
   return canManagePermissions ? [...pages, 'permissions'] : pages
 }
 

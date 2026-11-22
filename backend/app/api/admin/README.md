@@ -10,6 +10,7 @@ permission dependency; it contains no endpoint handlers.
 | `overview.py` | Admin identity and dashboard |
 | `members/memberships.py` | Staff/faculty onboarding decisions, roster, role, primary department, activate/suspend/deactivate and invitations |
 | `members/profiles.py` | Staff/faculty employee profiles and additional departments |
+| `members/responsibilities.py` | Class In-Charge and Subject Coordinator appointments (HOD stays under `/admin/department-heads`) |
 | `knowledge_sources.py` | Knowledge source creation, listing and updates |
 | `documents.py` | Document listing, upload, versions and deletion |
 | `faqs.py` | FAQ management and publication |

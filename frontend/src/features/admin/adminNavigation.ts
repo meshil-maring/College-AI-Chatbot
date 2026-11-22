@@ -5,7 +5,7 @@ export type AdminView =
   'staff-faculty' | 'academic-setup' | 'approvals' | 'notices' | 'documents' | 'faqs' | 'assistant' | 'profile'
 export type StudentWorkspacePage = 'register' | 'all' | 'bulk' | 'requests' | 'transfers' | 'new-transfer'
 /** Sub-pages of Staff and Faculty Management, in sidebar order. */
-export const STAFF_FACULTY_PAGES = ['requests', 'invitations', 'roster', 'permissions'] as const
+export const STAFF_FACULTY_PAGES = ['requests', 'invitations', 'roster', 'responsibilities', 'permissions'] as const
 export type StaffFacultyPage = (typeof STAFF_FACULTY_PAGES)[number]
 export interface AdminNavItem {
   readonly key: AdminView

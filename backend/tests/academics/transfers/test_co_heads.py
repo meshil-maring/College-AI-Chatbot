@@ -37,7 +37,7 @@ def test_add_and_end_routes_take_identity_only_from_the_path_and_body():
         assert client.post(base, json={"faculty_user_id": faculty, "institution_id": TENANT}).status_code == 422
         assert client.delete(f"{base}/{faculty}").status_code == 200
         assert client.delete(f"{base}/not-a-uuid").status_code == 422
-    adder.assert_called_once_with(user, department, faculty)
+    adder.assert_called_once_with(user, department, faculty, None, None)
     ender.assert_called_once_with(user, department, faculty)
 
 
@@ -62,7 +62,9 @@ def test_single_appointment_commands_revalidate_scope_and_call_the_writer(comman
     ):
         assert getattr(service, command)(user, department, faculty) == {"already_applied": False}
     scope.assert_called_once_with(client, user, TENANT)
-    writer.assert_called_once_with(client, user["user_id"], TENANT, department, faculty)
+    # Adding also passes the term; without one the appointment starts today.
+    extra = (None, None) if command == "add_department_head" else ()
+    writer.assert_called_once_with(client, user["user_id"], TENANT, department, faculty, *extra)
 
 
 def test_invalid_appointment_reports_the_existing_public_error():

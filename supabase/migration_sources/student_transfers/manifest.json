@@ -50,6 +50,16 @@
         "co_heads/heads.sql",
         "co_heads/security.sql"
       ]
+    },
+    {
+      "version": "20261129000000",
+      "name": "department_head_terms",
+      "files": [
+        "hod_terms/tables.sql",
+        "hod_terms/reads.sql",
+        "hod_terms/commands.sql",
+        "hod_terms/security.sql"
+      ]
     }
   ]
 }

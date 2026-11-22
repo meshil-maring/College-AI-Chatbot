@@ -33,6 +33,7 @@ export {
   type StaffPermissionEntry,
   type StaffPermissionState,
 } from './memberships.ts'
+export { assignMemberResponsibility, endMemberResponsibility, listMemberResponsibilities } from './responsibilities.ts'
 export { AdminApiError } from './http.ts'
 export { getAdminIdentity } from './identity.ts'
 export { listPendingStudents, approvePendingStudent, rejectPendingStudent } from './students.ts'

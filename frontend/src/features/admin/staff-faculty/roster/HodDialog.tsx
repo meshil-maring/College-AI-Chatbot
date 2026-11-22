@@ -4,7 +4,9 @@ import type { Department } from '../../../../types/academicSetup.ts'
 import type { MembershipRosterEntry } from '../../../../types/admin.ts'
 import { useWorkspaceDialog } from '../../../workspace/useWorkspaceDialog.ts'
 import { BUTTON_CLASS, PRIMARY_BUTTON_CLASS } from '../StaffFacultyUI.tsx'
-import type { HeadAppointment } from '../useDepartmentHeadActions.ts'
+import type { DepartmentHeadTerm } from '../../../../types/transfer.ts'
+import type { HeadAppointment, HeadSelection } from '../useDepartmentHeadActions.ts'
+import HodTermFields, { termError, todayIso } from './HodTermFields.tsx'
 
 interface Props {
   member: MembershipRosterEntry
@@ -12,14 +14,18 @@ interface Props {
   appointments: HeadAppointment[]
   coHeadsOf: (departmentId: string, exceptUserId: string) => string[]
   canAppoint: boolean
+  /** Institution policy: may one faculty member head several departments? */
+  allowMulti: boolean
   saving: boolean
-  onSave: (departmentIds: string[]) => void
+  onSave: (selections: HeadSelection[]) => void
   onClose: () => void
 }
 
 /**
- * Choose every department a faculty member heads. Departments may have more
- * than one Head of Department; all heads have the same authority.
+ * Choose every department a faculty member heads, each with a start date and an
+ * optional planned end. Departments may have more than one Head of Department;
+ * all heads have the same authority. After the planned end the appointment no
+ * longer counts.
  */
 export default function HodDialog({
   member,
@@ -27,20 +33,37 @@ export default function HodDialog({
   appointments,
   coHeadsOf,
   canAppoint,
+  allowMulti,
   saving,
   onSave,
   onClose,
 }: Props) {
   const ref = useWorkspaceDialog('#membership-roster-heading')
   const name = member.name || member.email
-  const initial = appointments.map((item) => item.departmentId)
-  const [selected, setSelected] = useState<string[]>(initial)
-  const changed = selected.length !== initial.length || selected.some((id) => !initial.includes(id))
+  const initial = Object.fromEntries(
+    appointments.map(({ departmentId, starts_on, planned_end_on }) => [departmentId, { starts_on, planned_end_on }]),
+  ) as Record<string, DepartmentHeadTerm>
+  const [terms, setTerms] = useState<Record<string, DepartmentHeadTerm>>(initial)
+  const selected = Object.keys(terms)
+  const changed = JSON.stringify(terms) !== JSON.stringify(initial)
+  const invalid = selected.some((id) => termError(terms[id]) !== null && !sameTerm(id))
   // Ended or deactivated departments the member still heads can only be removed.
   const inactive = appointments.filter((item) => !item.departmentActive)
+  // With the one-department policy, choosing a department locks the others.
+  const full = !allowMulti && selected.length >= 1
+
+  /** An unchanged existing term is never blocked, even if its start was long ago. */
+  function sameTerm(id: string) {
+    return JSON.stringify(terms[id]) === JSON.stringify(initial[id])
+  }
 
   function toggle(id: string, checked: boolean) {
-    setSelected((previous) => (checked ? [...previous, id] : previous.filter((item) => item !== id)))
+    setTerms((previous) => {
+      const next = { ...previous }
+      if (checked) next[id] = initial[id] ?? { starts_on: todayIso(), planned_end_on: null }
+      else delete next[id]
+      return next
+    })
   }
 
   function option(id: string, label: string, disabled: boolean) {
@@ -52,7 +75,7 @@ export default function HodDialog({
             type="checkbox"
             className="mt-0.5 size-5 shrink-0 accent-[var(--ui-accent)]"
             checked={selected.includes(id)}
-            disabled={saving || (disabled && !selected.includes(id))}
+            disabled={saving || ((disabled || full) && !selected.includes(id))}
             onChange={(event) => toggle(id, event.target.checked)}
           />
           <span className="flex min-w-0 flex-col">
@@ -65,6 +88,15 @@ export default function HodDialog({
             </span>
           </span>
         </label>
+        {selected.includes(id) ? (
+          <HodTermFields
+            id={`hod-term-${id}`}
+            label={label}
+            term={terms[id]}
+            disabled={saving}
+            onChange={(term) => setTerms((previous) => ({ ...previous, [id]: term }))}
+          />
+        ) : null}
       </li>
     )
   }
@@ -106,6 +138,11 @@ export default function HodDialog({
             Only active Faculty can be appointed. You can still end existing appointments.
           </p>
         ) : null}
+        {!allowMulti ? (
+          <p className="mb-3 text-sm text-muted">
+            Your institution allows one department per Head of Department. Change this under Responsibilities.
+          </p>
+        ) : null}
         {departments.length === 0 && inactive.length === 0 ? (
           <p className="text-sm text-muted">No active departments yet. Add one in Academic Setup first.</p>
         ) : (
@@ -126,8 +163,8 @@ export default function HodDialog({
         </button>
         <button
           type="button"
-          disabled={saving || !changed}
-          onClick={() => onSave(selected)}
+          disabled={saving || !changed || invalid}
+          onClick={() => onSave(selected.map((departmentId) => ({ departmentId, ...terms[departmentId] })))}
           className={PRIMARY_BUTTON_CLASS}
         >
           {saving ? 'Saving…' : 'Save'}

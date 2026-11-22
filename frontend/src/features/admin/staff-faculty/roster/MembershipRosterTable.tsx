@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { Department } from '../../../../types/academicSetup.ts'
 import type { MembershipRosterEntry } from '../../../../types/admin.ts'
 import { BUTTON_CLASS } from '../StaffFacultyUI.tsx'
+import type { HeadSelection } from '../useDepartmentHeadActions.ts'
 import HodDialog from './HodDialog.tsx'
 import MembershipRosterRow, { type RosterActions } from './MembershipRosterRow.tsx'
 import RosterToolbar from './RosterToolbar.tsx'
@@ -13,7 +14,9 @@ interface Props extends RosterActions {
   departments: Department[]
   loading: boolean
   coHeadsOf: (departmentId: string, exceptUserId: string) => string[]
-  saveHodDepartments: (member: MembershipRosterEntry, departmentIds: string[]) => Promise<void>
+  saveHodDepartments: (member: MembershipRosterEntry, selections: HeadSelection[]) => Promise<void>
+  /** Institution policy: may one faculty member head several departments? */
+  allowMultiHod: boolean
 }
 
 /**
@@ -26,6 +29,7 @@ export default function MembershipRosterTable({
   loading,
   coHeadsOf,
   saveHodDepartments,
+  allowMultiHod,
   ...actions
 }: Props) {
   const filters = useRosterFilters(members)
@@ -117,9 +121,10 @@ export default function MembershipRosterTable({
           appointments={actions.appointmentsOf(hodMember)}
           coHeadsOf={coHeadsOf}
           canAppoint={hodMember.role === 'faculty' && hodMember.status === 'active'}
+          allowMulti={allowMultiHod}
           saving={actions.actionKey === `hod:${hodMember.user_id}`}
-          onSave={(departmentIds) => {
-            void saveHodDepartments(hodMember, departmentIds).then(() => setHodUserId(null))
+          onSave={(selections) => {
+            void saveHodDepartments(hodMember, selections).then(() => setHodUserId(null))
           }}
           onClose={() => setHodUserId(null)}
         />

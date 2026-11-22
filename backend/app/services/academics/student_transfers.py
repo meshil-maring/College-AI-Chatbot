@@ -47,6 +47,14 @@ TRANSFER_ERRORS = {
         422, "TRANSFER_SEMESTER_MISMATCH",
         "Transfers must keep the same semester number. Only an administrator can override this.",
     ),
+    "P1114": (
+        409, "DEPARTMENT_HEAD_POLICY",
+        "This faculty member already heads another department, and your institution allows one department per head.",
+    ),
+    "P1115": (
+        422, "DEPARTMENT_HEAD_TERM_INVALID",
+        "The start date cannot be in the future and the planned end date cannot already have passed.",
+    ),
     "23505": (409, "TRANSFER_ALREADY_OPEN", "You already have an open transfer request."),
     "42501": (403, "FORBIDDEN", "You do not have permission to perform this action."),
 }
@@ -182,13 +190,34 @@ def assign_department_head(user, department_id, faculty_user_id):
     return _call(write)
 
 
-def add_department_head(user, department_id, faculty_user_id):
+def add_department_head(user, department_id, faculty_user_id, starts_on=None, planned_end_on=None):
     """Appoint one more Head of Department; current heads keep their appointment."""
     def write():
         client, tenant = _department_admin(user, "departments.manage")
         return repository.add_department_head(
-            client, str(user["user_id"]), tenant, department_id, faculty_user_id
+            client, str(user["user_id"]), tenant, department_id, faculty_user_id,
+            starts_on.isoformat() if starts_on else None,
+            planned_end_on.isoformat() if planned_end_on else None,
         )
+    return _call(write)
+
+
+def set_department_head_term(user, department_id, faculty_user_id, starts_on, planned_end_on):
+    """Change the start or planned end date of a current appointment."""
+    def write():
+        client, tenant = _department_admin(user, "departments.manage")
+        return repository.set_department_head_term(
+            client, str(user["user_id"]), tenant, department_id, faculty_user_id,
+            starts_on.isoformat(), planned_end_on.isoformat() if planned_end_on else None,
+        )
+    return _call(write)
+
+
+def set_department_head_policy(user, allow):
+    """Allow or stop one faculty member heading several departments."""
+    def write():
+        client, tenant = _department_admin(user, "departments.manage")
+        return repository.set_department_head_policy(client, str(user["user_id"]), tenant, allow)
     return _call(write)
 
 

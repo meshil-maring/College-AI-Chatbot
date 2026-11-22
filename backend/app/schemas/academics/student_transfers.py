@@ -4,10 +4,11 @@ The browser never supplies a student, institution, source section or program:
 the database derives them from the authenticated actor and current placement.
 """
 
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.schemas.academics.academic_setup import AcademicModel
 
@@ -44,6 +45,33 @@ class DepartmentHeadWrite(AcademicModel):
     faculty_user_id: UUID | None
 
 
+class DepartmentHeadTerm(AcademicModel):
+    """HOD term. The start cannot be in the future; the planned end is optional."""
+
+    starts_on: date
+    planned_end_on: date | None = None
+
+    @model_validator(mode="after")
+    def _term(self):
+        if self.planned_end_on is not None and self.planned_end_on < self.starts_on:
+            raise ValueError("The planned end date cannot be before the start date")
+        return self
+
+
 class DepartmentHeadAdd(AcademicModel):
     # One more Head of Department for the department; existing heads stay.
+    # Without a start date the appointment starts today.
     faculty_user_id: UUID
+    starts_on: date | None = None
+    planned_end_on: date | None = None
+
+    @model_validator(mode="after")
+    def _term(self):
+        if self.planned_end_on is not None and self.starts_on is not None and self.planned_end_on < self.starts_on:
+            raise ValueError("The planned end date cannot be before the start date")
+        return self
+
+
+class DepartmentHeadPolicy(AcademicModel):
+    # Whether one faculty member may head several departments at once.
+    allow_multi_department_hod: bool

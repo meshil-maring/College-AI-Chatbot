@@ -22,7 +22,8 @@ applicants no longer pick a department. The administrator also confirms Staff or
 Faculty on approval and can switch it from the roster; the server refuses a switch
 while the member is a current Head of Department or holds extra Staff permissions.
 Staff and Faculty Management has four sidebar pages (`StaffFacultyNavigation.tsx`,
-`staff-page` in the URL): Requests, Pending invitations, Roster and Staff permissions.
+`staff-page` in the URL): Requests, Pending invitations, Roster, Responsibilities and
+Staff permissions.
 `StaffFacultyManager.tsx` renders the chosen page; reads stay cached across pages.
 Each roster row keeps its actions (Manage HOD, Permissions, Deactivate/Reactivate) in one
 **Actions** menu (`roster/RowActionsMenu.tsx`), portalled so the table scroll never clips it.
@@ -51,6 +52,14 @@ The person accepts through the existing invitation page; the database then recor
 approved membership request decided by the inviting administrator, grants the role and
 assigns the departments and employee profile together (`20261127000000` to
 `20261128020000` migrations).
+**Responsibilities** (`responsibilities/`) are dated extra duties of Faculty, not roles.
+Heads of Department are appointed from the roster: `roster/HodDialog.tsx` gives each
+department a start date and optional planned end (`roster/HodTermFields.tsx`, UTC dates
+like the server) and respects the institution's one-department rule;
+`useDepartmentHeadActions.ts` ends, adds and re-dates appointments. `ResponsibilitiesPage.tsx`
+switches that rule and manages Class In-Charge (a class section) and Subject Coordinator
+(a catalogue course) through `useMemberResponsibilities.ts`; each section or course has
+one current holder, and history is kept (`20261129000000`/`20261129010000` migrations).
 The embedded permission list (`permissions/StaffPermissionList.tsx`) shows role grants
 read-only beside delegable permissions with readable labels.
 

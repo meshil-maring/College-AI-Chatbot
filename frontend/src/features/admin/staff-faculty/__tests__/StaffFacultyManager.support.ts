@@ -2,17 +2,21 @@ import { fireEvent, screen } from '@testing-library/react'
 import { beforeEach, vi } from 'vitest'
 import * as academics from '../../../../services/admin/academics.ts'
 import * as api from '../../../../services/admin/adminApi.ts'
+import * as structure from '../../../../services/admin/academicStructure.ts'
 import * as transfers from '../../../../services/students/transferApi.ts'
 import type { MembershipRosterEntry } from '../../../../types/admin.ts'
 
 // Import this module before StaffFacultyManager so both API modules are mocked.
 vi.mock('../../../../services/admin/adminApi.ts')
 vi.mock('../../../../services/admin/academics.ts', () => ({ getAcademicSetup: vi.fn() }))
+vi.mock('../../../../services/admin/academicStructure.ts', () => ({ getAcademicStructure: vi.fn() }))
 vi.mock('../../../../services/students/transferApi.ts', () => ({
   getDepartmentHeads: vi.fn(),
   assignDepartmentHead: vi.fn(),
   addDepartmentHead: vi.fn(),
   endDepartmentHead: vi.fn(),
+  setDepartmentHeadTerm: vi.fn(),
+  setDepartmentHeadPolicy: vi.fn(),
 }))
 
 export const request = {
@@ -84,7 +88,19 @@ beforeEach(() => {
     permissions: [],
     delegable_permissions: ['documents.read'],
   })
-  vi.mocked(transfers.getDepartmentHeads).mockResolvedValue({ institution_id: 'institution-1', heads: [], faculty: [] })
+  vi.mocked(transfers.getDepartmentHeads).mockResolvedValue({
+    institution_id: 'institution-1',
+    allow_multi_department_hod: true,
+    heads: [],
+    faculty: [],
+  })
+  vi.mocked(api.listMemberResponsibilities).mockResolvedValue({ responsibilities: [], total: 0 })
+  vi.mocked(structure.getAcademicStructure).mockResolvedValue({
+    institution_id: 'institution-1',
+    records: { academic_sections: [] },
+    manageable: [],
+    activities: [],
+  })
   vi.mocked(academics.getAcademicSetup).mockResolvedValue({
     institution_id: 'institution-1',
     records: { departments: [MECH, CSE, { ...CSE, department_id: 'old', name: 'Closed', is_active: false }] },

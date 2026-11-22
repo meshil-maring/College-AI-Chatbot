@@ -204,7 +204,8 @@ export function useStaffFacultyManagement(accessToken: string) {
     )
   }
 
-  const hod = useDepartmentHeadActions({ accessToken, heads, departments, runAction })
+  const allowMultiHod = headsQuery.data?.allow_multi_department_hod ?? true
+  const hod = useDepartmentHeadActions({ accessToken, heads, departments, allowMultiHod, runAction })
 
   return {
     requestFilter,

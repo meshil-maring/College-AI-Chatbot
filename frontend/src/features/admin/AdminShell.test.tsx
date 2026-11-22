@@ -88,7 +88,7 @@ describe('administrator account workspace', () => {
       within(pages)
         .getAllByRole('button')
         .map((item) => item.textContent),
-    ).toEqual(['Requests', 'Pending invitations', 'Roster', 'Staff permissions'])
+    ).toEqual(['Requests', 'Pending invitations', 'Roster', 'Responsibilities', 'Staff permissions'])
     expect(screen.getByRole('heading', { name: 'Requests', level: 1 })).toBeInTheDocument()
     expect(within(pages).getByRole('button', { name: 'Requests' })).toHaveAttribute('aria-current', 'page')
     await userEvent.click(within(pages).getByRole('button', { name: 'Roster' }))

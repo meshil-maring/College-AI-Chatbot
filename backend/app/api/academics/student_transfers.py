@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends
 
 from app.core.security import get_current_user, require_institution_roles
 from app.schemas.academics.student_transfers import (
-    DepartmentHeadAdd, DepartmentHeadWrite, DirectTransfer, TransferDecision, TransferSubmit,
+    DepartmentHeadAdd, DepartmentHeadPolicy, DepartmentHeadTerm, DepartmentHeadWrite, DirectTransfer,
+    TransferDecision, TransferSubmit,
 )
 from app.services.academics import student_transfers as service
 
@@ -80,7 +81,24 @@ def assign_department_head(
 def add_department_head(
     department_id: UUID, body: DepartmentHeadAdd, user: dict = Depends(_ADMIN),
 ):
-    return service.add_department_head(user, str(department_id), str(body.faculty_user_id))
+    return service.add_department_head(
+        user, str(department_id), str(body.faculty_user_id), body.starts_on, body.planned_end_on
+    )
+
+
+@router.put("/admin/department-heads/{department_id}/heads/{faculty_user_id}/term")
+def set_department_head_term(
+    department_id: UUID, faculty_user_id: UUID, body: DepartmentHeadTerm, user: dict = Depends(_ADMIN),
+):
+    return service.set_department_head_term(
+        user, str(department_id), str(faculty_user_id), body.starts_on, body.planned_end_on
+    )
+
+
+# Its own path so it never collides with /admin/department-heads/{department_id}.
+@router.put("/admin/department-head-policy")
+def set_department_head_policy(body: DepartmentHeadPolicy, user: dict = Depends(_ADMIN)):
+    return service.set_department_head_policy(user, body.allow_multi_department_hod)
 
 
 @router.delete("/admin/department-heads/{department_id}/heads/{faculty_user_id}")

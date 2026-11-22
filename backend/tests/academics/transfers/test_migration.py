@@ -27,6 +27,7 @@ def test_generated_migrations_match_sources_and_own_their_versions():
         "20261123000000_student_transfer_same_semester.sql",
         "20261124000000_student_transfer_notifications.sql",
         "20261126000000_department_co_heads.sql",
+        "20261129000000_department_head_terms.sql",
     ]
     for target, sql in migrations:
         assert target.read_text(encoding="utf-8") == sql

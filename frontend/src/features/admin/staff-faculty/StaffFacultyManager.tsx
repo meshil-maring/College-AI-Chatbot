@@ -7,6 +7,7 @@ import AddMemberDialog, { type InvitationDraft } from './invitations/AddMemberDi
 import PendingInvitations from './invitations/PendingInvitations.tsx'
 import { useMemberInvitations } from './invitations/useMemberInvitations.ts'
 import MembershipRequests from './requests/MembershipRequests.tsx'
+import ResponsibilitiesPage from './responsibilities/ResponsibilitiesPage.tsx'
 import MembershipRosterTable from './roster/MembershipRosterTable.tsx'
 import StaffFacultySummary from './StaffFacultySummary.tsx'
 import { Feedback, PRIMARY_BUTTON_CLASS } from './StaffFacultyUI.tsx'
@@ -14,7 +15,7 @@ import { useStaffFacultyManagement } from './useStaffFacultyManagement.ts'
 
 /**
  * Staff and Faculty Management, one page at a time: Requests, Pending
- * invitations, Roster and Staff permissions. The admin shell owns the page in
+ * invitations, Roster, Responsibilities and Staff permissions. The admin shell owns the page in
  * the URL (`staff-page`); without `page` the component keeps its own state.
  * Reads stay cached across pages, so switching pages shows saved data at once.
  */
@@ -119,6 +120,7 @@ export default function StaffFacultyManager({
           appointmentsOf={management.appointmentsOf}
           coHeadsOf={management.coHeadsOf}
           saveHodDepartments={management.saveHodDepartments}
+          allowMultiHod={management.allowMultiHod}
           managePermissions={
             canManagePermissions
               ? (member) => {
@@ -127,6 +129,16 @@ export default function StaffFacultyManager({
                 }
               : undefined
           }
+        />
+      ) : null}
+
+      {current === 'responsibilities' ? (
+        <ResponsibilitiesPage
+          accessToken={accessToken}
+          members={management.members}
+          headCount={management.headCount}
+          allowMultiHod={management.allowMultiHod}
+          onOpenRoster={() => navigate('roster')}
         />
       ) : null}
 

@@ -16,6 +16,7 @@ Moving to another batch of the same program is not handled here.
 | `20261123000000` | `student_transfer_same_semester` | Same-semester rule and the admin override |
 | `20261124000000` | `student_transfer_notifications` | Student notifications for transfer outcomes |
 | `20261126000000` | `department_co_heads` | Several equal HODs per department; one HOD may head several departments |
+| `20261129000000` | `department_head_terms` | HOD start and planned end dates; the institution's one-department rule |
 
 Applied migrations never change; new behaviour is a new entry in `follow_ups`
 (`manifest.json`) with its SQL in a subfolder. Generate everything with
@@ -62,6 +63,18 @@ may review its requests, and the first decision counts. `add_department_head` an
 replaces all heads with one (or removes all). Ended appointments keep their row,
 and every change is audited. A faculty member who loses their faculty grant loses
 HOD authority immediately.
+
+Since `20261129000000` each appointment has a start date (`starts_on`, never in the
+future) and an optional planned end (`planned_end_on`). It counts as current while it
+is not ended and its planned end has not passed (`department_head_in_effect`, UTC
+dates), so authority stops the day after the planned end without a scheduled job;
+`department_head_lock` records the end of such rows the next time that department
+changes. `institutions.allow_multi_department_hod` (default `true`) decides whether
+one faculty member may head several departments; switching it off keeps existing
+appointments and rejects new ones with `P1114`. Invalid dates raise `P1115`.
+`set_department_head_term` and `set_department_head_policy` change them, audited.
+Class In-Charge and Subject Coordinator are kept separately in
+`member_responsibilities` (`20261129010000`).
 
 - Rejection requires a reason. Reviewers may first mark a request `under_review`.
 - A direct transfer applies immediately, with no approval step. It is refused while

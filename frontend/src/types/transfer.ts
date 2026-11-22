@@ -112,7 +112,17 @@ export interface DepartmentHead {
   name: string
   email: string | null
   assigned_at: string
+  /** First day of the appointment (ISO date). */
+  starts_on: string
+  /** Optional last day; after it the appointment no longer counts. */
+  planned_end_on: string | null
   is_active_faculty: boolean
+}
+
+/** Start and optional planned end of a Head of Department appointment (ISO dates). */
+export interface DepartmentHeadTerm {
+  starts_on: string
+  planned_end_on: string | null
 }
 
 export interface FacultyCandidate {
@@ -134,6 +144,8 @@ export interface DepartmentHeadChange {
 
 export interface DepartmentHeads {
   institution_id: string
+  /** Whether one faculty member may head several departments at once. */
+  allow_multi_department_hod: boolean
   heads: DepartmentHead[]
   faculty: FacultyCandidate[]
 }

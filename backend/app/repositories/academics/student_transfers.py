@@ -70,10 +70,27 @@ def assign_department_head(client, actor_id, tenant, department_id, faculty_user
     }).execute().data
 
 
-def add_department_head(client, actor_id, tenant, department_id, faculty_user_id):
+def add_department_head(
+    client, actor_id, tenant, department_id, faculty_user_id, starts_on=None, planned_end_on=None,
+):
     return client.rpc("add_department_head", {
         "p_actor": actor_id, "p_tenant": tenant,
         "p_department": department_id, "p_faculty": faculty_user_id,
+        "p_starts_on": starts_on, "p_planned_end_on": planned_end_on,
+    }).execute().data
+
+
+def set_department_head_term(client, actor_id, tenant, department_id, faculty_user_id, starts_on, planned_end_on):
+    return client.rpc("set_department_head_term", {
+        "p_actor": actor_id, "p_tenant": tenant,
+        "p_department": department_id, "p_faculty": faculty_user_id,
+        "p_starts_on": starts_on, "p_planned_end_on": planned_end_on,
+    }).execute().data
+
+
+def set_department_head_policy(client, actor_id, tenant, allow):
+    return client.rpc("set_department_head_policy", {
+        "p_actor": actor_id, "p_tenant": tenant, "p_allow": allow,
     }).execute().data
 
 

@@ -1,5 +1,6 @@
 import type {
   DepartmentHeadChange,
+  DepartmentHeadTerm,
   DepartmentHeads,
   DirectTransferBody,
   DirectTransferOptions,
@@ -65,10 +66,32 @@ export function addDepartmentHead(
   token: string,
   departmentId: string,
   facultyUserId: string,
+  term?: DepartmentHeadTerm,
 ): Promise<DepartmentHeadChange> {
   return requestJson('POST', `${ADMIN_BASE}/department-heads/${encodeURIComponent(departmentId)}/heads`, token, {
     faculty_user_id: facultyUserId,
+    ...(term ?? {}),
   })
+}
+
+/** Change the start or planned end date of a current appointment. */
+export function setDepartmentHeadTerm(
+  token: string,
+  departmentId: string,
+  facultyUserId: string,
+  term: DepartmentHeadTerm,
+): Promise<unknown> {
+  return requestJson(
+    'PUT',
+    `${ADMIN_BASE}/department-heads/${encodeURIComponent(departmentId)}/heads/${encodeURIComponent(facultyUserId)}/term`,
+    token,
+    term,
+  )
+}
+
+/** Allow or stop one faculty member heading several departments (institution-wide). */
+export function setDepartmentHeadPolicy(token: string, allow: boolean): Promise<unknown> {
+  return requestJson('PUT', `${ADMIN_BASE}/department-head-policy`, token, { allow_multi_department_hod: allow })
 }
 
 /** End one Head of Department's appointment; the department's other heads stay. */

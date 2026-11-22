@@ -15,13 +15,23 @@ function head(userId: string, name: string, departmentId = CSE.department_id) {
     name,
     email: null,
     assigned_at: '2026-11-21T00:00:00Z',
+    starts_on: '2026-11-21',
+    planned_end_on: null,
     is_active_faculty: true,
   }
 }
 
-function withHeads(heads: ReturnType<typeof head>[]) {
-  vi.mocked(transfers.getDepartmentHeads).mockResolvedValue({ institution_id: 'institution-1', heads, faculty: [] })
+function withHeads(heads: ReturnType<typeof head>[], allow = true) {
+  vi.mocked(transfers.getDepartmentHeads).mockResolvedValue({
+    institution_id: 'institution-1',
+    allow_multi_department_hod: allow,
+    heads,
+    faculty: [],
+  })
 }
+
+// New appointments start today (UTC) with no planned end unless changed.
+const TODAY_TERM = { starts_on: new Date().toISOString().slice(0, 10), planned_end_on: null }
 
 function change(departmentId: string) {
   return {
@@ -49,8 +59,8 @@ describe('Staff and Faculty Management — Head of Department', () => {
     fireEvent.click(within(dialog).getByRole('checkbox', { name: /Mechanical/ }))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(transfers.addDepartmentHead).toHaveBeenCalledTimes(2))
-    expect(transfers.addDepartmentHead).toHaveBeenCalledWith('jwt', CSE.department_id, teacher.user_id)
-    expect(transfers.addDepartmentHead).toHaveBeenCalledWith('jwt', MECH.department_id, teacher.user_id)
+    expect(transfers.addDepartmentHead).toHaveBeenCalledWith('jwt', CSE.department_id, teacher.user_id, TODAY_TERM)
+    expect(transfers.addDepartmentHead).toHaveBeenCalledWith('jwt', MECH.department_id, teacher.user_id, TODAY_TERM)
     expect(transfers.assignDepartmentHead).not.toHaveBeenCalled()
     expect(
       await screen.findByText('Tina Teacher is now Head of Department of Computer Science and Mechanical.'),
@@ -69,7 +79,7 @@ describe('Staff and Faculty Management — Head of Department', () => {
     fireEvent.click(option)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
     await waitFor(() =>
-      expect(transfers.addDepartmentHead).toHaveBeenCalledWith('jwt', CSE.department_id, teacher.user_id),
+      expect(transfers.addDepartmentHead).toHaveBeenCalledWith('jwt', CSE.department_id, teacher.user_id, TODAY_TERM),
     )
     expect(transfers.endDepartmentHead).not.toHaveBeenCalled()
   })

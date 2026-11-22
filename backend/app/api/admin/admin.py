@@ -13,6 +13,7 @@ from app.api.admin import (
 )
 from app.api.admin import student_approvals
 from app.api.admin.members import memberships, profiles as member_profiles
+from app.api.admin.members import responsibilities as member_responsibilities
 from app.api.admin import student_onboarding
 from app.api.admin.dependencies import _authorize_admin_endpoint
 
@@ -25,6 +26,7 @@ router = APIRouter(
 router.include_router(overview.router)
 router.include_router(memberships.router)
 router.include_router(member_profiles.router)
+router.include_router(member_responsibilities.router)
 router.include_router(knowledge_sources.router)
 router.include_router(documents.router)
 router.include_router(faqs.router)
