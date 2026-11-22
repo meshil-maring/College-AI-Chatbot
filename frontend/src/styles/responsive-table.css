@@ -1,0 +1,60 @@
+/*
+ * Shared responsive record table (DESIGN_SYSTEM.md §5).
+ * Wrap a table in `.ui-card-table-region` and give it `.ui-card-table`. When the
+ * region is narrower than 840px each row becomes a labeled card: cells show
+ * their `data-label` as a heading, and cells without a label (actions, empty
+ * states) span the full card width. Headers stay available to screen readers.
+ * Unlayered on purpose so it overrides Tailwind padding utilities on cells.
+ */
+.ui-card-table-region {
+  container-type: inline-size;
+}
+@container (max-width: 840px) {
+  .ui-card-table-region table.ui-card-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+  .ui-card-table-region table.ui-card-table > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .ui-card-table-region table.ui-card-table > tbody,
+  .ui-card-table-region table.ui-card-table > tbody > tr {
+    display: block;
+  }
+  .ui-card-table-region table.ui-card-table > tbody > tr {
+    padding: 12px 16px;
+    border-top: 1px solid var(--ui-border);
+  }
+  .ui-card-table-region table.ui-card-table > tbody > tr:first-child {
+    border-top: 0;
+  }
+  .ui-card-table-region table.ui-card-table > tbody > tr > td {
+    display: grid;
+    grid-template-columns: minmax(96px, 35%) minmax(0, 1fr);
+    align-items: start;
+    justify-items: start;
+    gap: 8px;
+    /* The base td height is a minimum in tables but fixed for grid items. */
+    height: auto;
+    padding: 4px 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+  }
+  .ui-card-table-region table.ui-card-table > tbody > tr > td[data-label]::before {
+    content: attr(data-label);
+    color: var(--ui-text-muted);
+    font-size: var(--ui-type-small);
+    font-weight: 600;
+  }
+  .ui-card-table-region table.ui-card-table > tbody > tr > td:not([data-label]) {
+    display: block;
+    padding-top: 12px;
+  }
+}

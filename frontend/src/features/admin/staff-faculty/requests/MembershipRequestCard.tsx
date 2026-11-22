@@ -49,7 +49,7 @@ export default function MembershipRequestCard({
 
   return (
     <article className="flex flex-col gap-4 rounded-xl border border-line bg-canvas/40 p-4 lg:flex-row lg:items-end">
-      <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="flex min-w-0 flex-1 items-start gap-3 lg:min-w-64">
         <Initials name={label} />
         <div className="min-w-0 space-y-1">
           <p className="font-semibold text-content">{request.full_name || 'Unnamed applicant'}</p>
@@ -63,7 +63,7 @@ export default function MembershipRequestCard({
       </div>
 
       {request.status === 'pending' ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end lg:max-w-xl">
           <label className="flex flex-col gap-1 text-xs font-medium text-muted">
             Role
             <select
@@ -80,7 +80,7 @@ export default function MembershipRequestCard({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-xs font-medium text-muted">
+          <label className="flex min-w-0 max-w-full flex-col gap-1 text-xs font-medium text-muted sm:flex-[1_1_14rem]">
             Department
             <select
               aria-label={`Department for ${label}`}
@@ -88,7 +88,7 @@ export default function MembershipRequestCard({
               value={departmentId}
               disabled={busy || departments.length === 0}
               onChange={(event) => onDepartmentChange(event.target.value)}
-              className={`${SELECT_CLASS} sm:min-w-56`}
+              className={`${SELECT_CLASS} w-full min-w-0`}
             >
               <option value="">Choose department…</option>
               {departments.map((department) => (

@@ -9,7 +9,11 @@ export function AccountSecurityPanel() {
   return (
     <div className="fixed bottom-4 right-4 z-40 max-w-[calc(100vw-32px)]">
       {open ? (
-        <div id="account-security-panel" className="flex flex-col items-end gap-2">
+        // A solid, height-capped card so the form stays readable and scrollable on short screens.
+        <div
+          id="account-security-panel"
+          className="flex max-h-[calc(100dvh-32px)] w-[min(420px,calc(100vw-32px))] flex-col items-end gap-2 overflow-y-auto overscroll-contain rounded-xl border border-control bg-surface p-3 shadow-2xl"
+        >
           <button
             type="button"
             onClick={() => void logoutAll()}

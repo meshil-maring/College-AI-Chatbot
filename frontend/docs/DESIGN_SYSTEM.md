@@ -153,7 +153,10 @@ At mobile sizes, sidebar width is `min(280px, calc(100vw - 48px))`.
 Prefer container queries for feature grids: above 1050px use up to four summary
 columns, 521–1050px use two, and up to 520px use one. Below 840px of available
 content width, convert management records to labeled cards, preserving sorting and
-actions. If a comparison requires a table, place horizontal scrolling inside its
+actions. For tables, wrap them in `.ui-card-table-region`, add `.ui-card-table` and give
+each cell a `data-label` (`src/styles/responsive-table.css`); unlabeled cells, such as
+actions, span the card. Grid and flex parents of wide content need `minmax(0, 1fr)`
+tracks or `min-width: 0` so the content cannot widen the page. If a comparison requires a table, place horizontal scrolling inside its
 own labeled region. Never require horizontal scrolling for the whole page.
 Wrap long names and identifiers; make any truncated value available on focus or
 through an accessible detail view. Allow control and row heights to grow with text.

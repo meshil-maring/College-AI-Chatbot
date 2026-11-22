@@ -101,6 +101,14 @@
     flex-direction: column;
     align-items: flex-start;
   }
+  .structure-actions button,
+  .structure-drawer button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+/* Card rows whenever the table panel itself is narrow (phones and sidebar tablets). */
+@container structure-table (max-width: 840px) {
   .structure-table,
   .structure-table tbody {
     display: block;
@@ -134,10 +142,5 @@
   }
   .structure-table td:first-child {
     font-weight: 600;
-  }
-  .structure-actions button,
-  .structure-drawer button {
-    min-width: 44px;
-    min-height: 44px;
   }
 }

@@ -91,7 +91,7 @@ export default function MembershipRosterRow({
           </div>
         </div>
       </td>
-      <td className="px-4 py-3">
+      <td data-label="Role" className="px-4 py-3">
         <select
           aria-label={`Role for ${label}`}
           value={member.role}
@@ -117,7 +117,7 @@ export default function MembershipRosterRow({
         ) : null}
         <Saving show={actionKey === `role:${member.user_id}`} />
       </td>
-      <td className="px-4 py-3">
+      <td data-label="Department" className="px-4 py-3">
         <select
           aria-label={`Department for ${label}`}
           value={member.department_id ?? ''}
@@ -137,10 +137,10 @@ export default function MembershipRosterRow({
         </select>
         <Saving show={actionKey === `department:${member.user_id}`} />
       </td>
-      <td className="px-4 py-3">
+      <td data-label="Status" className="whitespace-nowrap px-4 py-3">
         <StatusBadge status={member.status} />
       </td>
-      <td className="px-4 py-3">
+      <td className="whitespace-nowrap px-4 py-3">
         <div className="flex justify-end">
           <RowActionsMenu label={label} actions={menu} disabled={busy} busyText={busyText[actionKey ?? ''] ?? null} />
         </div>

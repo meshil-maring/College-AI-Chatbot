@@ -62,6 +62,8 @@
   }
   .admin-main {
     padding: var(--ui-space-4);
+    /* Keep the last content clear of the floating Account security button. */
+    padding-bottom: calc(var(--ui-space-4) + 64px);
   }
   .admin-nav-item,
   .admin-mobile-toggle,

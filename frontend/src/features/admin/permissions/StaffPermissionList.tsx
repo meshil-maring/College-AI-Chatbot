@@ -79,9 +79,9 @@ export default function StaffPermissionList({
             <Badge tone="neutral">Not granted</Badge>
           )
           return (
-            <li key={code} className="flex items-center gap-3 px-3 py-2">
+            <li key={code} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2">
               {selectable ? (
-                <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                <label className="flex min-w-[10rem] flex-1 cursor-pointer items-center gap-3">
                   <input
                     type="checkbox"
                     className="size-5 shrink-0 accent-[var(--ui-accent)]"
@@ -95,7 +95,7 @@ export default function StaffPermissionList({
                   {text}
                 </label>
               ) : (
-                <span className="flex min-w-0 flex-1 items-center gap-3 pl-8">{text}</span>
+                <span className="flex min-w-[10rem] flex-1 items-center gap-3 pl-8">{text}</span>
               )}
               {badge}
             </li>

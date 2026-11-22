@@ -6,8 +6,8 @@ export default function StudentApprovalTable({ model }: { model: ApprovalQueueMo
   const { visible, busyStudentId, canApprove, canReject, decide, filtered, currentPage, setPage } = model
   return (
     <>
-      <div className="students-table-scroll">
-        <table className="students-table directory students-approval-table">
+      <div className="students-table-scroll ui-card-table-region">
+        <table className="students-table directory students-approval-table ui-card-table">
           <caption className="sr-only">Student registrations awaiting approval</caption>
           <thead>
             <tr>
@@ -23,12 +23,14 @@ export default function StudentApprovalTable({ model }: { model: ApprovalQueueMo
           <tbody>
             {visible.map((student) => (
               <tr key={student.student_id}>
-                <td className="student-name">{field(student.student_number)}</td>
-                <td>{field(student.register_number)}</td>
-                <td>{field(student.university_roll_number)}</td>
-                <td>{field(student.email)}</td>
-                <td>{field(student.status)}</td>
-                <td>
+                <td className="student-name" data-label="Student number">
+                  {field(student.student_number)}
+                </td>
+                <td data-label="Register number">{field(student.register_number)}</td>
+                <td data-label="University roll number">{field(student.university_roll_number)}</td>
+                <td data-label="Email">{field(student.email)}</td>
+                <td data-label="Enrollment status">{field(student.status)}</td>
+                <td data-label="Approval status">
                   <span className="students-status invalid">
                     <Hourglass aria-hidden="true" />
                     {field(student.approval_status)}

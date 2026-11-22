@@ -87,6 +87,16 @@
 .students-approval-table .students-approval-actions {
   white-space: nowrap;
 }
+/* Card view (shared .ui-card-table): actions fill the card width. */
+@container (max-width: 840px) {
+  .students-approval-table .students-approval-actions {
+    justify-content: stretch;
+  }
+  .students-approval-table .students-approval-actions .students-button {
+    flex: 1;
+    justify-content: center;
+  }
+}
 .students-page-links {
   padding-inline: 0;
 }

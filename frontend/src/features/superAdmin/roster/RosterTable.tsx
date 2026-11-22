@@ -85,83 +85,91 @@ export function RosterTable({
       <p className="mt-4 text-sm text-muted">
         {roster.admin_count} active {roster.admin_count === 1 ? 'admin' : 'admins'} for {institutionCode}.
       </p>
-      <table className="mt-4 w-full text-left text-sm">
-        <caption className="sr-only">University Admins and pending invitations for {institutionCode}</caption>
-        <thead className="border-b border-line bg-surface text-xs uppercase tracking-wide text-muted">
-          <tr>
-            <th scope="col" className="px-4 py-3 font-semibold">
-              Email
-            </th>
-            <th scope="col" className="px-4 py-3 font-semibold">
-              Status
-            </th>
-            <th scope="col" className="px-4 py-3 font-semibold">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {roster.admins.map((entry) => (
-            <tr key={`admin-${entry.user_id ?? entry.email}`} className="border-b border-line">
-              <td className="px-4 py-3 text-content">{entry.email}</td>
-              <td className="px-4 py-3 text-muted">Active</td>
-              <td className="px-4 py-3">
-                <button
-                  type="button"
-                  onClick={() => onRevoke(entry)}
-                  disabled={busy !== null || entry.user_id === null}
-                  className="rounded-lg border border-danger px-3 py-2 text-xs font-medium text-danger hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
-                >
-                  Revoke
-                </button>
-              </td>
+      <div className="ui-card-table-region mt-4">
+        <table className="ui-card-table w-full text-left text-sm">
+          <caption className="sr-only">University Admins and pending invitations for {institutionCode}</caption>
+          <thead className="border-b border-line bg-surface text-xs uppercase tracking-wide text-muted">
+            <tr>
+              <th scope="col" className="px-4 py-3 font-semibold">
+                Email
+              </th>
+              <th scope="col" className="px-4 py-3 font-semibold">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3 font-semibold">
+                Actions
+              </th>
             </tr>
-          ))}
-          {roster.pending_invitations.map((entry) => (
-            <tr key={`invite-${entry.invitation_id ?? entry.email}`} className="border-b border-line">
-              <td className="px-4 py-3 text-content">{entry.email}</td>
-              <td className="px-4 py-3">
-                <div className="text-muted">{statusLabel(entry.status)}</div>
-                <div className={`mt-0.5 text-xs ${deliveryClass(entry.email_delivery_status)}`}>
-                  {deliveryLabel(entry.email_delivery_status, entry.email_delivery_attempts)}
-                </div>
-                {expiryLabel(entry.expires_at) !== '' ? (
-                  <div className="mt-0.5 text-xs text-muted">{expiryLabel(entry.expires_at)}</div>
-                ) : null}
-                {entry.resend_count !== null && entry.resend_count > 0 ? (
-                  <div className="mt-0.5 text-xs text-muted">Resent {entry.resend_count}&times;</div>
-                ) : null}
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  {entry.invitation_id !== null && (entry.status === 'invited' || entry.status === 'expired') ? (
-                    <button
-                      type="button"
-                      disabled={busy !== null}
-                      onClick={() => onResend(entry)}
-                      className="rounded-lg border border-accent px-3 py-2 text-xs font-medium text-accent hover:bg-raised focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
-                    >
-                      {busy === 'resend' ? 'Resending...' : 'Resend'}
-                    </button>
+          </thead>
+          <tbody>
+            {roster.admins.map((entry) => (
+              <tr key={`admin-${entry.user_id ?? entry.email}`} className="border-b border-line">
+                <td data-label="Email" className="px-4 py-3 text-content">
+                  {entry.email}
+                </td>
+                <td data-label="Status" className="px-4 py-3 text-muted">
+                  Active
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => onRevoke(entry)}
+                    disabled={busy !== null || entry.user_id === null}
+                    className="rounded-lg border border-danger px-3 py-2 text-xs font-medium text-danger hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
+                  >
+                    Revoke
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {roster.pending_invitations.map((entry) => (
+              <tr key={`invite-${entry.invitation_id ?? entry.email}`} className="border-b border-line">
+                <td data-label="Email" className="px-4 py-3 text-content">
+                  {entry.email}
+                </td>
+                <td data-label="Status" className="px-4 py-3">
+                  <div className="text-muted">{statusLabel(entry.status)}</div>
+                  <div className={`mt-0.5 text-xs ${deliveryClass(entry.email_delivery_status)}`}>
+                    {deliveryLabel(entry.email_delivery_status, entry.email_delivery_attempts)}
+                  </div>
+                  {expiryLabel(entry.expires_at) !== '' ? (
+                    <div className="mt-0.5 text-xs text-muted">{expiryLabel(entry.expires_at)}</div>
                   ) : null}
-                  {entry.status === 'invited' && entry.invitation_id !== null ? (
-                    <button
-                      type="button"
-                      disabled={busy !== null}
-                      onClick={() => onCancel(entry)}
-                      className="rounded-lg border border-control px-3 py-2 text-xs font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
-                    >
-                      {busy === 'cancel' ? 'Cancelling...' : 'Cancel'}
-                    </button>
-                  ) : (
-                    <span className="text-xs text-muted">No action</span>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  {entry.resend_count !== null && entry.resend_count > 0 ? (
+                    <div className="mt-0.5 text-xs text-muted">Resent {entry.resend_count}&times;</div>
+                  ) : null}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {entry.invitation_id !== null && (entry.status === 'invited' || entry.status === 'expired') ? (
+                      <button
+                        type="button"
+                        disabled={busy !== null}
+                        onClick={() => onResend(entry)}
+                        className="rounded-lg border border-accent px-3 py-2 text-xs font-medium text-accent hover:bg-raised focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
+                      >
+                        {busy === 'resend' ? 'Resending...' : 'Resend'}
+                      </button>
+                    ) : null}
+                    {entry.status === 'invited' && entry.invitation_id !== null ? (
+                      <button
+                        type="button"
+                        disabled={busy !== null}
+                        onClick={() => onCancel(entry)}
+                        className="rounded-lg border border-control px-3 py-2 text-xs font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
+                      >
+                        {busy === 'cancel' ? 'Cancelling...' : 'Cancel'}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted">No action</span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   )
 }

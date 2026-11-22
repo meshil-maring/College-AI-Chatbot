@@ -76,6 +76,7 @@
   color-scheme: dark;
 }
 .structure-table-panel {
+  container: structure-table / inline-size;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-md);
   overflow: auto;

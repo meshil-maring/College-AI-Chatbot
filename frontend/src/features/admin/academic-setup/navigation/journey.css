@@ -1,11 +1,14 @@
 .academic-workspace-flow {
   display: grid;
+  /* A fixed track stops wide children (the scrollable step strip) widening the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   min-width: 0;
   scroll-margin-top: calc(68px + var(--ui-space-6));
 }
 .academic-journey {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   padding: 20px;
   background: var(--ui-surface);
@@ -46,6 +49,8 @@
   cursor: pointer;
 }
 .academic-journey li {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 .academic-journey .academic-step-description {
@@ -58,7 +63,8 @@
   gap: 8px;
   width: 100%;
   min-height: 44px;
-  height: 100%;
+  /* Natural height: a 100% height pushed the step description out of the card. */
+  flex: 1 0 auto;
   padding: 12px;
   border: 1px solid var(--ui-border-control);
   border-radius: var(--ui-radius-md);

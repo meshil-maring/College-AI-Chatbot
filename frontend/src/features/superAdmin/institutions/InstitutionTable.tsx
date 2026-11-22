@@ -48,8 +48,8 @@ export function InstitutionTable({
     )
   }
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface">
-      <table className="w-full text-left text-sm">
+    <div className="ui-card-table-region overflow-hidden rounded-xl border border-line bg-surface">
+      <table className="ui-card-table w-full text-left text-sm">
         <caption className="sr-only">Institutions registered on the platform</caption>
         <thead className="border-b border-line bg-surface text-xs uppercase tracking-wide text-muted">
           <tr>
@@ -73,12 +73,18 @@ export function InstitutionTable({
         <tbody className="divide-y divide-slate-800">
           {institutions.map((institution) => (
             <tr key={institution.id} className="hover:bg-hover">
-              <td className="px-5 py-4 font-medium text-content">{institution.name}</td>
-              <td className="px-5 py-4 font-mono text-xs text-muted">{institution.code}</td>
-              <td className="px-5 py-4">
+              <td data-label="Institution" className="px-5 py-4 font-medium text-content">
+                {institution.name}
+              </td>
+              <td data-label="Code" className="px-5 py-4 font-mono text-xs text-muted">
+                {institution.code}
+              </td>
+              <td data-label="Status" className="px-5 py-4">
                 <StatusPill status={institution.status} />
               </td>
-              <td className="px-5 py-4 text-muted">{institution.admin_count}</td>
+              <td data-label="Admins" className="px-5 py-4 text-muted">
+                {institution.admin_count}
+              </td>
               <td className="px-5 py-4 text-right">
                 <button
                   type="button"
