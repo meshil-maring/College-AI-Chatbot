@@ -25,9 +25,13 @@ MIGRATIONS = Path(__file__).resolve().parents[3] / "supabase/migrations"
 client = TestClient(app, raise_server_exceptions=False)
 
 
+PROFILE = {"common": {"employee_id": "EMP-1", "designation": "Professor", "joining_date": "2026-01-05"},
+           "faculty": {"employment_type": "permanent", "employment_start_date": "2026-01-05"}}
+
+
 def body(**changes) -> MemberInvitationCreate:
     data = {"email": " Ada@Example.com ", "full_name": "  Ada   Lovelace ", "role": "faculty",
-            "department_id": str(DEPT_A)}
+            "department_id": str(DEPT_A), "profile": PROFILE}
     return MemberInvitationCreate(**{**data, **changes})
 
 

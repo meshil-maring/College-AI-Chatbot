@@ -14,13 +14,18 @@ export {
 export {
   type AdminIdentity,
   type AuditLogEntry,
+  type FacultyEmploymentType,
+  type MemberCommonProfile,
   type MemberDepartmentResult,
+  type MemberFacultyProfile,
   type MemberInvitation,
   type MemberInvitationCancelled,
   type MemberInvitationCreate,
   type MemberInvitationCreated,
   type MemberInvitationList,
+  type MemberProfileWrite,
   type MemberRoleResult,
+  type MemberStaffProfile,
   type MembershipDecisionResult,
   type MembershipLifecycleResult,
   type MembershipRequest,
@@ -29,5 +34,7 @@ export {
   type MembershipRole,
   type MembershipRoster,
   type MembershipRosterEntry,
+  type StaffCategory,
+  type StaffEmploymentType,
 } from './admin/memberships.ts'
 export { type PendingStudent } from './admin/students.ts'

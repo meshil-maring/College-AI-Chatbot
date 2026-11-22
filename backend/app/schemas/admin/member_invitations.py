@@ -14,8 +14,7 @@ from app.schemas.invitations.admin_invitations import EmailDeliveryOutcome
 class MemberInvitationCreate(BaseModel):
     """Everything the administrator chooses. Institution, expiry and token are server-side.
 
-    ``profile`` and ``additional_department_ids`` are optional: without them the
-    administrator completes the employee profile after the person accepts.
+    The employee profile is required; it is applied when the person accepts.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -24,24 +23,20 @@ class MemberInvitationCreate(BaseModel):
     full_name: str = Field(min_length=1, max_length=200)
     role: MembershipRole
     department_id: UUID
-    profile: MemberProfileWrite | None = None
+    profile: MemberProfileWrite
     additional_department_ids: list[UUID] = Field(default_factory=list, max_length=10)
 
     @model_validator(mode="after")
     def _profile_matches(self):
-        if self.profile is not None and self.profile.role != self.role:
+        if self.profile.role != self.role:
             raise ValueError("The profile details must match the selected role")
-        if self.additional_department_ids and self.profile is None:
-            raise ValueError("Additional departments are saved with the profile details")
         if self.department_id in self.additional_department_ids:
             raise ValueError("The primary department cannot also be an additional department")
         self.additional_department_ids = list(dict.fromkeys(self.additional_department_ids))
         return self
 
-    def database_profile(self) -> dict | None:
-        """The invited profile as stored on the invitation, or None."""
-        if self.profile is None:
-            return None
+    def database_profile(self) -> dict:
+        """The invited profile as stored on the invitation."""
         return self.profile.database_payload() | {
             "additional_department_ids": [str(item) for item in self.additional_department_ids]
         }

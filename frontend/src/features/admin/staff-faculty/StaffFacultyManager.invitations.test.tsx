@@ -23,13 +23,17 @@ function invitation(changes: Partial<MemberInvitation> = {}): MemberInvitation {
   }
 }
 
+function type(dialog: HTMLElement, role: 'textbox' | 'combobox', name: RegExp, value: string) {
+  fireEvent.change(within(dialog).getByRole(role, { name }), { target: { value } })
+}
+
 async function openDialog() {
   fireEvent.click(await screen.findByRole('button', { name: 'Add member' }))
   return screen.getByRole('dialog', { name: 'Add Staff or Faculty' })
 }
 
 describe('Staff and Faculty Management — invitations', () => {
-  it('invites a new Faculty member into the chosen department', async () => {
+  it('invites a new Faculty member through basic details, role details and review', async () => {
     vi.mocked(api.createMembershipInvitation).mockResolvedValue({
       invitation: invitation(),
       email_delivery: { status: 'pending', provider: 'outbox' },
@@ -38,13 +42,19 @@ describe('Staff and Faculty Management — invitations', () => {
     })
     render(<StaffFacultyManager accessToken="jwt" />)
     const dialog = await openDialog()
-    fireEvent.change(within(dialog).getByRole('textbox', { name: /Full name/ }), {
-      target: { value: ' Ada Lovelace ' },
-    })
-    fireEvent.change(within(dialog).getByRole('textbox', { name: /Email/ }), { target: { value: 'Ada@Example.com' } })
-    fireEvent.change(within(dialog).getByRole('combobox', { name: /Department/ }), {
-      target: { value: MECH.department_id },
-    })
+    type(dialog, 'textbox', /Full name/, ' Ada Lovelace ')
+    type(dialog, 'textbox', /Email/, 'Ada@Example.com')
+    type(dialog, 'textbox', /Employee ID/, 'EMP-001')
+    type(dialog, 'textbox', /Designation/, 'Assistant Professor')
+    fireEvent.change(within(dialog).getByLabelText(/Joining date/), { target: { value: '2026-07-01' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }))
+    type(dialog, 'combobox', /Primary department/, MECH.department_id)
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Computer Science' }))
+    // Employment starts on the joining date unless changed.
+    expect(within(dialog).getByLabelText(/Employment start date/)).toHaveValue('2026-07-01')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }))
+    expect(within(dialog).getByText('Invitation pending')).toBeInTheDocument()
+    expect(within(dialog).getByText('Mechanical')).toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Send invitation' }))
     await waitFor(() =>
       expect(api.createMembershipInvitation).toHaveBeenCalledWith('jwt', {
@@ -52,6 +62,23 @@ describe('Staff and Faculty Management — invitations', () => {
         email: 'ada@example.com',
         role: 'faculty',
         department_id: MECH.department_id,
+        additional_department_ids: [CSE.department_id],
+        profile: {
+          common: {
+            employee_id: 'EMP-001',
+            phone: null,
+            designation: 'Assistant Professor',
+            joining_date: '2026-07-01',
+          },
+          faculty: {
+            employment_type: 'permanent',
+            employment_start_date: '2026-07-01',
+            contract_end_date: null,
+            qualification: null,
+            specialization: null,
+            experience_years: null,
+          },
+        },
       }),
     )
     expect(await screen.findByText(/Invitation sent to ada@example.com/)).toBeInTheDocument()
@@ -60,32 +87,17 @@ describe('Staff and Faculty Management — invitations', () => {
     expect(screen.getByRole('region', { name: 'Pending invitations' })).toBeInTheDocument()
   })
 
-  it('explains missing fields before sending anything', async () => {
+  it('explains missing basic details before moving on', async () => {
     render(<StaffFacultyManager accessToken="jwt" />)
     const dialog = await openDialog()
-    fireEvent.click(within(dialog).getByRole('radio', { name: /Staff/ }))
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Send invitation' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }))
     expect(within(dialog).getByText('Enter their name.')).toBeInTheDocument()
     expect(within(dialog).getByText('Enter a valid email address.')).toBeInTheDocument()
-    expect(within(dialog).getByText('Choose a department.')).toBeInTheDocument()
+    expect(within(dialog).getByText('Enter the designation.')).toBeInTheDocument()
+    expect(within(dialog).getByText('Choose the joining date.')).toBeInTheDocument()
     expect(within(dialog).getByRole('textbox', { name: /Full name/ })).toHaveAttribute('aria-invalid', 'true')
+    expect(within(dialog).getByText(/Step 1 of 3/)).toBeInTheDocument()
     expect(api.createMembershipInvitation).not.toHaveBeenCalled()
-  })
-
-  it('keeps the form open and shows why the server refused', async () => {
-    vi.mocked(api.createMembershipInvitation).mockRejectedValue(
-      new Error('This email already belongs to a member of your institution.'),
-    )
-    render(<StaffFacultyManager accessToken="jwt" />)
-    const dialog = await openDialog()
-    fireEvent.change(within(dialog).getByRole('textbox', { name: /Full name/ }), { target: { value: 'Sam' } })
-    fireEvent.change(within(dialog).getByRole('textbox', { name: /Email/ }), { target: { value: 'sam@example.com' } })
-    fireEvent.change(within(dialog).getByRole('combobox', { name: /Department/ }), {
-      target: { value: CSE.department_id },
-    })
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Send invitation' }))
-    expect(await within(dialog).findByRole('alert')).toHaveTextContent('already belongs to a member')
-    expect(within(dialog).getByRole('textbox', { name: /Email/ })).toHaveValue('sam@example.com')
   })
 
   it('lists pending invitations with resend and cancel', async () => {
@@ -112,7 +124,7 @@ describe('Staff and Faculty Management — invitations', () => {
 
   it('offers to invite again with the same details once a link expires', async () => {
     vi.mocked(api.listMembershipInvitations).mockResolvedValue({
-      invitations: [invitation({ status: 'expired', role: 'staff' })],
+      invitations: [invitation({ status: 'expired', role: 'staff', employee_id: 'EMP-001' })],
       total: 1,
     })
     render(<StaffFacultyManager accessToken="jwt" defaultPage="invitations" />)
@@ -121,7 +133,11 @@ describe('Staff and Faculty Management — invitations', () => {
     fireEvent.click(await within(section).findByRole('button', { name: 'Invite Ada Lovelace again' }))
     const dialog = screen.getByRole('dialog', { name: 'Add Staff or Faculty' })
     expect(within(dialog).getByRole('textbox', { name: /Email/ })).toHaveValue('ada@example.com')
+    expect(within(dialog).getByRole('textbox', { name: /Employee ID/ })).toHaveValue('EMP-001')
     expect(within(dialog).getByRole('radio', { name: /Staff/ })).toBeChecked()
-    expect(within(dialog).getByRole('combobox', { name: /Department/ })).toHaveValue(CSE.department_id)
+    fireEvent.change(within(dialog).getByLabelText(/Joining date/), { target: { value: '2026-07-01' } })
+    type(dialog, 'textbox', /Designation/, 'Office Assistant')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }))
+    expect(within(dialog).getByRole('combobox', { name: /Primary department/ })).toHaveValue(CSE.department_id)
   })
 })

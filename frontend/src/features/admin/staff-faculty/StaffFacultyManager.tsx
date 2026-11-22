@@ -100,6 +100,8 @@ export default function StaffFacultyManager({
               email: invitation.email,
               role: invitation.role,
               department_id: invitation.department_id ?? undefined,
+              employee_id: invitation.employee_id ?? undefined,
+              designation: invitation.designation ?? undefined,
             })
           }
         />

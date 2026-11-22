@@ -68,6 +68,11 @@ export interface MembershipRosterEntry {
   department_id: string | null
   department_code: string | null
   department_name: string | null
+  /** Employee profile summary; null until the administrator completes it. */
+  employee_id?: string | null
+  designation?: string | null
+  employment_type?: string | null
+  additional_department_names?: string[]
 }
 
 export interface MemberRoleResult {
@@ -92,7 +97,7 @@ export interface MembershipRoster {
 
 export interface MembershipLifecycleResult {
   user_id: string
-  status: 'active' | 'deactivated'
+  status: 'active' | 'suspended' | 'deactivated'
   already_applied: boolean
   message: string
 }
@@ -101,11 +106,59 @@ export interface MembershipLifecycleResult {
 // Staff / Faculty invited by the administrator
 // ============================================================================
 
+export type FacultyEmploymentType = 'permanent' | 'temporary' | 'contractual' | 'visiting' | 'guest'
+export type StaffEmploymentType = 'permanent' | 'temporary' | 'contractual'
+export type StaffCategory =
+  | 'office_administration'
+  | 'accounts_finance'
+  | 'library'
+  | 'it_support'
+  | 'laboratory'
+  | 'hostel_administration'
+  | 'examination_office'
+  | 'other'
+
+/** Fields shared by every member type. Dates are ISO `YYYY-MM-DD`. */
+export interface MemberCommonProfile {
+  employee_id: string
+  phone?: string | null
+  designation: string
+  joining_date: string
+}
+
+export interface MemberFacultyProfile {
+  employment_type: FacultyEmploymentType
+  employment_start_date: string
+  /** Required unless employment is permanent. */
+  contract_end_date?: string | null
+  qualification?: string | null
+  specialization?: string | null
+  experience_years?: number | null
+}
+
+export interface MemberStaffProfile {
+  staff_category: StaffCategory
+  employment_type: StaffEmploymentType
+  employment_start_date: string
+  contract_end_date?: string | null
+  responsibilities: string[]
+}
+
+/** The common profile plus exactly one role profile matching the member's role. */
+export interface MemberProfileWrite {
+  common: MemberCommonProfile
+  faculty?: MemberFacultyProfile
+  staff?: MemberStaffProfile
+}
+
 export interface MemberInvitationCreate {
   email: string
   full_name: string
   role: MembershipRole
+  /** Primary department. */
   department_id: string
+  profile: MemberProfileWrite
+  additional_department_ids?: string[]
 }
 
 export interface MemberInvitation {
@@ -114,6 +167,8 @@ export interface MemberInvitation {
   full_name: string | null
   role: MembershipRole
   department_id: string | null
+  employee_id?: string | null
+  designation?: string | null
   status: 'invited' | 'accepted' | 'cancelled' | 'expired'
   expires_at: string | null
   created_at: string | null

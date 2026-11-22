@@ -82,12 +82,10 @@ def test_profile_has_exactly_one_role_section_and_a_flat_payload() -> None:
 
 def test_invitation_profile_must_match_the_role_and_departments() -> None:
     base = {"email": "ada@example.com", "full_name": "Ada", "role": "faculty", "department_id": str(DEPT_A)}
-    plain = MemberInvitationCreate(**base)
-    assert plain.database_profile() is None
+    with pytest.raises(ValidationError, match="profile"):
+        MemberInvitationCreate(**base)
     with pytest.raises(ValidationError, match="match the selected role"):
         MemberInvitationCreate(**base, profile={"common": COMMON, "staff": STAFF})
-    with pytest.raises(ValidationError, match="saved with the profile"):
-        MemberInvitationCreate(**base, additional_department_ids=[str(DEPT_B)])
     with pytest.raises(ValidationError, match="primary department"):
         MemberInvitationCreate(**base, profile={"common": COMMON, "faculty": FACULTY},
                                additional_department_ids=[str(DEPT_A)])

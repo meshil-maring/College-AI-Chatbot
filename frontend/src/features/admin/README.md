@@ -38,13 +38,19 @@ showing the error; late responses from a replaced session are discarded.
 `StaffFacultySummary.tsx` shows pending, active Faculty/Staff and unassigned counts;
 `roster/useRosterFilters.ts` searches and filters the loaded roster in the browser,
 and `StaffFacultyUI.tsx` holds the page's shared buttons, badges and dismissible feedback.
-**Add member** (`invitations/AddMemberDialog.tsx`) invites new Staff or Faculty by
-email with a name, role and department; `invitations/useMemberInvitations.ts` owns the
-pending list and resend/cancel, and `invitations/PendingInvitations.tsx` renders it
-(expired links offer **Invite again**). The person accepts through the existing
-invitation page; the database then records an approved membership request decided by
-the inviting administrator, grants the role and assigns the department together
-(`20261127000000`/`20261127010000` migrations).
+**Add member** (`invitations/AddMemberDialog.tsx`) invites new Staff or Faculty in
+three steps from `invitations/add-member/`: basic details (`BasicDetailsStep.tsx`:
+name, email, phone, employee ID, designation, joining date, user type), role details
+(`RoleDetailsStep.tsx` with `DepartmentFields.tsx` for primary and additional
+departments and `ResponsibilitiesField.tsx` for Staff), and `ReviewStep.tsx`.
+`useAddMemberDraft.ts` holds the draft and validates each step; `memberDraft.ts`
+mirrors the server rules and builds the request with the employee profile.
+`invitations/useMemberInvitations.ts` owns the pending list and resend/cancel, and
+`invitations/PendingInvitations.tsx` renders it (expired links offer **Invite again**).
+The person accepts through the existing invitation page; the database then records an
+approved membership request decided by the inviting administrator, grants the role and
+assigns the departments and employee profile together (`20261127000000` to
+`20261128020000` migrations).
 The embedded permission list (`permissions/StaffPermissionList.tsx`) shows role grants
 read-only beside delegable permissions with readable labels.
 
