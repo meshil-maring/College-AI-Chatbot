@@ -147,3 +147,15 @@ def test_non_admins_cannot_change_roles(role: str) -> None:
     response = client.put(f"/api/v1/admin/memberships/{USER_A}/role", json={"role": "faculty"})
     assert response.status_code == 403
 
+
+
+def test_only_active_direct_grants_block_the_switch_to_faculty() -> None:
+    """Revoked grants are history; unticking every permission must unblock the switch."""
+    client = MagicMock()
+    query = client.table.return_value.select.return_value
+    query.eq.return_value = query
+    query.is_.return_value = query
+    query.limit.return_value.execute.return_value.data = []
+    assert service.repo.has_direct_staff_grants(client, INST_A, USER_A) is False
+    client.table.assert_called_with("user_permission_grants")
+    query.is_.assert_called_once_with("revoked_at", "null")

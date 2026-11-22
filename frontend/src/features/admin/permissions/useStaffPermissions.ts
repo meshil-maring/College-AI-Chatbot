@@ -62,7 +62,10 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
     },
     queryClient,
   )
-  const [selectedCodes, setSelectedCodes] = useState<string[]>([])
+  // Boxes ticked or unticked since the last save: each flips that permission.
+  const [changedCodes, setChangedCodes] = useState<ReadonlySet<string>>(new Set())
+  // The list is read-only until the administrator chooses Edit.
+  const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [actionError, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -71,7 +74,8 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
   useEffect(() => {
     if (focus === null) return
     setSelectedUserId(focus.userId)
-    setSelectedCodes([])
+    setChangedCodes(new Set())
+    setEditing(false)
     setNotice(null)
   }, [focus])
 
@@ -85,20 +89,58 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
         ? message(stateQuery.error, 'Could not load this Staff member.')
         : null
 
-  async function apply(action: 'grant' | 'revoke') {
-    if (!selectedUserId || selectedCodes.length === 0) return
-    const verb = action === 'grant' ? 'Grant' : 'Revoke'
-    if (!window.confirm(`${verb} ${selectedCodes.length} permission(s) for this Staff member?`)) return
+  function toggle(code: string) {
+    setNotice(null)
+    setChangedCodes((previous) => {
+      const next = new Set(previous)
+      if (next.has(code)) next.delete(code)
+      else next.add(code)
+      return next
+    })
+  }
+
+  function selectMember(userId: string) {
+    setSelectedUserId(userId)
+    setChangedCodes(new Set())
+    setEditing(false)
+    setError(null)
+    setNotice(null)
+  }
+
+  const isGranted = (code: string) =>
+    (stateQuery.data?.permissions ?? []).some((item) => item.code === code && !item.inherited && item.direct_grant_id)
+  const toGrant = [...changedCodes].filter((code) => !isGranted(code))
+  const toRevoke = [...changedCodes].filter(isGranted)
+
+  async function save() {
+    if (!selectedUserId || changedCodes.size === 0) return
+    const parts = [
+      toGrant.length ? `grant ${toGrant.length}` : '',
+      toRevoke.length ? `revoke ${toRevoke.length}` : '',
+    ].filter(Boolean)
+    if (!window.confirm(`Save changes for this Staff member: ${parts.join(' and ')} permission(s)?`)) return
+    const stateKey = staffFacultyKeys.staffPermissions(accessToken, selectedUserId)
     setBusy(true)
     setError(null)
     setNotice(null)
+    let changed = 0
     try {
-      const result = await changeStaffPermissions(accessToken, selectedUserId, selectedCodes, action)
-      queryClient.setQueryData(staffFacultyKeys.staffPermissions(accessToken, selectedUserId), result.permissions)
-      setSelectedCodes([])
-      setNotice(`${verb} completed. ${result.changed} permission grant(s) changed.`)
+      for (const [action, codes] of [
+        ['grant', toGrant],
+        ['revoke', toRevoke],
+      ] as const) {
+        if (codes.length === 0) continue
+        const result = await changeStaffPermissions(accessToken, selectedUserId, codes, action)
+        // Record each step at once, so a failure in the next one keeps only
+        // the changes that were not applied.
+        queryClient.setQueryData(stateKey, result.permissions)
+        setChangedCodes((previous) => new Set([...previous].filter((code) => !codes.includes(code))))
+        changed += result.changed
+      }
+      setEditing(false)
+      setNotice(`Changes saved. ${changed} permission grant(s) changed.`)
     } catch (cause) {
-      setError(message(cause, `Could not ${verb.toLowerCase()} permissions.`))
+      setError(message(cause, 'Could not save permission changes.'))
     } finally {
       setBusy(false)
     }
@@ -107,16 +149,28 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
   return {
     members,
     selectedUserId,
-    setSelectedUserId,
+    selectMember,
     state: stateQuery.data ?? null,
     catalogue: catalogueQuery.data ?? [],
-    selectedCodes,
-    setSelectedCodes,
+    changedCodes,
+    toGrant,
+    toRevoke,
+    toggle,
+    editing,
+    startEditing: () => {
+      setEditing(true)
+      setError(null)
+      setNotice(null)
+    },
+    cancelEditing: () => {
+      setChangedCodes(new Set())
+      setEditing(false)
+      setError(null)
+    },
     loading,
     busy,
     error: actionError ?? loadError,
-    setError,
     notice,
-    apply,
+    save,
   }
 }

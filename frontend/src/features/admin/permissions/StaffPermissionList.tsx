@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react'
 import { Badge } from '../staff-faculty/StaffFacultyUI.tsx'
 
 interface PermissionState {
@@ -30,20 +29,20 @@ export function permissionLabel(code: string) {
 
 /**
  * Every permission this Staff member has or could be given, in one list.
- * Role grants are read-only; delegable permissions can be selected to grant
- * or revoke.
+ * Role grants are read-only. A delegable permission's box shows whether it is
+ * granted; ticking or unticking it marks a change that Save applies.
  */
 export default function StaffPermissionList({
   permissions,
   catalogue,
-  selectedCodes,
-  setSelectedCodes,
+  changedCodes,
+  onToggle,
   disabled,
 }: {
   permissions: PermissionState[]
   catalogue: string[]
-  selectedCodes: string[]
-  setSelectedCodes: Dispatch<SetStateAction<string[]>>
+  changedCodes: ReadonlySet<string>
+  onToggle: (code: string) => void
   disabled: boolean
 }) {
   const byCode = new Map(permissions.map((item) => [item.code, item]))
@@ -65,6 +64,7 @@ export default function StaffPermissionList({
           const inherited = state?.inherited ?? false
           const granted = !inherited && Boolean(state?.direct_grant_id)
           const selectable = !inherited && delegable.has(code)
+          const changed = selectable && changedCodes.has(code)
           const text = (
             <span className="flex min-w-0 flex-col">
               <span className="text-sm text-content">{permissionLabel(code)}</span>
@@ -73,6 +73,8 @@ export default function StaffPermissionList({
           )
           const badge = inherited ? (
             <Badge tone="neutral">Inherited role grant · read-only</Badge>
+          ) : changed ? (
+            <Badge tone={granted ? 'danger' : 'warning'}>{granted ? 'Will be revoked' : 'Will be granted'}</Badge>
           ) : granted ? (
             <Badge tone="success">{selectable ? 'Granted' : 'Direct grant'}</Badge>
           ) : (
@@ -85,12 +87,8 @@ export default function StaffPermissionList({
                   <input
                     type="checkbox"
                     className="size-5 shrink-0 accent-[var(--ui-accent)]"
-                    checked={selectedCodes.includes(code)}
-                    onChange={(event) =>
-                      setSelectedCodes((previous) =>
-                        event.target.checked ? [...previous, code] : previous.filter((item) => item !== code),
-                      )
-                    }
+                    checked={granted !== changed}
+                    onChange={() => onToggle(code)}
                   />
                   {text}
                 </label>

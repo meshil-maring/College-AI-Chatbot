@@ -106,8 +106,8 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "notices.read",
         }
     ),
-    # Staff is intentionally conservative; institution admins can configure
-    # additional job-function grants through role/direct permission management.
+    # Staff keeps only a baseline. Job-function permissions are per-member
+    # direct grants from DELEGABLE_STAFF_PERMISSIONS (20261204000000).
     "staff": frozenset(
         {
             "profile.own.read",
@@ -115,17 +115,8 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "notifications.own.read",
             "notifications.own.update",
             "ai.chat",
-            "ai.knowledge.create",
-            "students.read",
-            "students.update",
             "students.approve",
             "students.reject",
-            "documents.read",
-            "documents.create",
-            "documents.update",
-            "notices.read",
-            "notices.create",
-            "notices.update",
         }
     ),
     "student": frozenset(

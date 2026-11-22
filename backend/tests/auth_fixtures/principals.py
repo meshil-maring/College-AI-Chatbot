@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 
-from app.core.permission_defaults import DEFAULT_ROLE_PERMISSIONS
+from app.core.permission_defaults import DEFAULT_ROLE_PERMISSIONS, DELEGABLE_STAFF_PERMISSIONS
 from app.core.security.roles import resolve_primary_role
 from app.core.security.scoped_permissions import primary_scope_permissions
 
@@ -31,6 +31,13 @@ def resolved_principal(principal):
     ])
     for grant in user.get("role_assignments", []):
         grant.setdefault("permissions", sorted(DEFAULT_ROLE_PERMISSIONS.get(grant.get("role"), ())))
+    # Staff job-function permissions are direct grants (20261204000000); model
+    # a migrated Staff member who still holds every delegable permission.
+    if "staff" in user.get("roles", []) and user.get("institution_id"):
+        user.setdefault("direct_permission_grants", [
+            {"institution_id": user["institution_id"], "permission": code}
+            for code in sorted(DELEGABLE_STAFF_PERMISSIONS)
+        ])
     user.setdefault("permissions_resolved", True)
     user.setdefault("scoped_permissions_resolved", True)
     user.setdefault("effective_permissions", sorted(primary_scope_permissions(user, resolve_primary_role(user.get("roles", [])))))

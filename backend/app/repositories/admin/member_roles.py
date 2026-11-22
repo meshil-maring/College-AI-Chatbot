@@ -41,6 +41,7 @@ def has_direct_staff_grants(client: Client, institution_id: UUID | str, user_id:
         .select("grant_id")
         .eq("user_id", str(user_id))
         .eq("institution_id", str(institution_id))
+        .is_("revoked_at", "null")
         .limit(1)
         .execute()
     )

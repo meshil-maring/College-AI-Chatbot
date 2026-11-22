@@ -99,8 +99,14 @@ def permission_matches(granted: Iterable[str], required: str) -> bool:
 
 
 def fallback_permissions_for_roles(roles: Iterable[str]) -> frozenset[str]:
-    """Union defaults only for dependency-overridden/internal test contexts."""
+    """Union defaults only for dependency-overridden/internal test contexts.
+
+    Staff job-function permissions are direct grants rather than role defaults;
+    an unresolved Staff context models a member holding every delegable one.
+    """
     result: set[str] = set()
     for role in roles:
         result.update(DEFAULT_ROLE_PERMISSIONS.get(role, ()))
+        if role == "staff":
+            result.update(DELEGABLE_STAFF_PERMISSIONS)
     return frozenset(result)

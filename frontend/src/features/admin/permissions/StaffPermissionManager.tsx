@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { DANGER_BUTTON_CLASS, Initials, PRIMARY_BUTTON_CLASS, SELECT_CLASS } from '../staff-faculty/StaffFacultyUI.tsx'
+import { BUTTON_CLASS, Initials, PRIMARY_BUTTON_CLASS, SELECT_CLASS } from '../staff-faculty/StaffFacultyUI.tsx'
 import StaffPermissionList from './StaffPermissionList.tsx'
 import { useStaffPermissions, type StaffPermissionFocus } from './useStaffPermissions.ts'
 
@@ -13,17 +13,21 @@ export default function StaffPermissionManager({
   const {
     members,
     selectedUserId,
-    setSelectedUserId,
+    selectMember,
     state,
     catalogue,
-    selectedCodes,
-    setSelectedCodes,
+    changedCodes,
+    toGrant,
+    toRevoke,
+    toggle,
+    editing,
+    startEditing,
+    cancelEditing,
     loading,
     busy,
     error,
-    setError,
     notice,
-    apply,
+    save,
   } = useStaffPermissions(accessToken, focus)
   const headingRef = useRef<HTMLHeadingElement>(null)
 
@@ -32,11 +36,14 @@ export default function StaffPermissionManager({
     if (focus !== null) headingRef.current?.focus({ preventScroll: true })
   }, [focus])
 
-  const permissionByCode = new Map((state?.permissions ?? []).map((item) => [item.code, item]))
   const selected = members.find((member) => member.user_id === selectedUserId)
-  const canRevoke =
-    selectedCodes.length > 0 && selectedCodes.every((code) => permissionByCode.get(code)?.direct_grant_id)
-  const canGrant = selectedCodes.length > 0
+  const hasChanges = changedCodes.size > 0
+  const summary = [
+    toGrant.length ? `${toGrant.length} to grant` : '',
+    toRevoke.length ? `${toRevoke.length} to revoke` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <section
@@ -79,11 +86,7 @@ export default function StaffPermissionManager({
                 className={`${SELECT_CLASS} w-full`}
                 value={selectedUserId}
                 disabled={busy || loading}
-                onChange={(event) => {
-                  setSelectedUserId(event.target.value)
-                  setSelectedCodes([])
-                  setError(null)
-                }}
+                onChange={(event) => selectMember(event.target.value)}
               >
                 {members.map((member) => (
                   <option key={member.user_id} value={member.user_id}>
@@ -106,33 +109,37 @@ export default function StaffPermissionManager({
             <StaffPermissionList
               permissions={state?.permissions ?? []}
               catalogue={catalogue}
-              selectedCodes={selectedCodes}
-              setSelectedCodes={setSelectedCodes}
-              disabled={busy || loading || state === null}
+              changedCodes={changedCodes}
+              onToggle={toggle}
+              disabled={!editing || busy || loading || state === null}
             />
-            <div className="flex flex-wrap items-center gap-2">
+            {editing ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={busy || !hasChanges}
+                  onClick={() => void save()}
+                  className={PRIMARY_BUTTON_CLASS}
+                >
+                  Save changes
+                </button>
+                <button type="button" disabled={busy} onClick={cancelEditing} className={BUTTON_CLASS}>
+                  Cancel
+                </button>
+                <p className="text-xs text-muted" aria-live="polite">
+                  {hasChanges ? summary : 'Tick a permission to grant it, or untick it to revoke it.'}
+                </p>
+              </div>
+            ) : (
               <button
                 type="button"
-                disabled={busy || !canGrant}
-                onClick={() => void apply('grant')}
+                disabled={busy || loading || state === null}
+                onClick={startEditing}
                 className={PRIMARY_BUTTON_CLASS}
               >
-                Grant selected
+                Edit permissions
               </button>
-              <button
-                type="button"
-                disabled={busy || !canRevoke}
-                onClick={() => void apply('revoke')}
-                className={DANGER_BUTTON_CLASS}
-              >
-                Revoke selected direct grants
-              </button>
-              <p className="text-xs text-muted" aria-live="polite">
-                {selectedCodes.length === 0
-                  ? 'Select permissions to grant or revoke.'
-                  : `${selectedCodes.length} selected${canRevoke ? '' : ' · Revoke needs every selected item to be granted'}`}
-              </p>
-            </div>
+            )}
           </div>
         </div>
       )}
