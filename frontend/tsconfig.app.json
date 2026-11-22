@@ -41,8 +41,6 @@
     "src/features/admin/students/studentSections.ts",
     "src/features/admin/shared/adminAcademicQueries.ts",
     "src/features/faculty/dashboard/FacultyDashboard.tsx",
-    "src/features/student/dashboard/StudentDashboard.tsx",
-    "src/features/student/shared/AcademicContextCard.tsx",
     "src/features/students/StudentRegistrationInvitations.tsx",
     "src/features/students/StudentRosterFilters.tsx",
     "src/features/students/StudentWorkspaceContext.tsx",

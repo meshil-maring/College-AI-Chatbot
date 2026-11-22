@@ -1,5 +1,5 @@
 import './__tests__/StudentExperienceFinalIntegration.support.tsx'
-import { goTo, logoutMock } from './__tests__/StudentExperienceFinalIntegration.support.tsx'
+import { goTo, logoutMock, openProfile } from './__tests__/StudentExperienceFinalIntegration.support.tsx'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
@@ -12,8 +12,9 @@ describe('student identity and information journey', () => {
     mockAllLoaded()
     const user = userEvent.setup()
     render(<StudentShell />)
-    await screen.findByText('Welcome, REG-100')
-    expect(getMyNotices).not.toHaveBeenCalled()
+    // The dashboard previews three notices; resources load only on their page.
+    await openProfile(user)
+    expect(getMyNotices).toHaveBeenCalledWith('test-token', 3)
     expect(getMyResources).not.toHaveBeenCalled()
     await goTo(user, 'Notices')
     expect(await screen.findByText('Exam schedule update')).toBeInTheDocument()
@@ -31,7 +32,9 @@ describe('student identity and information journey', () => {
     window.history.replaceState({}, '', '/student/attendance')
     mockAllLoaded()
     render(<StudentShell />)
-    expect(await screen.findByRole('heading', { name: 'Profile', level: 1 })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: /^Good (morning|afternoon|evening)/, level: 1 }),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Attendance' })).not.toBeInTheDocument()
     window.history.replaceState({}, '', '/')
   })

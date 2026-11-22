@@ -4,6 +4,7 @@ import { STUDENT_NAV_ITEMS, buildStudentNavigation } from './studentNavigation.t
 describe('student navigation', () => {
   it('includes semester registration alongside account and institution information', () => {
     expect(STUDENT_NAV_ITEMS.map((item) => item.key)).toEqual([
+      'dashboard',
       'profile',
       'registration',
       'transfer-requests',
@@ -22,6 +23,13 @@ describe('student navigation', () => {
     ).toEqual(['assistant'])
     expect(buildStudentNavigation('student', [])).toEqual([])
   })
+  it('shows the dashboard only to students who can read their profile', () => {
+    expect(buildStudentNavigation('student', ['profile.own.read']).map((item) => item.key)).toEqual([
+      'dashboard',
+      'profile',
+    ])
+    expect(buildStudentNavigation('staff', ['profile.own.read']).map((item) => item.key)).toEqual(['profile'])
+  })
   it('shows registration only to students with the current read grant', () => {
     expect(buildStudentNavigation('student', ['registration.own.read']).map((item) => item.key)).toEqual([
       'registration',
@@ -30,9 +38,7 @@ describe('student navigation', () => {
     expect(buildStudentNavigation('faculty', ['registration.own.read'])).toEqual([])
   })
   it('shows transfer requests to students who can read their own transfers', () => {
-    expect(buildStudentNavigation('student', ['transfers.read']).map((item) => item.key)).toEqual([
-      'transfer-requests',
-    ])
+    expect(buildStudentNavigation('student', ['transfers.read']).map((item) => item.key)).toEqual(['transfer-requests'])
     expect(buildStudentNavigation('student', ['transfers.request'])).toEqual([])
     expect(buildStudentNavigation('faculty', ['transfers.read'])).toEqual([])
   })

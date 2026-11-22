@@ -1,12 +1,23 @@
 /** Authenticated identity and institution information workspace. */
 
 import { useState } from 'react'
-import { ArrowLeftRight, Bell, BookOpen, Bot, ClipboardList, Inbox, UserCircle, type LucideIcon } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  Bell,
+  BookOpen,
+  Bot,
+  ClipboardList,
+  Inbox,
+  LayoutDashboard,
+  UserCircle,
+  type LucideIcon,
+} from 'lucide-react'
 import WorkspaceFrame from '../../workspace/WorkspaceFrame.tsx'
 import WorkspacePageHeader from '../../workspace/WorkspacePageHeader.tsx'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import ChatShell from '../../chat/ChatShell.tsx'
 import { STUDENT_VIEW_HEADINGS, buildStudentNavigation, type StudentView } from './studentNavigation.ts'
+import StudentDashboard from '../dashboard/StudentDashboard.tsx'
 import { NoticesPage } from '../notices/NoticesPage.tsx'
 import { ResourcesPage } from '../resources/ResourcesPage.tsx'
 import { ProfilePage } from '../profile/ProfilePage.tsx'
@@ -18,6 +29,7 @@ import { StudentAccessContext, useStudentResource, type StudentAccessDenial } fr
 import { ErrorBlock, LoadingBlock } from '../shared/SectionState.tsx'
 
 const icons: Record<StudentView, LucideIcon> = {
+  dashboard: LayoutDashboard,
   profile: UserCircle,
   registration: ClipboardList,
   notices: Bell,
@@ -29,7 +41,12 @@ const icons: Record<StudentView, LucideIcon> = {
 
 export default function StudentShell() {
   const { user, role, logout } = useAuth()
-  const [view, setView] = useState<StudentView>('profile')
+  const navigation = buildStudentNavigation(role, user?.effective_permissions)
+  // Open on the first permitted view: the dashboard for students, Profile otherwise.
+  const [selectedView, setView] = useState<StudentView>(() => navigation[0]?.key ?? 'profile')
+  const view = navigation.some((item) => item.key === selectedView)
+    ? selectedView
+    : (navigation[0]?.key ?? selectedView)
   const [accessDenial, setAccessDenial] = useState<StudentAccessDenial | null>(null)
   // This endpoint exposes approval state even for pending students. This is a
   // UX boundary only; each data endpoint still enforces access server-side.
@@ -39,7 +56,6 @@ export default function StudentShell() {
     '',
     'identity-profile',
   )
-  const navigation = buildStudentNavigation(role, user?.effective_permissions)
 
   const displayName = user?.email?.trim() || 'Student'
 
@@ -131,12 +147,13 @@ export default function StudentShell() {
       >
         {navigation.some((item) => item.key === view) ? (
           <>
-            {view !== 'assistant' && (
+            {view !== 'assistant' && view !== 'dashboard' && (
               <WorkspacePageHeader
                 title={STUDENT_VIEW_HEADINGS[view]}
                 description="Your student information and institution updates."
               />
             )}
+            {view === 'dashboard' && <StudentDashboard navigation={navigation} onNavigate={setView} />}
             {view === 'notices' && <NoticesPage />}
             {view === 'resources' && <ResourcesPage />}
             {view === 'profile' && <ProfilePage profile={profile} />}

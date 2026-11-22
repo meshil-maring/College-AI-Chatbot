@@ -1,75 +1,139 @@
-/** Phase 6.16 — dashboard rendering/empty/loading tests. */
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import {
-  getMyAcademicProfile, getMyAttendanceSummary, getMyNotices,
-  getMyResources, getMyResultsSummary, getMyTestResultsSummary,
-} from '../../../services/students/studentApi.ts'
-import StudentDashboard from './StudentDashboard.tsx'
-import { mockAllLoaded, PROFILE } from '../__tests__/studentTestFixtures.ts'
+import type { StudentSemester } from '../../../types/semesterRegistration.ts'
+import type { TransferRequest } from '../../../types/transfer.ts'
 
-vi.mock('../../chat/ChatShell.tsx', () => ({
-  default: () => <div data-testid="chat-shell-mock">AI chat</div>,
-}))
+const auth = vi.hoisted(() => ({ permissions: ['registration.own.read', 'transfers.read'] as string[] }))
 vi.mock('../../auth/session/AuthProvider.tsx', () => ({
   useAuth: () => ({
-    user: { email: 'student@college.edu' }, role: 'student',
-    accessToken: 'test-token', logout: vi.fn(),
+    user: { user_id: 'u1', institution_id: 'inst-1', effective_permissions: auth.permissions },
+    role: 'student',
+    accessToken: 'test-token',
+    sessionGeneration: 1,
   }),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  AuthProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
-vi.mock('../../../services/students/studentApi.ts', () => ({
-  StudentApiError: class extends Error {
-    status = 0; code: string | null = null;
-  },
-  getMyAcademicProfile: vi.fn(), getMyAttendanceSummary: vi.fn(),
-  getMyResultsSummary: vi.fn(), getMyTestResultsSummary: vi.fn(),
-  getMyNotices: vi.fn(), getMyResources: vi.fn(),
+vi.mock('../../../services/students/studentApi.ts', async (importActual) => ({
+  ...(await importActual<typeof import('../../../services/students/studentApi.ts')>()),
+  getMyNotices: vi.fn(),
 }))
-beforeEach(() => { vi.clearAllMocks() })
+vi.mock('../../../services/academics/semesterRegistration.ts', () => ({ getMySemesters: vi.fn() }))
+vi.mock('../../../services/students/transferApi.ts', () => ({ getMyTransfers: vi.fn() }))
 
-describe('student dashboard rendering', () => {
-  it('renders identity, attendance, results, notices, resources, chatbot entry', async () => {
-    mockAllLoaded()
-    render(<StudentDashboard onNavigate={() => {}} />)
-    expect(await screen.findByText('Welcome, REG-100')).toBeInTheDocument()
-    expect(screen.getByText('Test College (TC01)')).toBeInTheDocument()
-    expect(screen.getByText('80%')).toBeInTheDocument()
-    expect(screen.getByText('Midterm 1')).toBeInTheDocument()
-    expect(screen.getByText('Exam schedule update')).toBeInTheDocument()
-    expect(screen.getByText('Lecture notes week 3')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open AI Assistant' })).toBeInTheDocument()
+import { getMyNotices } from '../../../services/students/studentApi.ts'
+import { getMySemesters } from '../../../services/academics/semesterRegistration.ts'
+import { getMyTransfers } from '../../../services/students/transferApi.ts'
+import StudentDashboard from './StudentDashboard.tsx'
+import { pickCurrentSemester, termProgress } from './useDashboardData.ts'
+import type { StudentNavItem } from '../workspace/studentNavigation.ts'
+
+const semester = {
+  semester_registration_id: 'r1',
+  program_name: 'B.Tech (CSE)',
+  batch_name: '2023 batch',
+  section_name: 'A',
+  program_semester_name: 'Semester 6',
+  term_name: 'Even 2026',
+  start_date: '2026-01-01',
+  end_date: '2026-12-31',
+  enrolled_subjects: [{ course_id: 'c1', name: 'Machine Learning', code: 'CS601', credits: 4 }],
+} as StudentSemester
+
+const request = {
+  transfer_request_id: 't1',
+  transfer_type: 'section_transfer',
+  status: 'under_review',
+  from_section: { section_name: 'CSE-A' },
+  to_section: { section_name: 'CSE-B' },
+} as TransferRequest
+
+const ALL_VIEWS: StudentNavItem[] = [
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'registration', label: 'Semester Registration' },
+  { key: 'transfer-requests', label: 'Transfer Requests' },
+  { key: 'notices', label: 'Notices' },
+]
+
+beforeEach(() => {
+  vi.resetAllMocks()
+  auth.permissions = ['registration.own.read', 'transfers.read']
+  vi.mocked(getMySemesters).mockResolvedValue({ institution_id: 'inst-1', items: [semester] })
+  vi.mocked(getMyTransfers).mockResolvedValue({
+    institution_id: 'inst-1',
+    current: null,
+    options: [],
+    requests: [request, { ...request, transfer_request_id: 't2', status: 'approved' }],
+  })
+  vi.mocked(getMyNotices).mockResolvedValue({
+    total: 1,
+    items: [
+      {
+        notice_id: 'n1',
+        title: 'Mid-Sem Examination Schedule',
+        content: 'Exams run Nov 24 to Nov 28.',
+        category: 'exam',
+        priority: 'high',
+        is_pinned: false,
+        published_at: '2026-11-14T00:00:00Z',
+        expires_at: null,
+      },
+    ],
+  })
+})
+
+describe('StudentDashboard', () => {
+  it('shows real program, semester, notices and open requests', async () => {
+    const onNavigate = vi.fn()
+    render(<StudentDashboard navigation={ALL_VIEWS} onNavigate={onNavigate} />)
+    expect(await screen.findByText('B.Tech (CSE)')).toBeInTheDocument()
+    expect(screen.getByText('2023 batch · Section A')).toBeInTheDocument()
+    expect(screen.getAllByText('Semester 6').length).toBeGreaterThan(0)
+    expect(screen.getByRole('progressbar', { name: 'Term progress' })).toBeInTheDocument()
+    expect(await screen.findByText('Mid-Sem Examination Schedule')).toBeInTheDocument()
+    expect(getMyNotices).toHaveBeenCalledWith('test-token', 3)
+
+    const requests = screen.getByRole('region', { name: 'Ongoing Requests' })
+    expect(await within(requests).findByText('Under review')).toBeInTheDocument()
+    expect(within(requests).queryByText('Approved')).not.toBeInTheDocument()
+
+    await userEvent.click(within(requests).getByRole('button', { name: 'View all' }))
+    expect(onNavigate).toHaveBeenCalledWith('transfer-requests')
   })
 
-  it('shows loading states, never zero/empty claims while loading', async () => {
-    vi.mocked(getMyAcademicProfile).mockImplementation(() => new Promise(() => {}))
-    vi.mocked(getMyAttendanceSummary).mockImplementation(() => new Promise(() => {}))
-    vi.mocked(getMyResultsSummary).mockResolvedValue({ summary: { records_available: false, total_results: 0 }, records: [] })
-    vi.mocked(getMyTestResultsSummary).mockResolvedValue({ summary: { records_available: false, total_results: 0 }, records: [] })
-    vi.mocked(getMyNotices).mockImplementation(() => new Promise(() => {}))
-    vi.mocked(getMyResources).mockImplementation(() => new Promise(() => {}))
-    render(<StudentDashboard onNavigate={() => {}} />)
-    expect(await screen.findByText('Loading your profile…')).toBeInTheDocument()
-    expect(screen.getByText('Loading your attendance…')).toBeInTheDocument()
-    expect(screen.getByText('Loading notices…')).toBeInTheDocument()
-    expect(screen.queryByText('No attendance records are available yet.')).not.toBeInTheDocument()
-    expect(screen.queryByText('No recent notices.')).not.toBeInTheDocument()
+  it('labels widgets without a backend API as coming soon', async () => {
+    render(<StudentDashboard navigation={ALL_VIEWS} onNavigate={vi.fn()} />)
+    for (const name of ['Attendance', 'CGPA'])
+      expect(within(screen.getByRole('region', { name })).getByText('Coming soon')).toBeInTheDocument()
+    for (const name of ["Today's Schedule", 'Upcoming Deadlines'])
+      expect(within(screen.getByRole('region', { name })).getByText('Coming soon')).toBeInTheDocument()
+    const attendance = screen.getByRole('region', { name: 'Subject Attendance' })
+    expect(await within(attendance).findByText('Machine Learning')).toBeInTheDocument()
+    expect(within(attendance).getByText('Coming soon')).toBeInTheDocument()
   })
 
-  it('shows empty states when backend has no records', async () => {
-    vi.mocked(getMyAcademicProfile).mockResolvedValue({ ...PROFILE, program_name: null, program_code: null })
-    vi.mocked(getMyAttendanceSummary).mockResolvedValue({
-      summary: { records_available: false, total_classes: 0, present_classes: 0, absent_classes: 0, late_classes: 0, excused_classes: 0, attendance_percentage: null },
-      records: [],
-    })
-    vi.mocked(getMyResultsSummary).mockResolvedValue({ summary: { records_available: false, total_results: 0 }, records: [] })
-    vi.mocked(getMyTestResultsSummary).mockResolvedValue({ summary: { records_available: false, total_results: 0 }, records: [] })
-    vi.mocked(getMyNotices).mockResolvedValue({ items: [], total: 0 })
-    vi.mocked(getMyResources).mockResolvedValue({ items: [], total: 0 })
-    render(<StudentDashboard onNavigate={() => {}} />)
-    expect(await screen.findByText('No attendance records are available yet.')).toBeInTheDocument()
-    expect(screen.getByText('No examination results are available yet.')).toBeInTheDocument()
-    expect(screen.getByText('No recent notices.')).toBeInTheDocument()
-    expect(screen.getByText('No learning resources are currently available.')).toBeInTheDocument()
+  it('skips reads the student is not permitted to make', () => {
+    auth.permissions = []
+    render(<StudentDashboard navigation={[{ key: 'dashboard', label: 'Dashboard' }]} onNavigate={vi.fn()} />)
+    expect(screen.getByText('Notices are unavailable for this account.')).toBeInTheDocument()
+    expect(screen.getByText('Requests are unavailable for this account.')).toBeInTheDocument()
+    expect(getMySemesters).not.toHaveBeenCalled()
+    expect(getMyTransfers).not.toHaveBeenCalled()
+    expect(getMyNotices).not.toHaveBeenCalled()
+  })
+})
+
+describe('dashboard helpers', () => {
+  it('prefers the running term, else the latest one', () => {
+    const later = { ...semester, start_date: '2027-01-01', end_date: '2027-06-30' }
+    expect(pickCurrentSemester([later, semester], new Date('2026-06-01'))).toBe(semester)
+    expect(pickCurrentSemester([semester, later], new Date('2028-01-01'))).toBe(later)
+    expect(pickCurrentSemester([])).toBeNull()
+  })
+  it('clamps term progress and rejects unusable dates', () => {
+    expect(termProgress(semester, new Date('2025-01-01'))).toBe(0)
+    expect(termProgress(semester, new Date('2027-06-01'))).toBe(100)
+    expect(termProgress({ ...semester, end_date: '2025-01-01' })).toBeNull()
   })
 })

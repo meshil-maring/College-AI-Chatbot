@@ -115,7 +115,9 @@ describe('App shell selection from the canonical /auth/me role', () => {
   it('shows the student shell for the student role', async () => {
     authState.role = 'student'
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Profile' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: /^Good (morning|afternoon|evening)/, level: 1 }),
+    ).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Student navigation' })).toBeInTheDocument()
     expect(screen.queryByText('Admin Panel')).not.toBeInTheDocument()
   })

@@ -26,6 +26,12 @@ export const nav = () => screen.getByRole('navigation', { name: 'Student navigat
 export const goTo = async (user: ReturnType<typeof userEvent.setup>, label: string): Promise<void> => {
   await user.click(within(nav()).getByRole('button', { name: label }))
 }
+/** Students land on the dashboard; open Profile and wait for the identity card. */
+export const openProfile = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
+  await screen.findByRole('heading', { name: /^Good (morning|afternoon|evening)/, level: 1 })
+  await goTo(user, 'Profile')
+  await screen.findByText('Welcome, REG-100')
+}
 beforeEach(() => {
   vi.resetAllMocks()
   resetSessionExpiredListeners()

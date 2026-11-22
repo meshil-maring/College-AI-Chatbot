@@ -24,13 +24,10 @@ remains active where required.
   `AdminDashboard.test.tsx`, `DashboardCards.tsx`.
 - `frontend/src/features/faculty/dashboard/`: `FacultyDashboard.tsx`,
   `FacultyDashboard.test.tsx`.
-- `frontend/src/features/student/dashboard/`: `StudentDashboard.tsx`,
-  `StudentDashboard.test.tsx`, `StudentDashboardEdgeCases.test.tsx`,
-  `StudentDashboardHardening.test.tsx`, `StudentDashboardIntegration.test.tsx`,
-  `StudentDashboardStates.test.tsx`.
 - `frontend/src/types/admin/dashboard.ts`.
-- `frontend/src/features/student/shared/AcademicContextCard.tsx`.
 
-These files must remain until the owner requests their removal. Inactive legacy
+These files must remain until the owner requests their removal. The legacy
+student dashboard and `AcademicContextCard.tsx` were removed at the owner's
+request on 2026-11-22 and replaced by the active student dashboard. Inactive legacy
 code may still describe retired API contracts; it must not re-enable academic
 endpoints or require recreating the removed database tables.

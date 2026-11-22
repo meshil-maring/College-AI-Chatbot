@@ -19,8 +19,9 @@ when no destination is supplied. Browser Back/Forward and refresh retain the
 selected view. Staff navigation continues to use local view state.
 Administrator views are Profile, Academic Setup, Staff and Faculty Management, Student registration and approvals,
 Notices, Learning Resources, FAQs and AI Assistant. Old `view=permissions` links open its Staff permissions page. Staff views are Profile,
-Student Approvals, Learning Resources and AI Assistant. Student views are Profile, Notices, Learning
-Resources, Semester Registration and AI Assistant after account approval. Server permissions filter
+Student Approvals, Learning Resources and AI Assistant. Student views are Dashboard (the default),
+Profile, Notices, Learning Resources, Semester Registration, Transfer Requests,
+Notifications and AI Assistant after account approval. Server permissions filter
 navigation, and backend endpoints enforce authorization and tenant isolation.
 Admin, faculty and staff mount the same resource page; exact grants control
 library, own submissions, uploads and admin review. Only Notices remains a faculty

@@ -230,6 +230,6 @@ describe('stale view-state protection', () => {
 
     expect(screen.queryByRole('link', { name: 'Waiting approval' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Student Approvals', exact: true })).not.toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: 'Profile' })).toHaveAttribute('aria-current', 'page')
+    expect(await screen.findByRole('button', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page')
   })
 })

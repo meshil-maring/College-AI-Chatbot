@@ -9,17 +9,26 @@ it('moves active state using keyboard navigation without duplicate or academic e
   mockAllLoaded()
   render(<StudentShell />)
   const navigation = await screen.findByRole('navigation', { name: 'Student navigation' })
-  const profile = within(navigation).getByRole('button', { name: 'Profile' })
-  expect(profile).toHaveAttribute('aria-current', 'page')
+  const dashboard = within(navigation).getByRole('button', { name: 'Dashboard' })
+  expect(dashboard).toHaveAttribute('aria-current', 'page')
   const notices = within(navigation).getByRole('button', { name: 'Notices' })
   notices.focus()
   await userEvent.keyboard('{Enter}')
   expect(await screen.findByRole('heading', { name: 'Notices', level: 1 })).toBeInTheDocument()
   expect(notices).toHaveAttribute('aria-current', 'page')
-  expect(profile).not.toHaveAttribute('aria-current')
+  expect(dashboard).not.toHaveAttribute('aria-current')
   expect(
     within(navigation)
       .getAllByRole('button')
       .map((item) => item.textContent),
-  ).toEqual(['Profile', 'Semester Registration', 'Transfer Requests', 'Notifications', 'Notices', 'Learning Resources', 'AI Assistant'])
+  ).toEqual([
+    'Dashboard',
+    'Profile',
+    'Semester Registration',
+    'Transfer Requests',
+    'Notifications',
+    'Notices',
+    'Learning Resources',
+    'AI Assistant',
+  ])
 })

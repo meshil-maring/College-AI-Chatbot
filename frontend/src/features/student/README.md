@@ -3,6 +3,7 @@
 | Folder                       | Current responsibility                                                   |
 | ---------------------------- | ------------------------------------------------------------------------ |
 | `workspace/`                 | Shell, navigation, approval/inactive-account gates and session lifecycle |
+| `dashboard/`                 | Default overview: program, term, notices, open requests, "Coming soon" widgets |
 | `profile/`                   | Read-only identity profile using `GET /students/me/profile`              |
 | `registration/`              | Assigned semesters, complete subject options and atomic course registration |
 | `transfer/`                  | Current placement, section/program transfer requests, cancellation and history |
@@ -17,10 +18,15 @@ The resources page also uses the shared Ask AI eligibility button and resource
 chat view. Its metadata API still exposes no file/storage fields or downloads.
 
 Attendance, results and subject-package pages have been removed. The former
-academic dashboard, its historical tests and `shared/AcademicContextCard.tsx`
-remain as disconnected source at the owner's request. Their dependencies include
-retired contracts; they are excluded individually from the active TypeScript
-project and Vitest suite. See the [removal record](../../../../docs/retirements/academic-setup/README.md).
+academic dashboard and `shared/AcademicContextCard.tsx` were deleted on
+2026-11-22. See the [removal record](../../../../docs/retirements/academic-setup/README.md).
+
+The dashboard is the default student view. It reads only existing student APIs:
+semester registrations (program, batch, section, term and progress), notices
+(three newest), and own transfer requests (open ones). Each read runs only with
+its grant and shares the query cache of the full page it links to. Attendance,
+CGPA, timetable and deadlines have no student API yet, so they show "Coming
+soon" instead of numbers. Staff and faculty do not get the dashboard.
 
 The replacement Semester Registration page uses the additive academic workspace
 and its own API, never retired package endpoints. Its query factories include the

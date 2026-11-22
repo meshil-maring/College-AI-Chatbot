@@ -29,7 +29,7 @@ It includes TypeScript recipes and an adoption checklist for new and migrated pa
 | `src/features/admin/`                      | Institution account administration, approvals and knowledge management      |
 | `src/features/staff/`                      | Staff identity, student account approvals and chat                          |
 | `src/features/faculty/`                    | Faculty profile, existing information placeholders and chat                 |
-| `src/features/student/`                    | Identity/approval gate, notices, resources and chat                         |
+| `src/features/student/`                    | Identity/approval gate, dashboard, notices, resources and chat              |
 | `src/features/students/`                   | Shared account-approval UI and retained inactive roster source              |
 | `src/features/superAdmin/`                 | Institution and administrator lifecycle                                     |
 | `src/features/publicChat/`                 | Institution public chat and history storage                                 |

@@ -1,5 +1,5 @@
 import './__tests__/StudentExperienceFinalIntegration.support.tsx'
-import { goTo, holder, logoutMock } from './__tests__/StudentExperienceFinalIntegration.support.tsx'
+import { goTo, holder, logoutMock, openProfile } from './__tests__/StudentExperienceFinalIntegration.support.tsx'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -10,10 +10,10 @@ import { mockAllLoaded } from '../__tests__/studentTestFixtures.ts'
 describe('institution information errors remain isolated', () => {
   it('keeps profile and resources usable after a notices failure', async () => {
     mockAllLoaded()
-    vi.mocked(getMyNotices).mockRejectedValueOnce(new holder.actual.StudentApiError(500, 'private server details'))
+    vi.mocked(getMyNotices).mockRejectedValue(new holder.actual.StudentApiError(500, 'private server details'))
     render(<StudentShell />)
-    await screen.findByText('Welcome, REG-100')
     const user = userEvent.setup()
+    await openProfile(user)
     await goTo(user, 'Notices')
     expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load notices.')
     expect(screen.queryByText('private server details')).not.toBeInTheDocument()
@@ -28,10 +28,10 @@ describe('institution information errors remain isolated', () => {
     mockAllLoaded()
     vi.mocked(getMyNotices).mockReturnValue(new Promise(() => {}))
     render(<StudentShell />)
-    await screen.findByText('Welcome, REG-100')
     const user = userEvent.setup()
+    await openProfile(user)
     await goTo(user, 'Notices')
-    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Loading notices…')
     await goTo(user, 'Profile')
     expect(screen.getByText('Welcome, REG-100')).toBeInTheDocument()
   })
