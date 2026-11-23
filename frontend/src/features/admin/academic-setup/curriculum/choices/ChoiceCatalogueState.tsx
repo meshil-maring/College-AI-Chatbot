@@ -14,7 +14,6 @@ export default function ChoiceCatalogueState({ state }: { state: RegistrationAdm
           )}
         </div>
       )}
-      {state.notice && <p role="status">{state.notice}</p>}
       {state.saving && <p role="status">Saving student choices…</p>}
     </>
   )

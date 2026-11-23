@@ -18,14 +18,11 @@ export function useCalendarDeletion(context: CalendarContext, state: CalendarSta
   return {
     saving,
     active: years.record ? years : semesters.record ? semesters : null,
-    notice: years.notice || semesters.notice,
     canManage: (record: CalendarPeriod) => forRecord(record).canManage,
     open: (record: CalendarPeriod) => {
       if (saving) return
       years.close()
       semesters.close()
-      years.clearNotice()
-      semesters.clearNotice()
       forRecord(record).open(record)
     },
   }

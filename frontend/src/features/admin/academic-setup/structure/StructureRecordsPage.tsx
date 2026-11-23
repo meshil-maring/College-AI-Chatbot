@@ -121,7 +121,6 @@ export default function StructureRecordsPage({
       <StructureState state={state} />
       {!state.loading && state.canManage(entity) && creationIssue && <p role="status">{creationIssue}</p>}
       {children}
-      {editor.notice && <p role="status">{editor.notice}</p>}
       <div className="structure-filters" role="search" aria-label="Filter academic records">
         <label>
           <span>Search</span>

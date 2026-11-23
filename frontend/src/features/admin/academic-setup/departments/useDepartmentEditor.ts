@@ -4,6 +4,7 @@ import { createAcademicRecord, updateAcademicRecord } from '../../../../services
 import { AdminApiError } from '../../../../services/admin/http.ts'
 import type { AcademicCatalogue, AcademicCreateMap, Department } from '../../../../types/academicSetup.ts'
 import { departmentDraft, validateDepartment, type DepartmentDraft, type DepartmentErrors } from './departmentModel.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 interface Options {
   accessToken: string
@@ -19,7 +20,6 @@ export function useDepartmentEditor({ accessToken, institutionId, catalogue, bus
   const [errors, setErrors] = useState<DepartmentErrors>({})
   const [validationVersion, setValidationVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [confirmation, setConfirmation] = useState<'discard' | 'status' | null>(null)
   const initial = useRef(JSON.stringify(departmentDraft()))
   const mounted = useRef(true)
@@ -55,7 +55,7 @@ export function useDepartmentEditor({ accessToken, institutionId, catalogue, bus
     onSuccess: async (_data, variables) => {
       if (!mounted.current) return
       setPanel(null)
-      setNotice(variables.id ? 'Department updated successfully.' : 'Department created successfully.')
+      notification.success(variables.id ? 'Department updated successfully' : 'Department created successfully')
       await refresh()
     },
     onError: (cause) => {
@@ -81,7 +81,6 @@ export function useDepartmentEditor({ accessToken, institutionId, catalogue, bus
     initial.current = JSON.stringify(next)
     setErrors({})
     setError(null)
-    setNotice(null)
     setConfirmation(null)
   }
   function change<K extends keyof DepartmentDraft>(field: K, value: DepartmentDraft[K]) {
@@ -126,7 +125,6 @@ export function useDepartmentEditor({ accessToken, institutionId, catalogue, bus
     errors,
     validationVersion,
     error,
-    notice,
     confirmation,
     canManage: Boolean(canManage) && !busy,
     saving: mutation.isPending,

@@ -24,7 +24,7 @@ describe('Subject drawers', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: /Credits/ }), { target: { value: '3.5' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: /Tutorial Hours/ }), { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create Subject' }))
-    await screen.findByText('Subject created successfully.')
+    await screen.findByText('Subject created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledWith('token-1', 'courses', {
       name: 'Applied Mathematics',
       code: 'AM',
@@ -65,7 +65,7 @@ describe('Subject drawers', () => {
     expect(screen.getByRole('textbox', { name: /Subject Name/ })).toHaveValue(' Applied Mathematics ')
     fireEvent.change(screen.getByRole('textbox', { name: /Subject Code/ }), { target: { value: 'AM2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create Subject' }))
-    expect(await screen.findByText('Subject created successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Subject created successfully')).toBeInTheDocument()
   })
 
   it('confirms discarding edits and restores focus to the invoking control', async () => {
@@ -98,7 +98,7 @@ describe('Subject drawers', () => {
     expect(screen.getByRole('alertdialog', { name: 'Confirm status change' })).toBeInTheDocument()
     expect(api.updateAcademicRecord).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Changes' }))
-    await screen.findByText('Subject updated successfully.')
+    await screen.findByText('Subject updated successfully')
     const payload = vi.mocked(api.updateAcademicRecord).mock.calls[0][3]
     expect(payload).not.toHaveProperty('department_id')
     expect(payload).toMatchObject({ is_active: false, credits: 3.5, tutorial_hours: null })

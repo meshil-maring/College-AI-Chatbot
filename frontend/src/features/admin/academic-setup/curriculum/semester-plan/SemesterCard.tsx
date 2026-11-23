@@ -27,10 +27,15 @@ export default function SemesterCard({
   const name = `Semester ${number}`
   const included = subjects.filter((subject) => subject.is_active).length
   const editable = studyPlanCanChange(state, version) && Boolean(semester?.is_active)
-  const editor = useStructureEditor(state, 'curriculum_subjects', {
-    curriculum_version_id: version.curriculum_version_id,
-    program_semester_id: semester?.program_semester_id ?? '',
-  })
+  const editor = useStructureEditor(
+    state,
+    'curriculum_subjects',
+    {
+      curriculum_version_id: version.curriculum_version_id,
+      program_semester_id: semester?.program_semester_id ?? '',
+    },
+    `Subject saved in ${name.toLowerCase()}`,
+  )
   const used = new Set(subjects.map((subject) => subject.course_id))
   const fields = editor.fields
     .filter((field) =>
@@ -120,7 +125,6 @@ export default function SemesterCard({
       {canAdd === false && editable && state.canManage('curriculum_subjects') && (
         <p>All available subjects are already listed here, or there are no active subjects to add.</p>
       )}
-      {editor.notice && <p role="status">Subject saved in {name.toLowerCase()}.</p>}
       {editor.panel && (
         <SemesterSubjectDrawer
           editor={{ ...editor, fields, canManage: editable && editor.canManage }}

@@ -17,6 +17,7 @@ import {
   type DeletionEntity,
   type DeletionRecord,
 } from './academicDeletionModel.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 const deleteRequests = {
   departments: deleteDepartment,
@@ -49,7 +50,6 @@ export function useAcademicDeletion({
   const noun = label.toLowerCase()
   const [record, setRecord] = useState<DeletionRecord | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const mounted = useRef(true)
   const submitting = useRef(false)
   const source = entity === 'academic_sections' ? structure : catalogue
@@ -86,7 +86,7 @@ export function useAcademicDeletion({
     onSuccess: async () => {
       if (!mounted.current) return
       setRecord(null)
-      setNotice(`${label} deleted successfully.`)
+      notification.success(`${label} deleted successfully`)
       await refresh()
     },
     onError: (cause) => {
@@ -106,8 +106,6 @@ export function useAcademicDeletion({
     canManage,
     record,
     error,
-    notice,
-    clearNotice: () => setNotice(null),
     blocked,
     canDelete: canManage && !blocked,
     saving: mutation.isPending,
@@ -115,7 +113,6 @@ export function useAcademicDeletion({
       if (!canManage || mutation.isPending || selected.institution_id !== institutionId) return
       setRecord(selected)
       setError(null)
-      setNotice(null)
     },
     close: () => {
       if (!mutation.isPending && !submitting.current) setRecord(null)

@@ -11,18 +11,19 @@ import {
   validateStructureFields,
   type StructureRow,
 } from './structureForm.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 export function useStructureEditor(
   state: AcademicStructureState,
   entity: StructureEntity,
   defaults: StructureDraft = {},
+  successMessage = 'Changes saved successfully',
 ) {
   const write = useStructureWrite(state, entity)
   const [panel, setPanel] = useState<{ mode: 'add' | 'edit' | 'view'; row?: StructureRow }>()
   const [draft, setDraft] = useState(() => structureDraft(undefined, defaults))
   const [error, setError] = useState<string>()
   const [confirmation, setConfirmation] = useState<'discard' | 'status'>()
-  const [notice, setNotice] = useState('')
   const initial = useRef(JSON.stringify(draft))
   const fields = structureFields(entity, state, draft).map((field) => ({
     ...field,
@@ -82,7 +83,7 @@ export function useStructureEditor(
     )
     if (saved) {
       setPanel(undefined)
-      setNotice('Changes saved successfully.')
+      notification.success(successMessage)
     }
   }
   return {
@@ -90,7 +91,6 @@ export function useStructureEditor(
     draft,
     fields,
     confirmation,
-    notice,
     saving: write.saving,
     error: error ?? write.error,
     canManage: panel?.row ? structureCanEdit(entity, panel.row, state) : state.canManage(entity),

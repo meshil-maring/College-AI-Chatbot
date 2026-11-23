@@ -4,6 +4,7 @@ import type { AcademicStructureState } from '../../structure/useAcademicStructur
 import { useStructureWrite } from '../../structure/useStructureWrite.ts'
 import { studyPlanCanChange, studyPlanSemesters } from './studyPlanModel.ts'
 import type { StudyPlanChoicesState } from './useStudyPlanChoices.ts'
+import { notification } from '../../../../../lib/notifications/notification.ts'
 
 export function useStudyPlanPublication(
   state: AcademicStructureState,
@@ -11,7 +12,6 @@ export function useStudyPlanPublication(
   choices: StudyPlanChoicesState,
 ) {
   const [reviewing, setReviewing] = useState(false)
-  const [notice, setNotice] = useState('')
   const write = useStructureWrite(state, 'curriculum_versions')
   const semesters = studyPlanSemesters(state, version)
   const count = semesters.reduce(
@@ -32,12 +32,11 @@ export function useStudyPlanPublication(
     if (!reviewing || !canPublish) return
     if (await write.save(version.curriculum_version_id, { status: 'published' })) {
       setReviewing(false)
-      setNotice('Study plan published. You can now assign it to a batch.')
+      notification.success('Study plan published', 'You can now assign it to a batch.')
     }
   }
   return {
     reviewing,
-    notice,
     semesters,
     count,
     emptySemesters: emptySemesters.length,

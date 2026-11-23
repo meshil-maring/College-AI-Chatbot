@@ -87,7 +87,7 @@ describe('Department access and session boundaries', () => {
     const requests = vi.mocked(api.getAcademicSetup).mock.calls.length
     await act(async () => resolve({ ...department, department_id: 'late-department', name: 'Applied Sciences' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.queryByText('Department created successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Department created successfully')).not.toBeInTheDocument()
     expect(screen.queryByText('Applied Sciences')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(requests)
   })

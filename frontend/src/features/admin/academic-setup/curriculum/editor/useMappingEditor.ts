@@ -5,6 +5,7 @@ import { AdminApiError } from '../../../../../services/admin/http.ts'
 import { useApiMutation } from '../../../../../hooks/useApiQuery.ts'
 import type { CurriculumContext, CurriculumState } from '../useCurriculum.ts'
 import { mappingDraft, validateMapping, type MappingDraft, type MappingErrors } from './mappingDraft.ts'
+import { notification } from '../../../../../lib/notifications/notification.ts'
 
 export function useMappingEditor(context: CurriculumContext, state: CurriculumState) {
   const [panel, setPanel] = useState<'add' | 'edit' | null>(null)
@@ -13,7 +14,6 @@ export function useMappingEditor(context: CurriculumContext, state: CurriculumSt
   const [errors, setErrors] = useState<MappingErrors>({})
   const [validationVersion, setValidationVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [confirmation, setConfirmation] = useState<'discard' | 'status' | null>(null)
   const initial = useRef(JSON.stringify(draft))
   const mounted = useRef(true)
@@ -53,7 +53,7 @@ export function useMappingEditor(context: CurriculumContext, state: CurriculumSt
     onSuccess: async (_data, variables) => {
       if (!mounted.current) return
       setPanel(null)
-      setNotice(variables.id ? 'Subject mapping updated successfully.' : 'Subject mapped successfully.')
+      notification.success(variables.id ? 'Subject mapping updated successfully' : 'Subject mapped successfully')
       await state.query.refetch()
     },
     onError: (cause) => {
@@ -80,7 +80,6 @@ export function useMappingEditor(context: CurriculumContext, state: CurriculumSt
     setRecord(link)
     setErrors({})
     setError(null)
-    setNotice(null)
     setConfirmation(toggle ? 'status' : null)
   }
   function change<K extends keyof MappingDraft>(field: K, value: MappingDraft[K]) {
@@ -120,7 +119,6 @@ export function useMappingEditor(context: CurriculumContext, state: CurriculumSt
     errors,
     validationVersion,
     error,
-    notice,
     confirmation,
     saving: mutation.isPending,
     canManage: state.manageable && !state.busy && (panel !== 'add' || state.canAdd),

@@ -1,22 +1,17 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { act, screen, waitFor, within } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 import { AdminApiError } from '../../services/admin/http.ts'
-import { NotificationProvider } from '../../providers/NotificationProvider.tsx'
 import { notification } from './notification.ts'
 import { GENERIC_FAILURE_DESCRIPTION } from './notificationErrors.ts'
 
+// The shared test setup mounts NotificationProvider once per test, as main.tsx does.
 function renderToaster() {
-  render(<NotificationProvider />)
-  return () => screen.getByRole('region', { name: /notifications/i })
+  expect(screen.getByRole('region', { name: /notifications/i })).toBeInTheDocument()
 }
 
 function toasts() {
   return document.querySelectorAll('[data-sonner-toast]')
 }
-
-afterEach(() => {
-  act(() => notification.dismiss())
-})
 
 describe('notification service', () => {
   it.each([

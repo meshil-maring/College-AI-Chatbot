@@ -94,16 +94,6 @@ export default function DepartmentsPage({ createInitially, onCreateHandled, onOv
           </button>
         </div>
       )}
-      {editor.notice && (
-        <p className="department-save-notice" role="status">
-          {editor.notice}
-        </p>
-      )}
-      {deletion.notice && (
-        <p className="department-save-notice" role="status">
-          {deletion.notice}
-        </p>
-      )}
       <DepartmentFilters state={state} />
       <DepartmentTable
         state={state}

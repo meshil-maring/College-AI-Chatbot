@@ -24,7 +24,7 @@ describe('Program drawers', () => {
     fillProgram()
     fireEvent.change(screen.getByRole('spinbutton', { name: /Total Credits/ }), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create Program' }))
-    await screen.findByText('Program created successfully.')
+    await screen.findByText('Program created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledWith('token-1', 'programs', {
       name: 'Applied Mathematics',
       code: 'AM',
@@ -51,7 +51,7 @@ describe('Program drawers', () => {
     expect(screen.getByRole('textbox', { name: /Program Name/ })).toHaveValue(' Applied Mathematics ')
     fireEvent.change(screen.getByRole('textbox', { name: /Program Code/ }), { target: { value: 'AM2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create Program' }))
-    expect(await screen.findByText('Program created successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Program created successfully')).toBeInTheDocument()
   })
 
   it('confirms discarding and restores the invoking control after closing', async () => {
@@ -86,7 +86,7 @@ describe('Program drawers', () => {
     expect(screen.getByRole('alertdialog', { name: 'Confirm status change' })).toBeInTheDocument()
     expect(api.updateAcademicRecord).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Changes' }))
-    await screen.findByText('Program updated successfully.')
+    await screen.findByText('Program updated successfully')
     const payload = vi.mocked(api.updateAcademicRecord).mock.calls[0][3]
     expect(payload).not.toHaveProperty('department_id')
     expect(payload).toMatchObject({ is_active: false, degree_type: 'Custom degree', duration_years: 2.5 })

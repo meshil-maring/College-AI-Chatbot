@@ -106,7 +106,7 @@ describe('Program access and identity boundaries', () => {
     await screen.findByRole('heading', { name: 'No programs yet' })
     const reads = vi.mocked(api.getAcademicSetup).mock.calls.length
     await act(async () => resolve({ ...program, name: 'Old identity program' }))
-    expect(screen.queryByText('Program created successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Program created successfully')).not.toBeInTheDocument()
     expect(screen.queryByText('Old identity program')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(reads)
   })

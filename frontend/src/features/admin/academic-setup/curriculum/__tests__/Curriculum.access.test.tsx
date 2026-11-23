@@ -111,7 +111,7 @@ describe('Curriculum access and identity boundaries', () => {
     await screen.findByRole('heading', { name: 'No programs yet' }, { timeout: 5000 })
     const reads = vi.mocked(api.getAcademicSetup).mock.calls.length
     await act(async () => resolve(link))
-    expect(screen.queryByText('Subject mapped successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Subject mapped successfully')).not.toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(reads)
   })

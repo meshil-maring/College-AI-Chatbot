@@ -19,7 +19,7 @@ it('creates only missing numbers and preserves custom, inactive and out-of-range
   await selectPlan()
   expect(api.createStructureRecord).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Set up 1 missing semester' }))
-  await screen.findByText('Semesters are ready. Existing semester records have been reused.')
+  await screen.findByText('Semesters are ready')
   expect(stages.slice(0, 2)).toEqual(before.program_semesters)
   for (const entity of [
     'curriculum_versions',
@@ -52,7 +52,7 @@ it('creates every missing semester in numeric order and avoids existing custom c
   renderPlan()
   await selectPlan()
   fireEvent.click(screen.getByRole('button', { name: 'Set up 2 missing semesters' }))
-  await screen.findByText('Semesters are ready. Existing semester records have been reused.')
+  await screen.findByText('Semesters are ready')
   expect(vi.mocked(api.createStructureRecord).mock.calls.map((call) => call[2])).toEqual([
     { program_id: 'program-1', semester_number: 1, name: 'Semester 1', code: 'SEM-1', is_active: true },
     { program_id: 'program-1', semester_number: 2, name: 'Semester 2', code: 'SEM-2', is_active: true },
@@ -88,7 +88,7 @@ it('retains successful stages after a failure and retries only numbers still mis
   const retry = await screen.findByRole('button', { name: 'Set up 1 missing semester' })
   await waitFor(() => expect(retry).toBeEnabled())
   fireEvent.click(retry)
-  await screen.findByText('Semesters are ready. Existing semester records have been reused.')
+  await screen.findByText('Semesters are ready')
   expect(structureCatalogue.records.program_semesters![0]).toEqual(first)
   expect(api.createStructureRecord).toHaveBeenCalledTimes(3)
   expect(

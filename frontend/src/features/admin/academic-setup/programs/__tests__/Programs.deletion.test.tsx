@@ -49,7 +49,7 @@ describe('Program deletion', () => {
     expect(dialog).toBeInTheDocument()
     catalogue.records.programs = []
     await act(async () => resolve(program))
-    expect(await screen.findByText('Program deleted successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Program deleted successfully')).toBeInTheDocument()
     expect(await screen.findByText('No programs yet')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Programs', level: 1 })).toHaveFocus()
     expect(catalogue.records.departments).toHaveLength(1)
@@ -110,7 +110,7 @@ describe('Program deletion', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Program' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('linked curricula')
     expect(catalogue.records.programs).toHaveLength(1)
-    expect(screen.queryByText('Program deleted successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Program deleted successfully')).not.toBeInTheDocument()
   })
 
   it('can retry deletion of an unused inactive program even with an inactive department', async () => {
@@ -127,7 +127,7 @@ describe('Program deletion', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Program' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Network unavailable')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Program' }))
-    expect(await screen.findByText('Program deleted successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Program deleted successfully')).toBeInTheDocument()
     expect(api.deleteProgram).toHaveBeenCalledTimes(2)
   })
 
@@ -162,7 +162,7 @@ describe('Program deletion', () => {
     const requests = vi.mocked(api.getAcademicSetup).mock.calls.length
     await act(async () => resolve(program))
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect(screen.queryByText('Program deleted successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Program deleted successfully')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(requests)
   })
 

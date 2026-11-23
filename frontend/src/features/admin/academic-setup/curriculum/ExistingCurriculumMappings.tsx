@@ -79,11 +79,6 @@ export function ExistingCurriculumMappings({
           </button>
         </div>
       )}
-      {editor.notice && (
-        <p className="curriculum-save-notice" role="status">
-          {editor.notice}
-        </p>
-      )}
       <CurriculumTabs
         items={tabs}
         value={state.tab}

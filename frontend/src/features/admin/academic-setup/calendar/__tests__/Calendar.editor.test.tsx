@@ -41,7 +41,7 @@ describe('Academic calendar editor', () => {
     fillYear()
     fireEvent.click(screen.getByRole('radio', { name: '3 Semesters (Trimester)' }))
     fireEvent.click(screen.getByRole('button', { name: 'Create Academic Year' }))
-    await screen.findByText('Academic year created successfully.')
+    await screen.findByText('Academic year created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledTimes(4)
     expect(api.createAcademicRecord).toHaveBeenNthCalledWith(1, 'token-1', 'academic_years', {
       name: '2028 - 2029',
@@ -83,7 +83,7 @@ describe('Academic calendar editor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
     expect(api.updateAcademicRecord).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Changes' }))
-    await screen.findByText('Semester updated successfully.')
+    await screen.findByText('Semester updated successfully')
     expect(api.updateAcademicRecord).toHaveBeenCalledWith(
       'token-1',
       'semesters',
@@ -106,7 +106,7 @@ describe('Academic calendar editor', () => {
       target: { value: '2027-06-30' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Create Semester' }))
-    await screen.findByText('Semester created successfully.')
+    await screen.findByText('Semester created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledWith(
       'token-1',
       'semesters',

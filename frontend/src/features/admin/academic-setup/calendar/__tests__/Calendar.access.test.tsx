@@ -39,7 +39,7 @@ describe('Calendar access and session boundaries', () => {
     fillYear()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Create Academic Year' }))
-    await screen.findByText('Academic year created successfully.')
+    await screen.findByText('Academic year created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledTimes(1)
   })
 
@@ -92,6 +92,6 @@ describe('Calendar access and session boundaries', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(api.createAcademicRecord).toHaveBeenCalledTimes(1)
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(calls)
-    expect(screen.queryByText('Academic year created successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Academic year created successfully')).not.toBeInTheDocument()
   })
 })

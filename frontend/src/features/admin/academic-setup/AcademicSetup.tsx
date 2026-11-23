@@ -91,11 +91,6 @@ function AcademicSetupWorkspace({
           {state.error}
         </p>
       )}
-      {state.notice && (
-        <p role="status" className="text-success">
-          {state.notice}
-        </p>
-      )}
       {state.formOpen && state.manageable && (
         <AcademicSetupForm
           entity={state.entity}

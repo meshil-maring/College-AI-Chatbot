@@ -3,13 +3,13 @@ import { createStructureRecord, getAcademicStructure } from '../../../../../serv
 import type { CurriculumVersion } from '../../../../../types/academicStructure.ts'
 import type { AcademicStructureState } from '../../structure/useAcademicStructure.ts'
 import { studyPlanCanChange, studyPlanSemesters } from '../semester-plan/studyPlanModel.ts'
+import { notification } from '../../../../../lib/notifications/notification.ts'
 
 // Reuse the existing, audited stage API. A failed batch keeps completed stages;
 // every explicit retry reads the server again and creates only missing numbers.
 export function usePrepareSemesters(state: AcademicStructureState, version?: CurriculumVersion, hasDrafts = false) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
   const [progress, setProgress] = useState({ completed: 0, total: 0 })
   const mounted = useRef(true)
   const locked = useRef(false)
@@ -31,7 +31,6 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
     locked.current = true
     setSaving(true)
     setError('')
-    setNotice('')
     const identity = state.context.identity
     const versionId = version.curriculum_version_id
     const current = () =>
@@ -94,7 +93,7 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
         codes.add(result.code.trim().toLowerCase())
         setProgress((value) => ({ ...value, completed: value.completed + 1 }))
       }
-      if (current()) setNotice('Semesters are ready. Existing semester records have been reused.')
+      if (current()) notification.success('Semesters are ready', 'Existing semester records have been reused.')
     } catch (cause) {
       if (current())
         setError(
@@ -106,7 +105,6 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
         try {
           const results = await live.current.state.refresh()
           if (current() && results.some((result) => result.isError)) {
-            setNotice('')
             setError('Semester changes were saved, but the list could not refresh. Use Retry above to reload it.')
           }
         } catch {
@@ -117,5 +115,5 @@ export function usePrepareSemesters(state: AcademicStructureState, version?: Cur
       if (mounted.current) setSaving(false)
     }
   }
-  return { missing, canPrepare, saving, error, notice, progress, prepare }
+  return { missing, canPrepare, saving, error, progress, prepare }
 }

@@ -82,11 +82,6 @@ export default function SubjectsPage({ createInitially, onCreateHandled, onOverv
           </button>
         </div>
       )}
-      {editor.notice && (
-        <p className="subject-save-notice" role="status">
-          {editor.notice}
-        </p>
-      )}
       <SubjectFilters state={state} />
       <SubjectTable
         state={state}

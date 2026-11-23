@@ -106,7 +106,7 @@ describe('Subject access and identity boundaries', () => {
     await screen.findByRole('heading', { name: 'No subjects yet' })
     const reads = vi.mocked(api.getAcademicSetup).mock.calls.length
     await act(async () => resolve({ ...subject, name: 'Old identity subject' }))
-    expect(screen.queryByText('Subject created successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Subject created successfully')).not.toBeInTheDocument()
     expect(screen.queryByText('Old identity subject')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(reads)
   })

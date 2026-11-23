@@ -24,20 +24,10 @@ export default function StudyPlanPublication({
   choices: StudyPlanChoicesState
 }) {
   const publication = useStudyPlanPublication(state, version, choices)
-  const {
-    reviewing,
-    notice,
-    semesters,
-    count,
-    canPublish,
-    saving,
-    emptySemesters,
-    unconfiguredSemesters,
-    semesterCount,
-  } = publication
+  const { reviewing, semesters, count, canPublish, saving, emptySemesters, unconfiguredSemesters, semesterCount } =
+    publication
   return (
     <div className="study-plan-publication">
-      {notice && <p role="status">{notice}</p>}
       {version.status === 'draft' ? (
         <>
           {!count && <p>Add at least one subject before publishing.</p>}

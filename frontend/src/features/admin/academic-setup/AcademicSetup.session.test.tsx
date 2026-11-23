@@ -61,7 +61,7 @@ describe('Academic Setup permissions and session lifecycle', () => {
     })
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
     expect(screen.queryByText('Old session failure')).not.toBeInTheDocument()
-    expect(screen.queryByText('Saved successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Saved successfully')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenLastCalledWith('token-2')
     fireEvent.click(screen.getByRole('button', { name: 'Add department' }))
     expect(screen.getByLabelText('Name')).toHaveValue('')
@@ -110,7 +110,7 @@ describe('Academic Setup permissions and session lifecycle', () => {
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'New draft' } })
     await act(async () => resolveOld(department))
     expect(screen.getByLabelText('Name')).toHaveValue('New draft')
-    expect(screen.queryByText('Saved successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Saved successfully')).not.toBeInTheDocument()
   })
 
   it('retains successful-save feedback and blocks duplicate retries until a failed refresh recovers', async () => {
@@ -120,7 +120,7 @@ describe('Academic Setup permissions and session lifecycle', () => {
     fireEvent.change(screen.getByLabelText('Code'), { target: { value: 'ME' } })
     vi.mocked(api.getAcademicSetup).mockRejectedValueOnce(new Error('Network unavailable'))
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(await screen.findByText('Saved successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Saved successfully')).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not refresh Academic Setup')
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add department' })).toBeDisabled()

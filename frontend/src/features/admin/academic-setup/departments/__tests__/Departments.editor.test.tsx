@@ -38,7 +38,7 @@ describe('Department drawers', () => {
       target: { value: ' Interdisciplinary study ' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Create Department', exact: true }))
-    await screen.findByText('Department created successfully.')
+    await screen.findByText('Department created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledWith('token-1', 'departments', {
       name: 'Applied Sciences',
       code: 'AS',
@@ -63,7 +63,7 @@ describe('Department drawers', () => {
     expect(screen.getByRole('radio', { name: /^Active/ })).toBeChecked()
     fireEvent.change(screen.getByRole('textbox', { name: /Department Code/ }), { target: { value: 'AS' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create Department', exact: true }))
-    expect(await screen.findByText('Department created successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Department created successfully')).toBeInTheDocument()
   })
 
   it('retains a failed request and disables repeat submission while saving', async () => {
@@ -114,7 +114,7 @@ describe('Department drawers', () => {
     )
     expect(api.updateAcademicRecord).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Changes' }))
-    await screen.findByText('Department updated successfully.')
+    await screen.findByText('Department updated successfully')
     expect(api.updateAcademicRecord).toHaveBeenCalledWith(
       'token-1',
       'departments',

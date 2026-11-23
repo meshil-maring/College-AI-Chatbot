@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { queryClient } from '../../../../lib/queryClient.ts'
 import { AdminApiError } from '../../../../services/admin/http.ts'
 import type { StructureContext } from '../structure/useAcademicStructure.ts'
 import { registrationCatalogueOptions } from './registrationQueries.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 export function useRegistrationAdmin(context: StructureContext) {
   const query = useQuery(registrationCatalogueOptions(context), queryClient)
-  const [notice, setNotice] = useState('')
   const mounted = useRef(true)
   const locked = useRef(false)
   useEffect(() => {
@@ -25,7 +25,7 @@ export function useRegistrationAdmin(context: StructureContext) {
       },
       onSuccess: async () => {
         if (!mounted.current) return
-        setNotice('Saved successfully.')
+        notification.success('Saved successfully')
         await queryClient.invalidateQueries({ queryKey: registrationCatalogueOptions(context).queryKey })
       },
     },
@@ -36,7 +36,6 @@ export function useRegistrationAdmin(context: StructureContext) {
   async function save(operation: () => Promise<{ institution_id: string }>) {
     if (!mounted.current || locked.current || query.isFetching || query.isError) return false
     locked.current = true
-    setNotice('')
     try {
       await mutation.mutateAsync(operation)
       return mounted.current
@@ -51,7 +50,6 @@ export function useRegistrationAdmin(context: StructureContext) {
     data,
     save,
     saving: mutation.isPending,
-    notice,
     error: query.error ?? mutation.error,
     busy: query.isFetching || query.isError || mutation.isPending || !data,
   }

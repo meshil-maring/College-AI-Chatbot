@@ -57,9 +57,7 @@ it.each(['foreign catalogue', 'foreign stage', 'published version', 'revoked gra
       change === 'foreign stage' ? 'could not be verified' : 'setup is unavailable',
     )
     if (change !== 'foreign stage') expect(api.createStructureRecord).not.toHaveBeenCalled()
-    expect(
-      screen.queryByText('Semesters are ready. Existing semester records have been reused.'),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText('Semesters are ready')).not.toBeInTheDocument()
   },
 )
 

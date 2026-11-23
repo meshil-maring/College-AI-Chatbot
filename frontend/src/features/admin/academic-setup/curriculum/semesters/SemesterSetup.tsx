@@ -52,7 +52,6 @@ export default function SemesterSetup({
           {setup.error}
         </p>
       )}
-      {setup.notice && <p role="status">{setup.notice}</p>}
     </section>
   )
 }

@@ -71,7 +71,7 @@ describe('export-aligned setup workflow', () => {
     choose('Course type', 'core')
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(api.createAcademicRecord).toHaveBeenCalledTimes(1))
-    await screen.findByText('Saved successfully.')
+    await screen.findByText('Saved successfully')
     expect(api.createAcademicRecord).toHaveBeenLastCalledWith('token-1', 'program_courses', {
       program_id: program.program_id,
       course_id: course.course_id,
@@ -87,7 +87,7 @@ describe('export-aligned setup workflow', () => {
     choose('Semester', semester.semester_id)
     fill('Capacity (optional)', '60')
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    await screen.findByText('Saved successfully.')
+    await screen.findByText('Saved successfully')
     expect(api.createAcademicRecord).toHaveBeenLastCalledWith(
       'token-1',
       'course_offerings',

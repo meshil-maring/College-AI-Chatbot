@@ -24,7 +24,7 @@ describe('Calendar save recovery', () => {
     ).toBeDisabled()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Retry Remaining Semesters' })).toBeEnabled())
     fireEvent.click(screen.getByRole('button', { name: 'Retry Remaining Semesters' }))
-    await screen.findByText('Academic year created successfully.')
+    await screen.findByText('Academic year created successfully')
     expect(vi.mocked(api.createAcademicRecord).mock.calls.filter((call) => call[1] === 'academic_years')).toHaveLength(
       1,
     )
@@ -43,7 +43,7 @@ describe('Calendar save recovery', () => {
     expect(screen.getByLabelText(/Academic Year Code/)).toHaveValue(' AY2028 ')
     fireEvent.change(screen.getByLabelText(/Academic Year Code/), { target: { value: 'AY2028B' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create Academic Year' }))
-    await screen.findByText('Academic year created successfully.')
+    await screen.findByText('Academic year created successfully')
   })
 
   it('blocks duplicate submissions and disables edits during a save', async () => {

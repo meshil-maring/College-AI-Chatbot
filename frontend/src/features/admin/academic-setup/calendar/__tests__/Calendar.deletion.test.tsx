@@ -20,7 +20,7 @@ describe('Calendar deletion', () => {
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus()
     expect(api.deleteAcademicYear).not.toHaveBeenCalled()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Academic Year' }))
-    expect(await screen.findByText('Academic Year deleted successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Academic Year deleted successfully')).toBeInTheDocument()
     expect(api.deleteAcademicYear).toHaveBeenCalledWith('token-1', 'year-2')
     expect(screen.queryByRole('button', { name: 'Delete 2024 - 2025' })).not.toBeInTheDocument()
     expect(catalogue.records.academic_years).toHaveLength(1)
@@ -32,8 +32,8 @@ describe('Calendar deletion', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Semesters', exact: true }))
     const nextDialog = await openDelete('Semester 2', 'semester')
     fireEvent.click(within(nextDialog).getByRole('button', { name: 'Delete Semester' }))
-    expect(await screen.findByText('Semester deleted successfully.')).toBeInTheDocument()
-    expect(screen.queryByText('Academic Year deleted successfully.')).not.toBeInTheDocument()
+    expect(await screen.findByText('Semester deleted successfully')).toBeInTheDocument()
+    // Each confirmed deletion gets its own toast; the earlier one expires on its own.
   })
 
   it('blocks a current year before deletion, regardless of linked records', async () => {
@@ -64,7 +64,7 @@ describe('Calendar deletion', () => {
     fireEvent.click(await screen.findByRole('tab', { name: 'Semesters', exact: true }))
     const dialog = await openDelete('Semester 2', 'semester')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Semester' }))
-    expect(await screen.findByText('Semester deleted successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Semester deleted successfully')).toBeInTheDocument()
     expect(api.deleteSemester).toHaveBeenCalledWith('token-1', 'semester-2')
     expect(catalogue.records.academic_years).toHaveLength(2)
   })
@@ -123,7 +123,7 @@ describe('Calendar deletion', () => {
     await screen.findByText('No academic years yet')
     const requests = vi.mocked(api.getAcademicSetup).mock.calls.length
     await act(async () => resolve({ ...year, academic_year_id: 'year-2' }))
-    expect(screen.queryByText('Academic Year deleted successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Academic Year deleted successfully')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(requests)
   })
 })

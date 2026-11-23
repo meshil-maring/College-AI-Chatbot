@@ -10,6 +10,7 @@ import {
   type ProgramDraft,
   type ProgramErrors,
 } from './programModel.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 interface Options {
   accessToken: string
@@ -25,7 +26,6 @@ export function useProgramEditor({ accessToken, institutionId, catalogue, busy, 
   const [errors, setErrors] = useState<ProgramErrors>({})
   const [validationVersion, setValidationVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [confirmation, setConfirmation] = useState<'discard' | 'status' | null>(null)
   const initial = useRef(JSON.stringify(programDraft()))
   const mounted = useRef(true)
@@ -65,7 +65,7 @@ export function useProgramEditor({ accessToken, institutionId, catalogue, busy, 
     onSuccess: async (_data, variables) => {
       if (!mounted.current) return
       setPanel(null)
-      setNotice(variables.id ? 'Program updated successfully.' : 'Program created successfully.')
+      notification.success(variables.id ? 'Program updated successfully' : 'Program created successfully')
       await refresh()
     },
     onError: (cause) => {
@@ -97,7 +97,6 @@ export function useProgramEditor({ accessToken, institutionId, catalogue, busy, 
     initial.current = JSON.stringify(next)
     setErrors({})
     setError(null)
-    setNotice(null)
     setConfirmation(null)
   }
   function change<K extends keyof ProgramDraft>(field: K, value: ProgramDraft[K]) {
@@ -146,7 +145,6 @@ export function useProgramEditor({ accessToken, institutionId, catalogue, busy, 
     errors,
     validationVersion,
     error,
-    notice,
     confirmation,
     canManage: Boolean(canManage) && !busy && (panel !== 'add' || Boolean(canCreate)),
     saving: mutation.isPending,

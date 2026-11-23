@@ -3,6 +3,7 @@ import { BATCH_PAGE_SIZE, filterBatches, type BatchRecord, type BatchSort } from
 import { batchChoices, storedBatch } from './batchStorage.ts'
 import { useAcademicStructure, type StructureContext } from '../structure/useAcademicStructure.ts'
 import { useStructureWrite } from '../structure/useStructureWrite.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 export function useBatches(context: StructureContext) {
   const source = useAcademicStructure(context)
@@ -15,7 +16,6 @@ export function useBatches(context: StructureContext) {
   const [status, changeStatus] = useState('')
   const [sort, changeSort] = useState<BatchSort>('year-desc')
   const [requestedPage, setPage] = useState(1)
-  const [notice, setNotice] = useState('')
   const filtered = filterBatches(records, choices.programs, { search, program, year, status, sort })
   const pages = Math.max(1, Math.ceil(filtered.length / BATCH_PAGE_SIZE))
   const page = Math.min(requestedPage, pages)
@@ -56,7 +56,7 @@ export function useBatches(context: StructureContext) {
     if (saved) {
       clearFilters()
       changeSort('year-desc')
-      setNotice(`${record.name} ${existing ? 'updated' : 'created'} successfully.`)
+      notification.success(`${record.name} ${existing ? 'updated' : 'created'} successfully`)
     }
     return saved
   }
@@ -81,7 +81,6 @@ export function useBatches(context: StructureContext) {
     page,
     pages,
     filtered,
-    notice,
     save,
     available: source.structure?.records.admission_cohorts !== undefined,
     canManage,

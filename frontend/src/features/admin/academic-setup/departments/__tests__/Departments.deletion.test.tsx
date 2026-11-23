@@ -55,7 +55,7 @@ describe('Department deletion', () => {
     expect(dialog).toBeInTheDocument()
     catalogue.records.departments = []
     await act(async () => resolve(department))
-    expect(await screen.findByText('Department deleted successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Department deleted successfully')).toBeInTheDocument()
     expect(await screen.findByText('No departments yet')).toBeInTheDocument()
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Departments', level: 1 })).toHaveFocus()
@@ -107,7 +107,7 @@ describe('Department deletion', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Department' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('linked records')
     expect(catalogue.records.departments).toHaveLength(1)
-    expect(screen.queryByText('Department deleted successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Department deleted successfully')).not.toBeInTheDocument()
   })
 
   it('allows retry after failure and deletes an unused inactive department', async () => {
@@ -123,7 +123,7 @@ describe('Department deletion', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Department' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Network unavailable')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Department' }))
-    expect(await screen.findByText('Department deleted successfully.')).toBeInTheDocument()
+    expect(await screen.findByText('Department deleted successfully')).toBeInTheDocument()
     expect(api.deleteDepartment).toHaveBeenCalledTimes(2)
   })
 
@@ -154,7 +154,7 @@ describe('Department deletion', () => {
     const requests = vi.mocked(api.getAcademicSetup).mock.calls.length
     await act(async () => resolve(department))
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect(screen.queryByText('Department deleted successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Department deleted successfully')).not.toBeInTheDocument()
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(requests)
   })
 
@@ -164,6 +164,6 @@ describe('Department deletion', () => {
     const dialog = await openDeletion()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Department' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('could not be verified')
-    expect(screen.queryByText('Department deleted successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Department deleted successfully')).not.toBeInTheDocument()
   })
 })

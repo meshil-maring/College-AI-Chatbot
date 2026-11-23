@@ -116,7 +116,7 @@ describe('Academic Setup Stage 1', () => {
     fireEvent.click(await screen.findByRole('button', { name: `Deactivate ${department.name}` }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deactivation' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Deactivate active programs')
-    expect(screen.queryByText('Saved successfully.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Saved successfully')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: `Deactivate ${department.name}` })).toBeEnabled()
     vi.mocked(api.createAcademicRecord).mockRejectedValue(new Error('This code already exists.'))
     fireEvent.click(screen.getByRole('button', { name: 'Add department' }))

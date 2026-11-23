@@ -3,6 +3,7 @@ import { SECTION_PAGE_SIZE, filterSections, type SectionRecord, type SectionSort
 import { sectionChoices, storedSection } from './sectionStorage.ts'
 import { useAcademicStructure, type StructureContext } from '../structure/useAcademicStructure.ts'
 import { useStructureWrite } from '../structure/useStructureWrite.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 export function useSections(context: StructureContext) {
   const source = useAcademicStructure(context)
@@ -16,7 +17,6 @@ export function useSections(context: StructureContext) {
   const [status, changeStatus] = useState('')
   const [sort, changeSort] = useState<SectionSort>('reference')
   const [requestedPage, setPage] = useState(1)
-  const [notice, setNotice] = useState('')
   const filtered = filterSections(records, choices.batches, { search, batch, program, year, status, sort })
   const pages = Math.max(1, Math.ceil(filtered.length / SECTION_PAGE_SIZE))
   const page = Math.min(requestedPage, pages)
@@ -56,7 +56,7 @@ export function useSections(context: StructureContext) {
     if (saved) {
       clearFilters()
       changeSort('reference')
-      setNotice(`${record.name} ${existing ? 'updated' : 'created'} successfully.`)
+      notification.success(`${record.name} ${existing ? 'updated' : 'created'} successfully`)
     }
     return saved
   }
@@ -82,7 +82,6 @@ export function useSections(context: StructureContext) {
     page,
     pages,
     filtered,
-    notice,
     save,
     available: source.structure?.records.academic_sections !== undefined,
     canManage,

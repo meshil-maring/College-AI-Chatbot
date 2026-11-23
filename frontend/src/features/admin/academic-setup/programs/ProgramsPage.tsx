@@ -91,17 +91,7 @@ export default function ProgramsPage({ createInitially, onCreateHandled, onOverv
           </button>
         </div>
       )}
-      {editor.notice && (
-        <p className="program-save-notice" role="status">
-          {editor.notice}
-        </p>
-      )}
       <ProgramFilters state={state} />
-      {deletion.notice && (
-        <p className="program-save-notice" role="status">
-          {deletion.notice}
-        </p>
-      )}
       <ProgramTable
         state={state}
         onCreate={() => editor.open('add')}

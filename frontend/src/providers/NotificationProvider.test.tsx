@@ -1,12 +1,11 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { notification } from '../lib/notifications/notification.ts'
-import { NotificationProvider } from './NotificationProvider.tsx'
 
-describe('NotificationProvider', () => {
+describe('NotificationProvider (mounted by src/test/setup.ts)', () => {
   it('renders one labelled, dark, top-right toast region', async () => {
-    render(<NotificationProvider />)
+    // The shared test setup mounts the provider once, as main.tsx does.
     expect(screen.getAllByRole('region', { name: /notifications/i })).toHaveLength(1)
     act(() => {
       notification.info('Welcome back')
@@ -20,7 +19,6 @@ describe('NotificationProvider', () => {
 
   it('lets keyboard users dismiss a toast with its labelled close button', async () => {
     const user = userEvent.setup()
-    render(<NotificationProvider />)
     act(() => {
       notification.success('Changes saved successfully')
     })

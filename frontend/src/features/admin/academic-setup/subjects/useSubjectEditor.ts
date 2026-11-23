@@ -5,6 +5,7 @@ import { AdminApiError } from '../../../../services/admin/http.ts'
 import type { AcademicCatalogue, AcademicCreateMap, Course } from '../../../../types/academicSetup.ts'
 import { subjectDepartments } from './subjectModel.ts'
 import { subjectDraft, validateSubject, type SubjectDraft, type SubjectErrors } from './forms/subjectDraft.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 interface Options {
   accessToken: string
@@ -20,7 +21,6 @@ export function useSubjectEditor({ accessToken, institutionId, catalogue, busy, 
   const [errors, setErrors] = useState<SubjectErrors>({})
   const [validationVersion, setValidationVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [confirmation, setConfirmation] = useState<'discard' | 'status' | null>(null)
   const initial = useRef(JSON.stringify(subjectDraft()))
   const mounted = useRef(true)
@@ -60,7 +60,7 @@ export function useSubjectEditor({ accessToken, institutionId, catalogue, busy, 
     onSuccess: async (_data, variables) => {
       if (!mounted.current) return
       setPanel(null)
-      setNotice(variables.id ? 'Subject updated successfully.' : 'Subject created successfully.')
+      notification.success(variables.id ? 'Subject updated successfully' : 'Subject created successfully')
       await refresh()
     },
     onError: (cause) => {
@@ -92,7 +92,6 @@ export function useSubjectEditor({ accessToken, institutionId, catalogue, busy, 
     initial.current = JSON.stringify(next)
     setErrors({})
     setError(null)
-    setNotice(null)
     setConfirmation(null)
   }
   function change<K extends keyof SubjectDraft>(field: K, value: SubjectDraft[K]) {
@@ -142,7 +141,6 @@ export function useSubjectEditor({ accessToken, institutionId, catalogue, busy, 
     errors,
     validationVersion,
     error,
-    notice,
     confirmation,
     canManage: Boolean(canManage) && !busy && (panel !== 'add' || Boolean(canCreate)),
     saving: mutation.isPending,

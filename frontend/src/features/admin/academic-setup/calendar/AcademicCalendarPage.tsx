@@ -98,11 +98,6 @@ export default function AcademicCalendarPage({
           </button>
         </div>
       )}
-      {editor.notice && (
-        <p className="calendar-save-notice" role="status">
-          {editor.notice}
-        </p>
-      )}
       <div
         ref={tabs}
         className="calendar-tabs"
@@ -201,11 +196,6 @@ export default function AcademicCalendarPage({
       )}
       {editor.panel && (editor.panel.entity === 'academic_years' ? state.years : state.semesters) && (
         <CalendarDrawer editor={editor} state={state} />
-      )}
-      {deletion.notice && (
-        <p className="calendar-save-notice" role="status">
-          {deletion.notice}
-        </p>
       )}
       {deletion.active && <AcademicDeleteDialog deletion={deletion.active} />}
     </section>

@@ -100,7 +100,7 @@ it('clears choice drafts after an identity change and ignores late save callback
   const reads = vi.mocked(api.getRegistrationCatalogue).mock.calls.length
   await act(async () => resolve({ institution_id: 'institution-1', choice_group_id: 'group-1' }))
   expect(api.getRegistrationCatalogue).toHaveBeenCalledTimes(reads)
-  expect(screen.queryByText('Saved successfully.')).not.toBeInTheDocument()
+  expect(screen.queryByText('Saved successfully')).not.toBeInTheDocument()
 })
 
 it('waits for every open choice draft to be saved or cancelled before publication', async () => {

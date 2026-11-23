@@ -16,7 +16,7 @@ it('reviews actual semester subjects and publishes only after explicit confirmat
   expect(api.updateStructureRecord).toHaveBeenCalledExactlyOnceWith('token-1', 'curriculum_versions', 'version-1', {
     status: 'published',
   })
-  expect(screen.getByText('Study plan published. You can now assign it to a batch.')).toBeInTheDocument()
+  expect(await screen.findByText('Study plan published')).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Add subject/ })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Assign to a batch' }))
   await screen.findByRole('heading', { name: 'Batches', level: 1 })
@@ -67,7 +67,7 @@ it('rejects an unverifiable publication response', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Review and publish' }))
   fireEvent.click(screen.getByRole('button', { name: 'Publish study plan' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('could not be verified for this institution')
-  expect(screen.queryByText(/Study plan published\./)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Study plan published/)).not.toBeInTheDocument()
 })
 
 it('locks publication while pending and does not refresh or notify after unmount', async () => {

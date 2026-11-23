@@ -45,7 +45,6 @@ export default function StudentEnrollmentPage({ context, onBack }: { context: St
           </button>
         </div>
       )}
-      {state.notice && <p role="status">{state.notice}</p>}
       {state.data && !state.data.can_assign && (
         <p role="status">Assigning students requires Courses manage, Students read, and Students update permissions.</p>
       )}

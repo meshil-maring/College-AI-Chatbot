@@ -76,17 +76,7 @@ export default function SectionsPage({
           Create an active batch, program semester and dated teaching term before adding a section.
         </p>
       )}
-      {state.notice && (
-        <p className="section-save-notice" role="status">
-          {state.notice}
-        </p>
-      )}
       <SectionFilters state={state} />
-      {deletion.notice && (
-        <p className="section-save-notice" role="status">
-          {deletion.notice}
-        </p>
-      )}
       <SectionTable
         state={state}
         onOpen={editor.open}

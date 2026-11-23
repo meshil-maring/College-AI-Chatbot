@@ -10,6 +10,7 @@ import {
 } from './editor/calendarDraft.ts'
 import { saveCalendar, type CalendarProgress } from './editor/saveCalendar.ts'
 import type { CalendarContext, CalendarState } from './useCalendar.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 export function useCalendarEditor(context: CalendarContext, state: CalendarState) {
   const [panel, setPanel] = useState<CalendarPanel | null>(null)
@@ -17,7 +18,6 @@ export function useCalendarEditor(context: CalendarContext, state: CalendarState
   const [errors, setErrors] = useState<CalendarErrors>({})
   const [validationVersion, setValidationVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [confirmation, setConfirmation] = useState<'discard' | 'status' | null>(null)
   const [progress, setProgress] = useState<CalendarProgress>({ completed: 0 })
@@ -84,7 +84,6 @@ export function useCalendarEditor(context: CalendarContext, state: CalendarState
     initial.current = JSON.stringify(next)
     setErrors({})
     setError(null)
-    setNotice(null)
     setConfirmation(null)
     progressRef.current = { completed: 0 }
     setProgress(progressRef.current)
@@ -157,8 +156,8 @@ export function useCalendarEditor(context: CalendarContext, state: CalendarState
       })
       if (!mounted.current) return
       setPanel(null)
-      setNotice(
-        `${panel.entity === 'academic_years' ? 'Academic year' : 'Semester'} ${panel.mode === 'add' ? 'created' : 'updated'} successfully.`,
+      notification.success(
+        `${panel.entity === 'academic_years' ? 'Academic year' : 'Semester'} ${panel.mode === 'add' ? 'created' : 'updated'} successfully`,
       )
       await state.query.refetch()
     } catch (cause) {
@@ -176,7 +175,6 @@ export function useCalendarEditor(context: CalendarContext, state: CalendarState
     errors,
     validationVersion,
     error,
-    notice,
     saving,
     confirmation,
     progress,

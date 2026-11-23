@@ -12,6 +12,7 @@ import {
   academicUpdatePayload,
   makeAcademicDraft,
 } from './academicSetupForm.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 export function useAcademicSetup(
   accessToken: string,
@@ -25,7 +26,6 @@ export function useAcademicSetup(
   const [formOpen, setFormOpen] = useState(false)
   const [draft, setDraft] = useState(makeAcademicDraft)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const mounted = useRef(true)
   const initialActionHandled = useRef(false)
   useEffect(() => {
@@ -67,7 +67,7 @@ export function useAcademicSetup(
       setFormOpen(false)
       setEditing(null)
       setDraft(makeAcademicDraft())
-      setNotice('Saved successfully.')
+      notification.success('Saved successfully')
       await query.refetch()
     },
     onError: (cause) => {
@@ -82,14 +82,12 @@ export function useAcademicSetup(
     setEditing(null)
     setDraft(makeAcademicDraft())
     setError(null)
-    setNotice(null)
   }
 
   function open(record?: AcademicRecord) {
     setEditing(record ?? null)
     setDraft(makeAcademicDraft(record))
     setError(null)
-    setNotice(null)
     setFormOpen(true)
   }
 
@@ -97,14 +95,12 @@ export function useAcademicSetup(
     if (mutation.isPending) return
     const validation = academicDraftError(entity, draft)
     setError(validation)
-    setNotice(null)
     if (!validation) mutation.mutate({ record: editing ?? undefined })
   }
 
   function toggle(record: AcademicRecord) {
     if (mutation.isPending) return
     setError(null)
-    setNotice(null)
     mutation.mutate({ record, toggle: true })
   }
 
@@ -119,7 +115,6 @@ export function useAcademicSetup(
     draft,
     setDraft,
     error,
-    notice,
     busy: mutation.isPending || query.isFetching || query.isError,
     select,
     open,

@@ -54,11 +54,6 @@ export default function BatchesPage({
           Create an active program, academic year and published curriculum before adding a batch.
         </p>
       )}
-      {state.notice && (
-        <p className="batch-save-notice" role="status">
-          {state.notice}
-        </p>
-      )}
       {createdBatch && (
         <div className="batch-integration-note">
           <p>
