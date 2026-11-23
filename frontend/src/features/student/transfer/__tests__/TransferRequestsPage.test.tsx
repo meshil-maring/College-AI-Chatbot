@@ -48,7 +48,7 @@ it('submits only the chosen section and a trimmed reason', async () => {
       reason: 'Clash with lab hours',
     }),
   )
-  expect(await screen.findByText('Your transfer request was submitted.')).toBeInTheDocument()
+  expect(await screen.findByText('Transfer request submitted successfully')).toBeInTheDocument()
 })
 
 it('offers cancel instead of a new request while one is open', async () => {

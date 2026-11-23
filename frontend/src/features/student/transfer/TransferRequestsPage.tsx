@@ -6,6 +6,7 @@ import { describeSection, formatTransferDate, isOpenTransfer } from '../../trans
 import TransferForm from './TransferForm.tsx'
 import TransferTimeline from './TransferTimeline.tsx'
 import { useStudentTransfers } from './useStudentTransfers.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 export default function TransferRequestsPage() {
   const { accessToken, user, role, sessionGeneration } = useAuth()
@@ -43,7 +44,6 @@ function TransferSession({
 }) {
   const { query, submit, cancel } = useStudentTransfers(identity, institutionId, token)
   const [showForm, setShowForm] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
   const busy = submit.isPending || cancel.isPending
   const error = query.error ?? submit.error ?? cancel.error
   const data = query.data
@@ -59,7 +59,6 @@ function TransferSession({
           <p>{error.message}</p>
         </div>
       )}
-      {notice && <p role="status">{notice}</p>}
       {data && (
         <>
           <CurrentPlacement data={data} />
@@ -73,7 +72,7 @@ function TransferSession({
                 submit.mutate(body, {
                   onSuccess: () => {
                     setShowForm(false)
-                    setNotice('Your transfer request was submitted.')
+                    notification.success('Transfer request submitted successfully')
                   },
                 })
               }
@@ -86,7 +85,9 @@ function TransferSession({
             canCancel={canRequest}
             busy={busy}
             onCancel={(requestId) =>
-              cancel.mutate(requestId, { onSuccess: () => setNotice('Your transfer request was cancelled.') })
+              cancel.mutate(requestId, {
+                onSuccess: () => notification.success('Transfer request cancelled successfully'),
+              })
             }
           />
         </>

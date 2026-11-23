@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PasswordField from './PasswordField.tsx'
 import { AuthError, changePassword } from '../../../services/auth/auth.ts'
 import { useAuth } from '../session/AuthProvider.tsx'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 interface FieldErrors {
   currentPassword?: string
@@ -17,7 +18,6 @@ export default function ChangePasswordForm() {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [success, setSuccess] = useState(false)
 
   async function handleSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault()
@@ -44,11 +44,10 @@ export default function ChangePasswordForm() {
 
     setErrors({})
     setFormError(null)
-    setSuccess(false)
     setBusy(true)
     try {
       await changePassword(accessToken, currentPassword, newPassword, confirmPassword)
-      setSuccess(true)
+      notification.success('Password updated successfully', 'This session remains active.')
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
@@ -72,14 +71,6 @@ export default function ChangePasswordForm() {
       {formError !== null && (
         <div role="alert" className="mt-4 rounded-lg border border-danger bg-danger-bg px-4 py-2 text-sm text-danger">
           {formError}
-        </div>
-      )}
-      {success && (
-        <div
-          role="status"
-          className="mt-4 rounded-lg border border-success bg-success-bg px-4 py-2 text-sm text-success"
-        >
-          Password changed successfully. This session remains active.
         </div>
       )}
       <form

@@ -116,7 +116,8 @@ describe('Phase 7.15 invitation delivery and resend', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Resend' }))
     await userEvent.click(screen.getByRole('button', { name: 'Send new link' }))
 
-    expect(await screen.findByText(/Invitation could not be delivered/i)).toBeDefined()
+    const undelivered = await screen.findByText(/Invitation could not be delivered/i)
+    expect(undelivered.closest('[data-sonner-toast]')?.getAttribute('data-type')).toBe('warning')
     // The failure is never dressed up as success.
     expect(screen.queryByText(/emailed to the invited address/i)).toBeNull()
   })

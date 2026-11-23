@@ -13,10 +13,14 @@ import type {
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import { useApiQuery } from '../../../hooks/useApiQuery.ts'
 import { queryClient } from '../../../lib/queryClient.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 export const inputClass =
   'w-full rounded-lg border border-control bg-surface px-3 py-2 text-sm text-content placeholder-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent'
 
 export const labelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-muted'
+
+/** Saved, but the email was not delivered: reported as a warning, never as success. */
+export const DELIVERY_FAILED = 'Invitation could not be delivered. Try again later.'
 
 export function useAdminRoster({
   institutionId,
@@ -33,7 +37,6 @@ export function useAdminRoster({
 
   const [busy, setBusy] = useState<'invite' | 'cancel' | 'resend' | 'revoke' | null>(null)
   const [actionError, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
 
   const [showInvite, setShowInvite] = useState(false)
   const [email, setEmail] = useState('')
@@ -67,9 +70,10 @@ export function useAdminRoster({
     async (action: 'invite' | 'cancel' | 'resend' | 'revoke', operation: () => Promise<string>): Promise<void> => {
       setBusy(action)
       setError(null)
-      setNotice(null)
       try {
-        setNotice(await operation())
+        const message = await operation()
+        if (message === DELIVERY_FAILED) notification.warning(message)
+        else notification.success(message)
         await refresh()
         onChanged?.()
       } catch (err) {
@@ -93,9 +97,7 @@ export function useAdminRoster({
       setEmail('')
       setShowInvite(false)
       if (result.email_delivery?.status === 'pending') return 'Invitation email queued'
-      return result.email_delivery?.status === 'sent'
-        ? 'Invitation sent'
-        : 'Invitation could not be delivered. Try again later.'
+      return result.email_delivery?.status === 'sent' ? 'Invitation sent' : DELIVERY_FAILED
     })
 
   return {
@@ -107,8 +109,6 @@ export function useAdminRoster({
     busy,
     error,
     setError,
-    notice,
-    setNotice,
     showInvite,
     setShowInvite,
     email,

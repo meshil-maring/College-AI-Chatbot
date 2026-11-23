@@ -15,6 +15,7 @@ import { queryClient } from '../../lib/queryClient.ts'
 import InstitutionDetailPanel, { type BusyAction } from './InstitutionDetailPanel.tsx'
 import { CreateInstitutionForm } from './institutions/CreateInstitutionForm.tsx'
 import { InstitutionTable } from './institutions/InstitutionTable.tsx'
+import { notification } from '../../lib/notifications/notification.ts'
 
 /**
  * Phase 7.13 Super Admin institution management.
@@ -40,7 +41,6 @@ export default function InstitutionManagement() {
   const [detailLoading, setLoading] = useState(false)
   const [busy, setBusy] = useState<BusyAction>(null)
   const [actionError, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
 
   const token = accessToken ?? ''
@@ -78,12 +78,12 @@ export default function InstitutionManagement() {
 
   /** Every mutation re-reads the authoritative server state afterwards. */
   const runAction = useCallback(
-    async (action: BusyAction, operation: () => Promise<string>): Promise<void> => {
+    async (action: BusyAction, operation: () => Promise<string | null>): Promise<void> => {
       setBusy(action)
       setError(null)
-      setNotice(null)
       try {
-        setNotice(await operation())
+        const message = await operation()
+        if (message) notification.success(message)
         await refreshList()
         if (selected !== null) setSelected(await getInstitution(token, selected.id))
       } catch (err) {
@@ -114,7 +114,6 @@ export default function InstitutionManagement() {
                 setShowDetail(false)
                 setSelected(null)
                 setError(null)
-                setNotice(null)
               }}
               className="rounded-lg border border-control px-4 py-2 text-sm font-medium text-content hover:bg-hover focus:outline-none focus:ring-2 focus:ring-accent"
             >
@@ -126,7 +125,6 @@ export default function InstitutionManagement() {
             onClick={() => {
               setShowCreate((open) => !open)
               setError(null)
-              setNotice(null)
             }}
             className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
           >
@@ -138,11 +136,6 @@ export default function InstitutionManagement() {
       {error !== null ? (
         <p role="alert" className="rounded-xl border border-danger bg-danger-bg px-4 py-3 text-sm text-danger">
           {error}
-        </p>
-      ) : null}
-      {notice !== null ? (
-        <p role="status" className="rounded-xl border border-success bg-success-bg px-4 py-3 text-sm text-success">
-          {notice}
         </p>
       ) : null}
 
@@ -157,7 +150,11 @@ export default function InstitutionManagement() {
               const created = await createInstitution(token, input)
               setShowCreate(false)
               await openDetail(created.id)
-              return `Institution ${created.name} created. Public AI is reachable at /u/${created.code.toLowerCase()}/ai.`
+              notification.success(
+                'Institution created successfully',
+                `${created.name}'s public AI is reachable at /u/${created.code.toLowerCase()}/ai.`,
+              )
+              return null
             })
           }}
         />

@@ -47,7 +47,8 @@ describe('ChangePasswordForm', () => {
     await user.type(screen.getByLabelText('Confirm new password'), 'newpass123')
     await user.click(screen.getByRole('button', { name: /change password/i }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/successfully/i)
+    expect(await screen.findByText('Password updated successfully')).toBeInTheDocument()
+    expect(screen.getByText('This session remains active.')).toBeInTheDocument()
     expect(auth.changePassword).toHaveBeenCalledWith(
       'access-token',
       'oldpass123',

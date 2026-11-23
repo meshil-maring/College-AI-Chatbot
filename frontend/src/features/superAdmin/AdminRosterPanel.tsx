@@ -17,7 +17,7 @@ import { InvitationLinkNotice, ResendConfirmation, RevokeConfirmation, RosterTab
  * never logged. Losing it means cancelling and reissuing the invitation.
  */
 
-import { inputClass, labelClass, useAdminRoster } from './roster/useAdminRoster.ts'
+import { DELIVERY_FAILED, inputClass, labelClass, useAdminRoster } from './roster/useAdminRoster.ts'
 export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster>[0]) {
   const model = useAdminRoster(props)
   const {
@@ -29,8 +29,6 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
     busy,
     error,
     setError,
-    notice,
-    setNotice,
     showInvite,
     setShowInvite,
     email,
@@ -60,7 +58,6 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
           onClick={() => {
             setShowInvite((open) => !open)
             setError(null)
-            setNotice(null)
           }}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-ink hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent"
         >
@@ -71,11 +68,6 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
       {error !== null ? (
         <p role="alert" className="mt-4 rounded-xl border border-danger bg-danger-bg px-4 py-3 text-sm text-danger">
           {error}
-        </p>
-      ) : null}
-      {notice !== null ? (
-        <p role="status" className="mt-4 rounded-xl border border-success bg-success-bg px-4 py-3 text-sm text-success">
-          {notice}
         </p>
       ) : null}
 
@@ -167,12 +159,10 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
           onResend={(entry) => {
             setConfirmResend(entry)
             setError(null)
-            setNotice(null)
           }}
           onRevoke={(entry) => {
             setConfirmRevoke(entry)
             setError(null)
-            setNotice(null)
           }}
         />
       )}
@@ -197,9 +187,7 @@ export default function AdminRosterPanel(props: Parameters<typeof useAdminRoster
               )
               setCopied(false)
               if (result.email_delivery.status === 'pending') return 'Invitation email queued'
-              return result.email_delivery.status === 'sent'
-                ? result.message
-                : 'Invitation could not be delivered. Try again later.'
+              return result.email_delivery.status === 'sent' ? result.message : DELIVERY_FAILED
             })
           }}
         />
