@@ -218,8 +218,9 @@ urgent errors use an alert. Preserve existing permission and stale-data safeguar
 Report the outcome of a user action with a toast from
 [`lib/notifications`](../src/lib/notifications/notification.ts); never import Sonner
 directly. The single dark, top-right `<Toaster>` lives in
-[`NotificationProvider`](../src/providers/NotificationProvider.tsx) and maps Sonner's
-colors to the status tokens above. Show success only after the server confirms the
+[`NotificationProvider`](../src/providers/NotificationProvider.tsx); toasts are
+raised neutral cards with a status-colored accent bar and icon, styled in
+[`toasts.css`](../src/styles/toasts.css). Show success only after the server confirms the
 change, in short past-tense headlines such as "Department created successfully",
 with an optional one-sentence description. Use `warning` when a change was saved but
 a follow-up failed (for example a setup email that could not be sent), `loading` or

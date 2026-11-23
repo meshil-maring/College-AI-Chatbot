@@ -1,0 +1,106 @@
+/*
+ * Toast notifications (Sonner), configured in providers/NotificationProvider.tsx.
+ * Sonner injects its own base styles at runtime; these selectors are scoped to
+ * the toaster and the `app-toast` class so they win without !important.
+ *
+ * Layout: neutral raised card, a status-coloured accent bar and icon, and the
+ * close button inside the top-right corner.
+ */
+[data-sonner-toaster] {
+  --width: 360px;
+}
+
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast {
+  --toast-accent: var(--ui-text-muted);
+  align-items: flex-start;
+  gap: var(--ui-space-3);
+  padding: 14px 44px 14px 18px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  /* Status accent bar along the leading edge, then the overlay shadow. */
+  box-shadow:
+    inset 3px 0 0 var(--toast-accent),
+    var(--ui-shadow-overlay);
+  font-family: var(--ui-font-sans);
+}
+
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast[data-type='success'] {
+  --toast-accent: var(--ui-success);
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast[data-type='error'] {
+  --toast-accent: var(--ui-danger);
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast[data-type='warning'] {
+  --toast-accent: var(--ui-warning);
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast[data-type='info'],
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast[data-type='loading'] {
+  --toast-accent: var(--ui-info);
+}
+
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-icon] {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  color: var(--toast-accent);
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-icon] svg {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast .sonner-loading-wrapper {
+  --size: 20px;
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast .sonner-loading-bar {
+  background: var(--ui-info);
+}
+
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-content] {
+  gap: 2px;
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-title] {
+  color: var(--ui-text);
+  font-size: var(--ui-type-body);
+  font-weight: 600;
+  line-height: 1.4;
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-description] {
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+/* Close button: inside the card, overriding the global 40px button height. */
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-close-button] {
+  inset: 10px 10px auto auto;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-text-muted);
+  transform: none;
+  opacity: 1;
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-close-button] svg {
+  width: 14px;
+  height: 14px;
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast:hover [data-close-button]:hover {
+  border: 0;
+  background: var(--ui-surface-hover);
+  color: var(--ui-text);
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast [data-close-button]:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+[data-sonner-toaster][data-sonner-theme] [data-sonner-toast].app-toast:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
