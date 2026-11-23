@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import type { AcademicStructureState } from '../../structure/useAcademicStructure.ts'
 import StructureState from '../../structure/StructureState.tsx'
 import SemesterCard from './SemesterCard.tsx'
@@ -22,6 +22,7 @@ export default function SemesterPlanPage({
   onCreateCurriculum,
   onBatches,
   navigation,
+  autoPrepareId = '',
 }: {
   state: AcademicStructureState
   versionId: string
@@ -30,12 +31,21 @@ export default function SemesterPlanPage({
   onCreateCurriculum: () => void
   onBatches?: () => void
   navigation: ReactNode
+  autoPrepareId?: string
 }) {
   const scoped = scopeStudyPlanState(source)
   const choices = useStudyPlanChoices(scoped.context)
   const versions = scoped.structure?.records.curriculum_versions
   const version = versions?.find((item) => item.curriculum_version_id === versionId)
   const setup = usePrepareSemesters(scoped, version, choices.hasDrafts)
+  const prepared = useRef('')
+  useEffect(() => {
+    // Set up semesters once for a just-created draft; later visits use the button.
+    if (!autoPrepareId || prepared.current === autoPrepareId || versionId !== autoPrepareId) return
+    if (!setup.canPrepare || setup.saving) return
+    prepared.current = autoPrepareId
+    void setup.prepare()
+  }, [autoPrepareId, versionId, setup])
   const state = {
     ...scoped,
     busy: scoped.busy || setup.saving,

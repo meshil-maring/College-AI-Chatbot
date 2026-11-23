@@ -130,11 +130,8 @@ it('keeps curriculum tabs and sidebar selection synchronized', async () => {
   fireEvent.click(screen.getByRole('tab', { name: 'Version History' }))
   expect(sidebar.getByRole('button', { name: 'Version History', exact: true })).toHaveAttribute('aria-current', 'page')
   expect(screen.getByRole('region', { name: 'Published curriculum history' })).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('tab', { name: 'Legacy program mappings' }))
-  expect(sidebar.getByRole('button', { name: 'Legacy program mappings', exact: true })).toHaveAttribute(
-    'aria-current',
-    'page',
-  )
+  expect(screen.queryByRole('tab', { name: 'Legacy program mappings' })).not.toBeInTheDocument()
+  expect(sidebar.queryByRole('button', { name: 'Legacy program mappings', exact: true })).not.toBeInTheDocument()
 })
 
 it('keeps keyboard focus on the selected curriculum tab after arrow navigation', () => {

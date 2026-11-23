@@ -28,7 +28,8 @@ export function useStructureWrite<E extends StructureEntity>(state: AcademicStru
         throw new Error('The saved record could not be verified for this institution.')
       if (!mounted.current) return false
       await state.refresh()
-      return mounted.current
+      // The verified record is returned so callers can continue with it.
+      return mounted.current ? result : false
     } catch (cause) {
       if (mounted.current)
         setError(cause instanceof Error ? cause.message : 'Could not save. Your entries have been kept.')

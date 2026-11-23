@@ -6,7 +6,7 @@ from app.core.errors import AppError
 DATABASE_ERRORS = {
     "23505": (
         409, "ACADEMIC_DUPLICATE",
-        "An academic record or program-course link already exists in this context",
+        "An academic record already exists in this context",
     ),
     "23P01": (409, "ACADEMIC_DATE_CONFLICT", "Active academic year dates overlap"),
     "23514": (422, "ACADEMIC_HIERARCHY_INVALID", "Check active parents, dependent records and academic dates"),

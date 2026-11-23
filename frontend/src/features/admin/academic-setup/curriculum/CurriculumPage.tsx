@@ -1,17 +1,14 @@
-import type { CurriculumContext } from './useCurriculum.ts'
-import type { CurriculumTab } from './curriculumModel.ts'
+import type { StructureContext } from '../structure/useAcademicStructure.ts'
 import VersionedCurriculumPage from './versioning/VersionedCurriculumPage.tsx'
 import type { VersionedCurriculumTab } from './versioning/VersionedCurriculumPage.tsx'
 
 export default function CurriculumPage({
-  initialTab,
   onOverview,
   activeTab,
   onTabChange,
   onBatches,
   ...context
-}: CurriculumContext & {
-  initialTab?: CurriculumTab
+}: StructureContext & {
   onOverview: () => void
   activeTab?: VersionedCurriculumTab
   onTabChange?: (tab: VersionedCurriculumTab) => void
@@ -21,7 +18,6 @@ export default function CurriculumPage({
     <VersionedCurriculumPage
       context={context}
       onOverview={onOverview}
-      initialMapping={initialTab === 'mapping'}
       activeTab={activeTab}
       onTabChange={onTabChange}
       onBatches={onBatches}

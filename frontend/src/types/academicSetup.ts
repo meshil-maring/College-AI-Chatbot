@@ -1,10 +1,8 @@
 /** Descendant institution_id is API context derived from tenant-scoped joins. */
-export type AcademicEntity =
-  | 'departments'
-  | 'programs'
-  | 'academic_years'
-  | 'semesters'
-  | 'courses'
+export type AcademicEntity = 'departments' | 'programs' | 'academic_years' | 'semesters' | 'courses'
+
+/** How a subject counts within a curriculum semester (`curriculum_subjects.course_type`). */
+export type CourseType = 'core' | 'elective' | 'open_elective' | 'skill' | 'project'
 
 export interface AcademicContext {
   institution_id: string

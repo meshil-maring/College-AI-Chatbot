@@ -21,6 +21,7 @@ export default function StructureRecordsPage({
   defaults = {},
   filter,
   filterBySection = false,
+  onCreated,
 }: {
   context: StructureContext
   entity: StructureEntity
@@ -30,12 +31,13 @@ export default function StructureRecordsPage({
   defaults?: StructureDraft
   filter?: (row: StructureRow) => boolean
   filterBySection?: boolean
+  onCreated?: (row: StructureRow) => void
 }) {
   const state = useAcademicStructure(context)
   const [sectionId, setSectionId] = useState('')
   const editorDefaults = filterBySection && sectionId ? { ...defaults, academic_section_id: sectionId } : defaults
   const creationIssue = structureCreationIssue(entity, state, editorDefaults)
-  const editor = useStructureEditor(state, entity, editorDefaults)
+  const editor = useStructureEditor(state, entity, editorDefaults, undefined, onCreated)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [requestedPage, setPage] = useState(1)

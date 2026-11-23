@@ -1,7 +1,6 @@
 import { useId } from 'react'
 import type { AcademicCatalogue, AcademicEntity } from '../../../../types/academicSetup.ts'
 import { academicParents } from '../academicSetupParents.ts'
-import { academicRecordLabel } from '../academicSetupLabels.ts'
 import type { AcademicTextField } from '../academicSetupForm.ts'
 import { academicInputClass, type AcademicFieldsProps } from './academicFormControls.ts'
 
@@ -31,7 +30,7 @@ export default function AcademicRelationFields({
         is_active: active.departments.has(row.department_id),
       })),
     })
-  if (entity === 'semesters' || entity === 'course_offerings')
+  if (entity === 'semesters')
     fields.push({
       key: 'academic_year_id',
       label: 'Academic year',
@@ -41,67 +40,8 @@ export default function AcademicRelationFields({
         is_active: active.years.has(row.academic_year_id),
       })),
     })
-  if (entity === 'program_courses' || entity === 'course_offerings') {
-    fields.push({
-      key: 'program_id',
-      label: 'Degree program',
-      options: (rows.programs ?? []).map((row) => ({
-        id: row.program_id,
-        name: `${row.name} (${row.code})`,
-        is_active: active.programs.has(row.program_id),
-      })),
-    })
-    fields.push({
-      key: 'course_id',
-      label: 'Course',
-      options: (rows.courses ?? []).map((row) => ({
-        id: row.course_id,
-        name: `${row.name} (${row.code})`,
-        is_active:
-          active.courses.has(row.course_id) &&
-          (entity !== 'course_offerings' ||
-            active.links.some((link) => link.program_id === draft.program_id && link.course_id === row.course_id)),
-      })),
-    })
-  }
-  if (entity === 'program_courses' || entity === 'course_offerings')
-    fields.push({
-      key: 'semester_id',
-      label: 'Semester',
-      optional: entity === 'program_courses',
-      options: (rows.semesters ?? []).map((row) => ({
-        id: row.semester_id,
-        name: `${row.name} (${row.code})`,
-        is_active:
-          active.semesters.has(row.semester_id) &&
-          (entity !== 'course_offerings' ||
-            (row.academic_year_id === draft.academic_year_id &&
-              active.links.some(
-                (link) =>
-                  link.program_id === draft.program_id &&
-                  link.course_id === draft.course_id &&
-                  (!link.semester_id || link.semester_id === row.semester_id),
-              ))),
-      })),
-    })
-  if (entity === 'sections')
-    fields.push({
-      key: 'course_offering_id',
-      label: 'Course offering',
-      options: (rows.course_offerings ?? []).map((row) => ({
-        id: row.course_offering_id,
-        name: academicRecordLabel(row, catalogue),
-        is_active: active.offerings.some((item) => item.course_offering_id === row.course_offering_id),
-      })),
-    })
   function change(key: AcademicTextField, value: string) {
-    setDraft((current) => ({
-      ...current,
-      [key]: value,
-      ...(entity === 'course_offerings' && key !== 'semester_id'
-        ? { semester_id: '', ...(key === 'program_id' ? { course_id: '' } : {}) }
-        : {}),
-    }))
+    setDraft((current) => ({ ...current, [key]: value }))
   }
   return (
     <>

@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
 import {
   emptySection,
+  largestOfferingCapacity,
   sectionDraft,
+  termFitsBatch,
   validateSection,
   type SectionDraft,
   type SectionRecord,
@@ -63,9 +65,17 @@ export function useSectionEditor(state: SectionsState) {
       !state.stages.some(
         (stage) => stage.program_semester_id === draft.programSemesterId && stage.program_id === batch?.programId,
       ) || !state.terms.some((term) => term.semester_id === draft.semesterId)
+    const term = state.terms.find((item) => item.semester_id === draft.semesterId)
+    const largest = largestOfferingCapacity(panel.record?.id, state.offerings)
     const issue =
       validateSection(draft, state.records, state.batches, panel.record?.id) ??
-      (!panel.record && missingParent ? 'Select a matching program semester and teaching term.' : undefined)
+      (!panel.record && missingParent ? 'Select a matching program semester and teaching term.' : undefined) ??
+      (!panel.record && term && !termFitsBatch(term, batch)
+        ? `Choose a teaching term within the batch years (${batch?.startYear}–${batch?.endYear}).`
+        : undefined) ??
+      (draft.capacity && largest !== undefined && Number(draft.capacity) < largest
+        ? `Maximum capacity cannot be lower than a subject offering capacity (${largest}).`
+        : undefined)
     if (issue) {
       setError(issue)
       return

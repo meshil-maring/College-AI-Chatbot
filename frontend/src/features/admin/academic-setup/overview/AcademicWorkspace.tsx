@@ -124,7 +124,6 @@ function AcademicWorkspaceContent(
         identity={props.identity}
         institutionId={props.institutionId}
         canReadCatalogues={props.canReadCatalogues}
-        initialTab={props.page === 'curriculum-subjects' ? 'mapping' : 'list'}
         activeTab={
           props.page === 'program-semesters' ||
           props.page === 'curriculum-subjects' ||
@@ -132,9 +131,7 @@ function AcademicWorkspaceContent(
             ? 'subjects'
             : props.page === 'curriculum-history'
               ? 'history'
-              : props.page === 'curriculum-existing'
-                ? 'existing'
-                : 'versions'
+              : 'versions'
         }
         onTabChange={(tab) =>
           props.onNavigate(
@@ -142,9 +139,7 @@ function AcademicWorkspaceContent(
               ? 'curriculum-subjects'
               : tab === 'history'
                 ? 'curriculum-history'
-                : tab === 'existing'
-                  ? 'curriculum-existing'
-                  : 'curriculum-versions',
+                : 'curriculum-versions',
           )
         }
         onOverview={() => props.onNavigate('overview')}

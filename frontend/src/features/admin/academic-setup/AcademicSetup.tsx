@@ -115,7 +115,6 @@ function AcademicSetupWorkspace({
       {pendingTransition && (
         <AcademicTransitionDialog
           record={pendingTransition}
-          catalogue={parents.catalogue}
           onCancel={() => setPendingTransition(null)}
           onConfirm={() => {
             state.toggle(pendingTransition)

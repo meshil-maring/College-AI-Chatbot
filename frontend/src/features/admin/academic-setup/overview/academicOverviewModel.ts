@@ -31,7 +31,6 @@ export type AcademicPage =
   | 'curriculum-subjects'
   | 'curriculum-options'
   | 'curriculum-history'
-  | 'curriculum-existing'
   | 'enrollments'
   | 'cohorts'
   | 'sections'
@@ -95,7 +94,7 @@ export const academicAreas: readonly AcademicArea[] = [
     description: 'Set up program semesters and choose their subjects together in one study plan.',
     action: 'Manage Curriculum',
     note: 'Published structures, preserved over time.',
-    children: ['curriculum-versions', 'curriculum-subjects', 'curriculum-history', 'curriculum-existing'],
+    children: ['curriculum-versions', 'curriculum-subjects', 'curriculum-history'],
   },
   {
     page: 'cohorts',

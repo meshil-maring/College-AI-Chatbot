@@ -4,20 +4,18 @@ import type { StructureContext } from '../../structure/useAcademicStructure.ts'
 import { useAcademicStructure } from '../../structure/useAcademicStructure.ts'
 import StructureRecordsPage from '../../structure/StructureRecordsPage.tsx'
 import CurriculumTabs from '../CurriculumTabs.tsx'
-import { ExistingCurriculumMappings } from '../ExistingCurriculumMappings.tsx'
 import SemesterPlanPage from '../semester-plan/SemesterPlanPage.tsx'
 import StudyPlanSteps from '../semester-plan/StudyPlanSteps.tsx'
 import CurriculumVersionCompare from './CurriculumVersionCompare.tsx'
 import '../semester-plan/study-plan.css'
 
 // Previously saved option destinations now use the combined semester view.
-export type VersionedCurriculumTab = 'versions' | 'subjects' | 'options' | 'history' | 'existing'
+export type VersionedCurriculumTab = 'versions' | 'subjects' | 'options' | 'history'
 type Tab = VersionedCurriculumTab
 const tabs: { id: Tab; label: string }[] = [
   { id: 'versions', label: 'Curriculum List' },
   { id: 'subjects', label: 'Subjects by semester' },
   { id: 'history', label: 'Version History' },
-  { id: 'existing', label: 'Legacy program mappings' },
 ]
 export default function VersionedCurriculumPage({
   context,
@@ -40,6 +38,8 @@ export default function VersionedCurriculumPage({
   const tab = requestedTab === 'options' ? 'subjects' : requestedTab
   const setTab = onTabChange ?? setLocalTab
   const [versionId, setVersionId] = useState('')
+  // A new draft opens its semester plan, which sets up the missing program semesters.
+  const [createdId, setCreatedId] = useState('')
   const versions = state.structure?.records.curriculum_versions ?? []
   const navigation = (
     <CurriculumTabs items={tabs} value={tab} onChange={setTab} prefix="versioned-curriculum" label="Curriculum views" />
@@ -54,14 +54,8 @@ export default function VersionedCurriculumPage({
         onCreateCurriculum={() => setTab('versions')}
         onBatches={onBatches}
         navigation={navigation}
+        autoPrepareId={createdId}
       />
-    )
-  if (tab === 'existing')
-    return (
-      <>
-        {navigation}
-        <ExistingCurriculumMappings {...context} onOverview={onOverview} />
-      </>
     )
   return (
     <StructureRecordsPage
@@ -70,6 +64,12 @@ export default function VersionedCurriculumPage({
       entity="curriculum_versions"
       title="Curriculum"
       onOverview={onOverview}
+      onCreated={(row) => {
+        if (!('curriculum_version_id' in row) || tab !== 'versions') return
+        setVersionId(row.curriculum_version_id)
+        setCreatedId(row.curriculum_version_id)
+        setTab('subjects')
+      }}
     >
       {navigation}
       {tab === 'versions' && (

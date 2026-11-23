@@ -1,7 +1,7 @@
 import type { AcademicCatalogue, AcademicRecord } from '../../../types/academicSetup.ts'
 import { academicButtonClass } from './forms/academicFormControls.ts'
 import { academicRecordId } from './academicSetupForm.ts'
-import { academicRecordContext, academicRecordLabel } from './academicSetupLabels.ts'
+import { academicRecordContext } from './academicSetupLabels.ts'
 
 interface Props {
   records: AcademicRecord[]
@@ -16,7 +16,7 @@ export default function AcademicSetupRecords({ records, catalogue, manageable, b
   return (
     <ul className="space-y-3" aria-label="Academic records">
       {records.map((record) => {
-        const label = 'name' in record ? record.name : academicRecordLabel(record, catalogue)
+        const label = record.name
         return (
           <li
             key={academicRecordId(record)}
@@ -25,9 +25,9 @@ export default function AcademicSetupRecords({ records, catalogue, manageable, b
             <div className="space-y-1">
               <h3 className="font-semibold text-content text-card">{label}</h3>
               <p className="text-sm text-muted">
-                {'code' in record ? `${record.code} ? ` : ''}
+                {'code' in record ? `${record.code} · ` : ''}
                 {record.is_active ? 'Active' : 'Inactive'}
-                {'is_current' in record && record.is_current ? ' ? Current' : ''}
+                {'is_current' in record && record.is_current ? ' · Current' : ''}
               </p>
               <p className="text-sm text-muted">{academicRecordContext(record, catalogue)}</p>
               {'description' in record && record.description && (
@@ -35,13 +35,13 @@ export default function AcademicSetupRecords({ records, catalogue, manageable, b
               )}
               {'degree_type' in record && (
                 <p className="text-sm text-muted">
-                  {record.degree_type} ? {record.duration_years} years
-                  {record.total_credits === null ? '' : ` ? ${record.total_credits} credits`}
+                  {record.degree_type} · {record.duration_years} years
+                  {record.total_credits === null ? '' : ` · ${record.total_credits} credits`}
                 </p>
               )}
               {'credits' in record && (
                 <p className="text-sm text-muted">
-                  {record.credits === null ? 'Credits unspecified' : `${record.credits} credits`} ? Lecture{' '}
+                  {record.credits === null ? 'Credits unspecified' : `${record.credits} credits`} · Lecture{' '}
                   {record.lecture_hours ?? '?'} / Tutorial {record.tutorial_hours ?? '?'} / Practical{' '}
                   {record.practical_hours ?? '?'}
                 </p>
@@ -50,9 +50,6 @@ export default function AcademicSetupRecords({ records, catalogue, manageable, b
                 <p className="text-sm text-muted">
                   {record.start_date} to {record.end_date}
                 </p>
-              )}
-              {'capacity' in record && (
-                <p className="text-sm text-muted">Capacity: {record.capacity ?? 'Unspecified'}</p>
               )}
             </div>
             {manageable && (

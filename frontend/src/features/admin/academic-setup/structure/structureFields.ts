@@ -91,7 +91,7 @@ export function structureFields(
         min: 1,
         max: 32,
         immutable: true,
-        help: 'Choose the study plan length. Set up missing semesters in Subjects by semester; existing semesters are reused.',
+        help: 'Starts at two semesters per program year. After saving, the program semesters are set up for you; existing ones are reused.',
       }),
       field('description', 'Description', { type: 'textarea', required: false }),
       active,
@@ -183,7 +183,13 @@ export function structureFields(
                 ?.name ?? 'Subject unavailable',
           })),
       }),
-      field('capacity', 'Maximum Capacity', { type: 'number', min: 0, max: 2147483647, required: false }),
+      field('capacity', 'Maximum Capacity', {
+        type: 'number',
+        min: 0,
+        max: section?.capacity ?? 2147483647,
+        required: false,
+        help: section?.capacity != null ? `Up to the section capacity of ${section.capacity}.` : undefined,
+      }),
       active,
     ]
   }

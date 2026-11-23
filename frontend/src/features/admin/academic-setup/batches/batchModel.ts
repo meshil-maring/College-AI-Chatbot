@@ -41,12 +41,46 @@ export function emptyBatch(): BatchDraft {
     programId: '',
     curriculumId: '',
     academicYear: '',
-    startYear: '2026',
-    endYear: '2030',
+    startYear: '',
+    endYear: '',
     expectedCount: '',
     description: '',
     status: 'active',
   }
+}
+export interface BatchYear {
+  academic_year_id: string
+  start_date: string
+}
+/** A batch starts in the calendar year its intake academic year starts. */
+export function intakeStartYear(yearId: string, years: BatchYear[]) {
+  const year = years.find((item) => item.academic_year_id === yearId)
+  return year ? year.start_date.slice(0, 4) : ''
+}
+/** Longest span allowed for the program; shorter spans suit lateral-entry batches. */
+export function batchSpan(programId: string, programs: BatchProgram[]) {
+  const duration = programs.find((item) => item.id === programId)?.duration
+  return duration && duration > 0 ? Math.ceil(duration) : undefined
+}
+/** Fill the start year, end year and sole published curriculum from earlier choices. */
+export function deriveBatch(
+  draft: BatchDraft,
+  changed: keyof BatchDraft,
+  programs: BatchProgram[],
+  curricula: (BatchCurriculum & { active?: boolean })[],
+  years: BatchYear[],
+): BatchDraft {
+  const next = { ...draft }
+  if (changed === 'programId') {
+    const published = curricula.filter((item) => item.programId === next.programId && item.active !== false)
+    next.curriculumId = published.length === 1 ? published[0].id : ''
+  }
+  if (changed === 'academicYear') next.startYear = intakeStartYear(next.academicYear, years)
+  if ((changed === 'programId' || changed === 'academicYear') && next.startYear) {
+    const span = batchSpan(next.programId, programs)
+    if (span) next.endYear = String(Number(next.startYear) + span)
+  }
+  return next
 }
 export function batchDraft(record: BatchRecord): BatchDraft {
   const { id: _id, studentCount: _students, ...draft } = record
@@ -81,6 +115,7 @@ export function validateBatch(
   programs: BatchProgram[],
   curricula: BatchCurriculum[],
   id?: string,
+  years: BatchYear[] = [],
 ) {
   if (!draft.name.trim() || !draft.code.trim()) return 'Enter a batch name and code.'
   if (!id && !programs.some((item) => item.id === draft.programId)) return 'Select a program.'
@@ -91,6 +126,12 @@ export function validateBatch(
   const end = Number(draft.endYear)
   if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1900 || end > 2200 || end <= start)
     return 'End year must be later than start year, between 1900 and 2200.'
+  if (!id) {
+    const intake = intakeStartYear(draft.academicYear, years)
+    if (intake && Number(intake) !== start) return `Start year must be ${intake}, when the intake academic year starts.`
+    const span = batchSpan(draft.programId, programs)
+    if (span && end - start > span) return `End year cannot be later than ${start + span} for this program's duration.`
+  }
   if (draft.expectedCount && (!/^\d+$/.test(draft.expectedCount) || !Number.isSafeInteger(Number(draft.expectedCount))))
     return 'Expected student count must be a nonnegative whole number.'
   if (records.some((item) => item.id !== id && item.code.toLowerCase() === draft.code.trim().toLowerCase()))

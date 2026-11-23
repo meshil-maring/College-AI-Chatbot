@@ -1,11 +1,5 @@
 import { catalogue, department, program, year } from './AcademicSetup.support.ts'
-import type {
-  Course,
-  Semester,
-  ProgramCourse,
-  CourseOffering,
-  OfferingSection,
-} from '../../../../types/academicSetup.ts'
+import type { Course, Semester } from '../../../../types/academicSetup.ts'
 
 export const semester: Semester = {
   institution_id: 'institution-1',
@@ -32,35 +26,6 @@ export const course: Course = {
   practical_hours: 2,
   is_active: true,
 }
-export const link: ProgramCourse = {
-  institution_id: 'institution-1',
-  program_course_id: 'link-1',
-  program_id: program.program_id,
-  course_id: course.course_id,
-  semester_id: null,
-  course_type: 'core',
-  is_required: true,
-  is_active: true,
-}
-export const offering: CourseOffering = {
-  institution_id: 'institution-1',
-  course_offering_id: 'offering-1',
-  program_id: program.program_id,
-  course_id: course.course_id,
-  academic_year_id: year.academic_year_id,
-  semester_id: semester.semester_id,
-  capacity: 60,
-  is_active: true,
-}
-export const section: OfferingSection = {
-  institution_id: 'institution-1',
-  section_id: 'section-1',
-  course_offering_id: offering.course_offering_id,
-  name: 'Section A',
-  code: 'A',
-  capacity: 30,
-  is_active: true,
-}
 export function populateExportCatalogue() {
   catalogue.records = {
     departments: [structuredClone(department)],
@@ -68,18 +33,6 @@ export function populateExportCatalogue() {
     academic_years: [structuredClone(year)],
     semesters: [structuredClone(semester)],
     courses: [structuredClone(course)],
-    program_courses: [structuredClone(link)],
-    course_offerings: [structuredClone(offering)],
-    sections: [structuredClone(section)],
   }
-  catalogue.manageable = [
-    'departments',
-    'programs',
-    'academic_years',
-    'semesters',
-    'courses',
-    'program_courses',
-    'course_offerings',
-    'sections',
-  ]
+  catalogue.manageable = ['departments', 'programs', 'academic_years', 'semesters', 'courses']
 }

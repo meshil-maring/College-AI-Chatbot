@@ -5,6 +5,7 @@ import { useStructureWrite } from './useStructureWrite.ts'
 import { structureCanEdit } from './structureAvailability.ts'
 import { structureFields, type StructureDraft } from './structureFields.ts'
 import {
+  defaultSemesterCount,
   structureDraft,
   structureId,
   structurePayload,
@@ -18,6 +19,7 @@ export function useStructureEditor(
   entity: StructureEntity,
   defaults: StructureDraft = {},
   successMessage = 'Changes saved successfully',
+  onCreated?: (row: StructureRow) => void,
 ) {
   const write = useStructureWrite(state, entity)
   const [panel, setPanel] = useState<{ mode: 'add' | 'edit' | 'view'; row?: StructureRow }>()
@@ -50,6 +52,9 @@ export function useStructureEditor(
       [key]: value,
       ...(key === 'curriculum_version_id' ? { program_semester_id: '' } : {}),
       ...(key === 'academic_section_id' ? { curriculum_subject_id: '' } : {}),
+      ...(entity === 'curriculum_versions' && key === 'program_id' && !panel?.row
+        ? defaultSemesterCount(state, String(value), current.total_semesters)
+        : {}),
     }))
     setError(undefined)
     write.clearError()
@@ -84,6 +89,7 @@ export function useStructureEditor(
     if (saved) {
       setPanel(undefined)
       notification.success(successMessage)
+      if (!panel.row) onCreated?.(saved as StructureRow)
     }
   }
   return {

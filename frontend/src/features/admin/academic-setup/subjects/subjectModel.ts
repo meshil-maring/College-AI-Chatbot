@@ -13,40 +13,25 @@ export function subjectDepartments(catalogue: AcademicCatalogue | undefined, ins
 // A reusable subject can have different types/semesters in different curricula.
 // Keep each assignment together so combined filters match the same relationship.
 export function subjectAssignments(
-  catalogue: AcademicCatalogue | undefined,
+  _catalogue: AcademicCatalogue | undefined,
   institutionId: string,
   structure?: StructureCatalogue,
 ) {
-  const semesters = catalogue?.records.semesters?.filter((item) => item.institution_id === institutionId)
-  const links = catalogue?.records.program_courses?.filter((item) => item.institution_id === institutionId)
-  const stages =
-    structure?.institution_id === institutionId
-      ? structure.records.program_semesters?.filter((item) => item.institution_id === institutionId)
-      : undefined
-  const mappings =
-    structure?.institution_id === institutionId
-      ? structure.records.curriculum_subjects?.filter((item) => item.institution_id === institutionId)
-      : undefined
-  const choices = [
-    ...(semesters ?? []).map((item) => ({ ...item, name: `Teaching term: ${item.name}` })),
-    ...(stages ?? []).map((item) => ({
+  const scoped = structure?.institution_id === institutionId ? structure.records : undefined
+  const stages = scoped?.program_semesters?.filter((item) => item.institution_id === institutionId)
+  const mappings = scoped?.curriculum_subjects?.filter((item) => item.institution_id === institutionId)
+  return {
+    semesters: stages?.map((item) => ({
       semester_id: item.program_semester_id,
       semester_number: item.semester_number,
       name: `Program: ${item.name}`,
       code: item.code,
     })),
-  ]
-  const assignments = [
-    ...(links ?? []),
-    ...(mappings ?? []).map((item) => ({
+    links: mappings?.map((item) => ({
       course_id: item.course_id,
       semester_id: item.program_semester_id,
       course_type: item.course_type,
     })),
-  ]
-  return {
-    semesters: semesters || stages?.length ? choices : undefined,
-    links: links || mappings?.length ? assignments : undefined,
   }
 }
 

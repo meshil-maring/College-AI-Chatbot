@@ -1,6 +1,7 @@
 import '../../__tests__/AcademicSetup.support.ts'
-import { catalogue } from '../../__tests__/AcademicSetup.support.ts'
-import { course, link, semester } from '../../__tests__/academicExportFixtures.ts'
+import { catalogue, structureCatalogue } from '../../__tests__/AcademicSetup.support.ts'
+import { course, semester } from '../../__tests__/academicExportFixtures.ts'
+import { mapping, stage } from '../../__tests__/academicStructureFixtures.ts'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { beforeEach, vi } from 'vitest'
@@ -8,14 +9,16 @@ import AcademicWorkspace from '../../overview/AcademicWorkspace.tsx'
 import AcademicSidebar from '../../overview/AcademicSidebar.tsx'
 import type { AcademicPage } from '../../overview/academicOverviewModel.ts'
 
-export { auth, catalogue, department, setCatalogue } from '../../__tests__/AcademicSetup.support.ts'
-export { course as subject, semester, link } from '../../__tests__/academicExportFixtures.ts'
+export { auth, catalogue, department, setCatalogue, structureCatalogue } from '../../__tests__/AcademicSetup.support.ts'
+export { course as subject, semester } from '../../__tests__/academicExportFixtures.ts'
+export { mapping, stage } from '../../__tests__/academicStructureFixtures.ts'
 export * as api from '../../../../../services/admin/academics.ts'
 
 beforeEach(() => {
   catalogue.records.courses = [structuredClone(course)]
   catalogue.records.semesters = [structuredClone(semester)]
-  catalogue.records.program_courses = [{ ...link, semester_id: semester.semester_id }]
+  structureCatalogue.records.program_semesters = [structuredClone(stage)]
+  structureCatalogue.records.curriculum_subjects = [structuredClone(mapping)]
   catalogue.manageable.push('courses')
 })
 

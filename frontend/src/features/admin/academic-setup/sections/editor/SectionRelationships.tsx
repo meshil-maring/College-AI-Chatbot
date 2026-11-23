@@ -1,3 +1,4 @@
+import { termFitsBatch } from '../sectionModel.ts'
 import type { SectionEditor } from './useSectionEditor.ts'
 
 export default function SectionRelationships({ editor }: { editor: SectionEditor }) {
@@ -77,7 +78,7 @@ export default function SectionRelationships({ editor }: { editor: SectionEditor
         >
           <option value="">Select teaching term</option>
           {state.terms
-            .filter((term) => term.available || term.semester_id === draft.semesterId)
+            .filter((term) => (term.available && termFitsBatch(term, batch)) || term.semester_id === draft.semesterId)
             .map((term) => (
               <option key={term.semester_id} value={term.semester_id}>
                 {term.name} (
@@ -85,7 +86,9 @@ export default function SectionRelationships({ editor }: { editor: SectionEditor
               </option>
             ))}
         </select>
-        <p>A dated teaching period is separate from program progression.</p>
+        <p>
+          Only terms within the batch years are listed. A dated teaching period is separate from program progression.
+        </p>
       </div>
     </>
   )

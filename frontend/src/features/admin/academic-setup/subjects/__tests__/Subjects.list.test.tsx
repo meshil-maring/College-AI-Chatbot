@@ -1,4 +1,13 @@
-import { api, catalogue, department, subject, semester, link, renderSubjects } from './Subjects.support.tsx'
+import {
+  api,
+  catalogue,
+  department,
+  mapping,
+  renderSubjects,
+  stage,
+  structureCatalogue,
+  subject,
+} from './Subjects.support.tsx'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
@@ -16,8 +25,16 @@ describe('Subjects management list', () => {
       name: 'Foreign Department',
       institution_id: 'foreign',
     })
-    catalogue.records.program_courses!.push({ ...link, institution_id: 'foreign', course_type: 'project' })
-    catalogue.records.semesters!.push({ ...semester, institution_id: 'foreign', name: 'Foreign Semester' })
+    structureCatalogue.records.curriculum_subjects!.push({
+      ...mapping,
+      institution_id: 'foreign',
+      course_type: 'project',
+    })
+    structureCatalogue.records.program_semesters!.push({
+      ...stage,
+      institution_id: 'foreign',
+      name: 'Foreign Semester',
+    })
     renderSubjects()
     await waitFor(
       () => expect(screen.getByRole('region', { name: 'Subject summary' })).toHaveAttribute('aria-busy', 'false'),
@@ -59,17 +76,23 @@ describe('Subjects management list', () => {
   })
 
   it('combines filters against the same curriculum assignment', async () => {
-    catalogue.records.semesters!.push({ ...semester, semester_id: 'semester-2', name: 'Spring', semester_number: 2 })
-    catalogue.records.program_courses!.push({
-      ...link,
-      program_course_id: 'link-2',
-      semester_id: 'semester-2',
+    structureCatalogue.records.program_semesters!.push({
+      ...stage,
+      program_semester_id: 'stage-2',
+      name: 'Semester 2',
+      code: 'S2',
+      semester_number: 2,
+    })
+    structureCatalogue.records.curriculum_subjects!.push({
+      ...mapping,
+      curriculum_subject_id: 'mapping-2',
+      program_semester_id: 'stage-2',
       course_type: 'elective',
     })
     renderSubjects()
     await screen.findByRole('row', { name: /Data Mining/ })
     const filters = within(screen.getByRole('search', { name: 'Filter subjects' }))
-    fireEvent.change(filters.getByRole('combobox', { name: 'Semester' }), { target: { value: 'semester-1' } })
+    fireEvent.change(filters.getByRole('combobox', { name: 'Semester' }), { target: { value: 'stage-1' } })
     fireEvent.change(filters.getByRole('combobox', { name: 'Subject Type' }), { target: { value: 'elective' } })
     expect(screen.getByRole('heading', { name: 'No subjects match your filters' })).toBeInTheDocument()
     fireEvent.change(filters.getByRole('combobox', { name: 'Subject Type' }), { target: { value: 'core' } })
@@ -81,7 +104,8 @@ describe('Subjects management list', () => {
   })
 
   it('distinguishes missing assignments from confirmed unassigned subjects', async () => {
-    delete catalogue.records.program_courses
+    delete structureCatalogue.records.curriculum_subjects
+    delete structureCatalogue.records.program_semesters
     renderSubjects()
     const row = await screen.findByRole('row', { name: /Data Mining/ })
     expect(within(row).getAllByText('Unavailable')).toHaveLength(2)

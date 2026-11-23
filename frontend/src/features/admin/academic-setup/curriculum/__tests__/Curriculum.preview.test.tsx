@@ -88,19 +88,14 @@ describe('Persisted curriculum versions', () => {
       ),
     )
   })
-  it('displays stored publication history and retains the existing mapping workflow', async () => {
+  it('displays stored publication history without a legacy mapping view', async () => {
     renderVersions()
     await screen.findByRole('button', { name: 'View CSE Curriculum' })
     fireEvent.click(screen.getByRole('tab', { name: 'Version History' }))
     expect(screen.getByRole('region', { name: 'Published curriculum history' })).toHaveTextContent(
       'CSE Curriculum · v1.0 · Published',
     )
-    fireEvent.click(screen.getByRole('tab', { name: 'Legacy program mappings' }))
-    expect(await screen.findByRole('heading', { name: 'Legacy program mappings' })).toBeInTheDocument()
-    expect(
-      screen.getByText(/They do not populate versioned curricula or determine the subjects assigned to new batches/),
-    ).toBeInTheDocument()
-    expect(await screen.findByRole('region', { name: 'Curriculum summary' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Legacy program mappings' })).not.toBeInTheDocument()
   })
 
   it('compares published subject mappings between versions of the same program', async () => {

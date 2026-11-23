@@ -50,24 +50,20 @@ export function deletionBlocker(
       break
     case 'programs':
       links = [
-        catalogue?.records.program_courses?.some((item) => item.program_id === id) && 'subject mappings',
-        catalogue?.records.course_offerings?.some((item) => item.program_id === id) && 'course offerings',
+        structure?.records.program_semesters?.some((item) => item.program_id === id) && 'program semesters',
+        structure?.records.curriculum_versions?.some((item) => item.program_id === id) && 'curricula',
+        structure?.records.admission_cohorts?.some((item) => item.program_id === id) && 'batches',
       ]
       break
     case 'academic_years':
       links = [
         catalogue?.records.semesters?.some((item) => item.academic_year_id === id) && 'semesters',
-        catalogue?.records.course_offerings?.some((item) => item.academic_year_id === id) && 'course offerings',
         structure?.records.curriculum_versions?.some((item) => item.academic_year_id === id) && 'curricula',
         structure?.records.admission_cohorts?.some((item) => item.academic_year_id === id) && 'batches',
       ]
       break
     case 'semesters':
-      links = [
-        catalogue?.records.program_courses?.some((item) => item.semester_id === id) && 'subject mappings',
-        catalogue?.records.course_offerings?.some((item) => item.semester_id === id) && 'course offerings',
-        structure?.records.academic_sections?.some((item) => item.semester_id === id) && 'class sections',
-      ]
+      links = [structure?.records.academic_sections?.some((item) => item.semester_id === id) && 'class sections']
       break
     case 'academic_sections':
       links = [

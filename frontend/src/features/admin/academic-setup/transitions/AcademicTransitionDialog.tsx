@@ -1,22 +1,19 @@
 import { useEffect, useRef } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import type { AcademicCatalogue, AcademicRecord } from '../../../../types/academicSetup.ts'
-import { academicRecordLabel } from '../academicSetupLabels.ts'
+import type { AcademicRecord } from '../../../../types/academicSetup.ts'
 import { academicButtonClass } from '../forms/academicFormControls.ts'
 
 export default function AcademicTransitionDialog({
   record,
-  catalogue,
   onConfirm,
   onCancel,
 }: {
   record: AcademicRecord
-  catalogue: AcademicCatalogue
   onConfirm: () => void
   onCancel: () => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
-  const label = 'name' in record ? record.name : academicRecordLabel(record, catalogue)
+  const label = record.name
   const action = record.is_active ? 'deactivation' : 'activation'
   useEffect(() => {
     const dialog = ref.current

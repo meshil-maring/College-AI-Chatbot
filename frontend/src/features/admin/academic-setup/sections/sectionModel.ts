@@ -20,6 +20,23 @@ export interface SectionBatch {
   name: string
   programId: string
   academicYear: string
+  startYear?: number
+  endYear?: number
+}
+/** A section's dated teaching term must fall within its batch's years. */
+export function termFitsBatch(term: { start_date: string; end_date: string }, batch?: SectionBatch) {
+  if (!batch?.startYear || !batch.endYear) return true
+  return Number(term.start_date.slice(0, 4)) >= batch.startYear && Number(term.end_date.slice(0, 4)) <= batch.endYear
+}
+/** The largest active subject-offering capacity in a section, if any. */
+export function largestOfferingCapacity(
+  sectionId: string | undefined,
+  offerings: { academic_section_id: string; capacity: number | null; is_active: boolean }[],
+) {
+  const capacities = offerings
+    .filter((item) => item.academic_section_id === sectionId && item.is_active && item.capacity != null)
+    .map((item) => item.capacity as number)
+  return capacities.length ? Math.max(...capacities) : undefined
 }
 export const SECTION_PAGE_SIZE = 10
 export const sectionStatuses: { value: SectionStatus; label: string; description: string }[] = [

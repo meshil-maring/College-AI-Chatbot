@@ -1,4 +1,4 @@
-import { ClipboardList, Database, History, CalendarDays, CalendarRange } from 'lucide-react'
+import { ClipboardList, History, CalendarDays, CalendarRange } from 'lucide-react'
 import type { AcademicArea } from '../overview/academicOverviewModel.ts'
 
 export const academicDestinations: readonly AcademicArea[] = [
@@ -17,14 +17,6 @@ export const academicDestinations: readonly AcademicArea[] = [
     description: 'Explore academic years and teaching terms on the calendar timeline.',
     action: 'View Calendar Timeline',
     note: 'A dated overview of the academic calendar.',
-  },
-  {
-    page: 'curriculum-existing',
-    title: 'Legacy program mappings',
-    icon: Database,
-    description: 'Review program–subject links retained for existing workflows.',
-    action: 'Open legacy program mappings',
-    note: 'Use versioned curricula for new batch study plans.',
   },
   {
     page: 'curriculum-history',

@@ -26,6 +26,8 @@ export function sectionChoices(source: AcademicStructureState) {
     id: record.admission_cohort_id,
     name: record.name,
     programId: record.program_id,
+    startYear: record.start_year,
+    endYear: record.end_year,
     academicYear:
       choices.years.find((year) => year.academic_year_id === record.academic_year_id)?.name ?? 'Unavailable',
     active: record.is_active && choices.programs.some((program) => program.id === record.program_id && program.active),
@@ -46,6 +48,7 @@ export function sectionChoices(source: AcademicStructureState) {
     batches,
     terms,
     stages: source.structure?.records.program_semesters ?? [],
+    offerings: source.structure?.records.academic_offerings ?? [],
     yearLabels: [...new Set(batches.map((batch) => batch.academicYear))],
   }
 }

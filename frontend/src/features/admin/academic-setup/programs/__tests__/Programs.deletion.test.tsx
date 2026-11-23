@@ -57,45 +57,6 @@ describe('Program deletion', () => {
     expect(api.getAcademicSetup).toHaveBeenCalledTimes(2)
   })
 
-  it.each([true, false])('blocks subject mappings with active status %s', async (active) => {
-    catalogue.records.program_courses = [
-      {
-        program_course_id: 'mapping-1',
-        institution_id: program.institution_id,
-        program_id: program.program_id,
-        course_id: 'course-1',
-        semester_id: null,
-        course_type: 'core',
-        is_required: true,
-        is_active: active,
-      },
-    ]
-    renderPrograms()
-    const dialog = await openDeletion()
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('linked subject mappings, including inactive records')
-    expect(within(dialog).getByRole('button', { name: 'Delete Program' })).toBeDisabled()
-    expect(api.deleteProgram).not.toHaveBeenCalled()
-  })
-
-  it('blocks inactive course offerings', async () => {
-    catalogue.records.course_offerings = [
-      {
-        course_offering_id: 'offering-1',
-        institution_id: program.institution_id,
-        program_id: program.program_id,
-        course_id: 'course-1',
-        semester_id: 'term-1',
-        academic_year_id: 'year-1',
-        capacity: null,
-        is_active: false,
-      },
-    ]
-    renderPrograms()
-    const dialog = await openDeletion()
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('linked course offerings')
-    expect(within(dialog).getByRole('button', { name: 'Delete Program' })).toBeDisabled()
-  })
-
   it('shows server conflicts for curriculum or batch links absent from the catalogue', async () => {
     vi.mocked(api.deleteProgram).mockRejectedValueOnce(
       new AdminApiError(

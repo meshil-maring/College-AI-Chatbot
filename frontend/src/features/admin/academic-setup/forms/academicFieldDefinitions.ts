@@ -31,7 +31,4 @@ export const ACADEMIC_FIELDS: Record<AcademicEntity, AcademicField[]> = {
     { key: 'tutorial_hours', label: 'Tutorial hours (optional)', type: 'number', min: 0, step: '0.01' },
     { key: 'practical_hours', label: 'Practical hours (optional)', type: 'number', min: 0, step: '0.01' },
   ],
-  program_courses: [],
-  course_offerings: [{ key: 'capacity', label: 'Capacity (optional)', type: 'number', min: 1, step: '1' }],
-  sections: [{ key: 'capacity', label: 'Capacity (optional)', type: 'number', min: 1, step: '1' }],
 }

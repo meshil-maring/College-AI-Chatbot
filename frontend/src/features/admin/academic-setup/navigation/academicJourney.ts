@@ -19,7 +19,6 @@ export const academicJourney = [
       'curriculum-options',
       'program-semesters',
       'curriculum-history',
-      'curriculum-existing',
     ],
     description: 'Build the curriculum, then review the subjects available to each section.',
   },

@@ -52,15 +52,15 @@ export default function BatchForm({ editor }: { editor: BatchEditor }) {
           </label>
           <input
             id="batch-start"
+            readOnly
             disabled={Boolean(editor.panel?.record) || editor.saving}
             type="number"
-            min={1900}
-            max={2199}
-            step={1}
             required
+            placeholder="Select an academic year"
             value={draft.startYear}
-            onChange={(event) => change('startYear', event.target.value)}
+            aria-describedby="batch-start-help"
           />
+          <p id="batch-start-help">Filled from the intake academic year.</p>
         </div>
         <div className="batch-field">
           <label htmlFor="batch-end">
@@ -76,7 +76,9 @@ export default function BatchForm({ editor }: { editor: BatchEditor }) {
             required
             value={draft.endYear}
             onChange={(event) => change('endYear', event.target.value)}
+            aria-describedby="batch-end-help"
           />
+          <p id="batch-end-help">Set from the program duration; shorten it for lateral-entry batches.</p>
         </div>
       </div>
       <div className="batch-field">

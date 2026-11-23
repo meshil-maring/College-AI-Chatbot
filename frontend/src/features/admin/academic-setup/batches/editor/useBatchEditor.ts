@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import {
   batchDraft,
+  deriveBatch,
   emptyBatch,
   validateBatch,
   type BatchDraft,
@@ -17,7 +18,11 @@ export function useBatchEditor(state: BatchesState, onCreated?: () => void) {
   const initial = useRef(JSON.stringify(emptyBatch()))
   function open(mode: 'add' | 'view' | 'edit', record?: BatchRecord, status?: BatchStatus) {
     if (state.write.saving || (mode !== 'view' && !state.canManage)) return
-    const next = record ? batchDraft(record) : emptyBatch()
+    const current = state.years.find((year) => year.is_active && year.is_current)
+    const blank = current
+      ? deriveBatch({ ...emptyBatch(), academicYear: current.academic_year_id }, 'academicYear', [], [], state.years)
+      : emptyBatch()
+    const next = record ? batchDraft(record) : blank
     initial.current = JSON.stringify(next)
     setDraft(status ? { ...next, status } : next)
     setError(undefined)
@@ -27,11 +32,11 @@ export function useBatchEditor(state: BatchesState, onCreated?: () => void) {
   function change<K extends keyof BatchDraft>(field: K, value: BatchDraft[K]) {
     if (state.write.saving) return
     state.write.clearError()
-    setDraft((current) => {
-      const next = { ...current, [field]: value }
-      if (field === 'programId' && value !== current.programId) next.curriculumId = ''
-      return next
-    })
+    setDraft((current) =>
+      current[field] === value
+        ? current
+        : deriveBatch({ ...current, [field]: value }, field, state.programs, state.curricula, state.years),
+    )
     setError(undefined)
   }
   function close() {
@@ -58,7 +63,7 @@ export function useBatchEditor(state: BatchesState, onCreated?: () => void) {
   }
   function submit() {
     if (!panel || panel.mode === 'view' || state.write.saving || !state.canManage) return
-    const issue = validateBatch(draft, state.records, state.programs, state.curricula, panel.record?.id)
+    const issue = validateBatch(draft, state.records, state.programs, state.curricula, panel.record?.id, state.years)
     if (issue) {
       setError(issue)
       return

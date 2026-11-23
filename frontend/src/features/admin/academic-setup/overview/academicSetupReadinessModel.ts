@@ -53,6 +53,7 @@ export function programReadiness(
     !catalogue.records.departments ||
     !catalogue.records.programs ||
     !academicYears ||
+    !catalogue.records.semesters ||
     !courses ||
     !versions ||
     !cohorts ||
@@ -66,7 +67,13 @@ export function programReadiness(
   const subjects = courses.filter(
     (item) => item.institution_id === institutionId && item.department_id === program.department_id && item.is_active,
   ).length
-  const years = activeRows(academicYears, institutionId)?.length ?? 0
+  const activeYears = activeRows(academicYears, institutionId) ?? []
+  const years = activeYears.length
+  const yearIds = new Set(activeYears.map((item) => item.academic_year_id))
+  // Sections need a dated teaching term inside an active academic year.
+  const terms = (activeRows(catalogue.records.semesters, institutionId) ?? []).filter((item) =>
+    yearIds.has(item.academic_year_id),
+  ).length
   const programVersions = versions.filter(
     (item) => item.institution_id === institutionId && item.program_id === programId && item.is_active,
   )
@@ -87,7 +94,7 @@ export function programReadiness(
   const offerings = academicOfferings.filter(
     (item) => item.institution_id === institutionId && item.is_active && sectionIds.has(item.academic_section_id),
   ).length
-  const foundationReady = Boolean(subjects && years)
+  const foundationReady = Boolean(subjects && years && terms)
   const curriculumReady = Boolean(published)
   const hasSections = sections.length > 0
 
@@ -102,6 +109,10 @@ export function programReadiness(
     nextPage = 'years'
     nextAction = 'Set up an academic year'
     nextExplanation = 'An active academic year is needed for this program’s curriculum and intake.'
+  } else if (!terms) {
+    nextPage = 'terms'
+    nextAction = 'Add teaching terms'
+    nextExplanation = 'Dated teaching terms say when classes run. Sections need one inside an active academic year.'
   } else if (!published) {
     nextPage = drafts ? 'curriculum-subjects' : 'curriculum-versions'
     nextAction = drafts ? 'Continue this program’s draft curriculum' : 'Create this program’s curriculum'
@@ -131,7 +142,7 @@ export function programReadiness(
     steps: [
       {
         title: 'Foundations',
-        detail: `${countLabel(subjects, 'active reusable subject')} · ${countLabel(years, 'active academic year')}`,
+        detail: `${countLabel(subjects, 'active reusable subject')} · ${countLabel(years, 'active academic year')} · ${countLabel(terms, 'teaching term')}`,
         status: foundationReady ? 'ready' : 'next',
       },
       {

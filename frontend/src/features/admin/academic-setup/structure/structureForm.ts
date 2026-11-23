@@ -1,5 +1,6 @@
 import type { StructureEntity, StructureRecordMap } from '../../../../types/academicStructure.ts'
 import type { StructureDraft, StructureField } from './structureFields.ts'
+import type { AcademicStructureState } from './useAcademicStructure.ts'
 
 export type StructureRow = StructureRecordMap[StructureEntity]
 export function structureId(entity: StructureEntity, row: StructureRow): string {
@@ -35,6 +36,12 @@ export function structureDraft(row?: StructureRow, defaults: StructureDraft = {}
         ...defaults,
       }
 }
+/** Two semesters per program year, as the starting length of a new curriculum. */
+export function defaultSemesterCount(state: AcademicStructureState, programId: string, fallback: string | boolean) {
+  const duration = state.catalogue?.records.programs?.find((item) => item.program_id === programId)?.duration_years
+  if (!duration || duration <= 0) return { total_semesters: fallback }
+  return { total_semesters: String(Math.min(32, Math.max(1, Math.ceil(duration * 2)))) }
+}
 export function structurePayload(fields: StructureField[], draft: StructureDraft, row?: StructureRow) {
   const original = row ? structureDraft(row) : undefined
   return Object.fromEntries(
@@ -65,6 +72,8 @@ export function validateStructureFields(fields: StructureField[], draft: Structu
     if (field.required && !value) return `Enter or select ${field.label.toLowerCase()}.`
     if (field.type === 'select' && value && !field.options?.some((option) => option.value === value))
       return `Select an available ${field.label.toLowerCase()}.`
+    if (field.type === 'number' && /^\d+$/.test(value) && field.max !== undefined && Number(value) > field.max)
+      return `${field.label} cannot be more than ${field.max}.`
     if (
       field.type === 'number' &&
       value &&
