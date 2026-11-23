@@ -28,12 +28,25 @@ Each API exposes a readable catalogue plus server-advertised manageable entities
 and POST/PATCH record operations. Public URLs include the existing `/api/v1`
 prefix. Actor and institution come from verified server authorization.
 
-The existing eight-entity API and offering-owned `sections` retain their
-contracts and data. Legacy program-course mappings remain available through
-Curriculum's Legacy program mappings tab and the existing catalogue workflow.
-They do not populate versioned curricula; use versioned curricula for new batch
-study plans and retain legacy mappings only for workflows that still require them.
-They are not silently converted into curriculum versions or class sections.
+Legacy program-course mappings, course offerings and offering-owned sections
+were removed by migration `20261105000000_remove_legacy_program_courses`.
+Versioned curricula are the only source of subject assignments; the frontend
+has no legacy mapping view.
+
+## Consistency rules
+
+Migration `20261205000000_academic_setup_consistency` adds these database rules.
+The forms check the same rules first and explain the fix.
+
+- A batch's start year is the calendar year its intake academic year starts.
+  Its end year is filled from the program duration and may be shortened for
+  lateral-entry batches, but never extended beyond the duration.
+- A section's dated teaching term must fall within its batch's years; the term
+  list only offers terms that fit.
+- A subject offering's capacity cannot exceed its section's capacity, and a
+  section's capacity cannot drop below an active offering's capacity.
+- Published curriculum snapshots keep fractional credits and teaching hours
+  (`numeric(5,2)`, matching subjects).
 
 ## Building the academic structure
 
@@ -70,7 +83,8 @@ states from tenant-scoped saved records for the selected active program. Program
 can be switched to inspect their own department subjects, curricula, batches,
 sections and offerings; shared academic years remain institution-wide. Missing
 prerequisites are shown before later steps, and unavailable data is never
-presented as an empty setup. Class delivery is labeled optional until sections
+presented as an empty setup. Foundations are ready once the program has an
+active subject, an active academic year and a dated teaching term in it. Class delivery is labeled optional until sections
 are needed.
 
 Semester cards use a raised header with a 20px title, 16px section headings,
@@ -81,14 +95,17 @@ choice-group names and option labels follow the same heading hierarchy.
 
 1. Create a department, degree program, academic year and dated teaching terms.
 2. Create reusable subjects and the program's progression semesters.
-3. Create a draft curriculum version for the program and academic year.
+3. Create a draft curriculum version for the program and academic year. Its
+   semester count defaults to two per program year. Saving opens Subjects by
+   semester and sets up any missing program semesters automatically.
 4. Map subjects to that version's program semesters, retaining type and required
    status. Program semesters must belong to the same program and fit the version.
    In the same semester card, group optional mappings into complete alternatives; keep
    subjects shared by every student marked Required.
 5. Publish the curriculum after adding at least one active mapping. Publication
    records its timestamp and freezes metadata and subject mappings.
-6. Create a batch with a published curriculum for its program. Program,
+6. Create a batch with a published curriculum for its program. The sole published
+   curriculum is preselected and the years are filled in. Program,
    curriculum, intake academic year and year boundaries remain immutable. After
    saving, use Set up sections to continue to class grouping; this shortcut does
    not create a section automatically.
@@ -119,8 +136,7 @@ reusable; publication freezes mapping structure rather than copying subjects.
 
 Academic Terms describe dates within an academic year. Program Semesters describe
 progression within a degree. They remain separate selectors and relationships.
-Subjects display assignments from both existing dated-term mappings and versioned
-program-semester mappings, with labels that distinguish their meanings.
+Subjects display their versioned program-semester assignments.
 
 ## Access, errors and lifecycle
 
