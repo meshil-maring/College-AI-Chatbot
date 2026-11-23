@@ -50,8 +50,11 @@ describe('shared student approvals', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }))
     await waitFor(() => expect(approvePendingStudent).toHaveBeenCalledOnce())
     expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled()
+    expect(screen.queryByText('Student approved successfully')).not.toBeInTheDocument()
     finish({ ...pending[0], approval_status: 'approved' })
     expect(await screen.findByText('No students are awaiting approval right now.')).toBeInTheDocument()
+    // The double click produced one request and one confirmation.
+    expect(screen.getAllByText('Student approved successfully')).toHaveLength(1)
     await user.click(screen.getByRole('button', { name: 'Refresh registrations' }))
     expect(rejectPendingStudent).not.toHaveBeenCalled()
   })

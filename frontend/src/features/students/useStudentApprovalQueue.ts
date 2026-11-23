@@ -9,6 +9,7 @@ import {
 import type { PendingStudent } from '../../types/admin.ts'
 import { queryClient } from '../../lib/queryClient.ts'
 import { invalidateStudentDirectory } from '../admin/students/directory/studentDirectoryQueries.ts'
+import { notification } from '../../lib/notifications/notification.ts'
 
 export interface ApprovalQueueOptions {
   accessToken: string
@@ -31,7 +32,6 @@ export function useStudentApprovalQueue({
   const [busyStudentId, setBusyStudentId] = useState<string | null>(null)
   const deciding = useRef(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
   const [draftSearch, setDraftSearch] = useState('')
@@ -55,7 +55,6 @@ export function useStudentApprovalQueue({
 
   function refresh() {
     setActionError(null)
-    setActionSuccess(null)
     void queue.refetch()
   }
 
@@ -64,14 +63,14 @@ export function useStudentApprovalQueue({
     deciding.current = true
     setBusyStudentId(student.student_id)
     setActionError(null)
-    setActionSuccess(null)
     try {
       await decision.mutateAsync({ studentId: student.student_id, action })
-      setActionSuccess(
-        action === 'approve'
-          ? `Student ${student.student_number} approved. They can sign in after completing any required email verification.`
-          : `Student ${student.student_number} rejected. Their account cannot sign in.`,
-      )
+      if (action === 'approve')
+        notification.success(
+          'Student approved successfully',
+          `${student.student_number} can sign in after completing any required email verification.`,
+        )
+      else notification.success('Student rejected successfully', `${student.student_number} cannot sign in.`)
       setDismissed((current) => new Set(current).add(student.student_id))
       void queryClient.invalidateQueries({ queryKey: ['admin', 'students', accessToken] })
       void invalidateStudentDirectory()
@@ -91,7 +90,6 @@ export function useStudentApprovalQueue({
   return {
     busyStudentId,
     actionError,
-    actionSuccess,
     search,
     setSearch,
     draftSearch,

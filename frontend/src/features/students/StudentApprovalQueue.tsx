@@ -7,12 +7,11 @@ import './students.css'
 /** Administrator and staff account decisions use the same tenant-scoped contract. */
 export default function StudentApprovalQueue(options: ApprovalQueueOptions) {
   const model = useStudentApprovalQueue(options)
-  const { actionSuccess, actionError, queue, students, refresh } = model
+  const { actionError, queue, students, refresh } = model
   return (
     <section className="students-content students-scope" aria-label="Pending registrations">
       <StudentApprovalToolbar model={model} />
       <div aria-live="polite" className="students-queue-status">
-        {actionSuccess && <p className="text-success">{actionSuccess}</p>}
         {actionError && (
           <p role="status" className="text-warning">
             {actionError}
