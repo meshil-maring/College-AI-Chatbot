@@ -20,7 +20,8 @@
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
     "read-excel-file": "^9.3.12",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "sonner": "^2.0.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.11",
