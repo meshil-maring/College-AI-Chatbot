@@ -37,6 +37,7 @@ It includes TypeScript recipes and an adoption checklist for new and migrated pa
 | `src/services/`                            | Domain API clients and session-expiry events                                |
 | `src/types/`                               | Backend request/response contracts                                          |
 | `src/hooks/`, `src/lib/`, `src/providers/` | Shared query, navigation and providers                                      |
+| `src/lib/notifications/`                   | Toast notification service; its Toaster is `providers/NotificationProvider` |
 | `src/test/`, workflow `__tests__/`         | Test setup and fixtures                                                     |
 
 See the [admin](../src/features/admin/README.md),

@@ -215,6 +215,19 @@ and Retry; retained stale data is labeled. Unavailable metrics say “Unavailabl
 zero means a successful, empty result. Success messages use a polite live region;
 urgent errors use an alert. Preserve existing permission and stale-data safeguards.
 
+Report the outcome of a user action with a toast from
+[`lib/notifications`](../src/lib/notifications/notification.ts); never import Sonner
+directly. The single dark, top-right `<Toaster>` lives in
+[`NotificationProvider`](../src/providers/NotificationProvider.tsx) and maps Sonner's
+colors to the status tokens above. Show success only after the server confirms the
+change, in short past-tense headlines such as "Department created successfully",
+with an optional one-sentence description. Use `warning` when a change was saved but
+a follow-up failed (for example a setup email that could not be sent), `loading` or
+`promise` for long uploads, and `requestFailed` for failures that have no inline place:
+it hides server details and skips cancelled requests and expired sessions. Keep
+validation and request errors inline beside the form or dialog they belong to, and do
+not toast background refreshes. Toasts never replace confirmation for destructive actions.
+
 Use Lucide icons consistently: 16px inline, 20px navigation, 24px card headings,
 with stroke width 2. Decorative icons are hidden from assistive technology.
 Use 150ms ease-out for color/opacity changes and 200ms for drawer movement.
