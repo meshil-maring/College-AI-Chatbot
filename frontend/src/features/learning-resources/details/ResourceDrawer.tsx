@@ -77,11 +77,6 @@ export default function ResourceDrawer({
           {actions.error}
         </p>
       )}
-      {actions.notice && (
-        <p className="lr-callout lr-success" role="status">
-          {actions.notice}
-        </p>
-      )}
       {actions.saving && actions.activity === 'retry' && (
         <p role="status" className="lr-updating">
           Retrying indexing…

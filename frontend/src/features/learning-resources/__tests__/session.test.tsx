@@ -48,7 +48,7 @@ describe('resource identity boundaries', () => {
       finish(draft({ title: 'Private college A draft' }))
     })
     expect(screen.queryByText('Private college A draft')).not.toBeInTheDocument()
-    expect(screen.queryByText('Changes saved.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Changes saved successfully')).not.toBeInTheDocument()
     expect(
       client
         .getQueryCache()

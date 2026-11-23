@@ -53,6 +53,7 @@ describe('resource draft and upload workflow', () => {
     )
     await user.click(dialog.getByRole('button', { name: 'Upload and index' }))
     await waitFor(() => expect(dialog.getByRole('button', { name: 'Submit for review' })).toBeEnabled())
+    expect(await screen.findByText('Document uploaded successfully')).toBeInTheDocument()
     await user.click(dialog.getByRole('button', { name: 'Submit for review' }))
     await user.click(dialog.getByRole('button', { name: 'Confirm submit for review' }))
     await waitFor(() =>
@@ -64,6 +65,7 @@ describe('resource draft and upload workflow', () => {
       ),
     )
     expect(await dialog.findByText('Under review')).toBeInTheDocument()
+    expect(await screen.findByText('Submitted for review successfully')).toBeInTheDocument()
     expect(dialog.queryByRole('button', { name: 'Publish revision' })).not.toBeInTheDocument()
   })
   it('recovers a saved upload with failed indexing without uploading another version', async () => {
@@ -92,6 +94,9 @@ describe('resource draft and upload workflow', () => {
     )
     expect(api.uploadResourceFile).toHaveBeenCalledTimes(1)
     expect(await dialog.findByText('Indexed')).toBeInTheDocument()
+    // Failed indexing was never reported as a successful upload.
+    expect(await screen.findByText('Document processing started')).toBeInTheDocument()
+    expect(screen.queryByText('Document uploaded successfully')).not.toBeInTheDocument()
   })
   it('keeps a stale edit until the user explicitly discards it and reloads', async () => {
     const { user } = renderResources()

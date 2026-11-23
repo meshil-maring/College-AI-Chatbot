@@ -13,6 +13,14 @@ const labels: Record<ReviewAction, string> = {
   publish: 'Publish revision',
   unpublish: 'Unpublish resource',
 }
+const REVIEW_MESSAGES: Record<ReviewAction, string> = {
+  submit: 'Submitted for review successfully',
+  request_changes: 'Changes requested successfully',
+  approve: 'Resource approved successfully',
+  publish: 'Resource published successfully',
+  unpublish: 'Resource unpublished successfully',
+}
+
 export default function ReviewActions({
   context,
   revision,
@@ -43,7 +51,11 @@ export default function ReviewActions({
   }, [confirm])
   async function decide(action: ReviewAction) {
     if (busy || (action === 'request_changes' && !notes.trim())) return
-    const saved = await actions.run(() => decideRevision(context.accessToken, revision, action, notes), 'review')
+    const saved = await actions.run(
+      () => decideRevision(context.accessToken, revision, action, notes),
+      'review',
+      REVIEW_MESSAGES[action],
+    )
     if (saved) {
       setConfirm(null)
       setNotes('')

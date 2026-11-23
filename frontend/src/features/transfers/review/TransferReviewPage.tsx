@@ -15,6 +15,7 @@ import {
   type TransferFilters,
 } from './transferFilters.ts'
 import { useTransferReviews } from './useTransferReviews.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 const PAGE_SIZE = 20
 
@@ -40,7 +41,6 @@ function ReviewSession({ identity, institutionId, token }: { identity: string; i
   const [tab, setTab] = useState<ReviewTab>('pending')
   const [filters, setFilters] = useState<TransferFilters>(EMPTY_FILTERS)
   const [visible, setVisible] = useState(PAGE_SIZE)
-  const [notice, setNotice] = useState<string | null>(null)
   // One read of every request in scope; search and filters run on it locally.
   const { query, decide } = useTransferReviews(identity, institutionId, token, 'all')
   const data = query.data
@@ -92,11 +92,6 @@ function ReviewSession({ identity, institutionId, token }: { identity: string; i
         <div role="alert" className="ui-panel p-4">
           <p>{decide.error.message}</p>
         </div>
-      )}
-      {notice && (
-        <p role="status" className="rounded-lg bg-success-bg px-4 py-3 text-success">
-          {notice}
-        </p>
       )}
       {data && !data.can_review && (
         <p role="status">
@@ -153,14 +148,16 @@ function ReviewSession({ identity, institutionId, token }: { identity: string; i
                     decide.mutate(
                       { requestId: request.transfer_request_id, action, comment },
                       {
-                        onSuccess: (result) =>
-                          setNotice(
-                            result.status === 'approved'
-                              ? `${request.student_name ?? 'The student'} was moved to the new section.`
-                              : result.status === 'rejected'
-                                ? 'Transfer rejected. The student can see your reason.'
-                                : 'Marked as under review.',
-                          ),
+                        onSuccess: (result) => {
+                          if (result.status === 'approved')
+                            notification.success(
+                              'Transfer approved successfully',
+                              `${request.student_name ?? 'The student'} was moved to the new section.`,
+                            )
+                          else if (result.status === 'rejected')
+                            notification.success('Transfer rejected successfully', 'The student can see your reason.')
+                          else notification.success('Transfer marked as under review')
+                        },
                       },
                     )
                   }

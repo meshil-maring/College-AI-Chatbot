@@ -5,6 +5,7 @@ import { transferReviewIdentity } from '../review/TransferReviewPage.tsx'
 import { describeSection } from '../transferLabels.ts'
 import DirectTransferForm from './DirectTransferForm.tsx'
 import { useDirectTransfer } from './useDirectTransfer.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 /** Administrators transfer any student; a Head of Department only within their department. */
 export default function DirectTransferPage() {
@@ -25,7 +26,6 @@ function matches(student: DirectTransferStudent, search: string) {
 function DirectSession({ identity, institutionId, token }: { identity: string; institutionId: string; token: string }) {
   const [selected, setSelected] = useState<DirectTransferStudent | null>(null)
   const [search, setSearch] = useState('')
-  const [notice, setNotice] = useState<string | null>(null)
   const { students, options, transfer } = useDirectTransfer(
     identity,
     institutionId,
@@ -50,7 +50,6 @@ function DirectSession({ identity, institutionId, token }: { identity: string; i
           <p>{error.message}</p>
         </div>
       )}
-      {notice && <p role="status">{notice}</p>}
       {data && !data.can_transfer && (
         <p role="status">Only administrators and current Heads of Department can transfer students.</p>
       )}
@@ -75,7 +74,6 @@ function DirectSession({ identity, institutionId, token }: { identity: string; i
                   <button
                     type="button"
                     onClick={() => {
-                      setNotice(null)
                       setSelected(student)
                     }}
                     className="flex min-h-11 w-full flex-col items-start rounded-lg border border-line p-3 text-left hover:bg-hover"
@@ -130,7 +128,10 @@ function DirectSession({ identity, institutionId, token }: { identity: string; i
                       },
                       {
                         onSuccess: () => {
-                          setNotice(`${name} was moved to ${target ? describeSection(target) : 'the new section'}.`)
+                          notification.success(
+                            'Transfer completed successfully',
+                            `${name} was moved to ${target ? describeSection(target) : 'the new section'}.`,
+                          )
                           setSelected(null)
                         },
                       },

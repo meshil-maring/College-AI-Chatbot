@@ -30,6 +30,7 @@ describe('admin resource decisions', () => {
       ),
     )
     expect(await dialog.findByText('Published')).toBeInTheDocument()
+    expect(await screen.findByText('Resource published successfully')).toBeInTheDocument()
   })
   it('requires reviewer feedback to request changes', async () => {
     auth.user = identity('admin')
