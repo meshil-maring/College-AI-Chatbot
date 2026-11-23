@@ -133,11 +133,6 @@ export default function StudentDirectoryPage({
         </div>
 
         <div className="student-directory-results">
-          {actions.message && (
-            <p className="student-directory-action-message" role="status">
-              {actions.message}
-            </p>
-          )}
           {actions.error && (
             <p className="student-directory-action-message is-error" role="alert">
               {actions.error}

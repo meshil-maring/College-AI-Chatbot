@@ -14,6 +14,7 @@ import {
 import { getAcademicStructure } from '../../../services/admin/academicStructure.ts'
 import { parseStudentFile, validateStudentRows, type StudentImportRow } from './studentImport.ts'
 import { useStudentIdentityConflictReview } from './registration/useStudentIdentityConflictReview.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 const invitationKey = (identity: string) => ['admin', identity, 'student-onboarding-invitations'] as const
 const structureKey = (identity: string) => ['admin', identity, 'student-onboarding-structure'] as const
@@ -48,7 +49,6 @@ export function useStudentOnboarding(
   const [fileName, setFileName] = useState('')
   const [fileError, setFileError] = useState('')
   const [bulkResults, setBulkResults] = useState<StudentOnboardingBulkResult[]>([])
-  const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -75,7 +75,6 @@ export function useStudentOnboarding(
   function changeMode(next: 'single' | 'bulk') {
     setMode(next)
     setError('')
-    setNotice('')
   }
   function setField(field: keyof StudentInvitationInput, value: string) {
     setStudent((current) => ({ ...current, [field]: value }))
@@ -166,10 +165,10 @@ export function useStudentOnboarding(
   async function resend(invitationId: string) {
     setBusy(true)
     setError('')
-    setNotice('')
     try {
       const result = await resendStudentInvitation(accessToken, invitationId)
-      setNotice(result.delivery_message)
+      if (result.delivery_status === 'failed') notification.warning(result.delivery_message)
+      else notification.success(result.delivery_message)
       refresh()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'A new setup link could not be sent.')
@@ -181,10 +180,9 @@ export function useStudentOnboarding(
     if (!sectionId) return
     setBusy(true)
     setError('')
-    setNotice('')
     try {
       await reassignStudentInvitation(accessToken, invitationId, sectionId)
-      setNotice('Invitation assigned to the selected active section.')
+      notification.success('Invitation section updated successfully')
       refresh()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Section assignment could not be updated.')
@@ -222,7 +220,6 @@ export function useStudentOnboarding(
     fileName,
     fileError,
     bulkResults,
-    notice,
     error,
     identityReview: conflictReview.identityReview,
     identityReviewError: conflictReview.identityReviewError,

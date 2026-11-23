@@ -89,6 +89,7 @@ describe('FaqManager', () => {
         category: 'general',
       })
     })
+    expect(await screen.findByText('FAQ created successfully')).toBeInTheDocument()
   })
 
   it('shows error when create fails', async () => {
@@ -106,6 +107,7 @@ describe('FaqManager', () => {
     await waitFor(() => {
       expect(screen.getByText('Server error')).toBeInTheDocument()
     })
+    expect(screen.queryByText('FAQ created successfully')).not.toBeInTheDocument()
   })
 
   it('toggles FAQ active status', async () => {

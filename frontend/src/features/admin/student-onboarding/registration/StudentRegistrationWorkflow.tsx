@@ -27,7 +27,6 @@ export default function StudentRegistrationWorkflow({ model, bulkOnly }: { model
     fileName,
     fileError,
     bulkResults,
-    notice,
     error,
     identityReview,
     identityReviewError,
@@ -204,11 +203,6 @@ export default function StudentRegistrationWorkflow({ model, bulkOnly }: { model
           <BulkResults results={bulkResults} remaining={rows} onFix={() => setBulkStep(2)} onStartOver={resetBulk} />
         )}
       </section>
-      {notice && (
-        <p className="student-onboarding-notice" role="status">
-          {notice}
-        </p>
-      )}
       {error && mode === 'single' && singleStep !== 2 && (
         <p className="student-onboarding-inline-error" role="alert">
           {error}

@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import { deleteFaq, listFaqs, updateFaq } from '../../../services/admin/adminApi.ts'
 import type { Faq } from '../../../types/admin.ts'
 import FaqForm from './FaqForm.tsx'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 export default function FaqManager() {
   const { accessToken } = useAuth()
@@ -52,6 +53,7 @@ export default function FaqManager() {
       try {
         await deleteFaq(accessToken, id)
         updateFaqs((prev) => prev.filter((f) => f.faq_id !== id))
+        notification.success('FAQ deleted successfully')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to delete FAQ.')
       }
@@ -65,6 +67,7 @@ export default function FaqManager() {
       try {
         const updated = await updateFaq(accessToken, faq.faq_id, { is_active: !faq.is_active })
         updateFaqs((prev) => prev.map((f) => (f.faq_id === updated.faq_id ? updated : f)))
+        notification.success(updated.is_active ? 'FAQ published successfully' : 'FAQ unpublished successfully')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update FAQ.')
       }
@@ -107,6 +110,7 @@ export default function FaqManager() {
               const exists = prev.some((f) => f.faq_id === faq.faq_id)
               return exists ? prev.map((f) => (f.faq_id === faq.faq_id ? faq : f)) : [...prev, faq]
             })
+            notification.success(editing ? 'FAQ updated successfully' : 'FAQ created successfully')
             setIsFormOpen(false)
           }}
         />

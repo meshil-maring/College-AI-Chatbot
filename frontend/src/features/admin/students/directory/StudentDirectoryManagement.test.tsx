@@ -145,7 +145,7 @@ describe('StudentDirectoryPage management actions', () => {
         academic_section_id: null,
       })
     })
-    expect(await screen.findByText('Student details updated.')).toBeInTheDocument()
+    expect(await screen.findByText('Student updated successfully')).toBeInTheDocument()
   })
 
   it('keeps placement read-only while the directory response lacks placement identifiers', async () => {
@@ -172,7 +172,7 @@ describe('StudentDirectoryPage management actions', () => {
     await user.click(screen.getByRole('button', { name: 'Deactivate student' }))
 
     await waitFor(() => expect(api.setStudentActive).toHaveBeenCalledWith('token', 'student-1', false))
-    expect(await screen.findByText('Student deactivated.')).toBeInTheDocument()
+    expect(await screen.findByText('Student deactivated successfully')).toBeInTheDocument()
   })
 
   it('explains why a student with linked records cannot be deleted', async () => {
@@ -186,6 +186,7 @@ describe('StudentDirectoryPage management actions', () => {
     await user.click(screen.getByRole('button', { name: 'Delete profile' }))
 
     expect(await screen.findByRole('dialog')).toHaveTextContent('Student has linked records and cannot be deleted.')
+    expect(screen.queryByText('Student deleted successfully')).not.toBeInTheDocument()
   })
 
   it('deletes a student profile after confirmation when the server permits it', async () => {
@@ -195,10 +196,13 @@ describe('StudentDirectoryPage management actions', () => {
     await screen.findByText('Ada Lovelace')
     await user.click(screen.getByRole('button', { name: 'Actions for Ada Lovelace' }))
     await user.click(screen.getByRole('button', { name: 'Delete profile' }))
+    // The confirmation dialog is open; nothing is deleted or reported yet.
+    expect(api.deleteStudentProfile).not.toHaveBeenCalled()
+    expect(screen.queryByText('Student deleted successfully')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Delete profile' }))
 
     await waitFor(() => expect(api.deleteStudentProfile).toHaveBeenCalledWith('token', 'student-1'))
-    expect(await screen.findByText('Student profile deleted.')).toBeInTheDocument()
+    expect(await screen.findByText('Student deleted successfully')).toBeInTheDocument()
   })
 
   it('lets an admin correct a pending invitation email and sends a fresh setup link', async () => {
@@ -245,6 +249,6 @@ describe('StudentDirectoryPage management actions', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel invitation' }))
 
     await waitFor(() => expect(api.cancelStudentInvitation).toHaveBeenCalledWith('token', 'invitation-1'))
-    expect(await screen.findByText('Student invitation cancelled.')).toBeInTheDocument()
+    expect(await screen.findByText('Invitation cancelled successfully')).toBeInTheDocument()
   })
 })

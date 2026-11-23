@@ -28,7 +28,6 @@ export default function DocumentManager() {
     knowledgeSourceId,
     setKnowledgeSourceId,
     uploading,
-    uploadStatus,
     loadSources,
     handleUpload,
     handleNewVersion,
@@ -111,7 +110,6 @@ export default function DocumentManager() {
               className="mt-1 block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink hover:file:bg-accent-hover disabled:file:opacity-50"
             />
           </label>
-          {uploadStatus !== null && <p className="mt-1 text-xs text-muted">{uploadStatus}</p>}
         </div>
         {uploading && (
           <div className="rounded-lg border border-line bg-surface p-3">

@@ -9,6 +9,8 @@ import {
 } from '../../../services/admin/adminApi.ts'
 import type { DocumentWithVersions, KnowledgeSource } from '../../../types/admin.ts'
 import { useAuth } from '../../auth/session/AuthProvider.tsx'
+import { notification } from '../../../lib/notifications/notification.ts'
+
 export function useDocumentManager() {
   const { accessToken, user } = useAuth()
   // Tenant context resolved SERVER-SIDE (never hardcoded or guessed).
@@ -21,7 +23,6 @@ export function useDocumentManager() {
   const [error, setError] = useState<string | null>(null)
   const [knowledgeSourceId, setKnowledgeSourceId] = useState('')
   const [uploading, setUploading] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null)
 
   const loadSources = useCallback(async () => {
     if (accessToken === null || institutionId === null) return
@@ -75,18 +76,17 @@ export function useDocumentManager() {
         return
       }
       setUploading(true)
-      setUploadStatus('Uploading…')
       setError(null)
+      const progress = notification.loading('Uploading document...')
       try {
         await uploadDocument(accessToken, knowledgeSourceId.trim(), file)
-        setUploadStatus('Processing: extraction → chunking → embedding…')
-        window.setTimeout(() => {
-          void load()
-          setUploadStatus('Document uploaded successfully.')
-        }, 1500)
+        // The server accepted the file; extraction and indexing continue there.
+        notification.success('Document uploaded successfully', 'Document processing started.', { id: progress })
+        window.setTimeout(() => void load(), 1500)
       } catch (err) {
+        // The inline error explains the failure; drop the progress toast.
+        notification.dismiss(progress)
         setError(err instanceof Error ? err.message : 'Failed to upload document.')
-        setUploadStatus('Upload failed.')
       } finally {
         setUploading(false)
         e.target.value = ''
@@ -101,18 +101,15 @@ export function useDocumentManager() {
       const file = e.target.files?.[0]
       if (file === undefined) return
       setUploading(true)
-      setUploadStatus('Uploading new version…')
       setError(null)
+      const progress = notification.loading('Uploading new version...')
       try {
         await uploadDocumentVersion(accessToken, documentId, file)
-        setUploadStatus('Processing new version: extraction → chunking → embedding…')
-        window.setTimeout(() => {
-          void load()
-          setUploadStatus('New version uploaded successfully.')
-        }, 1500)
+        notification.success('New version uploaded successfully', 'Document processing started.', { id: progress })
+        window.setTimeout(() => void load(), 1500)
       } catch (err) {
+        notification.dismiss(progress)
         setError(err instanceof Error ? err.message : 'Failed to upload new version.')
-        setUploadStatus('Upload failed.')
       } finally {
         setUploading(false)
         e.target.value = ''
@@ -134,6 +131,7 @@ export function useDocumentManager() {
       })
       setKnowledgeSources((prev) => [created, ...prev])
       setKnowledgeSourceId(created.knowledge_source_id)
+      notification.success('Knowledge source created successfully')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create knowledge source.')
     }
@@ -146,6 +144,7 @@ export function useDocumentManager() {
       try {
         await deleteDocument(accessToken, id)
         setDocuments((prev) => prev.filter((d) => d.document_id !== id))
+        notification.success('Document deleted successfully')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to delete document.')
       }
@@ -164,7 +163,6 @@ export function useDocumentManager() {
     knowledgeSourceId,
     setKnowledgeSourceId,
     uploading,
-    uploadStatus,
     loadSources,
     handleUpload,
     handleNewVersion,

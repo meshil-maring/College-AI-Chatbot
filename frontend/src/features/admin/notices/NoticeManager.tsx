@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/session/AuthProvider.tsx'
 import { deleteNotice, listNotices, updateNotice } from '../../../services/admin/adminApi.ts'
 import type { Notice } from '../../../types/admin.ts'
 import NoticeForm from './NoticeForm.tsx'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 export default function NoticeManager() {
   const { accessToken } = useAuth()
@@ -52,6 +53,7 @@ export default function NoticeManager() {
       try {
         await deleteNotice(accessToken, id)
         updateNotices((prev) => prev.filter((n) => n.notice_id !== id))
+        notification.success('Notice deleted successfully')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to delete notice.')
       }
@@ -65,6 +67,7 @@ export default function NoticeManager() {
       try {
         const updated = await updateNotice(accessToken, notice.notice_id, { is_active: !notice.is_active })
         updateNotices((prev) => prev.map((n) => (n.notice_id === updated.notice_id ? updated : n)))
+        notification.success(updated.is_active ? 'Notice published successfully' : 'Notice unpublished successfully')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update notice.')
       }
@@ -103,6 +106,7 @@ export default function NoticeManager() {
               const exists = prev.some((n) => n.notice_id === notice.notice_id)
               return exists ? prev.map((n) => (n.notice_id === notice.notice_id ? notice : n)) : [...prev, notice]
             })
+            notification.success(editing ? 'Notice updated successfully' : 'Notice created successfully')
             setIsFormOpen(false)
           }}
         />

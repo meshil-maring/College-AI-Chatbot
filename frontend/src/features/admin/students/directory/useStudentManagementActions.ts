@@ -16,10 +16,19 @@ import type {
   StudentInvitationUpdateResult,
 } from '../../../../types/admin/students.ts'
 import { studentDirectoryKeys } from './studentDirectoryQueries.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
+
+/** A setup-link email that failed is reported as a warning, never as success. */
+function isFailedDelivery(result: unknown): boolean {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    (result as { delivery_status?: unknown }).delivery_status === 'failed'
+  )
+}
 
 export function useStudentManagementActions(accessToken: string, identity: string, canManagePlacement: boolean) {
   const [busyId, setBusyId] = useState('')
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const structure = useApiQuery(
     ['admin', 'student-management-structure', identity],
@@ -33,11 +42,12 @@ export function useStudentManagementActions(accessToken: string, identity: strin
     operation: () => Promise<T>,
   ): Promise<boolean> {
     setBusyId(student.record_id)
-    setMessage('')
     setError('')
     try {
       const result = await operation()
-      setMessage(typeof successMessage === 'function' ? successMessage(result) : successMessage)
+      const text = typeof successMessage === 'function' ? successMessage(result) : successMessage
+      if (isFailedDelivery(result)) notification.warning(text)
+      else notification.success(text)
       await queryClient.invalidateQueries({ queryKey: [...studentDirectoryKeys.all, identity] })
       return true
     } finally {
@@ -55,39 +65,39 @@ export function useStudentManagementActions(accessToken: string, identity: strin
         (result: StudentInvitationUpdateResult) =>
           result.email_changed
             ? (result.delivery_message ?? 'Invitation email updated; setup-link delivery status is unavailable.')
-            : 'Invitation details updated.',
+            : 'Invitation updated successfully',
         () => updateStudentInvitation(accessToken, student.record_id, input),
       )
     }
     if ('email' in input) throw new Error('Registered student email cannot be changed here.')
-    return mutate(student, 'Student details updated.', () =>
+    return mutate(student, 'Student updated successfully', () =>
       updateStudentProfile(accessToken, student.record_id, input),
     )
   }
 
   function setActive(student: StudentDirectoryRow, active: boolean) {
-    return mutate(student, active ? 'Student reactivated.' : 'Student deactivated.', () =>
+    return mutate(student, active ? 'Student reactivated successfully' : 'Student deactivated successfully', () =>
       setStudentActive(accessToken, student.record_id, active),
     )
   }
 
   function remove(student: StudentDirectoryRow) {
-    return mutate(student, 'Student profile deleted.', () => deleteStudentProfile(accessToken, student.record_id))
+    return mutate(student, 'Student deleted successfully', () => deleteStudentProfile(accessToken, student.record_id))
   }
 
   function cancelInvitation(student: StudentDirectoryRow) {
-    return mutate(student, 'Student invitation cancelled.', () =>
+    return mutate(student, 'Invitation cancelled successfully', () =>
       cancelStudentInvitation(accessToken, student.record_id),
     )
   }
 
   async function resend(student: StudentDirectoryRow) {
     setBusyId(student.record_id)
-    setMessage('')
     setError('')
     try {
       const result = await resendStudentInvitation(accessToken, student.record_id)
-      setMessage(result.delivery_message)
+      if (isFailedDelivery(result)) notification.warning(result.delivery_message)
+      else notification.success(result.delivery_message)
       await queryClient.invalidateQueries({ queryKey: [...studentDirectoryKeys.all, identity] })
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'A new setup link could not be sent.')
@@ -98,7 +108,6 @@ export function useStudentManagementActions(accessToken: string, identity: strin
 
   return {
     busyId,
-    message,
     error,
     structure,
     edit,
