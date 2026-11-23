@@ -15,6 +15,7 @@ import { getDepartmentHeads } from '../../../services/students/transferApi.ts'
 import { roleLabel } from './StaffFacultyUI.tsx'
 import { useDepartmentHeadActions } from './useDepartmentHeadActions.ts'
 import { staffFacultyKeys, type RequestFilter } from './staffFacultyKeys.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 function message(cause: unknown, fallback: string) {
   return cause instanceof Error ? cause.message : fallback
@@ -31,7 +32,6 @@ export function useStaffFacultyManagement(accessToken: string) {
   const [requestFilter, setRequestFilter] = useState<RequestFilter>('pending')
   const [actionKey, setActionKey] = useState<string | null>(null)
   const [actionError, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const identity = useRef(accessToken)
   identity.current = accessToken
 
@@ -108,7 +108,6 @@ export function useStaffFacultyManagement(accessToken: string) {
 
   function dismiss() {
     setError(null)
-    setSuccess(null)
   }
 
   /** Refresh every read on this page after a change, and wait for it. */
@@ -117,7 +116,6 @@ export function useStaffFacultyManagement(accessToken: string) {
 
   useEffect(() => {
     setActionKey(null)
-    setSuccess(null)
     setError(null)
   }, [accessToken])
 
@@ -133,11 +131,11 @@ export function useStaffFacultyManagement(accessToken: string) {
     if (!window.confirm(`${action} ${request.full_name || request.email}${as}?`)) return
     setActionKey(`${decision}:${request.request_id}`)
     setError(null)
-    setSuccess(null)
     try {
       const result = await decideMembershipRequest(accessToken, request.request_id, decision, departmentId, role)
       if (identity.current !== accessToken) return
-      setSuccess(retry ? 'Sign-in setup completed. This account can now sign in.' : result.message)
+      if (retry) notification.success('Sign-in setup completed', 'This account can now sign in.')
+      else notification.success(result.message)
       await latestLoad.current()
     } catch (cause) {
       if (identity.current !== accessToken) return
@@ -156,11 +154,10 @@ export function useStaffFacultyManagement(accessToken: string) {
     if (!window.confirm(LIFECYCLE_PROMPTS[action](member.name || member.email))) return
     setActionKey(`${action}:${member.user_id}`)
     setError(null)
-    setSuccess(null)
     try {
       const result = await changeMembershipStatus(accessToken, member.user_id, action)
       if (identity.current !== accessToken) return
-      setSuccess(result.message)
+      notification.success(result.message)
       await latestLoad.current()
     } catch (cause) {
       if (identity.current !== accessToken) return
@@ -174,11 +171,10 @@ export function useStaffFacultyManagement(accessToken: string) {
   async function runAction(key: string, work: () => Promise<string>, failure: string) {
     setActionKey(key)
     setError(null)
-    setSuccess(null)
     try {
       const message = await work()
       if (identity.current !== accessToken) return
-      setSuccess(message)
+      notification.success(message)
       await latestLoad.current()
     } catch (cause) {
       if (identity.current !== accessToken) return
@@ -222,14 +218,13 @@ export function useStaffFacultyManagement(accessToken: string) {
     loading,
     actionKey,
     error,
-    success,
     dismiss,
     pendingCount,
     // People, not appointments: one HOD may head several departments.
     headCount: new Set(heads.map((head) => head.faculty_user_id)).size,
     decide,
     lifecycle,
-    notify: setSuccess,
+    notify: (message: string) => notification.success(message),
     changeDepartment,
     changeRole,
     ...hod,

@@ -21,7 +21,7 @@ export default function AdministratorsPage({ accessToken }: { accessToken: strin
 
   return (
     <div className="space-y-4">
-      <Feedback error={model.error} success={model.notice} onDismiss={model.dismiss} />
+      <Feedback error={model.error} onDismiss={model.dismiss} />
       {!model.loading && !model.viewerIsOwner ? (
         <p className="rounded-lg border border-line bg-surface p-3 text-sm text-muted">
           Only the institution Owner can invite or remove administrators.

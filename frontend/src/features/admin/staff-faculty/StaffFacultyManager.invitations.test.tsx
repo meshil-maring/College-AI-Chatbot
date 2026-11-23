@@ -115,7 +115,7 @@ describe('Staff and Faculty Management — invitations', () => {
     expect(within(section).getByText('Email sent')).toBeInTheDocument()
     fireEvent.click(within(section).getByRole('button', { name: 'Resend invitation to Ada Lovelace' }))
     await waitFor(() => expect(api.resendMembershipInvitation).toHaveBeenCalledWith('jwt', invitation().invitation_id))
-    expect(await within(section).findByText(/A new invitation link was sent/)).toBeInTheDocument()
+    expect(await screen.findByText(/A new invitation link was sent/)).toBeInTheDocument()
     vi.mocked(api.resendMembershipInvitation).mockResolvedValueOnce({
       invitation_id: invitation().invitation_id,
       email_delivery: { status: 'failed', provider: 'test' },
@@ -123,11 +123,13 @@ describe('Staff and Faculty Management — invitations', () => {
       message: 'A new invitation link was issued, but the email could not be sent. Try resending again.',
     })
     fireEvent.click(within(section).getByRole('button', { name: 'Resend invitation to Ada Lovelace' }))
-    expect(await within(section).findByText(/the email could not be sent/)).toBeInTheDocument()
+    // A failed email is a warning, never a success.
+    const warning = await screen.findByText(/the email could not be sent/)
+    expect(warning.closest('[data-sonner-toast]')).toHaveAttribute('data-type', 'warning')
     fireEvent.click(within(section).getByRole('button', { name: 'Cancel invitation for Ada Lovelace' }))
     expect(window.confirm).toHaveBeenCalledWith('Cancel the invitation for Ada Lovelace?')
     await waitFor(() => expect(api.cancelMembershipInvitation).toHaveBeenCalledWith('jwt', invitation().invitation_id))
-    expect(await within(section).findByText('Invitation cancelled. The link no longer works.')).toBeInTheDocument()
+    expect(await screen.findByText('Invitation cancelled. The link no longer works.')).toBeInTheDocument()
   })
 
   it('offers to invite again with the same details once a link expires', async () => {

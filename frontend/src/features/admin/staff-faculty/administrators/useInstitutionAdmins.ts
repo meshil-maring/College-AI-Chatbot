@@ -18,6 +18,7 @@ import type {
   InstitutionAdmin,
 } from '../../../../types/admin/administrators.ts'
 import { staffFacultyKeys } from '../staffFacultyKeys.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 function message(cause: unknown, fallback: string) {
   return cause instanceof Error ? cause.message : fallback
@@ -38,26 +39,23 @@ export function useInstitutionAdmins(accessToken: string) {
     queryClient,
   )
   const [actionKey, setActionKey] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const identity = useRef(accessToken)
   identity.current = accessToken
 
   useEffect(() => {
     setActionKey(null)
-    setNotice(null)
     setError(null)
   }, [accessToken])
 
   /** Runs one command; returns an error message, or null when it succeeded. */
   async function run(key: string, work: () => Promise<{ message: string }>, failure: string) {
     setActionKey(key)
-    setNotice(null)
     setError(null)
     try {
       const result = await work()
       if (identity.current !== accessToken) return null
-      setNotice(result.message)
+      notification.success(result.message)
       return null
     } catch (cause) {
       if (identity.current !== accessToken) return null
@@ -148,12 +146,8 @@ export function useInstitutionAdmins(accessToken: string) {
     loading: query.isPending,
     loadError: query.error ? message(query.error, 'Could not load administrators.') : null,
     actionKey,
-    notice,
     error,
-    dismiss: () => {
-      setNotice(null)
-      setError(null)
-    },
+    dismiss: () => setError(null),
     invite,
     setAccess,
     saveProfile,

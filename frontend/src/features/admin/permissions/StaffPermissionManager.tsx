@@ -26,7 +26,6 @@ export default function StaffPermissionManager({
     loading,
     busy,
     error,
-    notice,
     save,
   } = useStaffPermissions(accessToken, focus)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -62,11 +61,6 @@ export default function StaffPermissionManager({
       {error ? (
         <p role="alert" className="rounded-lg border border-danger bg-danger-bg p-3 text-sm text-danger">
           {error}
-        </p>
-      ) : null}
-      {notice ? (
-        <p role="status" className="rounded-lg border border-success bg-success-bg p-3 text-sm text-success">
-          {notice}
         </p>
       ) : null}
       {loading ? (

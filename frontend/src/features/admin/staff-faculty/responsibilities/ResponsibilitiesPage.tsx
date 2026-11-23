@@ -26,7 +26,7 @@ export default function ResponsibilitiesPage({ accessToken, members, headCount, 
 
   return (
     <div className="space-y-4">
-      <Feedback error={model.error} success={model.notice} onDismiss={model.dismiss} />
+      <Feedback error={model.error} onDismiss={model.dismiss} />
       <section aria-labelledby="hod-policy-heading" className="space-y-3 rounded-xl border border-line bg-surface p-4">
         <h3 id="hod-policy-heading" className="text-sm font-semibold text-content">
           Heads of Department

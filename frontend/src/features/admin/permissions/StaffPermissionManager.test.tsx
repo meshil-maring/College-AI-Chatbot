@@ -59,7 +59,7 @@ describe('StaffPermissionManager', () => {
       expect(api.changeStaffPermissions).toHaveBeenCalledWith('jwt', 'staff-1', ['attendance.manage'], 'revoke')
     })
     expect(api.changeStaffPermissions).toHaveBeenCalledTimes(1)
-    expect(await screen.findByRole('status')).toHaveTextContent('Changes saved.')
+    expect(await screen.findByText('Permissions updated successfully')).toBeInTheDocument()
   })
 
   it('grants ticked and revokes unticked permissions in one save', async () => {
@@ -82,7 +82,8 @@ describe('StaffPermissionManager', () => {
     await waitFor(() => expect(api.changeStaffPermissions).toHaveBeenCalledTimes(2))
     expect(api.changeStaffPermissions).toHaveBeenCalledWith('jwt', 'staff-1', ['documents.read'], 'grant')
     expect(api.changeStaffPermissions).toHaveBeenCalledWith('jwt', 'staff-1', ['attendance.manage'], 'revoke')
-    expect(await screen.findByRole('status')).toHaveTextContent('Changes saved. 2 permission grant(s) changed.')
+    expect(await screen.findByText('Permissions updated successfully')).toBeInTheDocument()
+    expect(screen.getByText('2 permission grant(s) changed.')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: /documents.read/ })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: /attendance.manage/ })).not.toBeChecked()
     // Saving returns the list to read-only.
@@ -98,7 +99,7 @@ describe('StaffPermissionManager', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /documents.read/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Permission denied')
-    expect(screen.queryByText(/Changes saved/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Permissions updated/)).not.toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: /documents.read/ })).toBeChecked()
   })
 

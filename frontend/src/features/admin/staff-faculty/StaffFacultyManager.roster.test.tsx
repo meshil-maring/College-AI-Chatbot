@@ -1,6 +1,6 @@
 import './__tests__/StaffFacultyManager.support.ts'
 import { chooseAction, CSE, member } from './__tests__/StaffFacultyManager.support.ts'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import StaffFacultyManager from './StaffFacultyManager.tsx'
 import * as api from '../../../services/admin/adminApi.ts'
@@ -71,14 +71,24 @@ describe('Staff and Faculty Management — roster search and summary', () => {
     expect(rowNames()).toHaveLength(3)
   })
 
-  it('lets the administrator dismiss a result message', async () => {
+  it('reports a completed action as a dismissible toast', async () => {
     vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [roster[0]], total: 1 })
     vi.mocked(api.changeMembershipStatus).mockResolvedValue({ message: 'Member deactivated.' } as never)
     render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
     await chooseAction('Zed Staff', 'Deactivate')
     expect(await screen.findByText('Member deactivated.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss notification' }))
+    await waitFor(() => expect(screen.queryByText('Member deactivated.')).toBeNull())
+  })
+
+  it('lets the administrator dismiss a failed action message', async () => {
+    vi.mocked(api.listMembershipRoster).mockResolvedValue({ members: [roster[0]], total: 1 })
+    vi.mocked(api.changeMembershipStatus).mockRejectedValue(new Error('Member could not be deactivated.'))
+    render(<StaffFacultyManager accessToken="jwt" defaultPage="roster" />)
+    await chooseAction('Zed Staff', 'Deactivate')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Member could not be deactivated.')
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss message' }))
-    expect(screen.queryByText('Member deactivated.')).toBeNull()
+    expect(screen.queryByText('Member could not be deactivated.')).toBeNull()
   })
 
   it('keeps every row action in one keyboard-friendly menu', async () => {

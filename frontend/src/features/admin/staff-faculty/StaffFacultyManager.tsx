@@ -73,7 +73,7 @@ export default function StaffFacultyManager({
         </button>
       </div>
 
-      <Feedback error={management.error} success={management.success} onDismiss={management.dismiss} />
+      <Feedback error={management.error} onDismiss={management.dismiss} />
 
       {current !== 'permissions' && current !== 'administrators' && current !== 'teaching' ? (
         <StaffFacultySummary

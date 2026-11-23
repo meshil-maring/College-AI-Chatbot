@@ -8,6 +8,7 @@ import {
   listMembershipRoster,
 } from '../../../services/admin/adminApi.ts'
 import { staffFacultyKeys } from '../staff-faculty/staffFacultyKeys.ts'
+import { notification } from '../../../lib/notifications/notification.ts'
 
 /** A roster click asking the permissions section to open one Staff member. */
 export interface StaffPermissionFocus {
@@ -68,7 +69,6 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
   const [editing, setEditing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [actionError, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
 
   // Open the Staff member chosen from the roster.
   useEffect(() => {
@@ -76,7 +76,6 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
     setSelectedUserId(focus.userId)
     setChangedCodes(new Set())
     setEditing(false)
-    setNotice(null)
   }, [focus])
 
   // Only the first load hides the section. Switching member keeps the picker
@@ -90,7 +89,6 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
         : null
 
   function toggle(code: string) {
-    setNotice(null)
     setChangedCodes((previous) => {
       const next = new Set(previous)
       if (next.has(code)) next.delete(code)
@@ -104,7 +102,6 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
     setChangedCodes(new Set())
     setEditing(false)
     setError(null)
-    setNotice(null)
   }
 
   const isGranted = (code: string) =>
@@ -122,7 +119,6 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
     const stateKey = staffFacultyKeys.staffPermissions(accessToken, selectedUserId)
     setBusy(true)
     setError(null)
-    setNotice(null)
     let changed = 0
     try {
       for (const [action, codes] of [
@@ -138,7 +134,7 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
         changed += result.changed
       }
       setEditing(false)
-      setNotice(`Changes saved. ${changed} permission grant(s) changed.`)
+      notification.success('Permissions updated successfully', `${changed} permission grant(s) changed.`)
     } catch (cause) {
       setError(message(cause, 'Could not save permission changes.'))
     } finally {
@@ -160,7 +156,6 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
     startEditing: () => {
       setEditing(true)
       setError(null)
-      setNotice(null)
     },
     cancelEditing: () => {
       setChangedCodes(new Set())
@@ -170,7 +165,6 @@ export function useStaffPermissions(accessToken: string, focus: StaffPermissionF
     loading,
     busy,
     error: actionError ?? loadError,
-    notice,
     save,
   }
 }

@@ -9,6 +9,7 @@ import {
 } from '../../../../services/admin/adminApi.ts'
 import type { MemberInvitation, MemberInvitationCreate } from '../../../../types/admin.ts'
 import { staffFacultyKeys } from '../staffFacultyKeys.ts'
+import { notification } from '../../../../lib/notifications/notification.ts'
 
 function message(cause: unknown, fallback: string) {
   return cause instanceof Error ? cause.message : fallback
@@ -29,14 +30,12 @@ export function useMemberInvitations(accessToken: string) {
     queryClient,
   )
   const [actionKey, setActionKey] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const identity = useRef(accessToken)
   identity.current = accessToken
 
   useEffect(() => {
     setActionKey(null)
-    setNotice(null)
     setError(null)
   }, [accessToken])
 
@@ -47,12 +46,11 @@ export function useMemberInvitations(accessToken: string) {
   /** Send a new invitation. Returns an error message for the form, or null when sent. */
   async function create(draft: MemberInvitationCreate): Promise<string | null> {
     setActionKey('create')
-    setNotice(null)
     setError(null)
     try {
       const result = await createMembershipInvitation(accessToken, draft)
       if (identity.current !== accessToken) return null
-      setNotice(result.message)
+      notification.success(result.message)
       await refresh()
       return null
     } catch (cause) {
@@ -63,14 +61,14 @@ export function useMemberInvitations(accessToken: string) {
     }
   }
 
-  async function run(key: string, work: () => Promise<string>, failure: string) {
+  /** Runs one command. `work` reports its own outcome when it returns null. */
+  async function run(key: string, work: () => Promise<string | null>, failure: string) {
     setActionKey(key)
-    setNotice(null)
     setError(null)
     try {
       const text = await work()
       if (identity.current !== accessToken) return
-      setNotice(text)
+      if (text) notification.success(text)
     } catch (cause) {
       if (identity.current !== accessToken) return
       setError(message(cause, failure))
@@ -88,7 +86,10 @@ export function useMemberInvitations(accessToken: string) {
       async () => {
         const result = await resendMembershipInvitation(accessToken, invitation.invitation_id)
         // A failed email is reported as the server describes it, never as sent.
-        if (result?.email_delivery?.status === 'failed') return result.message
+        if (result?.email_delivery?.status === 'failed') {
+          if (identity.current === accessToken) notification.warning(result.message)
+          return null
+        }
         return `A new invitation link was sent to ${invitation.email}. The previous link no longer works.`
       },
       'The invitation could not be resent.',
@@ -109,7 +110,6 @@ export function useMemberInvitations(accessToken: string) {
     loading: query.isPending,
     loadError: query.error ? message(query.error, 'Could not load invitations.') : null,
     actionKey,
-    notice,
     error,
     create,
     resend,

@@ -80,7 +80,8 @@ describe('StaffFacultyManager', () => {
         undefined,
       ),
     )
-    expect(await screen.findByText('Sign-in setup completed. This account can now sign in.')).toBeDefined()
+    expect(await screen.findByText('Sign-in setup completed')).toBeDefined()
+    expect(screen.getByText('This account can now sign in.')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Reject' })).toBeNull()
   })
 
@@ -94,7 +95,7 @@ describe('StaffFacultyManager', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Approve' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Sign-in confirmation failed.')
     expect(await screen.findByRole('button', { name: 'Retry sign-in setup' })).toBeEnabled()
-    expect(screen.queryByText('Sign-in setup completed. This account can now sign in.')).toBeNull()
+    expect(screen.queryByText('Sign-in setup completed')).toBeNull()
   })
 
   it('does not retry sign-in setup for rejected requests', async () => {

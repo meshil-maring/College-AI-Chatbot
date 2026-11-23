@@ -28,7 +28,7 @@ export default function PendingInvitations({
   departments: Department[]
   onInviteAgain: (invitation: MemberInvitation) => void
 }) {
-  const { invitations, loading, loadError, actionKey, notice, error } = model
+  const { invitations, loading, loadError, actionKey, error } = model
   const busy = actionKey !== null
   const departmentName = (id: string | null) =>
     departments.find((department) => department.department_id === id)?.name ?? 'Department no longer active'
@@ -50,11 +50,6 @@ export default function PendingInvitations({
       {error || loadError ? (
         <p role="alert" className="rounded-lg border border-danger bg-danger-bg p-3 text-sm text-danger">
           {error ?? loadError}
-        </p>
-      ) : null}
-      {notice ? (
-        <p role="status" className="rounded-lg border border-success bg-success-bg p-3 text-sm text-success">
-          {notice}
         </p>
       ) : null}
       {loading ? (

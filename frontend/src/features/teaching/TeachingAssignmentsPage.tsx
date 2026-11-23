@@ -13,7 +13,7 @@ export default function TeachingAssignmentsPage({ accessToken }: { accessToken: 
   const model = useTeaching(accessToken)
   return (
     <section aria-label="Teaching assignments" className="space-y-4">
-      <Feedback error={model.error} success={model.notice} onDismiss={model.dismiss} />
+      <Feedback error={model.error} onDismiss={model.dismiss} />
       {model.optionsError ? (
         <p role="alert" className="text-sm text-danger">
           {model.optionsError}

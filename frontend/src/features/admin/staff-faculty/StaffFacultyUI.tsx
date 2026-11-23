@@ -83,29 +83,19 @@ export function formatDate(value: string | null) {
 }
 
 /**
- * Page-level result of the last action. It stays pinned to the top of the
- * workspace so the outcome of a roster change far down the page is visible.
+ * Page-level error from the last action. It stays pinned to the top of the
+ * workspace so a failed roster change far down the page is visible. Success
+ * feedback is shown as a toast through `lib/notifications`.
  */
-export function Feedback({
-  error,
-  success,
-  onDismiss,
-}: {
-  error: string | null
-  success: string | null
-  onDismiss: () => void
-}) {
-  if (!error && !success) return null
-  const isError = error !== null
+export function Feedback({ error, onDismiss }: { error: string | null; onDismiss: () => void }) {
+  if (!error) return null
   return (
     <div className="sticky top-2 z-10">
       <div
-        role={isError ? 'alert' : 'status'}
-        className={`flex items-start gap-3 rounded-lg border p-3 text-sm shadow-overlay ${
-          isError ? 'border-danger bg-danger-bg text-danger' : 'border-success bg-success-bg text-success'
-        }`}
+        role="alert"
+        className="flex items-start gap-3 rounded-lg border border-danger bg-danger-bg p-3 text-sm text-danger shadow-overlay"
       >
-        <p className="mr-auto">{error ?? success}</p>
+        <p className="mr-auto">{error}</p>
         <button
           type="button"
           aria-label="Dismiss message"

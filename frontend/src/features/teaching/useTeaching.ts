@@ -10,6 +10,7 @@ import {
 } from '../../services/academics/teachingApi.ts'
 import type { TeachingAssignment, TeachingAssignmentCreate } from '../../types/teaching.ts'
 import { assignmentLabel } from './teachingLabels.ts'
+import { notification } from '../../lib/notifications/notification.ts'
 
 export const teachingKeys = {
   all: (token: string) => ['teaching', token] as const,
@@ -44,25 +45,22 @@ export function useTeaching(accessToken: string) {
     queryClient,
   )
   const [actionKey, setActionKey] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const identity = useRef(accessToken)
   identity.current = accessToken
 
   useEffect(() => {
     setActionKey(null)
-    setNotice(null)
     setError(null)
   }, [accessToken])
 
   /** Runs one command; returns an error message, or null when it succeeded. */
   async function run(key: string, work: () => Promise<string>, failure: string): Promise<string | null> {
     setActionKey(key)
-    setNotice(null)
     setError(null)
     try {
       const text = await work()
-      if (identity.current === accessToken) setNotice(text)
+      if (identity.current === accessToken) notification.success(text)
       return null
     } catch (cause) {
       if (identity.current !== accessToken) return null
@@ -125,12 +123,8 @@ export function useTeaching(accessToken: string) {
     loadError: list.error ? message(list.error, 'Could not load teaching assignments.') : null,
     optionsError: options.error ? message(options.error, 'Could not load subjects and faculty.') : null,
     actionKey,
-    notice,
     error,
-    dismiss: () => {
-      setNotice(null)
-      setError(null)
-    },
+    dismiss: () => setError(null),
     assign,
     decide,
     end,
