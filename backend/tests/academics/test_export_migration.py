@@ -6,6 +6,9 @@ import re
 
 from app.schemas.academics.academic_setup import AcademicEntity
 
+# The supplied export is an immutable snapshot of the original eight tables.
+# Three of them were later replaced by versioned curricula and class sections.
+EXPORT_TABLES = set(AcademicEntity) | {"program_courses", "course_offerings", "sections"}
 ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / "supabase/migration_sources/academic_export"
 
@@ -14,7 +17,7 @@ def test_every_setup_table_definition_matches_the_supplied_export():
     pattern = r'CREATE TABLE (?:IF NOT EXISTS )?"public"\."([^"]+)" \((.*?)\n\);'
     exported = dict(re.findall(pattern, (ROOT / "academic_state_check_latest.sql").read_text(encoding="utf-8-sig"), re.S))
     maintained = dict(re.findall(pattern, (SOURCE / "tables.sql").read_text(encoding="utf-8"), re.S))
-    assert set(maintained) == set(AcademicEntity)
+    assert set(maintained) == EXPORT_TABLES
     for name, definition in maintained.items():
         assert definition == exported[name]
     assert "institution_id" not in maintained["programs"]
@@ -30,7 +33,7 @@ def test_keys_relationships_and_indexes_match_the_supplied_export():
     for filename, pattern in patterns.items():
         expected = {
             match.group(0) for match in re.finditer(pattern, exported)
-            if match.group(1) in set(AcademicEntity)
+            if match.group(1) in EXPORT_TABLES
         }
         maintained = {
             match.group(0) for match in re.finditer(

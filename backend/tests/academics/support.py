@@ -53,8 +53,6 @@ def academic_year(**changes):
 
 
 COURSE = SUBJECT
-LINK = "80000000-0000-0000-0000-000000000001"
-OFFERING = "90000000-0000-0000-0000-000000000001"
 SECTION = "a0000000-0000-0000-0000-000000000001"
 SETUP_PERMISSIONS = ALL_PERMISSIONS + [f"{resource}.{action}" for resource in ("courses", "semesters") for action in ("read", "manage")]
 
@@ -67,7 +65,4 @@ def setup_rows():
         "academic_years": academic_year(),
         "semesters": {**shared, "semester_id": SEMESTER, "academic_year_id": YEAR, "name": "Autumn", "code": "AUT", "semester_number": 1, "start_date": "2026-07-01", "end_date": "2026-12-31", "is_current": False},
         "courses": {**shared, "course_id": COURSE, "department_id": DEPARTMENT, "name": "Data Mining", "code": "DM", "description": None, "credits": 3.5, "lecture_hours": 3, "tutorial_hours": None, "practical_hours": 2},
-        "program_courses": {**shared, "program_course_id": LINK, "program_id": PROGRAM, "course_id": COURSE, "semester_id": None, "course_type": "core", "is_required": True},
-        "course_offerings": {**shared, "course_offering_id": OFFERING, "course_id": COURSE, "program_id": PROGRAM, "academic_year_id": YEAR, "semester_id": SEMESTER, "capacity": 60},
-        "sections": {**shared, "section_id": SECTION, "course_offering_id": OFFERING, "name": "A", "code": "A", "capacity": 30},
     }

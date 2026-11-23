@@ -35,13 +35,13 @@ def test_full_setup_create_catalogue_and_partial_update(api):
         catalogue = client.get("/api/v1/admin/academic-setup").json()
         assert set(catalogue["records"]) == set(Entity)
         assert all(len(rows)==1 for rows in catalogue["records"].values())
-        section = templates["sections"]
-        response = client.patch(f"/api/v1/admin/academic-setup/sections/{section['section_id']}", json={"capacity":25})
+        course = templates["courses"]
+        response = client.patch(f"/api/v1/admin/academic-setup/courses/{course['course_id']}", json={"credits":4})
         assert response.status_code == 200
-        assert writer.call_args.args[-1] == {"capacity":25}
+        assert writer.call_args.args[-1] == {"credits":4}
 
 
-@pytest.mark.parametrize("entity", ["subjects", "study_semesters", "class_sections"])
+@pytest.mark.parametrize("entity", ["subjects", "study_semesters", "class_sections", "program_courses", "course_offerings", "sections"])
 def test_superseded_entity_routes_are_rejected(api, entity):
     client, _, _, database = api
     assert client.post(f"/api/v1/admin/academic-setup/{entity}", json={}).status_code == 422
@@ -53,5 +53,5 @@ def test_course_read_grant_covers_only_export_course_resources(api):
     user["role_assignments"][0]["permissions"] = ["courses.read"]
     with patch.object(service.repository, "list_records", return_value=[]):
         body = client.get("/api/v1/admin/academic-setup").json()
-    assert set(body["records"]) == {"courses", "program_courses", "course_offerings", "sections"}
+    assert set(body["records"]) == {"courses"}
     assert body["manageable"] == []

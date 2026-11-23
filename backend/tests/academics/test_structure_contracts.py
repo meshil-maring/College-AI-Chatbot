@@ -1,4 +1,4 @@
-"""Contracts exercise the eight supplied tables and reject the prior model."""
+"""Contracts exercise the five Academic Setup tables and reject the prior model."""
 import pytest
 from pydantic import ValidationError
 
@@ -19,12 +19,9 @@ def test_export_record_round_trips_without_client_tenant_or_primary_key(entity):
 
 @pytest.mark.parametrize("entity,field", [
     (Entity.programs, "department_id"), (Entity.courses, "department_id"),
-    (Entity.semesters, "academic_year_id"), (Entity.program_courses, "program_id"),
-    (Entity.program_courses, "course_id"), (Entity.program_courses, "semester_id"),
-    (Entity.course_offerings, "program_id"), (Entity.course_offerings, "semester_id"),
-    (Entity.sections, "course_offering_id"), (Entity.sections, "code"),
+    (Entity.semesters, "academic_year_id"),
 ])
-def test_parent_references_and_section_code_are_immutable(entity, field):
+def test_parent_references_are_immutable(entity, field):
     with pytest.raises(ValidationError):
         UPDATE_MODELS[entity].model_validate({field: setup_rows()[entity][field]})
 
@@ -43,14 +40,8 @@ def test_course_nullable_credits_and_zero_hours_follow_export():
         UPDATE_MODELS[Entity.courses](lecture_hours=-1)
 
 
-@pytest.mark.parametrize("capacity", [0, -1, 1.5, True, float("inf")])
-def test_capacity_is_a_positive_integer(capacity):
-    with pytest.raises(ValidationError):
-        UPDATE_MODELS[Entity.course_offerings](capacity=capacity)
-
-
 def test_semester_requires_dates_and_has_no_program_or_study_number():
     with pytest.raises(ValidationError):
         CREATE_MODELS[Entity.semesters](name="Fifth", code="S5", program_id="old", study_semester_number=5)
     assert Entity.programs.permission_resource == "departments"
-    assert Entity.sections.permission_resource == "courses"
+    assert Entity.courses.permission_resource == "courses"
