@@ -92,8 +92,13 @@
 }
 .student-onboarding-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
+}
+@media (max-width: 1000px) {
+  .student-onboarding-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .student-onboarding-metric {
   display: flex;
@@ -105,6 +110,21 @@
   border: 1px solid var(--ui-border);
   border-radius: 0.7rem;
   background: var(--ui-surface);
+  color: var(--ui-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.student-onboarding-metric:hover:not(:disabled) {
+  background: var(--ui-surface-hover);
+}
+.student-onboarding-metric[aria-pressed='true'] {
+  border-color: var(--ui-accent);
+  box-shadow: inset 0 0 0 1px var(--ui-accent);
+}
+.student-onboarding-dashboard .student-onboarding-metric:disabled {
+  cursor: default;
+  opacity: 1;
 }
 .student-onboarding-metric-icon {
   display: grid;
@@ -122,7 +142,10 @@
 .student-onboarding-metric.is-warning .student-onboarding-metric-icon {
   color: var(--ui-warning);
 }
-.student-onboarding-metric > div {
+.student-onboarding-metric.is-danger .student-onboarding-metric-icon {
+  color: var(--ui-danger);
+}
+.student-onboarding-metric > span:last-child {
   display: grid;
   min-width: 0;
 }
@@ -131,7 +154,7 @@
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
-.student-onboarding-metric > div > span {
+.student-onboarding-metric > span:last-child > span {
   color: var(--ui-text-muted);
   font-size: 0.75rem;
 }

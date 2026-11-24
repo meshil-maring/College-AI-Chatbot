@@ -1,5 +1,4 @@
 import { FileSpreadsheet } from 'lucide-react'
-import InvitationMetrics from '../invitations/InvitationMetrics.tsx'
 import StudentInvitationList from '../invitations/StudentInvitationList.tsx'
 import { useStudentInvitations } from '../invitations/useStudentInvitations.ts'
 import { usePlacementOptions } from '../placement/usePlacementOptions.ts'
@@ -42,23 +41,17 @@ export default function AddStudentPage({
         resending={invitations.busy}
         onResend={invitations.resend}
       />
-      <section className="student-onboarding-records" aria-label="Pending invitations">
-        <InvitationMetrics
-          invitations={invitations.invitations}
-          unavailable={invitations.loading || Boolean(invitations.error)}
-        />
-        <StudentInvitationList
-          invitations={invitations.invitations}
-          loading={invitations.loading}
-          error={invitations.error}
-          fetching={invitations.fetching}
-          busy={invitations.busy || registration.busy}
-          sectionId={registration.sectionId}
-          onRefresh={invitations.refetch}
-          onResend={(id) => void invitations.resend(id)}
-          onReassign={(id) => void invitations.reassign(id, registration.sectionId)}
-        />
-      </section>
+      <StudentInvitationList
+        invitations={invitations.invitations}
+        placement={placement}
+        loading={invitations.loading}
+        error={invitations.error}
+        fetching={invitations.fetching}
+        busy={invitations.busy || registration.busy}
+        onRefresh={invitations.refetch}
+        onResend={(id) => void invitations.resend(id)}
+        onReassign={invitations.reassign}
+      />
     </section>
   )
 }

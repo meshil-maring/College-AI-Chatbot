@@ -1,33 +1,44 @@
-import { MailCheck, MailWarning, UsersRound } from 'lucide-react'
-import type { StudentInvitation } from '../../../../types/admin/students.ts'
+import { Clock, MailCheck, MailWarning, UsersRound } from 'lucide-react'
+import type { InvitationFilter } from './invitationFilters.ts'
 
-/** Summary of setup-link delivery for invitations that have not been accepted yet. */
+const METRICS = [
+  { filter: 'all', label: 'Awaiting account setup', tone: '', Icon: UsersRound },
+  { filter: 'sent', label: 'Setup emails delivered', tone: 'is-success', Icon: MailCheck },
+  { filter: 'failed', label: 'Email delivery issues', tone: 'is-warning', Icon: MailWarning },
+  { filter: 'expired', label: 'Expired setup links', tone: 'is-danger', Icon: Clock },
+] as const
+
+/** Delivery summary for unaccepted invitations; each card filters the table below. */
 export default function InvitationMetrics({
-  invitations,
+  counts,
   unavailable,
+  filter,
+  onFilter,
 }: {
-  invitations: StudentInvitation[]
+  counts: Record<InvitationFilter, number>
   unavailable: boolean
+  filter: InvitationFilter
+  onFilter: (filter: InvitationFilter) => void
 }) {
-  const sent = invitations.filter((invitation) => invitation.email_delivery_status === 'sent').length
-  const issues = invitations.filter((invitation) => invitation.email_delivery_status === 'failed').length
-  const metrics = [
-    { label: 'Awaiting account setup', value: invitations.length, tone: '', Icon: UsersRound },
-    { label: 'Setup emails delivered', value: sent, tone: 'is-success', Icon: MailCheck },
-    { label: 'Email delivery issues', value: issues, tone: 'is-warning', Icon: MailWarning },
-  ]
   return (
-    <div className="student-onboarding-metrics" aria-label="Invitation summary">
-      {metrics.map(({ label, value, tone, Icon }) => (
-        <article key={label} className={`student-onboarding-metric ${tone}`.trim()}>
+    <div className="student-onboarding-metrics" role="group" aria-label="Filter invitations by status">
+      {METRICS.map(({ filter: value, label, tone, Icon }) => (
+        <button
+          key={value}
+          type="button"
+          className={`student-onboarding-metric ${tone}`.trim()}
+          aria-pressed={filter === value}
+          disabled={unavailable}
+          onClick={() => onFilter(filter === value ? 'all' : value)}
+        >
           <span className="student-onboarding-metric-icon">
             <Icon size={20} aria-hidden="true" />
           </span>
-          <div>
-            <strong>{unavailable ? '—' : value}</strong>
+          <span>
+            <strong>{unavailable ? '—' : counts[value]}</strong>
             <span>{label}</span>
-          </div>
-        </article>
+          </span>
+        </button>
       ))}
     </div>
   )

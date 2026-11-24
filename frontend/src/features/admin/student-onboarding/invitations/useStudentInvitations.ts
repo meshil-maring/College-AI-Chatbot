@@ -33,15 +33,18 @@ export function useStudentInvitations(accessToken: string, identity: string, ena
     }
   }
 
-  async function reassign(invitationId: string, sectionId: string) {
-    if (!sectionId) return
+  /** Resolves to true when the invitation moved to the new section. */
+  async function reassign(invitationId: string, sectionId: string): Promise<boolean> {
+    if (!sectionId) return false
     setBusy(true)
     try {
       await reassignStudentInvitation(accessToken, invitationId, sectionId)
       notification.success('Invitation section updated successfully')
       refreshStudentInvitations(identity)
+      return true
     } catch (reason) {
       notification.error(reason instanceof Error ? reason.message : 'Section assignment could not be updated.')
+      return false
     } finally {
       setBusy(false)
     }

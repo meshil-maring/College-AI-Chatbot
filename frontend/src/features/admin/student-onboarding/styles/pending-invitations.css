@@ -91,7 +91,89 @@
   background: var(--ui-warning-bg);
   color: var(--ui-warning);
 }
+.student-invitation-status.is-expired {
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+}
+.student-invitation-status.is-pending {
+  background: var(--ui-info-bg);
+  color: var(--ui-info);
+}
 .student-invitation-actions {
   display: flex;
   gap: 0.4rem;
+}
+.student-invitation-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+}
+.student-invitation-search {
+  display: flex;
+  flex: 1;
+  max-width: 26rem;
+  min-width: min(100%, 14rem);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 0.45rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
+}
+.student-invitation-search:focus-within {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.student-invitation-search input {
+  width: 100%;
+  min-height: 2.4rem;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 0.82rem;
+  outline: none;
+}
+.student-invitation-count,
+.student-invitation-empty {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.78rem;
+}
+.student-invitation-section-edit {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 13rem;
+}
+.student-invitation-section-edit select {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 0.45rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font: inherit;
+}
+.student-invitation-section-edit > div {
+  display: flex;
+  gap: 0.4rem;
+}
+.student-invitation-section-edit button {
+  min-height: 2rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 0.45rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.student-invitation-section-edit button.is-primary {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
 }
