@@ -1,4 +1,4 @@
-import { BookOpenText, ChevronRight, Info } from 'lucide-react'
+import { BookOpenText, ChevronRight, Info, Wand2 } from 'lucide-react'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
 import AcademicOverview from './AcademicOverview.tsx'
 import AcademicAreaView from './AcademicAreaView.tsx'
@@ -53,6 +53,9 @@ export default function AcademicOverviewSession({
         <div className="academic-header-actions">
           <button type="button" className="academic-secondary-button" onClick={() => onNavigate('guide')}>
             <BookOpenText aria-hidden="true" /> User Guide
+          </button>
+          <button type="button" className="academic-secondary-button" onClick={() => onNavigate('quick-setup')}>
+            <Wand2 aria-hidden="true" /> Quick Setup
           </button>
           <AcademicQuickActions
             key={page}

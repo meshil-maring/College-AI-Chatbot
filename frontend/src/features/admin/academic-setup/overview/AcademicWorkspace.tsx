@@ -18,6 +18,7 @@ import '../styles/overview.css'
 import AcademicJourney from '../navigation/AcademicJourney.tsx'
 import StudentEnrollmentPage from '../registration/StudentEnrollmentPage.tsx'
 import AcademicGuidePage from '../guide/AcademicGuidePage.tsx'
+import QuickSetupPage from '../quick-setup/QuickSetupPage.tsx'
 import { calendarDestinations, calendarTabFor } from '../navigation/academicCalendarNavigation.ts'
 
 interface Props {
@@ -117,6 +118,7 @@ function AcademicWorkspaceContent(
       />
     )
   if (props.page === 'guide') return <AcademicGuidePage onOverview={() => props.onNavigate('overview')} />
+  if (props.page === 'quick-setup') return <QuickSetupPage context={structureContext} onNavigate={props.onNavigate} />
   if (props.page === 'enrollments')
     return <StudentEnrollmentPage context={structureContext} onBack={() => props.onNavigate('sections')} />
   if (props.page === 'program-semesters' || props.page === 'curriculum' || props.page.startsWith('curriculum-'))

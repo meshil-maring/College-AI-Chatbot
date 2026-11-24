@@ -37,6 +37,7 @@ export type AcademicPage =
   | 'offerings'
   | 'records'
   | 'guide'
+  | 'quick-setup'
 
 export interface AcademicArea {
   page: AcademicPage

@@ -51,6 +51,20 @@ shows the recommended next step.
 | 5. Enrollment | [Student enrollment](student-enrollment.md) |
 | Rules and problems | [Rules and troubleshooting](rules-and-troubleshooting.md) |
 
+## Quickest way to start
+
+**Quick Setup** (a button on the Academic Setup overview) walks through steps 1–4
+for one program on a single page: department → program → academic year and
+terms → draft curriculum → subjects from a CSV file → publish → batch and its
+first-year sections. Each step either reuses an existing record or creates a
+new one, and saves before moving on, so you can stop and come back.
+
+Each following year, **Roll over to next year** on the Academic Calendar page
+creates the next year's calendar and continues every active batch into its next
+semesters (see [Batches and sections](batches-and-sections.md)).
+
+The pages below explain each step in detail.
+
 ## Getting there
 
 1. Sign in as an institution administrator.

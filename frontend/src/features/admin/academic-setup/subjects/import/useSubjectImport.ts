@@ -13,11 +13,13 @@ interface Options {
   catalogue?: AcademicCatalogue
   structure?: StructureCatalogue
   refresh: () => Promise<unknown>
+  /** Preselects the department and draft curriculum, as Quick Setup does. */
+  fixed?: { departmentId: string; curriculumId: string }
 }
 
-export function useSubjectImport({ accessToken, institutionId, catalogue, structure, refresh }: Options) {
-  const [departmentId, setDepartmentId] = useState('')
-  const [curriculumId, setCurriculumId] = useState('')
+export function useSubjectImport({ accessToken, institutionId, catalogue, structure, refresh, fixed }: Options) {
+  const [departmentId, setDepartmentId] = useState(fixed?.departmentId ?? '')
+  const [curriculumId, setCurriculumId] = useState(fixed?.curriculumId ?? '')
   const [raw, setRaw] = useState<ReturnType<typeof parseSubjectCsv>>()
   const [fileName, setFileName] = useState('')
   const [fileError, setFileError] = useState<string>()

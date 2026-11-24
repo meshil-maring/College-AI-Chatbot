@@ -1,4 +1,4 @@
-import { BookOpenText, ClipboardList, History, CalendarDays, CalendarRange } from 'lucide-react'
+import { BookOpenText, ClipboardList, History, CalendarDays, CalendarRange, Wand2 } from 'lucide-react'
 import type { AcademicArea } from '../overview/academicOverviewModel.ts'
 
 export const academicDestinations: readonly AcademicArea[] = [
@@ -41,5 +41,13 @@ export const academicDestinations: readonly AcademicArea[] = [
     description: 'Step-by-step instructions for setting up departments, curricula, batches and enrollment.',
     action: 'Open User Guide',
     note: 'A worked example from departments to student enrollment.',
+  },
+  {
+    page: 'quick-setup',
+    title: 'Quick Setup',
+    icon: Wand2,
+    description: 'Set up a program step by step, from department to first-year sections.',
+    action: 'Start Quick Setup',
+    note: 'Each step saves before moving on and can reuse existing records.',
   },
 ]
