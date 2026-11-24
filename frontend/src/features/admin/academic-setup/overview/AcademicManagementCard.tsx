@@ -23,14 +23,6 @@ export default function AcademicManagementCard({ area, catalogue, structure, onN
           <area.icon aria-hidden="true" />
         </span>
         <h2 id={`academic-card-${area.page}`}>{area.title}</h2>
-        <button
-          type="button"
-          className="academic-arrow"
-          aria-label={`Open ${area.title}`}
-          onClick={() => onNavigate(area.page)}
-        >
-          <ArrowRight aria-hidden="true" />
-        </button>
       </div>
       <p className="academic-card-description">{area.description}</p>
       <div className="academic-card-context">
@@ -48,16 +40,7 @@ export default function AcademicManagementCard({ area, catalogue, structure, onN
             </button>
           ))
         ) : records ? (
-          <dl className="academic-card-metrics">
-            <div>
-              <dt>Active</dt>
-              <dd>{active}</dd>
-            </div>
-            <div>
-              <dt>Inactive</dt>
-              <dd>{records.length - active!}</dd>
-            </div>
-          </dl>
+          <AreaMetrics active={active!} total={records.length} />
         ) : (
           <p>{area.note}</p>
         )}
@@ -67,5 +50,31 @@ export default function AcademicManagementCard({ area, catalogue, structure, onN
         <ArrowRight aria-hidden="true" />
       </button>
     </article>
+  )
+}
+
+function AreaMetrics({ active, total }: { active: number; total: number }) {
+  const inactive = total - active
+  const share = total ? Math.round((active / total) * 100) : 0
+  return (
+    <div className="academic-card-metrics">
+      <p className="academic-card-total">
+        <strong>{total}</strong>
+        <span>total</span>
+      </p>
+      <dl>
+        <div className="is-active">
+          <dt>Active</dt>
+          <dd>{active}</dd>
+        </div>
+        <div>
+          <dt>Inactive</dt>
+          <dd>{inactive}</dd>
+        </div>
+      </dl>
+      <span className="academic-card-meter" aria-hidden="true">
+        <span style={{ width: `${share}%` }} />
+      </span>
+    </div>
   )
 }

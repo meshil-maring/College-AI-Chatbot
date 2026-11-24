@@ -92,13 +92,15 @@
     width: 100%;
   }
   .academic-management-card {
-    padding: 16px;
+    padding: 16px 16px 0;
   }
   .academic-card-heading h2 {
     font-size: var(--ui-type-card);
   }
   .academic-manage-button {
     min-height: var(--ui-control-height);
+    margin: 0 -16px;
+    padding: 12px 16px;
   }
   .academic-area-children {
     grid-template-columns: minmax(0, 1fr);
