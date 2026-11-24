@@ -2,6 +2,7 @@ from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
 from app.core.configuration.email import EmailSettings
+from app.core.configuration.environment_files import assert_local_target, backend_env_files
 from app.core.configuration.validation import DEV_TEST_ENVIRONMENTS, SettingsValidation
 
 
@@ -159,7 +160,7 @@ class Settings(EmailSettings, SettingsValidation):
     dev_test_mode: bool = False
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=backend_env_files(),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -217,3 +218,4 @@ class Settings(EmailSettings, SettingsValidation):
 
 
 settings = Settings()
+assert_local_target(settings.supabase_url)

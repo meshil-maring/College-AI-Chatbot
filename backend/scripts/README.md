@@ -32,6 +32,7 @@ repository source paths directly and needs no credentials or running services.
 | Path | Contents |
 | --- | --- |
 | `generate_frontend_rbac.py` | Generate the typed frontend permission snapshot; `--check` verifies it without writing |
+| `local_stack/write_local_env.py` | Write the git-ignored `backend/.env.local` from the running local Supabase stack; use it with `BACKEND_ENV=local` (see [local database](../../docs/architecture/local-database.md)) |
 | `validation/check_structure.py` | Offline file placement, naming, package and local import checks; no settings, credentials or running services required |
 | `diagnostics/check_schema.py`, `diagnostics/check_schema2.py` | Inspect the remote Supabase schema and column sets; `check_schema2.py` also probes `run_sql` and dumps seeded data |
 | `diagnostics/check_auth_users.py` | Probes `auth.users` columns/insertion and cleans up its test rows in a `finally` block |

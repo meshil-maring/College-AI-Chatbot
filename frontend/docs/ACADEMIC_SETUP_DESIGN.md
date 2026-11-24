@@ -48,6 +48,10 @@ The forms check the same rules first and explain the fix.
 - Published curriculum snapshots keep fractional credits and teaching hours
   (`numeric(5,2)`, matching subjects).
 
+These rules, publication guards and tenant isolation are tested on a real
+Postgres in `supabase/tests/database/academic_setup_rules.test.sql`; see the
+[local database guide](../../docs/architecture/local-database.md).
+
 ## Building the academic structure
 
 The setup guide follows Foundations → Curriculum → Batches → Classes & subjects
