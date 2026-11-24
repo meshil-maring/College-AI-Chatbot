@@ -80,12 +80,6 @@ export default function AcademicAreaView({ page, catalogue, busy, onNavigate, on
           </button>
         )}
       </div>
-      {(page === 'sections' || page === 'offerings') && (
-        <p className="academic-panel-note">
-          The existing catalogue uses offering-owned sections. It is kept separate from this proposed cohort-based
-          section model.
-        </p>
-      )}
     </section>
   )
 }
