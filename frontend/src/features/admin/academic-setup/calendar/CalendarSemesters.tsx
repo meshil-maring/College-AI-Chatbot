@@ -20,10 +20,10 @@ export default function CalendarSemesters({
 }) {
   return (
     <div className="calendar-semester-table-wrap">
-      <table className="calendar-semester-table" aria-label="Semesters">
+      <table className="calendar-semester-table" aria-label="Terms">
         <thead>
           <tr>
-            <th scope="col">Semester</th>
+            <th scope="col">Term</th>
             {showYear && <th scope="col">Academic Year</th>}
             <th scope="col">Type</th>
             <th scope="col">Start Date</th>
@@ -63,7 +63,7 @@ export default function CalendarSemesters({
           ))}
         </tbody>
       </table>
-      {!records.length && <p className="calendar-inline-empty">No semesters configured for this academic year.</p>}
+      {!records.length && <p className="calendar-inline-empty">No teaching terms configured for this academic year.</p>}
     </div>
   )
 }

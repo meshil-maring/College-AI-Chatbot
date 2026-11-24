@@ -7,7 +7,7 @@ export type CalendarSort = 'newest' | 'oldest' | 'name'
 export const CALENDAR_PAGE_SIZE = 6
 export const calendarTabs: { id: CalendarTab; label: string }[] = [
   { id: 'years', label: 'Academic Years' },
-  { id: 'semesters', label: 'Semesters' },
+  { id: 'semesters', label: 'Terms' },
   { id: 'dates', label: 'Important Dates' },
   { id: 'timeline', label: 'Overview Timeline' },
 ]

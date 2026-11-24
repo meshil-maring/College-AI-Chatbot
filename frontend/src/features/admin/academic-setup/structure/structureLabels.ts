@@ -1,6 +1,13 @@
-import type { StructureEntity } from '../../../../types/academicStructure.ts'
+import type { AcademicSection, StructureCatalogue, StructureEntity } from '../../../../types/academicStructure.ts'
 import type { AcademicStructureState } from './useAcademicStructure.ts'
 import type { StructureRow } from './structureForm.ts'
+
+/** Section codes repeat across batches and semesters, so lists name the batch and semester too. */
+export function academicSectionLabel(section: AcademicSection, records?: StructureCatalogue['records']) {
+  const batch = records?.admission_cohorts?.find((item) => item.admission_cohort_id === section.admission_cohort_id)
+  const stage = records?.program_semesters?.find((item) => item.program_semester_id === section.program_semester_id)
+  return [section.name, batch?.code, stage?.name].filter(Boolean).join(' · ')
+}
 
 export function structureLabel(entity: StructureEntity, row: StructureRow, state: AcademicStructureState) {
   if ('name' in row) return row.name
@@ -19,7 +26,7 @@ export function structureLabel(entity: StructureEntity, row: StructureRow, state
     const course = state.catalogue?.records.courses?.find(
       (item) => item.institution_id === state.context.institutionId && item.course_id === mapping?.course_id,
     )
-    return `${course?.name ?? 'Subject unavailable'} · ${section?.name ?? 'Section unavailable'}`
+    return `${course?.name ?? 'Subject unavailable'} · ${section ? academicSectionLabel(section, records) : 'Section unavailable'}`
   }
   return 'Academic record'
 }

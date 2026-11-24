@@ -11,14 +11,14 @@ export const ACADEMIC_LABELS: Record<AcademicEntity, string> = {
   departments: 'Departments',
   programs: 'Programs',
   academic_years: 'Academic years',
-  semesters: 'Semesters',
+  semesters: 'Terms',
   courses: 'Courses',
 }
 export const ACADEMIC_SINGULAR: Record<AcademicEntity, string> = {
   departments: 'department',
   programs: 'degree program',
   academic_years: 'academic year',
-  semesters: 'semester',
+  semesters: 'term',
   courses: 'course',
 }
 export const ACADEMIC_HELP: Record<AcademicEntity, string> = {
@@ -26,7 +26,7 @@ export const ACADEMIC_HELP: Record<AcademicEntity, string> = {
   programs:
     'Degree programs, such as B.Tech CSE, belong to a department. Assign their subjects in a curriculum version.',
   academic_years: 'Institution-wide calendar periods. Active years cannot overlap; only one year can be current.',
-  semesters: 'Dated terms within an academic year. Each term has a semester number; its dates must fit the year.',
+  semesters: 'Dated terms within an academic year. Each term has a number; its dates must fit the year.',
   courses: 'Teaching courses belong to departments, with optional credits and lecture, tutorial and practical hours.',
 }
 const TEXT_FIELDS = [

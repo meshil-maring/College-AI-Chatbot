@@ -12,6 +12,7 @@ import { setDepartmentHeadPolicy } from '../../../../services/students/transferA
 import type { MemberResponsibility, MemberResponsibilityAssign } from '../../../../types/admin/responsibilities.ts'
 import { staffFacultyKeys } from '../staffFacultyKeys.ts'
 import { notification } from '../../../../lib/notifications/notification.ts'
+import { academicSectionLabel } from '../../academic-setup/structure/structureLabels.ts'
 
 export interface ResponsibilityTarget {
   id: string
@@ -31,7 +32,7 @@ async function loadTargets(accessToken: string) {
     sections: sort(
       (structure.records.academic_sections ?? [])
         .filter((item) => item.is_active)
-        .map((item) => ({ id: item.academic_section_id, label: label(item) })),
+        .map((item) => ({ id: item.academic_section_id, label: academicSectionLabel(item, structure.records) })),
     ),
     courses: sort(
       (catalogue.records.courses ?? [])

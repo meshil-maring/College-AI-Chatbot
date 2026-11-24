@@ -107,7 +107,7 @@ def _delete_unused_record(user, entity: AcademicEntity, record_id: str) -> dict:
         if entity in {AcademicEntity.academic_years, AcademicEntity.semesters}:
             if existing.get("is_current") is True:
                 raise AppError(
-                    "Select a replacement current academic year or semester before deleting this record.",
+                    "Select a replacement current academic year or term before deleting this record.",
                     409, "ACADEMIC_CURRENT_PERIOD",
                 )
             row = repository.delete_period(client, str(user["user_id"]), institution_id, entity, record_id)

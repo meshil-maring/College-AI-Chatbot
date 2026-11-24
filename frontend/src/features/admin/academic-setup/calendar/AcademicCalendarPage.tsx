@@ -159,7 +159,7 @@ export default function AcademicCalendarPage({
             <p>
               {records.length
                 ? 'Try another search or status filter.'
-                : 'Add an academic year and configure its semesters to get started.'}
+                : 'Add an academic year and configure its teaching terms to get started.'}
             </p>
             {records.length > 0 && (
               <button type="button" className="academic-secondary-button" onClick={state.clearFilters}>
@@ -188,7 +188,7 @@ export default function AcademicCalendarPage({
           }
           onClick={() => editor.open('semesters', 'add')}
         >
-          <Plus aria-hidden="true" /> Add Semester
+          <Plus aria-hidden="true" /> Add Term
         </button>
       )}
       {records && !state.loading && (state.tab === 'years' || state.tab === 'semesters') && (

@@ -27,7 +27,7 @@ describe('Curriculum creation and academic offerings', () => {
     renderStructure('offerings')
     const trigger = screen.getByRole('button', { name: 'Make Subject Available' })
     expect(trigger).toBeDisabled()
-    await screen.findByRole('option', { name: 'Section A (CSE26A)' })
+    await screen.findByRole('option', { name: 'Section A · CSE26 · Semester 1' })
     const sectionFilter = screen.getByRole('combobox', { name: 'Choose an academic section' })
     await userEvent.selectOptions(sectionFilter, 'section-1')
     expect(sectionFilter).toHaveValue('section-1')

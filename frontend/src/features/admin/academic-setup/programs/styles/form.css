@@ -48,7 +48,8 @@
   border-color: var(--ui-danger);
 }
 .program-field-error,
-.program-field-help {
+.program-field-help,
+.program-field-warning {
   margin: 4px 0 0;
   font-size: var(--ui-type-small);
   line-height: 1.45;
@@ -58,6 +59,13 @@
 }
 .program-field-help {
   color: var(--ui-text-muted);
+}
+.program-field-warning {
+  padding: 6px 8px;
+  border-left: 2px solid var(--ui-warning);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-warning-bg);
+  color: var(--ui-text);
 }
 #program-form .program-status-options {
   display: grid;

@@ -29,17 +29,17 @@ describe('Calendar deletion', () => {
       catalogue.records.semesters!.splice(1, 1)
       return selected
     })
-    fireEvent.click(screen.getByRole('tab', { name: 'Semesters', exact: true }))
-    const nextDialog = await openDelete('Semester 2', 'semester')
-    fireEvent.click(within(nextDialog).getByRole('button', { name: 'Delete Semester' }))
-    expect(await screen.findByText('Semester deleted successfully')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Terms', exact: true }))
+    const nextDialog = await openDelete('Semester 2', 'term')
+    fireEvent.click(within(nextDialog).getByRole('button', { name: 'Delete Term' }))
+    expect(await screen.findByText('Term deleted successfully')).toBeInTheDocument()
     // Each confirmed deletion gets its own toast; the earlier one expires on its own.
   })
 
   it('blocks a current year before deletion, regardless of linked records', async () => {
     renderCalendar()
     const dialog = await openDelete(year.name, 'academic year')
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('replacement current academic year or semester')
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('replacement current academic year or term')
     expect(within(dialog).getByRole('button', { name: 'Delete Academic Year' })).toBeDisabled()
     expect(api.deleteAcademicYear).not.toHaveBeenCalled()
   })
@@ -61,19 +61,19 @@ describe('Calendar deletion', () => {
       return selected
     })
     renderCalendar()
-    fireEvent.click(await screen.findByRole('tab', { name: 'Semesters', exact: true }))
-    const dialog = await openDelete('Semester 2', 'semester')
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Semester' }))
-    expect(await screen.findByText('Semester deleted successfully')).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('tab', { name: 'Terms', exact: true }))
+    const dialog = await openDelete('Semester 2', 'term')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Term' }))
+    expect(await screen.findByText('Term deleted successfully')).toBeInTheDocument()
     expect(api.deleteSemester).toHaveBeenCalledWith('token-1', 'semester-2')
     expect(catalogue.records.academic_years).toHaveLength(2)
   })
 
   it('blocks the current semester', async () => {
     renderCalendar()
-    fireEvent.click(await screen.findByRole('tab', { name: 'Semesters', exact: true }))
-    const dialog = await openDelete(semester.name, 'semester')
-    expect(within(dialog).getByRole('button', { name: 'Delete Semester' })).toBeDisabled()
+    fireEvent.click(await screen.findByRole('tab', { name: 'Terms', exact: true }))
+    const dialog = await openDelete(semester.name, 'term')
+    expect(within(dialog).getByRole('button', { name: 'Delete Term' })).toBeDisabled()
     expect(api.deleteSemester).not.toHaveBeenCalled()
   })
 
@@ -87,9 +87,9 @@ describe('Calendar deletion', () => {
       ),
     )
     renderCalendar()
-    fireEvent.click(await screen.findByRole('tab', { name: 'Semesters', exact: true }))
-    const dialog = await openDelete('Semester 2', 'semester')
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Semester' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Terms', exact: true }))
+    const dialog = await openDelete('Semester 2', 'term')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Term' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('student assignments or registrations')
     expect(catalogue.records.semesters).toHaveLength(2)
   })

@@ -37,7 +37,7 @@ def translate_deletion_error(exc: Exception, noun: str) -> AppError:
     code = str(getattr(exc, "code", ""))
     if code == "P2004":
         return AppError(
-            "Select a replacement current academic year or semester before deleting this record.",
+            "Select a replacement current academic year or term before deleting this record.",
             409, "ACADEMIC_CURRENT_PERIOD",
         )
     if code in {"P2001", "P2002", "P2003", "23503"}:

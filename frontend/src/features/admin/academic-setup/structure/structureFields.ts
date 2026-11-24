@@ -1,5 +1,6 @@
 import type { StructureEntity } from '../../../../types/academicStructure.ts'
 import type { AcademicStructureState } from './useAcademicStructure.ts'
+import { academicSectionLabel } from './structureLabels.ts'
 
 export interface StructureField {
   key: string
@@ -164,7 +165,7 @@ export function structureFields(
         immutable: true,
         options: records?.academic_sections
           ?.filter((item) => item.is_active)
-          .map((item) => ({ value: item.academic_section_id, label: `${item.name} (${item.code})` })),
+          .map((item) => ({ value: item.academic_section_id, label: academicSectionLabel(item, records) })),
       }),
       field('curriculum_subject_id', 'Subject', {
         type: 'select',

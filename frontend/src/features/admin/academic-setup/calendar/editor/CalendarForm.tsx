@@ -9,7 +9,7 @@ export default function CalendarForm({ editor, state }: { editor: CalendarEditor
   const { panel, draft, errors } = editor
   const semester = panel?.entity === 'semesters'
   const view = panel?.mode === 'view'
-  const noun = semester ? 'Semester' : 'Academic Year'
+  const noun = semester ? 'Term' : 'Academic Year'
   useEffect(() => {
     if (editor.validationVersion)
       ref.current?.querySelector<HTMLElement>('[aria-invalid="true"]:not(:disabled)')?.focus()
@@ -53,7 +53,7 @@ export default function CalendarForm({ editor, state }: { editor: CalendarEditor
             label={`${noun} Name`}
             required
             error={errors.name}
-            help={semester ? 'e.g. Semester 1' : 'e.g. 2026 - 2027'}
+            help={semester ? 'e.g. Odd Term' : 'e.g. 2026 - 2027'}
           >
             <input
               id="calendar-name"
@@ -83,7 +83,7 @@ export default function CalendarForm({ editor, state }: { editor: CalendarEditor
             />
           </CalendarField>
           {semester && (
-            <CalendarField id="calendar-number" label="Semester Number" required error={errors.semester_number}>
+            <CalendarField id="calendar-number" label="Term Number" required error={errors.semester_number}>
               <input
                 id="calendar-number"
                 type="number"
@@ -141,14 +141,14 @@ export default function CalendarForm({ editor, state }: { editor: CalendarEditor
               aria-invalid={Boolean(errors.is_current)}
               onChange={(event) => editor.change('is_current', event.target.checked)}
             />
-            Set as current {semester ? 'semester' : 'academic year'}
+            Set as current {semester ? 'term' : 'academic year'}
           </label>
           {errors.is_current && <p className="calendar-field-error">{errors.is_current}</p>}
         </fieldset>
         {!semester && panel?.mode === 'add' && state.canManageSemesters && <InitialSemesters editor={editor} />}
         {!semester && panel?.mode === 'add' && !state.canManageSemesters && (
           <p className="calendar-field-help">
-            Your account can create academic years. Semester configuration requires semester management access.
+            Your account can create academic years. Adding terms requires term management access.
           </p>
         )}
       </fieldset>

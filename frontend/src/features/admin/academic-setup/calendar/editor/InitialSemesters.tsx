@@ -16,12 +16,12 @@ export default function InitialSemesters({ editor }: { editor: CalendarEditor })
     <div className="calendar-initial-semesters">
       <fieldset className="calendar-semester-options" disabled={Boolean(progress.year)}>
         <legend>
-          Number of Semesters <span>*</span>
+          Number of Terms <span>*</span>
         </legend>
         {(
           [
-            ['2', '2 Semesters'],
-            ['3', '3 Semesters (Trimester)'],
+            ['2', '2 Terms (Semesters)'],
+            ['3', '3 Terms (Trimesters)'],
             ['custom', 'Custom'],
           ] as const
         ).map(([value, label]) => (
@@ -37,7 +37,7 @@ export default function InitialSemesters({ editor }: { editor: CalendarEditor })
           </label>
         ))}
       </fieldset>
-      <p className="calendar-field-help">Initial Semesters</p>
+      <p className="calendar-field-help">Initial Terms</p>
       <div
         className="calendar-semester-plan"
         aria-describedby={errors.semesters ? 'calendar-semesters-error' : undefined}
@@ -45,7 +45,7 @@ export default function InitialSemesters({ editor }: { editor: CalendarEditor })
         {draft.semesters.map((semester, index) => (
           <fieldset key={semester.key} className="calendar-planned-semester" disabled={index < progress.completed}>
             <legend>
-              Semester {semester.semester_number}
+              Term {semester.semester_number}
               {index < progress.completed ? ' · Saved' : ''}
             </legend>
             <label>
@@ -84,7 +84,7 @@ export default function InitialSemesters({ editor }: { editor: CalendarEditor })
             </label>
             <button
               type="button"
-              aria-label={`Remove initial semester ${index + 1}`}
+              aria-label={`Remove initial term ${index + 1}`}
               onClick={() => {
                 editor.change('plan', 'custom')
                 editor.change(
@@ -113,7 +113,7 @@ export default function InitialSemesters({ editor }: { editor: CalendarEditor })
             editor.change('semesters', [...draft.semesters, { ...next, semester_number: number }])
           }}
         >
-          <Plus aria-hidden="true" /> Add Another Semester
+          <Plus aria-hidden="true" /> Add Another Term
         </button>
       </div>
     </div>

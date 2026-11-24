@@ -16,7 +16,7 @@ semester's subjects from their own portal.
 
 1. Open **Academic Sections** and select **Manage Student Enrollment**.
 2. In **Student Enrollment**, choose the section, for example
-   `CSE26-A-S1 — Section A (Semester 1)`.
+   *Section A (Semester 1)* of the CSE 2026 batch.
 3. Choose the student under **Select an approved student**.
 4. Select **Assign student**.
 
@@ -38,7 +38,7 @@ status changes to **Registered**.
 
 | Who | Action | Result |
 | --- | --- | --- |
-| Administrator | Assigns *Asha Rao* to `CSE26-A-S1` | Asha shows as *Awaiting subject selection* |
+| Administrator | Assigns *Asha Rao* to Section A, Semester 1 | Asha shows as *Awaiting subject selection* |
 | Asha | Opens Semester Registration, sees Programming Fundamentals and Engineering Mathematics I, selects **Register selected subjects** | *Registration complete* |
 | Administrator | Reviews **Semester assignments** | Asha shows as *Registered* |
 

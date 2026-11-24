@@ -9,9 +9,22 @@ interface Props {
   required?: boolean
   maxLength?: number
   numeric?: boolean
+  /** Shown when there is no error; does not block saving. */
+  warning?: string
 }
-export default function ProgramField({ editor, field, label, placeholder, help, required, maxLength, numeric }: Props) {
+export default function ProgramField({
+  editor,
+  field,
+  label,
+  placeholder,
+  help,
+  required,
+  maxLength,
+  numeric,
+  warning,
+}: Props) {
   const error = editor.errors[field]
+  const note = error || warning || help
   const id = `program-${field}`
   const shared = {
     id,
@@ -21,7 +34,7 @@ export default function ProgramField({ editor, field, label, placeholder, help, 
     placeholder,
     value: editor.draft[field],
     'aria-invalid': Boolean(error),
-    'aria-describedby': error || help ? `${id}-help` : undefined,
+    'aria-describedby': note ? `${id}-help` : undefined,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       editor.change(field, event.target.value),
   }
@@ -42,9 +55,13 @@ export default function ProgramField({ editor, field, label, placeholder, help, 
           autoFocus={field === 'name'}
         />
       )}
-      {(error || help) && (
-        <p id={`${id}-help`} className={error ? 'program-field-error' : 'program-field-help'}>
-          {error || help}
+      {note && (
+        <p
+          id={`${id}-help`}
+          className={error ? 'program-field-error' : warning ? 'program-field-warning' : 'program-field-help'}
+          aria-live={warning && !error ? 'polite' : undefined}
+        >
+          {note}
         </p>
       )}
     </div>

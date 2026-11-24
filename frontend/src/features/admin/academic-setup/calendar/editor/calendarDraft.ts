@@ -78,13 +78,12 @@ export function validateCalendar(
     if (!parent || (panel.mode === 'add' && !parent.is_active))
       errors.academic_year_id = 'Select an available active academic year.'
     if (!Number.isInteger(draft.semester_number) || draft.semester_number < 1 || draft.semester_number > 2147483647)
-      errors.semester_number = 'Enter a positive whole semester number.'
+      errors.semester_number = 'Enter a positive whole term number.'
     if (parent && (draft.start_date < parent.start_date || draft.end_date > parent.end_date))
-      errors.end_date = 'Semester dates must fall within the academic year.'
+      errors.end_date = 'Term dates must fall within the academic year.'
   }
   if (includeSemesters) {
-    if (draft.semesters.length && !draft.is_active)
-      errors.is_active = 'Activate the academic year before adding semesters.'
+    if (draft.semesters.length && !draft.is_active) errors.is_active = 'Activate the academic year before adding terms.'
     const numbers = new Set<number>()
     for (const semester of draft.semesters) {
       if (
@@ -98,7 +97,7 @@ export function validateCalendar(
         semester.end_date > draft.end_date ||
         semester.end_date <= semester.start_date
       ) {
-        errors.semesters = 'Use unique positive semester numbers and valid dates within the academic year.'
+        errors.semesters = 'Use unique positive term numbers and valid dates within the academic year.'
       }
       numbers.add(semester.semester_number)
     }

@@ -11,7 +11,7 @@ export const deletionConfig = {
   departments: { label: 'Department', key: 'department_id', focusTarget: '.departments-page h1' },
   programs: { label: 'Program', key: 'program_id', focusTarget: '.programs-page h1' },
   academic_years: { label: 'Academic Year', key: 'academic_year_id', focusTarget: '.calendar-page h1' },
-  semesters: { label: 'Semester', key: 'semester_id', focusTarget: '.calendar-page h1' },
+  semesters: { label: 'Term', key: 'semester_id', focusTarget: '.calendar-page h1' },
   academic_sections: { label: 'Section', key: 'academic_section_id', focusTarget: '.sections-page h1' },
 } as const
 export type DeletionEntity = keyof typeof deletionConfig
@@ -38,7 +38,7 @@ export function deletionBlocker(
 ) {
   if (!record) return null
   if ('is_current' in record && record.is_current)
-    return 'Select a replacement current academic year or semester before deleting this record.'
+    return 'Select a replacement current academic year or term before deleting this record.'
   const id = deletionId(entity, record)
   let links: (string | false | undefined)[]
   switch (entity) {

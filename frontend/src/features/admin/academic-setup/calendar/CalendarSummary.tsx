@@ -14,9 +14,9 @@ export default function CalendarSummary({ state }: { state: CalendarState }) {
       detail: currentYears?.map((year) => year.name).join(', '),
       tone: 'active',
     },
-    { label: 'Total Semesters', value: state.semesters?.length, icon: BookOpen },
+    { label: 'Total Terms', value: state.semesters?.length, icon: BookOpen },
     {
-      label: 'Ongoing Semester',
+      label: 'Ongoing Term',
       value: currentSemesters?.length,
       icon: CalendarDays,
       detail: currentSemesters

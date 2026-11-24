@@ -37,7 +37,7 @@ A program is a degree, diploma or certificate offered by a department.
    | Program Code | `BTCS` | |
    | Department | Computer Science and Engineering | Only active departments are listed. |
    | Degree Type | B.Tech | |
-   | Duration (Years) | 4 | Use years, not semesters. A 4-year degree is `4`, not `8`. |
+   | Duration (Years) | 4 | Use years, not semesters. A 4-year degree is `4`, not `8`. The form warns you if a duration looks like a semester count. |
    | Total Credits *(optional)* | 160 | |
    | Program Description *(optional)* | | |
 
@@ -70,11 +70,10 @@ active.
 
 ## 1.4 Add the academic terms
 
-Terms are the dated teaching periods inside the year. On the calendar screens
-they are listed as **Semesters** and added with **Add Semester**.
+Terms are the dated teaching periods inside the year.
 
-1. Open **Academic Calendar** → **Academic Terms**, or use **Add Semester** on
-   the academic year.
+1. Open **Academic Calendar** → **Terms**, or use **Add Term** on the academic
+   year.
 2. Create one record per teaching period:
 
    | Field | Odd Term | Even Term |
@@ -82,11 +81,11 @@ they are listed as **Semesters** and added with **Add Semester**.
    | Academic Year | 2026–27 | 2026–27 |
    | Name | Odd Term | Even Term |
    | Code | `ODD26` | `EVEN27` |
-   | Semester Number | 1 | 2 |
+   | Term Number | 1 | 2 |
    | Start Date | 1 Aug 2026 | 30 Jan 2027 |
    | End Date | 29 Jan 2027 | 31 Jul 2027 |
 
-3. Select **Create Semester** for each one.
+3. Select **Create Term** for each one.
 
 **Important:** a term's dates must fall inside its academic year. A term is a
 calendar period for *everyone*; it is not the same as "Semester 1" of a degree.

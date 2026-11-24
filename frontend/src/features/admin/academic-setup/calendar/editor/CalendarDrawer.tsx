@@ -10,7 +10,7 @@ export default function CalendarDrawer({ editor, state }: { editor: CalendarEdit
   const safeAction = useRef<HTMLButtonElement>(null)
   const confirming = editor.confirmation !== null
   const view = editor.panel?.mode === 'view'
-  const noun = editor.panel?.entity === 'semesters' ? 'Semester' : 'Academic Year'
+  const noun = editor.panel?.entity === 'semesters' ? 'Term' : 'Academic Year'
   const title = confirming
     ? editor.confirmation === 'discard'
       ? 'Discard your changes?'
@@ -48,7 +48,7 @@ export default function CalendarDrawer({ editor, state }: { editor: CalendarEdit
               : view
                 ? 'Review academic calendar information.'
                 : noun === 'Academic Year' && editor.panel?.mode === 'add'
-                  ? 'Create a new academic year and configure its semesters.'
+                  ? 'Create a new academic year and configure its teaching terms.'
                   : `Update your ${noun.toLowerCase()} information.`}
           </p>
         </div>
@@ -135,7 +135,7 @@ export default function CalendarDrawer({ editor, state }: { editor: CalendarEdit
               {editor.saving
                 ? 'Saving...'
                 : editor.progress.year
-                  ? 'Retry Remaining Semesters'
+                  ? 'Retry Remaining Terms'
                   : editor.panel?.mode === 'edit'
                     ? 'Save Changes'
                     : `Create ${noun}`}

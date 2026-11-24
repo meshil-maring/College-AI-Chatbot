@@ -18,7 +18,7 @@ export default function CalendarYears({
   return (
     <div className="calendar-years">
       <div className="calendar-year-heading" aria-hidden="true">
-        {['Academic Year', 'Code', 'Start Date', 'End Date', 'Semesters', 'Status', 'Actions'].map((label) => (
+        {['Academic Year', 'Code', 'Start Date', 'End Date', 'Terms', 'Status', 'Actions'].map((label) => (
           <span key={label}>{label}</span>
         ))}
       </div>
@@ -53,7 +53,7 @@ export default function CalendarYears({
               <span data-label="Code">{year.code}</span>
               <span data-label="Start Date">{formatCalendarDate(year.start_date)}</span>
               <span data-label="End Date">{formatCalendarDate(year.end_date)}</span>
-              <span data-label="Semesters">{semesters?.length ?? 'Unavailable'}</span>
+              <span data-label="Terms">{semesters?.length ?? 'Unavailable'}</span>
               <span data-label="Status">
                 <CalendarBadge period={year} />
               </span>
@@ -69,7 +69,7 @@ export default function CalendarYears({
                 {semesters ? (
                   <CalendarSemesters records={semesters} state={state} editor={editor} deletion={deletion} />
                 ) : (
-                  <p className="calendar-inline-empty">Semester records are unavailable for your account.</p>
+                  <p className="calendar-inline-empty">Term records are unavailable for your account.</p>
                 )}
                 <div className="calendar-year-footer">
                   <button
@@ -78,7 +78,7 @@ export default function CalendarYears({
                     disabled={!state.canManageSemesters || state.busy || !year.is_active || editor.saving}
                     onClick={() => editor.open('semesters', 'add', undefined, year)}
                   >
-                    <Plus aria-hidden="true" /> Add Semester
+                    <Plus aria-hidden="true" /> Add Term
                   </button>
                 </div>
               </div>

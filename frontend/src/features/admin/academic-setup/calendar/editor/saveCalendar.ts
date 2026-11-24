@@ -61,7 +61,7 @@ export async function saveCalendar(options: Options) {
     const semester = draft.semesters[index]
     const result = await createAcademicRecord(token, 'semesters', {
       academic_year_id: year.academic_year_id,
-      name: `Semester ${semester.semester_number}`,
+      name: `Term ${semester.semester_number}`,
       code: `S${semester.semester_number}`,
       semester_number: semester.semester_number,
       start_date: semester.start_date,

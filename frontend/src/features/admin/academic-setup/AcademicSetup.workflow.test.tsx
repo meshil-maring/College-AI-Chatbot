@@ -23,11 +23,11 @@ describe('export-aligned setup workflow', () => {
     catalogue.records.semesters = []
     catalogue.records.courses = []
     render(<AcademicSetup />)
-    await add('Semesters', 'semester')
+    await add('Terms', 'term')
     fill('Name', semester.name)
     fill('Code', semester.code)
     choose('Academic year', year.academic_year_id)
-    fill('Semester number', '1')
+    fill('Term number', '1')
     fill('Start date', semester.start_date)
     fill('End date', semester.end_date)
     expect(screen.queryByRole('combobox', { name: 'Degree program' })).not.toBeInTheDocument()

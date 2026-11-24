@@ -19,7 +19,7 @@ def validate_structure_parents(client, institution_id, entity, fields, existing)
     if entity == Entity.semesters:
         year = repository.get_record(client, institution_id, Entity.academic_years, values["academic_year_id"])
         if not year or values["start_date"] < year["start_date"] or values["end_date"] > year["end_date"]:
-            raise AppError("Semester dates must fit its academic year", 422, "ACADEMIC_REFERENCE_INVALID")
+            raise AppError("Term dates must fit its academic year", 422, "ACADEMIC_REFERENCE_INVALID")
     if not check_active:
         return
 

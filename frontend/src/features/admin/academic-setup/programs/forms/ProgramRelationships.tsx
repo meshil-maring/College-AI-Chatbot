@@ -1,6 +1,6 @@
 import type { Department } from '../../../../../types/academicSetup.ts'
 import type { ProgramEditor } from '../useProgramEditor.ts'
-import { DEGREE_TYPES } from '../programModel.ts'
+import { DEGREE_TYPES, durationWarning } from '../programModel.ts'
 import ProgramField from './ProgramField.tsx'
 
 export default function ProgramRelationships({
@@ -78,6 +78,8 @@ export default function ProgramRelationships({
         field="duration_years"
         label="Duration (Years)"
         placeholder="Select duration"
+        help="In years, not semesters. A 4-year degree is 4."
+        warning={durationWarning(editor.draft.duration_years)}
         required
         numeric
       />

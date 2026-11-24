@@ -39,7 +39,7 @@ describe('Academic calendar editor', () => {
     renderCalendar()
     await openCreate()
     fillYear()
-    fireEvent.click(screen.getByRole('radio', { name: '3 Semesters (Trimester)' }))
+    fireEvent.click(screen.getByRole('radio', { name: '3 Terms (Trimesters)' }))
     fireEvent.click(screen.getByRole('button', { name: 'Create Academic Year' }))
     await screen.findByText('Academic year created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledTimes(4)
@@ -77,13 +77,13 @@ describe('Academic calendar editor', () => {
   it('edits status with confirmation and preserves the immutable semester parent', async () => {
     renderCalendar()
     fireEvent.click(await screen.findByRole('button', { name: 'Edit Semester 1', exact: true }))
-    const dialog = screen.getByRole('dialog', { name: 'Edit Semester' })
+    const dialog = screen.getByRole('dialog', { name: 'Edit Term' })
     expect(within(dialog).getByRole('combobox', { name: /Academic Year/ })).toBeDisabled()
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Set as current semester' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Set as current term' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
     expect(api.updateAcademicRecord).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Changes' }))
-    await screen.findByText('Semester updated successfully')
+    await screen.findByText('Term updated successfully')
     expect(api.updateAcademicRecord).toHaveBeenCalledWith(
       'token-1',
       'semesters',
@@ -95,18 +95,18 @@ describe('Academic calendar editor', () => {
 
   it('adds a semester to its selected year and rejects dates outside that year', async () => {
     renderCalendar()
-    fireEvent.click(await screen.findByRole('button', { name: 'Add Semester', exact: true }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Term', exact: true }))
     expect(screen.getByRole('combobox', { name: /Academic Year/ })).toHaveValue(year.academic_year_id)
     fireEvent.change(screen.getByLabelText('End Date *', { selector: '#calendar-end' }), {
       target: { value: '2028-01-01' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Create Semester' }))
-    expect(screen.getByText('Semester dates must fall within the academic year.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Create Term' }))
+    expect(screen.getByText('Term dates must fall within the academic year.')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('End Date *', { selector: '#calendar-end' }), {
       target: { value: '2027-06-30' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Create Semester' }))
-    await screen.findByText('Semester created successfully')
+    fireEvent.click(screen.getByRole('button', { name: 'Create Term' }))
+    await screen.findByText('Term created successfully')
     expect(api.createAcademicRecord).toHaveBeenCalledWith(
       'token-1',
       'semesters',

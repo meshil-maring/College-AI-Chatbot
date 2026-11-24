@@ -4,7 +4,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(14);
+SELECT plan(17);
 
 -- Fixture: one active institution with a published B.Tech curriculum, a 2026
 -- batch, Section A (capacity 60) and one subject offering (capacity 40).
@@ -27,9 +27,11 @@ INSERT INTO semesters (semester_id, academic_year_id, name, code, semester_numbe
     ('00000000-0000-4000-8000-000000000016', '00000000-0000-4000-8000-000000000015', 'Odd', 'ODD31', 1, '2031-08-01', '2032-01-29');
 INSERT INTO courses (course_id, department_id, name, code, credits)
 VALUES ('00000000-0000-4000-8000-000000000007', '00000000-0000-4000-8000-000000000003', 'Programming', 'CS101', 1.5);
-INSERT INTO program_semesters (program_semester_id, institution_id, program_id, name, code, semester_number)
-VALUES ('00000000-0000-4000-8000-000000000008', '00000000-0000-4000-8000-000000000002',
-        '00000000-0000-4000-8000-000000000004', 'Semester 1', 'SEM-1', 1);
+INSERT INTO program_semesters (program_semester_id, institution_id, program_id, name, code, semester_number) VALUES
+    ('00000000-0000-4000-8000-000000000008', '00000000-0000-4000-8000-000000000002',
+     '00000000-0000-4000-8000-000000000004', 'Semester 1', 'SEM-1', 1),
+    ('00000000-0000-4000-8000-000000000018', '00000000-0000-4000-8000-000000000002',
+     '00000000-0000-4000-8000-000000000004', 'Semester 2', 'SEM-2', 2);
 INSERT INTO curriculum_versions (curriculum_version_id, institution_id, program_id, academic_year_id, name, version, total_semesters) VALUES
     ('00000000-0000-4000-8000-000000000009', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000004',
      '00000000-0000-4000-8000-000000000005', 'BT 2026', '1.0', 8),
@@ -97,6 +99,21 @@ SELECT lives_ok($$UPDATE academic_sections SET capacity = 40
 SELECT lives_ok($$UPDATE academic_offerings SET is_active = false, capacity = 55
                   WHERE academic_offering_id = '00000000-0000-4000-8000-00000000000d'$$,
                 'an inactive offering is not limited by section capacity changes');
+
+-- Section codes are unique per batch and program semester, not per institution
+SELECT lives_ok($$INSERT INTO academic_sections (institution_id, admission_cohort_id, program_semester_id, semester_id, name, code)
+                  SELECT '00000000-0000-4000-8000-000000000002', admission_cohort_id,
+                         '00000000-0000-4000-8000-000000000008', '00000000-0000-4000-8000-000000000006', 'Section A', 'A'
+                    FROM admission_cohorts WHERE code = 'LAT'$$,
+                'another batch can reuse the section code A');
+SELECT throws_ok($$INSERT INTO academic_sections (institution_id, admission_cohort_id, program_semester_id, semester_id, name, code)
+                   VALUES ('00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-00000000000b',
+                           '00000000-0000-4000-8000-000000000008', '00000000-0000-4000-8000-000000000006', 'Section A again', ' a ')$$,
+                 '23505', NULL, 'the same batch semester cannot reuse a section code, ignoring case and spaces');
+SELECT lives_ok($$INSERT INTO academic_sections (institution_id, admission_cohort_id, program_semester_id, semester_id, name, code)
+                  VALUES ('00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-00000000000b',
+                          '00000000-0000-4000-8000-000000000018', '00000000-0000-4000-8000-000000000006', 'Section A', 'A')$$,
+                'Section A can continue into the batch''s next program semester');
 
 -- Tenant isolation
 SELECT throws_ok($$INSERT INTO academic_sections (institution_id, admission_cohort_id, program_semester_id, semester_id, name, code)

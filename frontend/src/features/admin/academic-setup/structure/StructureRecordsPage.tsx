@@ -8,7 +8,7 @@ import StructureDrawer from './StructureDrawer.tsx'
 import SectionSubjectFilter from './SectionSubjectFilter.tsx'
 import { structureSingular, structureTitles, type StructureDraft } from './structureFields.ts'
 import { structureId, type StructureRow } from './structureForm.ts'
-import { structureContextLabel, structureLabel } from './structureLabels.ts'
+import { academicSectionLabel, structureContextLabel, structureLabel } from './structureLabels.ts'
 import { structureCanEdit, structureCreationIssue } from './structureAvailability.ts'
 import './styles/structure.css'
 
@@ -100,6 +100,7 @@ export default function StructureRecordsPage({
           )}
           value={sectionId}
           onChange={setSectionId}
+          labelFor={(section) => academicSectionLabel(section, state.structure?.records)}
         />
       )}
       <div className="structure-summary" aria-label="Academic record summary">

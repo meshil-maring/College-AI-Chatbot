@@ -59,7 +59,7 @@ describe('Staff and Faculty — Responsibilities', () => {
     const form = await openPage()
     await waitFor(() => expect(within(form).getByRole('option', { name: 'Tina Teacher' })).toBeInTheDocument())
     fireEvent.change(within(form).getByLabelText('Faculty member'), { target: { value: 'f-1' } })
-    await waitFor(() => expect(within(form).getByRole('option', { name: 'CSE Year 2 A (CSE-2A)' })).toBeInTheDocument())
+    await waitFor(() => expect(within(form).getByRole('option', { name: 'CSE Year 2 A' })).toBeInTheDocument())
     fireEvent.change(within(form).getByLabelText('Class section'), { target: { value: 's-1' } })
     fireEvent.click(within(form).getByRole('button', { name: 'Assign' }))
     await waitFor(() =>

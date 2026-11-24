@@ -22,7 +22,7 @@ export const ACADEMIC_FIELDS: Record<AcademicEntity, AcademicField[]> = {
   ],
   academic_years: dates,
   semesters: [
-    { key: 'semester_number', label: 'Semester number', type: 'number', required: true, min: 1, step: '1' },
+    { key: 'semester_number', label: 'Term number', type: 'number', required: true, min: 1, step: '1' },
     ...dates,
   ],
   courses: [

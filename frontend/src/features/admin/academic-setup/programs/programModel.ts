@@ -91,3 +91,12 @@ export function filterPrograms(
       return (order || a.program_id.localeCompare(b.program_id)) * (direction === 'asc' ? 1 : -1)
     })
 }
+
+/** Non-blocking hint when a duration looks like a semester count (e.g. 8 for a 4-year degree). */
+export function durationWarning(value: string): string | undefined {
+  const years = Number(value)
+  if (!value.trim() || !Number.isFinite(years) || years <= 6) return undefined
+  const asSemesters =
+    Number.isInteger(years) && years % 2 === 0 ? ` If this is ${years} semesters, enter ${years / 2}.` : ''
+  return `${years} years is unusually long. Duration is in years, not semesters.${asSemesters}`
+}

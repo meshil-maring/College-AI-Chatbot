@@ -171,7 +171,7 @@ it('keeps calendar tabs, filters and sidebar selection synchronized with keyboar
   const yearTab = screen.getByRole('tab', { name: 'Academic Years' })
   yearTab.focus()
   fireEvent.keyDown(yearTab, { key: 'ArrowRight' })
-  const semesterTab = screen.getByRole('tab', { name: 'Semesters' })
+  const semesterTab = screen.getByRole('tab', { name: 'Terms' })
   expect(semesterTab).toHaveFocus()
   expect(semesterTab).toHaveAttribute('tabindex', '0')
   expect(search).toHaveValue('2026')

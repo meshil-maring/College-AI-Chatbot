@@ -4,10 +4,12 @@ export default function SectionSubjectFilter({
   sections,
   value,
   onChange,
+  labelFor,
 }: {
   sections: AcademicSection[]
   value: string
   onChange: (sectionId: string) => void
+  labelFor: (section: AcademicSection) => string
 }) {
   return (
     <label className="structure-section-filter">
@@ -21,7 +23,7 @@ export default function SectionSubjectFilter({
         <option value="">Select a section</option>
         {sections.map((section) => (
           <option key={section.academic_section_id} value={section.academic_section_id}>
-            {section.name} ({section.code})
+            {labelFor(section)}
           </option>
         ))}
       </select>

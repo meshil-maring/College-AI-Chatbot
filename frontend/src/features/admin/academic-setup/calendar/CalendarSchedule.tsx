@@ -27,7 +27,7 @@ export default function CalendarSchedule({
       .sort((a, b) => a.date.localeCompare(b.date))
     return (
       <section className="calendar-dates" aria-label="Important academic dates">
-        <p className="calendar-schedule-note">Start and end dates from your academic years and semesters.</p>
+        <p className="calendar-schedule-note">Start and end dates from your academic years and teaching terms.</p>
         {events.map(({ period, date, label }) => (
           <article key={`${'semester_id' in period ? period.semester_id : period.academic_year_id}-${label}`}>
             <span className="calendar-date-icon">
@@ -39,7 +39,7 @@ export default function CalendarSchedule({
                 {period.name} {label}
               </strong>
               <small>
-                {'semester_id' in period ? 'Semester' : 'Academic year'} · {period.code}
+                {'semester_id' in period ? 'Term' : 'Academic year'} · {period.code}
               </small>
             </div>
             <CalendarActions
@@ -93,7 +93,7 @@ export default function CalendarSchedule({
                   </button>
                 ))}
             </div>
-            {!state.semesters && <p className="calendar-inline-empty">Semester records are unavailable.</p>}
+            {!state.semesters && <p className="calendar-inline-empty">Term records are unavailable.</p>}
           </article>
         )
       })}

@@ -54,7 +54,7 @@ class groups, and for each program semester they reach.
    | Field | Example | Notes |
    | --- | --- | --- |
    | Section Name | Section A | |
-   | Section Code | `CSE26-A-S1` | Must be unique across the whole institution, so include the batch and semester. |
+   | Section Code | `A` | Unique within the batch's program semester. Other batches, and this batch's other semesters, can also use `A`. |
    | Batch | CSE 2026 | Program and Batch Academic Year fill in from the batch. |
    | Program Semester | Semester 1 | The degree stage these students are in. |
    | Teaching Term | Odd Term (2026–27) | Only terms inside the batch's years are offered. |
@@ -67,8 +67,8 @@ For Greenfield College, create one section per term of the first year:
 
 | Section Code | Program Semester | Teaching Term | Capacity |
 | --- | --- | --- | --- |
-| `CSE26-A-S1` | Semester 1 | Odd Term 2026–27 | 60 |
-| `CSE26-A-S2` | Semester 2 | Even Term 2026–27 | 60 |
+| `A` | Semester 1 | Odd Term 2026–27 | 60 |
+| `A` | Semester 2 | Even Term 2026–27 | 60 |
 
 The batch, program semester, term and code cannot be changed after creation.
 The name, capacity and description can.
@@ -92,8 +92,8 @@ For Greenfield College:
 
 | Section | Subjects |
 | --- | --- |
-| `CSE26-A-S1` | Programming Fundamentals, Engineering Mathematics I |
-| `CSE26-A-S2` | Data Structures, Digital Logic |
+| Section A, Semester 1 | Programming Fundamentals, Engineering Mathematics I |
+| Section A, Semester 2 | Data Structures, Digital Logic |
 
 **Important:** every compulsory subject, and every subject a student may pick in
 a choice group, must be made available to the section. Otherwise students cannot

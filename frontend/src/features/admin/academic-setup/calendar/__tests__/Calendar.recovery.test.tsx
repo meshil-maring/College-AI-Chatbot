@@ -19,11 +19,9 @@ describe('Calendar save recovery', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Semester service unavailable.')
     expect(screen.getByText(/1 of 2 semesters saved/)).toBeInTheDocument()
     expect(screen.getByLabelText(/Academic Year Name/)).toBeDisabled()
-    expect(
-      within(screen.getByRole('group', { name: /Semester 1 · Saved/ })).getByLabelText('Start Date'),
-    ).toBeDisabled()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Retry Remaining Semesters' })).toBeEnabled())
-    fireEvent.click(screen.getByRole('button', { name: 'Retry Remaining Semesters' }))
+    expect(within(screen.getByRole('group', { name: /Term 1 · Saved/ })).getByLabelText('Start Date')).toBeDisabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Retry Remaining Terms' })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'Retry Remaining Terms' }))
     await screen.findByText('Academic year created successfully')
     expect(vi.mocked(api.createAcademicRecord).mock.calls.filter((call) => call[1] === 'academic_years')).toHaveLength(
       1,

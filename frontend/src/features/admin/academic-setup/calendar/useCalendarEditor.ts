@@ -76,7 +76,7 @@ export function useCalendarEditor(context: CalendarContext, state: CalendarState
             .filter((item) => item.academic_year_id === next.academic_year_id)
             .map((item) => item.semester_number),
         ) + 1
-      next.name = `Semester ${next.semester_number}`
+      next.name = `Term ${next.semester_number}`
       next.code = `S${next.semester_number}`
     }
     setPanel({ entity, mode, record })
@@ -123,7 +123,7 @@ export function useCalendarEditor(context: CalendarContext, state: CalendarState
           item.semester_id !== (panel.record && 'semester_id' in panel.record ? panel.record.semester_id : undefined),
       )
     )
-      nextErrors.semester_number = 'This semester number is already in use in this academic year.'
+      nextErrors.semester_number = 'This term number is already in use in this academic year.'
     setErrors(nextErrors)
     setValidationVersion((value) => value + 1)
     if (Object.keys(nextErrors).length) return
@@ -157,7 +157,7 @@ export function useCalendarEditor(context: CalendarContext, state: CalendarState
       if (!mounted.current) return
       setPanel(null)
       notification.success(
-        `${panel.entity === 'academic_years' ? 'Academic year' : 'Semester'} ${panel.mode === 'add' ? 'created' : 'updated'} successfully`,
+        `${panel.entity === 'academic_years' ? 'Academic year' : 'Term'} ${panel.mode === 'add' ? 'created' : 'updated'} successfully`,
       )
       await state.query.refetch()
     } catch (cause) {

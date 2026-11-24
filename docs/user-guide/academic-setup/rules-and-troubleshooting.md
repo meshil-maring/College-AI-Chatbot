@@ -10,7 +10,7 @@ the save is refused with a message that names the rule and how to fix it.
 
 | Area | Rule |
 | --- | --- |
-| Codes | Department, program, subject, batch and section codes must be unique. Section codes are unique across the **whole institution**. |
+| Codes | Department, program, subject and batch codes are unique in your institution. Section codes only need to be unique within a batch's program semester, so every batch can use `A`, `B`, … |
 | Parents | You can only choose **active** parents, for example an active department for a new program. |
 | Program duration | Entered in years. It sets the default curriculum length (2 semesters per year) and the longest a batch can run. |
 | Terms | A term's dates must fall inside its academic year. |
@@ -27,9 +27,9 @@ the save is refused with a message that names the rule and how to fix it.
 | --- | --- | --- |
 | "Start year must be 2026, when the intake academic year starts." | The start year differs from the intake year. | Choose the right **Academic Year**; the start year follows it. |
 | "End year cannot be later than 2030 for this program's duration." | The batch runs longer than the program. | Shorten the end year, or correct the program's **Duration (Years)**. |
-| "An academic record already exists in this context" | A record with the same code or name already exists. | Use a different code. For sections, include the batch and semester, for example `CSE26-A-S1`. |
+| "An academic record already exists in this context" | A record with the same code or name already exists. | Use a different code. For sections, this means the same batch and semester already has a section with that code. |
 | "Choose an active …" | The chosen parent is inactive. | Activate the parent, or choose another one. |
-| "Semester dates must fit its academic year" | A term starts or ends outside its year. | Adjust the term dates or the year dates. |
+| "Term dates must fit its academic year" | A term starts or ends outside its year. | Adjust the term dates or the year dates. |
 | "Add at least one subject before publishing." | The draft curriculum is empty. | Add subjects in **Subjects by semester**. |
 | "Active academic year dates overlap" | Two active academic years cover the same dates. | Adjust the dates so active years do not overlap. |
 | "Other active records depend on this one. Deactivate them first…" | You are deactivating a record that still has active programs, subjects, batches or sections. | Deactivate the dependent records first (programs before their department). |
