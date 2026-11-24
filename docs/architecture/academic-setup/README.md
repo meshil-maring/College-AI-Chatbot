@@ -4,6 +4,13 @@ Recorded on **28 October 2026** from the repository working tree, based on commi
 `93fafa4`. This describes the implemented application and migration sources.
 It is a source review, not a fresh certification of a deployed database.
 
+> **Later change (24 November 2026):** the generic "Existing Academic Catalogues"
+> page (`AcademicSetup.tsx`, `useAcademicSetup.ts`) and the placeholder
+> `AcademicAreaView` were removed; every Academic Setup page now has a dedicated
+> screen chosen through `overview/academicPageViews.tsx`. Links to those files in
+> this record point to the state at the commit above. The current design is in
+> [frontend/docs/ACADEMIC_SETUP_DESIGN.md](../../../frontend/docs/ACADEMIC_SETUP_DESIGN.md).
+
 ## Purpose
 
 Academic Setup defines what an institution teaches, how programs progress,

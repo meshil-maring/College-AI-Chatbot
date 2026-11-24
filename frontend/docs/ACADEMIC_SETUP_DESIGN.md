@@ -174,6 +174,15 @@ results, teaching assignments and program-outcome authoring remain separate work
 
 ## Overview and implementation
 
+`overview/AcademicWorkspace.tsx` resolves the current page through the registry
+in `overview/academicPageViews.tsx`: every Academic Setup page maps to its
+dedicated screen, and the overview is shown otherwise. Overview shortcuts open
+the page that owns an entity (terms open the Terms tab). The former generic
+catalogue page and its forms were removed. Bulk and guided flows live in
+`subjects/import/` (CSV import), `rollover/` (next academic year) and
+`quick-setup/` (one program end to end); they reuse the existing create
+endpoints, so the database rules and audit apply unchanged.
+
 The overview's management cards read available catalogue counts. Quick links
 navigate to manageable structure areas; foundation creation shortcuts open their
 existing drawers. Recent activities come from tenant-filtered successful academic

@@ -32,8 +32,7 @@
   flex: 1 1 18rem;
   min-width: 0;
 }
-.academic-page-header h1,
-.academic-existing-records > h1 {
+.academic-page-header h1 {
   margin: 0;
   font-size: var(--ui-type-title);
   font-weight: 700;

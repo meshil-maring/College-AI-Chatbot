@@ -17,7 +17,7 @@ export function resolveAdminLocation(search: string) {
   const requestedPage =
     requested === 'curriculum-options' || requested === 'program-semesters' ? 'curriculum-subjects' : requested
   const page: AcademicPage =
-    requestedPage === 'overview' || requestedPage === 'records'
+    requestedPage === 'overview'
       ? requestedPage
       : (allAcademicAreas.find((area) => area.page === requestedPage)?.page ?? 'overview')
   const view: AdminView =

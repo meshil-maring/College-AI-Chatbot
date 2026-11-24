@@ -5,7 +5,6 @@ import * as registrationApi from '../../../../services/academics/semesterRegistr
 import type { RegistrationCatalogue } from '../../../../types/semesterRegistration.ts'
 import type { StructureCatalogue, StructureEntity, StructureRecordMap } from '../../../../types/academicStructure.ts'
 import type { AcademicCatalogue, AcademicYear, DegreeProgram, Department } from '../../../../types/academicSetup.ts'
-import { academicRecordId } from '../academicSetupForm.ts'
 
 const auth = vi.hoisted(() => ({
   accessToken: 'token-1' as string | null,
@@ -179,5 +178,11 @@ beforeEach(() => {
     return structuredClone(record) as never
   })
 })
+
+/** The primary key of any Academic Setup catalogue record. */
+function academicRecordId(record: object): string {
+  const row = record as unknown as Record<string, string>
+  return row.semester_id ?? row.program_id ?? row.course_id ?? row.academic_year_id ?? row.department_id
+}
 
 export { auth }

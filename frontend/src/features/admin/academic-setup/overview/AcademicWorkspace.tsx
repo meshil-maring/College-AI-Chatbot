@@ -1,25 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Info } from 'lucide-react'
 import { useAuth } from '../../../auth/session/AuthProvider.tsx'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
-import AcademicSetup from '../AcademicSetup.tsx'
 import AcademicOverviewSession from './AcademicOverviewSession.tsx'
-import DepartmentsPage from '../departments/DepartmentsPage.tsx'
-import ProgramsPage from '../programs/ProgramsPage.tsx'
-import SubjectsPage from '../subjects/SubjectsPage.tsx'
-import CurriculumPage from '../curriculum/CurriculumPage.tsx'
-import BatchesPage from '../batches/BatchesPage.tsx'
-import SectionsPage from '../sections/SectionsPage.tsx'
-import StructureRecordsPage from '../structure/StructureRecordsPage.tsx'
-import AcademicCalendarPage from '../calendar/AcademicCalendarPage.tsx'
+import { academicPageView } from './academicPageViews.tsx'
 import { type AcademicPage } from './academicOverviewModel.ts'
 import { hasAcademicCatalogueReadAccess } from './useAcademicOverview.ts'
 import '../styles/overview.css'
 import AcademicJourney from '../navigation/AcademicJourney.tsx'
-import StudentEnrollmentPage from '../registration/StudentEnrollmentPage.tsx'
-import AcademicGuidePage from '../guide/AcademicGuidePage.tsx'
-import QuickSetupPage from '../quick-setup/QuickSetupPage.tsx'
-import { calendarDestinations, calendarTabFor } from '../navigation/academicCalendarNavigation.ts'
 
 interface Props {
   page: AcademicPage
@@ -83,131 +70,34 @@ function AcademicWorkspaceContent(
   props: Props & { accessToken: string; identity: string; institutionId: string; canReadCatalogues: boolean },
 ) {
   const [request, setRequest] = useState<{ entity?: AcademicEntity; create: boolean }>({ create: false })
+  /** Overview shortcuts open the page that owns an entity, optionally straight into its "add" drawer. */
   function openRecords(entity?: AcademicEntity, create = false) {
     setRequest({ entity, create })
-    props.onNavigate(
-      entity === 'departments' || entity === 'programs'
-        ? entity
-        : entity === 'courses'
-          ? 'subjects'
-          : entity === 'academic_years'
-            ? 'years'
-            : 'records',
-    )
+    props.onNavigate(entity ? ENTITY_PAGES[entity] : 'overview')
   }
-  const structureContext = {
-    accessToken: props.accessToken,
-    identity: props.identity,
-    institutionId: props.institutionId,
-    canReadCatalogues: props.canReadCatalogues,
-  }
-  if (props.page === 'cohorts')
+  const View = academicPageView(props.page)
+  if (View)
     return (
-      <BatchesPage
-        {...structureContext}
-        onOverview={() => props.onNavigate('overview')}
-        onCreateSections={() => props.onNavigate('sections')}
+      <View
+        page={props.page}
+        context={{
+          accessToken: props.accessToken,
+          identity: props.identity,
+          institutionId: props.institutionId,
+          canReadCatalogues: props.canReadCatalogues,
+        }}
+        navigate={props.onNavigate}
+        createRequest={request}
+        clearRequest={() => setRequest({ create: false })}
       />
     )
-  if (props.page === 'sections')
-    return (
-      <SectionsPage
-        {...structureContext}
-        onOverview={() => props.onNavigate('overview')}
-        onEnrollment={() => props.onNavigate('enrollments')}
-      />
-    )
-  if (props.page === 'guide') return <AcademicGuidePage onOverview={() => props.onNavigate('overview')} />
-  if (props.page === 'quick-setup') return <QuickSetupPage context={structureContext} onNavigate={props.onNavigate} />
-  if (props.page === 'enrollments')
-    return <StudentEnrollmentPage context={structureContext} onBack={() => props.onNavigate('sections')} />
-  if (props.page === 'program-semesters' || props.page === 'curriculum' || props.page.startsWith('curriculum-'))
-    return (
-      <CurriculumPage
-        accessToken={props.accessToken}
-        identity={props.identity}
-        institutionId={props.institutionId}
-        canReadCatalogues={props.canReadCatalogues}
-        activeTab={
-          props.page === 'program-semesters' ||
-          props.page === 'curriculum-subjects' ||
-          props.page === 'curriculum-options'
-            ? 'subjects'
-            : props.page === 'curriculum-history'
-              ? 'history'
-              : 'versions'
-        }
-        onTabChange={(tab) =>
-          props.onNavigate(
-            tab === 'subjects' || tab === 'options'
-              ? 'curriculum-subjects'
-              : tab === 'history'
-                ? 'curriculum-history'
-                : 'curriculum-versions',
-          )
-        }
-        onOverview={() => props.onNavigate('overview')}
-        onBatches={() => props.onNavigate('cohorts')}
-      />
-    )
-  if (props.page === 'offerings')
-    return (
-      <StructureRecordsPage
-        key={props.page}
-        context={structureContext}
-        entity="academic_offerings"
-        onOverview={() => props.onNavigate('overview')}
-        filterBySection
-      />
-    )
-  if (calendarTabFor(props.page))
-    return (
-      <AcademicCalendarPage
-        accessToken={props.accessToken}
-        identity={props.identity}
-        institutionId={props.institutionId}
-        canReadCatalogues={props.canReadCatalogues}
-        initialTab="years"
-        activeTab={calendarTabFor(props.page)}
-        onTabChange={(tab) => props.onNavigate(calendarDestinations[tab])}
-        createInitially={request.entity === 'academic_years' && request.create}
-        onCreateHandled={() => setRequest({ create: false })}
-        onOverview={() => props.onNavigate('overview')}
-      />
-    )
-  if (props.page === 'departments' || props.page === 'programs' || props.page === 'subjects') {
-    const Page =
-      props.page === 'departments' ? DepartmentsPage : props.page === 'programs' ? ProgramsPage : SubjectsPage
-    return (
-      <Page
-        accessToken={props.accessToken}
-        identity={props.identity}
-        institutionId={props.institutionId}
-        canReadCatalogues={props.canReadCatalogues}
-        createInitially={request.entity === (props.page === 'subjects' ? 'courses' : props.page) && request.create}
-        onCreateHandled={() => setRequest({ create: false })}
-        onOverview={() => props.onNavigate('overview')}
-      />
-    )
-  }
-  if (props.page === 'records' && props.canReadCatalogues)
-    return (
-      <section className="academic-workspace academic-existing-records">
-        <button type="button" className="academic-back-button" onClick={() => props.onNavigate('overview')}>
-          Back to Academic Setup overview
-        </button>
-        <h1>Existing Academic Catalogues</h1>
-        <p className="academic-information">
-          <Info aria-hidden="true" /> These record workflows retain the existing data model and permissions.
-        </p>
-        <AcademicSetup initialEntity={request.entity} createInitially={request.create} />
-      </section>
-    )
-  return (
-    <AcademicOverviewSession
-      {...props}
-      page={props.page === 'records' ? 'overview' : props.page}
-      onOpenRecords={openRecords}
-    />
-  )
+  return <AcademicOverviewSession {...props} onOpenRecords={openRecords} />
+}
+
+const ENTITY_PAGES: Record<AcademicEntity, AcademicPage> = {
+  departments: 'departments',
+  programs: 'programs',
+  courses: 'subjects',
+  academic_years: 'years',
+  semesters: 'terms',
 }

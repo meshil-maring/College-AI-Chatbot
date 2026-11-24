@@ -35,7 +35,6 @@ export type AcademicPage =
   | 'cohorts'
   | 'sections'
   | 'offerings'
-  | 'records'
   | 'guide'
   | 'quick-setup'
 

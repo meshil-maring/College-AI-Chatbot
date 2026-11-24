@@ -1,20 +1,17 @@
 import { BookOpenText, ChevronRight, Info, Wand2 } from 'lucide-react'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
 import AcademicOverview from './AcademicOverview.tsx'
-import AcademicAreaView from './AcademicAreaView.tsx'
 import AcademicQuickActions from './AcademicQuickActions.tsx'
-import { getAcademicArea, type AcademicPage } from './academicOverviewModel.ts'
+import type { AcademicPage } from './academicOverviewModel.ts'
 import { useAcademicStructure } from '../structure/useAcademicStructure.ts'
 
 interface Props {
-  page: AcademicPage
   search: string
   onNavigate: (page: AcademicPage) => void
   onClearSearch: () => void
 }
 
 export default function AcademicOverviewSession({
-  page,
   search,
   onNavigate,
   onClearSearch,
@@ -33,7 +30,6 @@ export default function AcademicOverviewSession({
   const state = useAcademicStructure({ accessToken, identity, institutionId, canReadCatalogues })
   const { catalogue, structure, error, loading } = state
   const busy = state.busy || !catalogue
-  const title = page === 'overview' ? 'Academic Setup' : (getAcademicArea(page)?.title ?? 'Academic Setup')
   return (
     <div className="academic-workspace">
       <nav className="academic-breadcrumbs" aria-label="Breadcrumb">
@@ -43,11 +39,11 @@ export default function AcademicOverviewSession({
           Academic Setup
         </button>
         <ChevronRight aria-hidden="true" />
-        <span aria-current="page">{page === 'overview' ? 'Overview' : title}</span>
+        <span aria-current="page">Overview</span>
       </nav>
       <header className="academic-page-header">
         <div>
-          <h1>{title}</h1>
+          <h1>Academic Setup</h1>
           <p>Manage your institution’s academic structure, programs, curricula, and calendar.</p>
         </div>
         <div className="academic-header-actions">
@@ -58,7 +54,6 @@ export default function AcademicOverviewSession({
             <Wand2 aria-hidden="true" /> Quick Setup
           </button>
           <AcademicQuickActions
-            key={page}
             catalogue={catalogue}
             structure={structure}
             onNavigate={onNavigate}
@@ -93,27 +88,17 @@ export default function AcademicOverviewSession({
           </button>
         </div>
       )}
-      {page === 'overview' ? (
-        <AcademicOverview
-          catalogue={catalogue}
-          structure={structure}
-          busy={busy}
-          loading={loading}
-          search={search}
-          onClearSearch={onClearSearch}
-          onNavigate={onNavigate}
-          onCreate={(entity) => onOpenRecords(entity, true)}
-          onOpenRecords={onOpenRecords}
-        />
-      ) : (
-        <AcademicAreaView
-          page={page}
-          catalogue={catalogue}
-          busy={busy}
-          onNavigate={onNavigate}
-          onOpenRecords={onOpenRecords}
-        />
-      )}
+      <AcademicOverview
+        catalogue={catalogue}
+        structure={structure}
+        busy={busy}
+        loading={loading}
+        search={search}
+        onClearSearch={onClearSearch}
+        onNavigate={onNavigate}
+        onCreate={(entity) => onOpenRecords(entity, true)}
+        onOpenRecords={onOpenRecords}
+      />
     </div>
   )
 }
