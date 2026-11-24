@@ -1,16 +1,18 @@
-import type { StudentInvitationInput } from '../../../types/admin/students.ts'
+import type { StudentInvitationInput } from '../../../../types/admin/students.ts'
 
 export default function StudentIdentityForm({
   student,
   busy,
   hasSection,
   onFieldChange,
+  onBack,
   onContinue,
 }: {
   student: StudentInvitationInput
   busy: boolean
   hasSection: boolean
   onFieldChange: (field: keyof StudentInvitationInput, value: string) => void
+  onBack: () => void
   onContinue: () => void
 }) {
   return (
@@ -22,8 +24,7 @@ export default function StudentIdentityForm({
       }}
     >
       <div className="student-onboarding-form-heading">
-        <span className="student-onboarding-eyebrow">Student information</span>
-        <h3>Enter the student’s details</h3>
+        <h2>Enter the student’s details</h2>
         <p>Use the institution’s official records. The email will receive the password setup link.</p>
       </div>
       <div className="student-onboarding-form-grid">
@@ -85,9 +86,14 @@ export default function StudentIdentityForm({
         <span>
           <b aria-hidden="true">*</b> Required fields
         </span>
-        <button type="submit" className="student-onboarding-primary" disabled={busy || !hasSection}>
-          Review details <span aria-hidden="true">→</span>
-        </button>
+        <div>
+          <button type="button" className="student-onboarding-secondary" disabled={busy} onClick={onBack}>
+            Back
+          </button>
+          <button type="submit" className="student-onboarding-primary" disabled={busy || !hasSection}>
+            Review details <span aria-hidden="true">→</span>
+          </button>
+        </div>
       </div>
     </form>
   )

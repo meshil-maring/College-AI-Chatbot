@@ -1,6 +1,6 @@
 import './__tests__/AdminShell.support.tsx'
 import { authState } from './__tests__/AdminShell.support.tsx'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import * as adminApi from '../../services/admin/adminApi.ts'
@@ -44,8 +44,9 @@ describe('administrator account workspace', () => {
   it('keeps student approvals available beneath the Students sidebar item', async () => {
     render(<AdminShell />)
     await userEvent.click(screen.getByRole('button', { name: 'Students', exact: true }))
-    expect(await screen.findByText('No students are awaiting approval right now.')).toBeInTheDocument()
-    expect(adminApi.listPendingStudents).toHaveBeenCalledWith('test-token')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Add Student' })).toBeInTheDocument()
+    // The Add Student page checks for waiting self-registration requests to link to.
+    await waitFor(() => expect(adminApi.listPendingStudents).toHaveBeenCalledWith('test-token'))
     expect(screen.getByRole('list', { name: 'Students pages' })).toBeInTheDocument()
   })
   it('places student destinations under the existing Students sidebar item', async () => {

@@ -1,4 +1,4 @@
-import StudentOnboardingProgress, { type OnboardingStep } from './StudentOnboardingProgress.tsx'
+import StudentOnboardingProgress from './StudentOnboardingProgress.tsx'
 
 export const registrationSteps = {
   single: [
@@ -14,29 +14,20 @@ export const registrationSteps = {
   ],
 }
 
+/** Step progress for a registration card, with the uploaded file name during bulk import. */
 export default function StudentOnboardingWorkflowHeader({
   mode,
-  fileName,
-  steps,
+  fileName = '',
   activeStep,
 }: {
   mode: 'single' | 'bulk'
-  fileName: string
-  steps: OnboardingStep[]
+  fileName?: string
   activeStep: number
 }) {
   return (
-    <>
-      <div className="student-onboarding-workflow-heading">
-        <div>
-          <span className="student-onboarding-eyebrow">
-            {mode === 'single' ? 'INDIVIDUAL REGISTRATION' : 'BULK REGISTRATION'}
-          </span>
-          <h3>{mode === 'single' ? 'Add one student' : 'Add multiple students'}</h3>
-        </div>
-        {mode === 'bulk' && fileName && <span className="student-onboarding-file-pill">{fileName}</span>}
-      </div>
-      <StudentOnboardingProgress steps={steps} activeStep={activeStep} />
-    </>
+    <div className="student-onboarding-workflow-heading">
+      <StudentOnboardingProgress steps={registrationSteps[mode]} activeStep={activeStep} />
+      {mode === 'bulk' && fileName && <span className="student-onboarding-file-pill">{fileName}</span>}
+    </div>
   )
 }

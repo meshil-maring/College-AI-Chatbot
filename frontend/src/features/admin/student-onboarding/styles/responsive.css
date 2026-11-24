@@ -1,7 +1,4 @@
 @media (max-width: 760px) {
-  .student-onboarding-mode-picker {
-    grid-template-columns: 1fr;
-  }
   .student-onboarding-progress li {
     display: grid;
     justify-items: start;
@@ -57,18 +54,12 @@
     right: 0;
   }
   .student-onboarding-workflow-heading {
-    align-items: flex-start;
-    flex-direction: column;
+    flex-direction: column-reverse;
   }
   .student-onboarding-file-pill {
     max-width: 100%;
   }
   .student-onboarding-result-counts {
     grid-template-columns: 1fr;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .student-onboarding-mode-picker > button {
-    transition: none;
   }
 }

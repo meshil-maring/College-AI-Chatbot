@@ -1,6 +1,6 @@
 import { Mail, UserRound } from 'lucide-react'
-import type { AcademicSection } from '../../../types/academicStructure.ts'
-import type { StudentInvitationInput } from '../../../types/admin/students.ts'
+import type { AcademicSection } from '../../../../types/academicStructure.ts'
+import type { StudentInvitationInput } from '../../../../types/admin/students.ts'
 
 export default function StudentInvitationReview({
   student,
@@ -18,7 +18,7 @@ export default function StudentInvitationReview({
           <UserRound size={20} />
         </span>
         <div>
-          <h3>Check the student details</h3>
+          <h2>Check the student details</h2>
           <p>We’ll create a pending account and email a secure password setup link.</p>
         </div>
       </div>

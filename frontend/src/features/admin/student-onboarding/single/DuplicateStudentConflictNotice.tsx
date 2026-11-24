@@ -1,3 +1,4 @@
+import StudentPageLink from '../shared/StudentPageLink.tsx'
 import type {
   StudentIdentityAccountMatch,
   StudentIdentityInvitationMatch,
@@ -15,12 +16,6 @@ export default function DuplicateStudentConflictNotice({
   reviewError: string
   reviewing: boolean
 }) {
-  const params = new URLSearchParams(window.location.search)
-  params.set('view', 'approvals')
-  params.set('student-page', 'all')
-  params.delete('academic')
-  params.delete('academic-search')
-  params.delete('student-search')
   const matches = [...(review?.students ?? []), ...(review?.invitations ?? [])]
 
   return (
@@ -30,7 +25,7 @@ export default function DuplicateStudentConflictNotice({
         No new student was created. All Students only includes student accounts and pending invitations belonging to
         your institution.
       </p>
-      <a href={`${window.location.pathname}?${params.toString()}`}>Open All Students</a>
+      <StudentPageLink page="all">Open All Students</StudentPageLink>
       {reviewing && <p role="status">Checking for matching student records in your institution…</p>}
       {reviewError && <p role="status">{reviewError}</p>}
       {review && matches.length > 0 && (

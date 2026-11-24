@@ -30,7 +30,7 @@ export default function StudentImportUpload({
           <FileSpreadsheet size={22} />
         </span>
         <div>
-          <h3>Upload your student list</h3>
+          <h2>Upload your student list</h2>
           <p>Start with a CSV or Excel workbook. You can check and fix every row before sending.</p>
         </div>
         <button

@@ -1,5 +1,5 @@
-import type { StudentInvitationInput } from '../../../types/admin/students.ts'
-import { normalizeCsvHeader as normalizeHeader, parseCsv } from '../../../lib/csv.ts'
+import type { StudentInvitationInput } from '../../../../types/admin/students.ts'
+import { normalizeCsvHeader as normalizeHeader, parseCsv } from '../../../../lib/csv.ts'
 
 export interface StudentImportRow extends StudentInvitationInput {
   sourceRow: number

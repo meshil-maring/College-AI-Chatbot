@@ -1,5 +1,5 @@
 import { RefreshCw } from 'lucide-react'
-import type { StudentInvitation } from '../../../types/admin/students.ts'
+import type { StudentInvitation } from '../../../../types/admin/students.ts'
 
 export default function StudentInvitationList({
   invitations,
