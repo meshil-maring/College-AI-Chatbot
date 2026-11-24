@@ -3,24 +3,38 @@ import { PlacementStep } from '../placement/PlacementStep.tsx'
 import type { PlacementOptions } from '../placement/usePlacementOptions.ts'
 import StudentOnboardingWorkflowHeader from '../shared/StudentOnboardingWorkflowHeader.tsx'
 import CompletionCard from './CompletionCard.tsx'
+import DuplicatePrecheckNotice from './DuplicatePrecheckNotice.tsx'
 import DuplicateStudentConflictNotice from './DuplicateStudentConflictNotice.tsx'
 import StudentIdentityForm from './StudentIdentityForm.tsx'
 import StudentInvitationReview from './StudentInvitationReview.tsx'
-import type { SingleRegistration } from './useSingleRegistration.ts'
+import { RESULT_STEP, REVIEW_STEP, type SingleRegistration } from './useSingleRegistration.ts'
 
 export default function SingleRegistrationWorkflow({
   registration,
   placement,
+  resending,
+  onResend,
 }: {
   registration: SingleRegistration
   placement: PlacementOptions
+  resending: boolean
+  onResend: (invitationId: string) => Promise<'sent' | 'failed' | null>
 }) {
   const { step, goTo, student, sectionId, error, busy } = registration
   const { selectedSection, selectedCohort } = placement
+  const placementLabel =
+    selectedSection && selectedCohort
+      ? `${selectedCohort.code} / ${selectedSection.code} · ${selectedSection.name}`
+      : ''
+  const duplicateError = error.includes('already in use')
 
   return (
     <section className="student-onboarding-workflow" aria-label="Single student registration">
-      <StudentOnboardingWorkflowHeader mode="single" activeStep={step} />
+      <StudentOnboardingWorkflowHeader
+        mode="single"
+        activeStep={step}
+        onSelectStep={busy || step === RESULT_STEP ? undefined : goTo}
+      />
       {placement.error && (
         <p className="student-onboarding-inline-error" role="alert">
           {placement.error}
@@ -40,16 +54,16 @@ export default function SingleRegistrationWorkflow({
         <StudentIdentityForm
           student={student}
           busy={busy}
-          hasSection={!!sectionId}
+          placementLabel={placementLabel}
           onFieldChange={registration.setField}
           onBack={() => goTo(0)}
-          onContinue={() => goTo(2)}
+          onContinue={() => goTo(REVIEW_STEP)}
         />
       )}
-      {step === 2 && selectedSection && (
+      {step === REVIEW_STEP && selectedSection && (
         <div className="student-onboarding-stage">
           <StudentInvitationReview student={student} section={selectedSection} batchCode={selectedCohort?.code ?? ''} />
-          {error && error.includes('already in use') ? (
+          {duplicateError ? (
             <DuplicateStudentConflictNotice
               message={error}
               review={registration.identityReview}
@@ -60,7 +74,13 @@ export default function SingleRegistrationWorkflow({
             <p className="student-onboarding-inline-error" role="alert">
               {error}
             </p>
-          ) : null}
+          ) : (
+            <DuplicatePrecheckNotice
+              review={registration.identityReview}
+              reviewing={registration.identityReviewing}
+              onEdit={() => goTo(1)}
+            />
+          )}
           <div className="student-onboarding-stage-actions">
             <button type="button" className="student-onboarding-secondary" disabled={busy} onClick={() => goTo(1)}>
               Back to details
@@ -76,8 +96,26 @@ export default function SingleRegistrationWorkflow({
           </div>
         </div>
       )}
-      {step === 3 && (
-        <CompletionCard sent={registration.delivery === 'sent'} email={student.email} onAgain={registration.reset} />
+      {step === RESULT_STEP && (
+        <CompletionCard
+          sent={registration.delivery === 'sent'}
+          email={student.email}
+          placementLabel={placementLabel}
+          resending={resending}
+          onAgain={registration.registerAnother}
+          onChangePlacement={() => {
+            registration.registerAnother()
+            goTo(0)
+          }}
+          onResend={
+            registration.invitationId
+              ? () =>
+                  void onResend(registration.invitationId).then((status) => {
+                    if (status === 'sent') registration.markDelivered()
+                  })
+              : undefined
+          }
+        />
       )}
     </section>
   )

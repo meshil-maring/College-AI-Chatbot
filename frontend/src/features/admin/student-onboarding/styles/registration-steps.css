@@ -1,0 +1,170 @@
+/* Add Student: placement picker, details form feedback, duplicate pre-check and result actions. */
+.student-onboarding-placement-picker {
+  display: grid;
+  gap: 1rem;
+}
+.student-onboarding-section-choices {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.student-onboarding-section-choices legend {
+  margin-bottom: 0.5rem;
+  padding: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.student-onboarding-section-choices legend b {
+  color: var(--ui-accent);
+}
+.student-onboarding-section-choices > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.student-onboarding-section-choices label {
+  position: relative;
+  display: flex;
+  min-width: 7rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--ui-border-control);
+  border-radius: 0.5rem;
+  background: var(--ui-surface-raised);
+  cursor: pointer;
+}
+.student-onboarding-section-choices label:hover {
+  background: var(--ui-surface-hover);
+}
+.student-onboarding-section-choices label:has(input:checked) {
+  border-color: var(--ui-accent);
+  box-shadow: inset 0 0 0 1px var(--ui-accent);
+}
+.student-onboarding-section-choices label:has(input:focus-visible) {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+.student-onboarding-section-choices input {
+  accent-color: var(--ui-accent);
+}
+.student-onboarding-section-choices label > span {
+  display: grid;
+  line-height: 1.25;
+}
+.student-onboarding-section-choices strong {
+  font-size: 0.85rem;
+}
+.student-onboarding-section-choices small {
+  color: var(--ui-text-muted);
+  font-size: 0.72rem;
+}
+.student-onboarding-placement-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.5rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
+  font-size: 0.82rem;
+}
+.student-onboarding-placement-summary strong {
+  color: var(--ui-text);
+}
+.student-onboarding-dashboard .student-onboarding-text-button {
+  display: inline;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.student-onboarding-identity-form input[aria-invalid='true'] {
+  border-color: var(--ui-danger);
+}
+.student-onboarding-identity-form label > .student-onboarding-field-error {
+  color: var(--ui-danger);
+}
+.student-onboarding-precheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--ui-warning);
+  border-radius: 0.5rem;
+  background: var(--ui-warning-bg);
+  font-size: 0.82rem;
+}
+.student-onboarding-precheck.is-checking {
+  border-color: var(--ui-border);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-muted);
+}
+.student-onboarding-precheck > svg {
+  flex: 0 0 auto;
+  color: var(--ui-warning);
+}
+.student-onboarding-precheck > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+}
+.student-onboarding-precheck ul,
+.student-onboarding-precheck p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.student-onboarding-precheck ul {
+  padding-left: 1.1rem;
+}
+.student-onboarding-precheck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.student-onboarding-precheck-actions a {
+  color: var(--ui-accent);
+  font-weight: 600;
+}
+.student-onboarding-step-button {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.student-onboarding-step-button:hover strong {
+  color: var(--ui-accent);
+  text-decoration: underline;
+}
+.student-onboarding-completion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.student-onboarding-completion .student-onboarding-completion-actions button {
+  margin-top: 0;
+}
+.student-onboarding-completion .student-onboarding-completion-placement {
+  font-size: 0.8rem;
+}

@@ -98,7 +98,7 @@ beforeEach(() => {
     failed: 0,
     rows: [{ row: 2, status: 'created', invitation: null, delivery_status: 'sent', message: 'Link sent.' }],
   })
-  mocks.reviewIdentity.mockResolvedValue({ students: [], invitations: [], email_conflict_exists: true })
+  mocks.reviewIdentity.mockResolvedValue({ students: [], invitations: [], email_conflict_exists: false })
 })
 
 export function renderPage({ canReview = false, bulkOnly = false } = {}) {
@@ -114,5 +114,6 @@ export function renderPage({ canReview = false, bulkOnly = false } = {}) {
 }
 
 export async function chooseSection(user: ReturnType<typeof userEvent.setup>) {
-  await user.selectOptions(screen.getByLabelText(/Batch and section/), 'section-1')
+  // A batch with one active section selects that section automatically.
+  await user.selectOptions(screen.getByRole('combobox', { name: /Batch/ }), 'batch-1')
 }

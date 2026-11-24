@@ -8,6 +8,9 @@ function emptyStudent(): StudentInvitationInput {
   return { student_name: '', register_number: '', university_roll_number: null, email: '' }
 }
 
+export const REVIEW_STEP = 2
+export const RESULT_STEP = 3
+
 /** Placement → details → review → result state for registering one student. */
 export function useSingleRegistration(accessToken: string, identity: string) {
   const conflictReview = useStudentIdentityConflictReview(accessToken)
@@ -15,12 +18,16 @@ export function useSingleRegistration(accessToken: string, identity: string) {
   const [step, setStep] = useState(0)
   const [student, setStudent] = useState<StudentInvitationInput>(emptyStudent)
   const [delivery, setDelivery] = useState<'sent' | 'failed'>('sent')
+  const [invitationId, setInvitationId] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
   function goTo(next: number) {
     setError('')
     setStep(next)
+    // Check for existing students before the admin confirms, so duplicates surface early.
+    if (next === REVIEW_STEP) void conflictReview.lookup(student)
+    else conflictReview.clear()
   }
   function setField(field: keyof StudentInvitationInput, value: string) {
     setStudent((current) => ({ ...current, [field]: value }))
@@ -41,7 +48,8 @@ export function useSingleRegistration(accessToken: string, identity: string) {
         university_roll_number: student.university_roll_number?.trim() || null,
       })
       setDelivery(result.delivery_status)
-      setStep(3)
+      setInvitationId(result.invitation?.invitation_id ?? '')
+      setStep(RESULT_STEP)
       refreshStudentInvitations(identity)
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : 'Student invitation could not be created.'
@@ -52,12 +60,11 @@ export function useSingleRegistration(accessToken: string, identity: string) {
     }
   }
 
-  function reset() {
+  /** Start the next student in the same batch and section. */
+  function registerAnother() {
     setStudent(emptyStudent())
-    setStep(0)
-    setSectionId('')
-    setError('')
-    conflictReview.clear()
+    setInvitationId('')
+    goTo(sectionId ? 1 : 0)
   }
 
   return {
@@ -68,13 +75,15 @@ export function useSingleRegistration(accessToken: string, identity: string) {
     student,
     setField,
     delivery,
+    invitationId,
     error,
     busy,
     identityReview: conflictReview.identityReview,
     identityReviewError: conflictReview.identityReviewError,
     identityReviewing: conflictReview.identityReviewing,
     submit,
-    reset,
+    registerAnother,
+    markDelivered: () => setDelivery('sent'),
   }
 }
 

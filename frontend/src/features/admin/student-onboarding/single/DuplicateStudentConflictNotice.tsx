@@ -53,10 +53,10 @@ export default function DuplicateStudentConflictNotice({
   )
 }
 
-function describeStudent(student: StudentIdentityAccountMatch) {
+export function describeStudent(student: StudentIdentityAccountMatch) {
   return `${student.student_name} · ${student.email ?? 'No email'} · Register ${student.register_number ?? '—'} · Roll ${student.university_roll_number ?? '—'} · ${student.has_signed_in ? 'Signed in' : 'Not signed in'} · Approval ${student.approval_status}`
 }
 
-function describeInvitation(invitation: StudentIdentityInvitationMatch) {
+export function describeInvitation(invitation: StudentIdentityInvitationMatch) {
   return `${invitation.student_name} · ${invitation.email} · Register ${invitation.register_number} · Roll ${invitation.university_roll_number ?? '—'} · Pending invitation, email ${invitation.email_delivery_status}`
 }

@@ -16,15 +16,18 @@ export function useStudentInvitations(accessToken: string, identity: string, ena
   const [busy, setBusy] = useState(false)
   const invitations = query.data?.invitations ?? []
 
-  async function resend(invitationId: string) {
+  /** Resolves to the new delivery status, or null when the request failed. */
+  async function resend(invitationId: string): Promise<'sent' | 'failed' | null> {
     setBusy(true)
     try {
       const result = await resendStudentInvitation(accessToken, invitationId)
       if (result.delivery_status === 'failed') notification.warning(result.delivery_message)
       else notification.success(result.delivery_message)
       refreshStudentInvitations(identity)
+      return result.delivery_status
     } catch (reason) {
       notification.error(reason instanceof Error ? reason.message : 'A new setup link could not be sent.')
+      return null
     } finally {
       setBusy(false)
     }

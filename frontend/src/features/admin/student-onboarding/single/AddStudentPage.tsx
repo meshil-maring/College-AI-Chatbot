@@ -36,7 +36,12 @@ export default function AddStudentPage({
         }
       />
       {canReview && <RegistrationRequestsNotice accessToken={accessToken} />}
-      <SingleRegistrationWorkflow registration={registration} placement={placement} />
+      <SingleRegistrationWorkflow
+        registration={registration}
+        placement={placement}
+        resending={invitations.busy}
+        onResend={invitations.resend}
+      />
       <section className="student-onboarding-records" aria-label="Pending invitations">
         <InvitationMetrics
           invitations={invitations.invitations}

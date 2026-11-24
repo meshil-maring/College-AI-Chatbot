@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import PlacementPicker from './PlacementPicker.tsx'
 import type { PlacementOptions } from './usePlacementOptions.ts'
 
 export function PlacementStep({
@@ -17,7 +18,7 @@ export function PlacementStep({
   onContinue: () => void
   continueLabel: string
 }) {
-  const { sections, cohorts, selectedSection, selectedLabel, loading } = placement
+  const { sections, selectedSection, selectedLabel, loading } = placement
   return (
     <div className="student-onboarding-stage">
       <div className="student-onboarding-form-heading">
@@ -28,23 +29,7 @@ export function PlacementStep({
             : 'Choose an active batch and section for the new student.'}
         </p>
       </div>
-      <label className="student-onboarding-section-select">
-        <span>
-          Batch and section <b aria-hidden="true">*</b>
-        </span>
-        <select required value={sectionId} disabled={loading} onChange={(event) => onChange(event.target.value)}>
-          <option value="">{loading ? 'Loading active sections…' : 'Select a batch and section'}</option>
-          {sections.map((section) => {
-            const cohort = cohorts.find((item) => item.admission_cohort_id === section.admission_cohort_id)
-            return (
-              <option key={section.academic_section_id} value={section.academic_section_id}>
-                {cohort?.code ?? 'Batch'} · {cohort?.name ?? 'Unknown batch'} · {section.code} {section.name}
-              </option>
-            )
-          })}
-        </select>
-        <small>Only active sections are available. The selected batch code appears in the student email.</small>
-      </label>
+      <PlacementPicker placement={placement} sectionId={sectionId} onChange={onChange} />
       {selectedSection && (
         <div className="student-onboarding-placement-card">
           <span className="student-onboarding-placement-mark">{selectedLabel.split(' · ')[0]}</span>

@@ -19,14 +19,16 @@ export default function StudentOnboardingWorkflowHeader({
   mode,
   fileName = '',
   activeStep,
+  onSelectStep,
 }: {
   mode: 'single' | 'bulk'
   fileName?: string
   activeStep: number
+  onSelectStep?: (index: number) => void
 }) {
   return (
     <div className="student-onboarding-workflow-heading">
-      <StudentOnboardingProgress steps={registrationSteps[mode]} activeStep={activeStep} />
+      <StudentOnboardingProgress steps={registrationSteps[mode]} activeStep={activeStep} onSelect={onSelectStep} />
       {mode === 'bulk' && fileName && <span className="student-onboarding-file-pill">{fileName}</span>}
     </div>
   )

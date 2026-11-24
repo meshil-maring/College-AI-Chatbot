@@ -71,7 +71,8 @@ describe('Add Student page', () => {
     await user.click(screen.getByRole('button', { name: /Continue to student details/ }))
     await fillDetails(user)
     await user.click(screen.getByRole('button', { name: 'Back' }))
-    expect(screen.getByLabelText(/Batch and section/)).toHaveValue('section-1')
+    expect(screen.getByRole('combobox', { name: /Batch/ })).toHaveValue('batch-1')
+    expect(screen.getByRole('radio', { name: /Section A/ })).toBeChecked()
     await user.click(screen.getByRole('button', { name: /Continue to student details/ }))
     expect(screen.getByRole('textbox', { name: /Student name/ })).toHaveValue('Ada Lovelace')
   })
@@ -79,6 +80,7 @@ describe('Add Student page', () => {
   it('submits registration directly and shows server-side duplicate conflicts', async () => {
     const user = userEvent.setup()
     window.history.replaceState(null, '', '/login/admin')
+    mocks.reviewIdentity.mockResolvedValue({ students: [], invitations: [], email_conflict_exists: true })
     mocks.createSingle.mockRejectedValueOnce(
       new Error('Email, Register Number, or University Roll No. is already in use'),
     )
