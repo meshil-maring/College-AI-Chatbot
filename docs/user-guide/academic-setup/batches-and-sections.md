@@ -105,4 +105,27 @@ finish their registration.
 - A section's capacity cannot be lowered below the capacity of any of its active
   section subjects. Lower the section subjects first, then the section.
 
+## Starting the next academic year
+
+At the end of a year, **Roll over to next year** on the **Academic Calendar**
+page does the yearly setup in one step:
+
+1. Choose the year to copy from (the current year is selected).
+2. Review the preview:
+   - **Calendar:** the next academic year and its terms, with dates moved
+     forward by one year (for example *2026 - 2027* becomes *2027 - 2028*).
+   - **Sections:** each active batch's sections continue into their next
+     semesters. With two terms a year, Section A of Semester 1 (Odd Term)
+     becomes Section A of Semester 3 in next year's Odd Term, with the same code
+     and capacity. Every active subject of that semester in the batch's
+     curriculum is made available to the new section.
+   - **Not continued:** batches that end before next year, or whose curriculum
+     has no further semesters.
+3. Select **Roll over**. Records that already exist are reused, so running it
+   again never creates duplicates. If it stops part-way, select **Retry**: it
+   continues with whatever is still missing.
+
+Afterwards, review the new sections and adjust any subjects, then assign
+students in **Student Enrollment**.
+
 Next: [Student enrollment →](student-enrollment.md)

@@ -7,7 +7,18 @@
   margin-top: 0;
   color: var(--ui-text);
 }
-.calendar-page .academic-page-header > button {
+.calendar-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.calendar-header-actions svg {
+  width: 16px;
+  height: 16px;
+}
+.calendar-page .academic-page-header > button,
+.calendar-header-actions > button {
   flex-shrink: 0;
   min-height: var(--ui-control-height);
   padding-inline: 20px;

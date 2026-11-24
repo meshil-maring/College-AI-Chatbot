@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { CalendarDays, ChevronRight, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { CalendarDays, ChevronRight, Plus, Repeat } from 'lucide-react'
 import { calendarTabs, type CalendarTab } from './calendarModel.ts'
 import { useCalendar, type CalendarContext } from './useCalendar.ts'
 import { useCalendarEditor } from './useCalendarEditor.ts'
@@ -14,6 +14,7 @@ import './styles/calendar.css'
 import { useVisibleTab } from '../navigation/useVisibleTab.ts'
 import { useCalendarDeletion } from './useCalendarDeletion.ts'
 import AcademicDeleteDialog from '../deletion/AcademicDeleteDialog.tsx'
+import RolloverDialog from '../rollover/RolloverDialog.tsx'
 
 interface Props extends CalendarContext {
   initialTab: CalendarTab
@@ -36,6 +37,7 @@ export default function AcademicCalendarPage({
   const editor = useCalendarEditor(context, state)
   const deletion = useCalendarDeletion(context, state, editor.saving)
   const tabs = useVisibleTab(state.tab)
+  const [rollingOver, setRollingOver] = useState(false)
   useEffect(() => {
     if (!createInitially || state.loading) return
     if (state.canManageYears && !state.busy) editor.open('academic_years', 'add')
@@ -64,14 +66,26 @@ export default function AcademicCalendarPage({
             numbered semesters in a program curriculum.
           </p>
         </div>
-        <button
-          type="button"
-          className="academic-primary-button"
-          disabled={!state.canManageYears || state.busy || editor.saving || deletion.saving}
-          onClick={() => editor.open('academic_years', 'add')}
-        >
-          <Plus aria-hidden="true" /> Add Academic Year
-        </button>
+        <div className="calendar-header-actions">
+          <button
+            type="button"
+            className="academic-secondary-button"
+            disabled={
+              !state.canManageYears || !state.canManageSemesters || state.busy || editor.saving || deletion.saving
+            }
+            onClick={() => setRollingOver(true)}
+          >
+            <Repeat aria-hidden="true" /> Roll over to next year
+          </button>
+          <button
+            type="button"
+            className="academic-primary-button"
+            disabled={!state.canManageYears || state.busy || editor.saving || deletion.saving}
+            onClick={() => editor.open('academic_years', 'add')}
+          >
+            <Plus aria-hidden="true" /> Add Academic Year
+          </button>
+        </div>
       </header>
       <CalendarSummary state={state} />
       {(!context.canReadCatalogues || (records && !state.canManageYears && !state.canManageSemesters)) && (
@@ -198,6 +212,7 @@ export default function AcademicCalendarPage({
         <CalendarDrawer editor={editor} state={state} />
       )}
       {deletion.active && <AcademicDeleteDialog deletion={deletion.active} />}
+      {rollingOver && <RolloverDialog context={context} onClose={() => setRollingOver(false)} />}
     </section>
   )
 }

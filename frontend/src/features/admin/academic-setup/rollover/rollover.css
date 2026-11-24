@@ -1,0 +1,120 @@
+.rollover-drawer {
+  width: min(560px, 100vw);
+}
+.rollover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rollover-source {
+  display: grid;
+  gap: 6px;
+  font-size: var(--ui-type-body);
+}
+.rollover-source select {
+  min-height: var(--ui-control-height);
+  padding: 0 10px;
+  border: 1px solid var(--ui-border-control);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+}
+.rollover-note,
+.rollover-empty {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-small);
+}
+.rollover-error,
+.rollover-done {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--ui-radius-md);
+  font-size: var(--ui-type-small);
+  line-height: 1.5;
+}
+.rollover-error {
+  border-left: 2px solid var(--ui-danger);
+  background: color-mix(in srgb, var(--ui-danger) 10%, transparent);
+}
+.rollover-done {
+  border-left: 2px solid var(--ui-success);
+  background: var(--ui-success-bg);
+}
+.rollover-progress {
+  display: grid;
+  gap: 6px;
+  font-size: var(--ui-type-small);
+}
+.rollover-meter {
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-border);
+}
+.rollover-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--ui-accent);
+  transition: width 0.2s ease;
+}
+.rollover-preview {
+  display: grid;
+  gap: 8px;
+}
+.rollover-preview h3 {
+  margin: 8px 0 0;
+  font-size: var(--ui-type-body);
+  font-weight: 600;
+}
+.rollover-preview h3 small {
+  color: var(--ui-text-muted);
+  font-weight: 400;
+}
+.rollover-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+}
+.rollover-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: var(--ui-type-small);
+}
+.rollover-list > li + li {
+  border-top: 1px solid var(--ui-border);
+}
+.rollover-list span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.rollover-list small {
+  color: var(--ui-text-muted);
+}
+.rollover-list.is-skipped {
+  border-style: dashed;
+}
+.rollover-tag {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 50%, transparent);
+  border-radius: var(--ui-radius-pill);
+  color: var(--ui-accent);
+  font-size: var(--ui-type-small);
+}
+.rollover-tag.is-existing {
+  border-color: var(--ui-border);
+  color: var(--ui-text-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rollover-meter > span {
+    transition: none;
+  }
+}
