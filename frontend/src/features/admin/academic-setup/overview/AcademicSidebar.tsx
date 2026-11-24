@@ -81,6 +81,7 @@ export default function AcademicSidebar({ page, onNavigate }: Props) {
             )}
         </details>
       ))}
+      {item('guide')}
     </nav>
   )
 }

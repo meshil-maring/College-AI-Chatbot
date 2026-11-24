@@ -7,6 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
+    fs: {
+      // The in-app Academic Setup guide imports docs/user-guide Markdown.
+      // Allow only that folder outside the frontend, never the repository root.
+      allow: ['.', '../docs/user-guide'],
+    },
     proxy: {
       // Development-only proxy: lets the browser call the FastAPI backend on
       // http://localhost:8000 via same-origin "/api" paths, so the locked

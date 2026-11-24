@@ -118,6 +118,17 @@
   border-color: var(--admin-yellow);
   background: var(--ui-surface);
 }
+.academic-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.academic-header-actions > .academic-secondary-button > svg {
+  width: 16px;
+  height: 16px;
+}
 .academic-quick-actions {
   position: relative;
   flex-shrink: 0;

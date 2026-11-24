@@ -1,4 +1,4 @@
-import { ClipboardList, History, CalendarDays, CalendarRange } from 'lucide-react'
+import { BookOpenText, ClipboardList, History, CalendarDays, CalendarRange } from 'lucide-react'
 import type { AcademicArea } from '../overview/academicOverviewModel.ts'
 
 export const academicDestinations: readonly AcademicArea[] = [
@@ -33,5 +33,13 @@ export const academicDestinations: readonly AcademicArea[] = [
     description: 'Assign approved students to a section so they can register their semester subjects.',
     action: 'Manage Student Enrollment',
     note: 'Students choose their subject options in Semester Registration.',
+  },
+  {
+    page: 'guide',
+    title: 'User Guide',
+    icon: BookOpenText,
+    description: 'Step-by-step instructions for setting up departments, curricula, batches and enrollment.',
+    action: 'Open User Guide',
+    note: 'A worked example from departments to student enrollment.',
   },
 ]

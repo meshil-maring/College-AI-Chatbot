@@ -1,0 +1,117 @@
+/* Typography for the Markdown guide content. */
+.academic-guide-markdown {
+  color: var(--ui-text-muted);
+  font-size: var(--ui-type-body);
+  line-height: 1.7;
+}
+.academic-guide-markdown > :first-child {
+  margin-top: 0;
+}
+.academic-guide-markdown h1 {
+  margin: 0 0 12px;
+  color: var(--ui-text);
+  font-size: var(--ui-type-section);
+  font-weight: 700;
+}
+.academic-guide-markdown h2 {
+  margin: 28px 0 10px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text);
+  font-size: var(--ui-type-card);
+  font-weight: 650;
+}
+.academic-guide-markdown p,
+.academic-guide-markdown ul,
+.academic-guide-markdown ol {
+  margin: 0 0 12px;
+}
+.academic-guide-markdown ul,
+.academic-guide-markdown ol {
+  padding-left: 22px;
+}
+.academic-guide-markdown ul {
+  list-style: disc;
+}
+.academic-guide-markdown ol {
+  list-style: decimal;
+}
+.academic-guide-markdown li + li {
+  margin-top: 4px;
+}
+.academic-guide-markdown li:has(> input[type='checkbox']) {
+  list-style: none;
+  margin-left: -22px;
+}
+.academic-guide-markdown input[type='checkbox'] {
+  margin-right: 8px;
+  accent-color: var(--admin-yellow);
+}
+.academic-guide-markdown strong {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+.academic-guide-markdown code {
+  padding: 1px 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-raised);
+  color: var(--admin-yellow);
+  font-size: 0.8125rem;
+}
+.academic-guide-markdown pre {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+}
+.academic-guide-markdown pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-text);
+  line-height: 1.6;
+}
+.academic-guide-table {
+  margin: 0 0 14px;
+  overflow-x: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+}
+.academic-guide-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.academic-guide-table th,
+.academic-guide-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ui-border);
+  text-align: left;
+  vertical-align: top;
+}
+.academic-guide-table th {
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font-weight: 600;
+}
+.academic-guide-table tr:last-child td {
+  border-bottom: 0;
+}
+.academic-guide-link {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  line-height: inherit;
+}
+.academic-guide-link,
+.academic-guide-markdown a {
+  color: var(--admin-yellow);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

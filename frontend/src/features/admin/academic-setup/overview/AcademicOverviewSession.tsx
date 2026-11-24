@@ -1,4 +1,4 @@
-import { ChevronRight, Info } from 'lucide-react'
+import { BookOpenText, ChevronRight, Info } from 'lucide-react'
 import type { AcademicEntity } from '../../../../types/academicSetup.ts'
 import AcademicOverview from './AcademicOverview.tsx'
 import AcademicAreaView from './AcademicAreaView.tsx'
@@ -50,14 +50,19 @@ export default function AcademicOverviewSession({
           <h1>{title}</h1>
           <p>Manage your institution’s academic structure, programs, curricula, and calendar.</p>
         </div>
-        <AcademicQuickActions
-          key={page}
-          catalogue={catalogue}
-          structure={structure}
-          onNavigate={onNavigate}
-          busy={busy}
-          onCreate={(entity) => onOpenRecords(entity, true)}
-        />
+        <div className="academic-header-actions">
+          <button type="button" className="academic-secondary-button" onClick={() => onNavigate('guide')}>
+            <BookOpenText aria-hidden="true" /> User Guide
+          </button>
+          <AcademicQuickActions
+            key={page}
+            catalogue={catalogue}
+            structure={structure}
+            onNavigate={onNavigate}
+            busy={busy}
+            onCreate={(entity) => onOpenRecords(entity, true)}
+          />
+        </div>
       </header>
       <p className="academic-information" role={canReadCatalogues ? undefined : 'status'}>
         <Info aria-hidden="true" />

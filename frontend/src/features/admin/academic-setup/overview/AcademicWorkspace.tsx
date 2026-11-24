@@ -17,6 +17,7 @@ import { hasAcademicCatalogueReadAccess } from './useAcademicOverview.ts'
 import '../styles/overview.css'
 import AcademicJourney from '../navigation/AcademicJourney.tsx'
 import StudentEnrollmentPage from '../registration/StudentEnrollmentPage.tsx'
+import AcademicGuidePage from '../guide/AcademicGuidePage.tsx'
 import { calendarDestinations, calendarTabFor } from '../navigation/academicCalendarNavigation.ts'
 
 interface Props {
@@ -115,6 +116,7 @@ function AcademicWorkspaceContent(
         onEnrollment={() => props.onNavigate('enrollments')}
       />
     )
+  if (props.page === 'guide') return <AcademicGuidePage onOverview={() => props.onNavigate('overview')} />
   if (props.page === 'enrollments')
     return <StudentEnrollmentPage context={structureContext} onBack={() => props.onNavigate('sections')} />
   if (props.page === 'program-semesters' || props.page === 'curriculum' || props.page.startsWith('curriculum-'))

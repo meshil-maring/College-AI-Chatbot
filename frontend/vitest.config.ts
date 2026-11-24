@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  // The Academic Setup guide imports docs/user-guide Markdown (see vite.config.ts).
+  server: { fs: { allow: ['.', '../docs/user-guide'] } },
   test: {
     environment: 'jsdom',
     globals: true,
