@@ -62,6 +62,10 @@ For Greenfield College, add:
 | 2 | Data Structures | Core | Yes |
 | 2 | Digital Logic | Core | Yes |
 
+**Tip:** to fill a whole study plan at once, use **Import CSV** on the Subjects
+page, choose this draft under **Place in draft curriculum**, and give each row a
+`semester`. See [Importing many subjects](foundations.md).
+
 ## 2.3 Add student choices *(optional)*
 
 Use choice groups when students pick one option from several, for example an

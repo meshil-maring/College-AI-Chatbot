@@ -189,3 +189,12 @@
     opacity: 0.45;
   }
 }
+.subject-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.subject-header-actions svg {
+  width: 16px;
+  height: 16px;
+}

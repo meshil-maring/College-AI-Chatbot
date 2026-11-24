@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
-import { ChevronRight, Info, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ChevronRight, FileUp, Info, Plus } from 'lucide-react'
 import { useSubjects, type SubjectsContext } from './useSubjects.ts'
 import { useSubjectEditor } from './useSubjectEditor.ts'
 import SubjectSummary from './SubjectSummary.tsx'
 import SubjectFilters from './SubjectFilters.tsx'
 import SubjectTable from './SubjectTable.tsx'
 import SubjectDrawer from './SubjectDrawer.tsx'
+import SubjectImportDialog from './import/SubjectImportDialog.tsx'
 import './styles/subjects.css'
 
 interface Props extends SubjectsContext {
@@ -15,6 +16,7 @@ interface Props extends SubjectsContext {
 }
 export default function SubjectsPage({ createInitially, onCreateHandled, onOverview, ...context }: Props) {
   const state = useSubjects(context)
+  const [importing, setImporting] = useState(false)
   const editor = useSubjectEditor({
     ...context,
     catalogue: state.catalogue,
@@ -45,14 +47,24 @@ export default function SubjectsPage({ createInitially, onCreateHandled, onOverv
           <h1 tabIndex={-1}>Subjects</h1>
           <p>Manage subject catalogue and subject details for your institution.</p>
         </div>
-        <button
-          type="button"
-          className="academic-primary-button"
-          disabled={!state.canCreate || state.busy || editor.saving}
-          onClick={() => editor.open('add')}
-        >
-          <Plus aria-hidden="true" /> Add Subject
-        </button>
+        <div className="subject-header-actions">
+          <button
+            type="button"
+            className="academic-secondary-button"
+            disabled={!state.canCreate || state.busy || editor.saving}
+            onClick={() => setImporting(true)}
+          >
+            <FileUp aria-hidden="true" /> Import CSV
+          </button>
+          <button
+            type="button"
+            className="academic-primary-button"
+            disabled={!state.canCreate || state.busy || editor.saving}
+            onClick={() => editor.open('add')}
+          >
+            <Plus aria-hidden="true" /> Add Subject
+          </button>
+        </div>
       </header>
       <SubjectSummary state={state} />
       {(!context.canReadCatalogues || !state.manageable || !state.canCreate) && (
@@ -94,6 +106,16 @@ export default function SubjectsPage({ createInitially, onCreateHandled, onOverv
       />
       {editor.panel && state.records && (
         <SubjectDrawer editor={editor} departments={state.departments} assignments={state.assignments} />
+      )}
+      {importing && (
+        <SubjectImportDialog
+          accessToken={context.accessToken}
+          institutionId={context.institutionId}
+          catalogue={state.catalogue}
+          structure={state.structure}
+          refresh={state.refreshAll}
+          onClose={() => setImporting(false)}
+        />
       )}
     </section>
   )

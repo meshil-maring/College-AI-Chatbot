@@ -17,7 +17,7 @@ export interface SubjectsContext {
   canReadCatalogues: boolean
 }
 export function useSubjects(context: SubjectsContext) {
-  const { query, catalogue, loading, error, structure, busy } = useAcademicStructure(context)
+  const { query, catalogue, loading, error, structure, busy, refresh } = useAcademicStructure(context)
   const denied = query.error instanceof AdminApiError && [401, 403].includes(query.error.status)
   const availableCatalogue = denied ? undefined : catalogue
   const records = availableCatalogue?.records.courses?.filter((item) => item.institution_id === context.institutionId)
@@ -51,6 +51,9 @@ export function useSubjects(context: SubjectsContext) {
   }
   return {
     query,
+    /** Curriculum structure and a refresh of both catalogues, used by the CSV import. */
+    structure,
+    refreshAll: refresh,
     catalogue: availableCatalogue,
     records,
     departments,

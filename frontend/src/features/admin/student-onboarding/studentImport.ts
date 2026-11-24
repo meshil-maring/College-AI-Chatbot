@@ -1,4 +1,5 @@
 import type { StudentInvitationInput } from '../../../types/admin/students.ts'
+import { normalizeCsvHeader as normalizeHeader, parseCsv } from '../../../lib/csv.ts'
 
 export interface StudentImportRow extends StudentInvitationInput {
   sourceRow: number
@@ -13,42 +14,6 @@ const HEADER_ALIASES: Record<string, keyof StudentInvitationInput> = {
   universityrollno: 'university_roll_number',
   universityrollnumber: 'university_roll_number',
   email: 'email',
-}
-
-function normalizeHeader(value: unknown): string {
-  return String(value ?? '').replace(/\uFEFF/g, '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-}
-
-function parseCsv(text: string): string[][] {
-  const rows: string[][] = []
-  let row: string[] = []
-  let field = ''
-  let quoted = false
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index]
-    if (quoted && character === '"' && text[index + 1] === '"') {
-      field += '"'
-      index += 1
-    } else if (character === '"') {
-      quoted = !quoted
-    } else if (!quoted && character === ',') {
-      row.push(field)
-      field = ''
-    } else if (!quoted && (character === '\n' || character === '\r')) {
-      row.push(field)
-      if (row.some((cell) => cell.trim())) rows.push(row)
-      row = []
-      field = ''
-      if (character === '\r' && text[index + 1] === '\n') index += 1
-    } else {
-      field += character
-    }
-    if (rows.length > 500) throw new Error('Upload no more than 500 student rows at a time.')
-  }
-  if (quoted) throw new Error('The CSV file contains an unclosed quoted field.')
-  row.push(field)
-  if (row.some((cell) => cell.trim())) rows.push(row)
-  return rows
 }
 
 function rowValue(row: unknown[], index: number | undefined): string {
@@ -84,7 +49,7 @@ export async function parseStudentFile(file: File): Promise<StudentImportRow[]> 
   const extension = file.name.split('.').pop()?.toLowerCase()
   const rawRows =
     extension === 'csv'
-      ? parseCsv(await file.text())
+      ? parseCsv(await file.text(), 500, 'student rows')
       : extension === 'xlsx'
         ? (await import('read-excel-file/browser')).default(file).then((sheets) => sheets[0]?.data ?? [])
         : null

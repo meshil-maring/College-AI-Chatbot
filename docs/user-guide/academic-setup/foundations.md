@@ -121,6 +121,30 @@ For Greenfield College, add these four subjects:
 | CS102 | Data Structures | 4 | 3-1-2 |
 | CS103 | Digital Logic | 3 | 3-0-2 |
 
+### Importing many subjects from a CSV file
+
+Instead of adding subjects one by one, select **Import CSV** on the Subjects page.
+
+1. Choose the **Department**.
+2. Optionally choose a draft curriculum under **Place in draft curriculum**. Rows
+   with a `semester` value are then also added to that semester of the plan.
+3. Select **Choose CSV file**. Use **Download template** to see the format:
+
+   ```
+   code,name,credits,L,T,P,semester,type,required,description
+   CS101,Programming Fundamentals,4,3,1,2,1,core,yes,
+   CS205,Machine Learning,3,3,0,0,5,elective,no,Semester 5 elective option
+   ```
+
+4. Review the preview. Rows with problems show the reason and are skipped.
+   Subjects whose code already exists in the department are reused, not
+   duplicated.
+5. Select **Import N rows**. If some rows fail, the button changes to **Retry
+   N failed rows** and repeats only those.
+
+`type` defaults to `core`. `required` defaults to `yes`, except for electives,
+which default to `no` so they can be used in choice groups.
+
 ## Check before moving on
 
 The **Setup guide** marks Foundations as ready when the selected program has
