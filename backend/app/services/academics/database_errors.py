@@ -1,6 +1,7 @@
 """Translate atomic Academic Setup failures without exposing database details."""
 
 from app.core.errors import AppError
+from app.services.academics.database_rule_messages import rule_message
 
 
 DATABASE_ERRORS = {
@@ -25,7 +26,8 @@ def translate_database_error(exc: Exception) -> AppError:
             "Academic setup schema is not available. Contact your administrator.",
             503, "ACADEMIC_SCHEMA_UNAVAILABLE",
         )
-    status, public_code, message = DATABASE_ERRORS.get(
+    specific = rule_message(code, str(getattr(exc, "message", "") or ""))
+    status, public_code, message = specific or DATABASE_ERRORS.get(
         code, (500, "ACADEMIC_OPERATION_FAILED", "Academic setup operation failed")
     )
     return AppError(message, status, public_code)

@@ -37,6 +37,9 @@ has no legacy mapping view.
 
 Migration `20261205000000_academic_setup_consistency` adds these database rules.
 The forms check the same rules first and explain the fix.
+If a rule is still broken on save, the backend maps the database message to a
+specific error code and explanation (`services/academics/database_rule_messages.py`);
+unknown database errors keep a generic message so no internal details leak.
 
 - A batch's start year is the calendar year its intake academic year starts.
   Its end year is filled from the program duration and may be shortened for

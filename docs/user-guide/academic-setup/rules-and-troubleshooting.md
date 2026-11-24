@@ -2,7 +2,7 @@
 
 The system checks these rules on every save, so the academic structure stays
 consistent. Forms explain the problem before you save; if a rule is still broken,
-the save is refused.
+the save is refused with a message that names the rule and how to fix it.
 
 [← Academic Setup guide](README.md)
 
@@ -32,7 +32,11 @@ the save is refused.
 | "Semester dates must fit its academic year" | A term starts or ends outside its year. | Adjust the term dates or the year dates. |
 | "Add at least one subject before publishing." | The draft curriculum is empty. | Add subjects in **Subjects by semester**. |
 | "Active academic year dates overlap" | Two active academic years cover the same dates. | Adjust the dates so active years do not overlap. |
-| "Check active parents, dependent records and academic dates" | A rule in the table above is broken, for example deactivating a department that still has active programs. | Check the rules above; deactivate dependent records first (programs before their department). |
+| "Other active records depend on this one. Deactivate them first…" | You are deactivating a record that still has active programs, subjects, batches or sections. | Deactivate the dependent records first (programs before their department). |
+| "This curriculum is published, so its subjects cannot change…" | Published curricula are read-only. | Use **Clone as draft**, change the draft and publish it as a new version. |
+| "One of this section's subjects allows more students than the new capacity…" | A section subject's capacity is above the new section capacity. | Lower that subject's capacity in **Subjects by section** first. |
+| "Choose a teaching term that falls within the batch's start and end years." | The term is outside the batch's years. | Pick a term inside the batch's years. |
+| "Check active parents, dependent records and academic dates" | A rule was broken that has no specific message yet. | Check the rules above. This message is now rare: most rules explain themselves. |
 | "This … cannot be deleted because it has linked …" | The record is in use. | Make it **Inactive** instead of deleting it. |
 
 ## Frequently asked questions
