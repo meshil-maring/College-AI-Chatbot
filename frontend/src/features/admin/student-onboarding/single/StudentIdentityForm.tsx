@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import PlacementSummary from '../placement/PlacementSummary.tsx'
 import type { StudentInvitationInput } from '../../../../types/admin/students.ts'
 import { STUDENT_FIELD_ORDER, validateStudent, type StudentField } from './studentValidation.ts'
 
@@ -67,16 +68,7 @@ export default function StudentIdentityForm({
         <h2>Enter the student’s details</h2>
         <p>Use the institution’s official records. The email will receive the password setup link.</p>
       </div>
-      {placementLabel && (
-        <div className="student-onboarding-placement-summary">
-          <span>
-            Placing in <strong>{placementLabel}</strong>
-          </span>
-          <button type="button" className="student-onboarding-text-button" disabled={busy} onClick={onBack}>
-            Change
-          </button>
-        </div>
-      )}
+      <PlacementSummary label={placementLabel} disabled={busy} onChange={onBack} />
       <div className="student-onboarding-form-grid">
         {STUDENT_FIELD_ORDER.map((field) => {
           const config = FIELDS[field]

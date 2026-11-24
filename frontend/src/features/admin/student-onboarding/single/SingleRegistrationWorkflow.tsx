@@ -1,5 +1,6 @@
 import { Mail } from 'lucide-react'
 import { PlacementStep } from '../placement/PlacementStep.tsx'
+import { shortPlacementLabel } from '../placement/PlacementSummary.tsx'
 import type { PlacementOptions } from '../placement/usePlacementOptions.ts'
 import StudentOnboardingWorkflowHeader from '../shared/StudentOnboardingWorkflowHeader.tsx'
 import CompletionCard from './CompletionCard.tsx'
@@ -22,10 +23,7 @@ export default function SingleRegistrationWorkflow({
 }) {
   const { step, goTo, student, sectionId, error, busy } = registration
   const { selectedSection, selectedCohort } = placement
-  const placementLabel =
-    selectedSection && selectedCohort
-      ? `${selectedCohort.code} / ${selectedSection.code} · ${selectedSection.name}`
-      : ''
+  const placementLabel = shortPlacementLabel(selectedCohort, selectedSection)
   const duplicateError = error.includes('already in use')
 
   return (

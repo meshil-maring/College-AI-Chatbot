@@ -16,20 +16,25 @@ export function useBulkImport(accessToken: string, identity: string) {
   const [results, setResults] = useState<StudentOnboardingBulkResult[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [reading, setReading] = useState(false)
   const readyRows = rows.filter((row) => row.errors.length === 0)
 
   async function upload(file?: File) {
     if (!file) return
     setFileError('')
     setResults([])
+    setReading(true)
     try {
       setRows(await parseStudentFile(file))
       setFileName(file.name)
-      setStep(1)
+      // Nothing else to do on the upload step, so go straight to checking the rows.
+      setStep(2)
     } catch (reason) {
       setRows([])
       setFileName('')
       setFileError(reason instanceof Error ? reason.message : 'The selected file could not be read.')
+    } finally {
+      setReading(false)
     }
   }
   function editRow(sourceRow: number, field: EditableField, value: string) {
@@ -91,6 +96,7 @@ export function useBulkImport(accessToken: string, identity: string) {
     results,
     error,
     busy,
+    reading,
     upload,
     editRow,
     removeRow,

@@ -1,5 +1,6 @@
 import { Check, Mail, UserPlus } from 'lucide-react'
 import { PlacementStep } from '../placement/PlacementStep.tsx'
+import PlacementSummary, { shortPlacementLabel } from '../placement/PlacementSummary.tsx'
 import { usePlacementOptions } from '../placement/usePlacementOptions.ts'
 import OnboardingPageHeading from '../shared/OnboardingPageHeading.tsx'
 import StudentOnboardingWorkflowHeader, { registrationSteps } from '../shared/StudentOnboardingWorkflowHeader.tsx'
@@ -14,6 +15,10 @@ export default function BulkImportPage({ accessToken, identity }: { accessToken:
   const bulk = useBulkImport(accessToken, identity)
   const placement = usePlacementOptions(accessToken, identity, true, bulk.sectionId)
   const { step, setStep, rows, readyRows, busy, error } = bulk
+  const placementLabel = shortPlacementLabel(placement.selectedCohort, placement.selectedSection)
+  const changePlacement = (
+    <PlacementSummary label={placementLabel} disabled={busy || bulk.reading} onChange={() => setStep(0)} />
+  )
 
   return (
     <section className="student-onboarding-dashboard is-bulk-import" aria-label="Bulk student import">
@@ -28,7 +33,12 @@ export default function BulkImportPage({ accessToken, identity }: { accessToken:
         }
       />
       <section className="student-onboarding-workflow" aria-label="Bulk student registration">
-        <StudentOnboardingWorkflowHeader mode="bulk" fileName={bulk.fileName} activeStep={step} />
+        <StudentOnboardingWorkflowHeader
+          mode="bulk"
+          fileName={bulk.fileName}
+          activeStep={step}
+          onSelectStep={busy || bulk.reading || step === 3 ? undefined : setStep}
+        />
         {placement.error && (
           <p className="student-onboarding-inline-error" role="alert">
             {placement.error}
@@ -46,10 +56,12 @@ export default function BulkImportPage({ accessToken, identity }: { accessToken:
         )}
         {step === 1 && (
           <div className="student-onboarding-stage">
+            {changePlacement}
             <StudentImportUpload
               fileName={bulk.fileName}
               error={bulk.fileError}
               disabled={busy}
+              reading={bulk.reading}
               onFile={(file) => void bulk.upload(file)}
             />
             <div className="student-onboarding-stage-actions">
@@ -62,13 +74,14 @@ export default function BulkImportPage({ accessToken, identity }: { accessToken:
                 disabled={!rows.length}
                 onClick={() => setStep(2)}
               >
-                Review student list <span aria-hidden="true">→</span>
+                Review uploaded list <span aria-hidden="true">→</span>
               </button>
             </div>
           </div>
         )}
         {step === 2 && (
           <div className="student-onboarding-stage">
+            {changePlacement}
             <div className="student-onboarding-review-summary" aria-live="polite">
               <span>
                 <strong>{rows.length}</strong> total students
@@ -107,7 +120,13 @@ export default function BulkImportPage({ accessToken, identity }: { accessToken:
           </div>
         )}
         {step === 3 && (
-          <BulkResults results={bulk.results} remaining={rows} onFix={() => setStep(2)} onStartOver={bulk.reset} />
+          <BulkResults
+            results={bulk.results}
+            remaining={rows}
+            placementLabel={placementLabel}
+            onFix={() => setStep(2)}
+            onStartOver={bulk.reset}
+          />
         )}
       </section>
     </section>

@@ -1,15 +1,18 @@
 import { Check, UsersRound } from 'lucide-react'
 import type { StudentOnboardingBulkResult } from '../../../../types/admin/students.ts'
+import StudentPageLink from '../shared/StudentPageLink.tsx'
 import type { StudentImportRow } from './studentImport.ts'
 
 export default function BulkResults({
   results,
   remaining,
+  placementLabel,
   onFix,
   onStartOver,
 }: {
   results: StudentOnboardingBulkResult[]
   remaining: StudentImportRow[]
+  placementLabel: string
   onFix: () => void
   onStartOver: () => void
 }) {
@@ -30,6 +33,11 @@ export default function BulkResults({
             ? 'Some setup emails need to be resent'
             : 'Student invitations processed'}
       </h2>
+      {placementLabel && (
+        <p className="student-onboarding-result-placement">
+          Placed in <strong>{placementLabel}</strong>
+        </p>
+      )}
       <div className="student-onboarding-result-counts">
         <span>
           <strong>{created}</strong>
@@ -80,6 +88,12 @@ export default function BulkResults({
             Fix remaining rows
           </button>
         )}
+        <StudentPageLink page="all" className="student-onboarding-secondary student-onboarding-link-button">
+          View in All Students
+        </StudentPageLink>
+        <StudentPageLink page="register" className="student-onboarding-secondary student-onboarding-link-button">
+          Track setup invitations
+        </StudentPageLink>
         <button type="button" className="student-onboarding-primary" onClick={onStartOver}>
           Start another upload
         </button>
